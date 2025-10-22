@@ -1,0 +1,1364 @@
+import { User, Booking, Payment, Cart, AuditLog, Review, OTP } from '../models/index.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
+import PasswordService from '../services/passwordService.js';
+import AuthService from '../services/authService.js';
+import { profileResponse, successResponse, errorResponse } from '../utils/responseFormat.js';
+import crypto from 'crypto';
+
+// ==================== USER-FOCUSED CONTROLLERS ====================
+
+// @desc    Register user
+// @route   POST /api/users/register
+// @access  Public
+export const register = asyncHandler(async (req, res) => {
+  const { name, email, phone, password, role = 'user' } = req.body;
+
+  // Check if user already exists
+  const existingUser = await User.findOne({
+    $or: [{ email }, { phone }]
+  });
+
+  if (existingUser) {
+    return res.status(400).json({
+      success: false,
+      message: 'User already exists with this email or phone number'
+    });
+  }
+
+  // Validate password strength
+  const passwordValidation = PasswordService.validatePasswordStrength(password);
+  if (!passwordValidation.isValid) {
+    return res.status(400).json({
+      success: false,
+      message: passwordValidation.message
+    });
+  }
+
+  // Check for common passwords
+  if (PasswordService.isCommonPassword(password)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Password is too common. Please choose a stronger password.'
+    });
+  }
+
+  // Hash password in controller (business logic)
+  const hashedPassword = await PasswordService.hashPassword(password);
+
+  // Create user
+  const user = await User.create({
+    name,
+    email,
+    phone,
+    password: hashedPassword,
+    role
+  });
+
+  // Generate token
+  const token = AuthService.generateToken(user._id, user.role);
+
+  // Create audit log
+  // DISABLED: await AuditLog.create({
+  //     actorId: user._id,
+  //     action: 'REGISTER',
+  //     targetId: user._id,
+  //     description: 'User registered successfully'
+  //   });
+
+  res.status(201).json({
+    success: true,
+    message: 'User registered successfully',
+    data: {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        profileImage: user.profileImage,
+        address: user.address,
+        isEmailVerified: user.isEmailVerified,
+        isPhoneVerified: user.isPhoneVerified
+      },
+      token
+    }
+  });
+});
+
+// @desc    Login user
+// @route   POST /api/users/login
+// @access  Public
+export const login = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  // Find user by email
+  const user = await User.findOne({ email }).select('+password');
+
+  if (!user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid email or password'
+    });
+  }
+
+  // Check if user is active
+  if (!user.isActive) {
+    return res.status(401).json({
+      success: false,
+      message: 'Account is deactivated. Please contact support.'
+    });
+  }
+
+  // Check password in controller (business logic)
+  const isPasswordValid = await PasswordService.comparePassword(password, user.password);
+
+  if (!isPasswordValid) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid email or password'
+    });
+  }
+
+  // Update last login
+  user.lastLogin = new Date();
+  await user.save();
+
+  // Generate token
+  const token = AuthService.generateToken(user._id, user.role);
+
+  // Create audit log
+  // DISABLED: await AuditLog.create({
+  //     actorId: user._id,
+  //     action: 'LOGIN',
+  //     targetId: user._id,
+  //     description: 'User logged in successfully'
+  //   });
+
+  res.status(200).json({
+    success: true,
+    message: 'Login successful',
+    data: {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        profileImage: user.profileImage,
+        address: user.address,
+        isEmailVerified: user.isEmailVerified,
+        isPhoneVerified: user.isPhoneVerified,
+        lastLogin: user.lastLogin
+      },
+      token
+    }
+  });
+});
+
+// @desc    Logout user
+// @route   POST /api/users/logout
+// @access  Private
+export const logout = asyncHandler(async (req, res) => {
+  // Create audit log
+  // DISABLED: await AuditLog.create({
+  //     actorId: req.userId,
+  //     action: 'LOGOUT',
+  //     targetId: req.userId,
+  //     description: 'User logged out'
+  //   });
+
+  res.status(200).json({
+    success: true,
+    message: 'Logout successful'
+  });
+});
+
+// @desc    Get user profile
+// @route   GET /api/users/profile
+// @access  Private
+export const getProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.userId).select('-password');
+  
+  console.log('🔍 Backend getProfile - user.address:', user.address);
+  console.log('🔍 Backend getProfile - full user object:', {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    address: user.address
+  });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        profileImage: user.profileImage,
+        address: user.address,
+        isEmailVerified: user.isEmailVerified,
+        isPhoneVerified: user.isPhoneVerified,
+        lastLogin: user.lastLogin,
+        createdAt: user.createdAt
+      }
+    }
+  });
+});
+
+// @desc    Update user profile
+// @route   PUT /api/users/profile
+// @access  Private
+export const updateProfile = asyncHandler(async (req, res) => {
+  const { name, phone, profileImage, address } = req.body;
+  console.log('🔍 Received profile update data:', { name, phone, profileImage, address });
+
+  const user = await User.findById(req.userId);
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'User not found'
+    });
+  }
+
+  // Check if phone number is already taken by another user
+  if (phone && phone !== user.phone) {
+    const existingUser = await User.findOne({ phone, _id: { $ne: req.userId } });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number is already taken'
+      });
+    }
+  }
+
+  // Update user
+  if (name) user.name = name;
+  if (phone) user.phone = phone;
+  if (profileImage) user.profileImage = profileImage;
+  if (address) {
+    console.log('🔍 Received address:', address);
+    console.log('🔍 Current user.address before update:', user.address);
+    
+    // Initialize address object if it doesn't exist
+    if (!user.address) {
+      user.address = {
+        street: '',
+        city: '',
+        state: '',
+        pincode: '',
+        country: 'India'
+      };
+    }
+    
+    // Explicitly set each address field to ensure proper saving
+    user.address.street = address.street || '';
+    user.address.city = address.city || '';
+    user.address.state = address.state || '';
+    user.address.pincode = address.pincode || '';
+    user.address.country = address.country || 'India';
+    
+    console.log('🔍 Address after setting:', user.address);
+    // Mark the address subdocument as modified
+    user.markModified('address');
+  }
+
+  await user.save();
+  console.log('🔍 User saved with address:', user.address);
+
+  // Create audit log
+  // DISABLED: await AuditLog.create({
+  //     actorId: req.userId,
+  //     action: 'UPDATE',
+  //     targetId: req.userId,
+  //     description: 'User profile updated'
+  //   });
+
+  console.log('🔍 Backend: Final user object before response:', {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    profileImage: user.profileImage,
+    address: user.address
+  });
+
+  res.status(200).json(profileResponse(
+    'Profile updated successfully',
+    {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      profileImage: user.profileImage,
+      address: user.address
+    }
+  ));
+});
+
+// @desc    Change password
+// @route   PUT /api/users/change-password
+// @access  Private
+export const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  const user = await User.findById(req.userId).select('+password');
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'User not found'
+    });
+  }
+
+  // Check current password in controller (business logic)
+  const isCurrentPasswordValid = await PasswordService.comparePassword(currentPassword, user.password);
+
+  if (!isCurrentPasswordValid) {
+    return res.status(400).json({
+      success: false,
+      message: 'Current password is incorrect'
+    });
+  }
+
+  // Validate new password strength
+  const passwordValidation = PasswordService.validatePasswordStrength(newPassword);
+  if (!passwordValidation.isValid) {
+    return res.status(400).json({
+      success: false,
+      message: passwordValidation.message
+    });
+  }
+
+  // Hash new password in controller (business logic)
+  const hashedNewPassword = await PasswordService.hashPassword(newPassword);
+
+  // Update password
+  user.password = hashedNewPassword;
+  await user.save();
+
+  // Create audit log
+  // DISABLED: await AuditLog.create({
+  //     actorId: req.userId,
+  //     action: 'UPDATE',
+  //     targetId: req.userId,
+  //     description: 'User password changed'
+  //   });
+
+  res.status(200).json({
+    success: true,
+    message: 'Password changed successfully'
+  });
+});
+
+// @desc    Get user dashboard
+// @route   GET /api/users/dashboard
+// @access  Private
+export const getUserDashboard = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+
+  // Get user stats
+  const totalBookings = await Booking.countDocuments({ userId });
+  const activeBookings = await Booking.countDocuments({ 
+    userId, 
+    status: { $in: ['PENDING_PARTIAL_PAYMENT', 'PARTIALLY_PAID', 'ASSIGNED', 'IN_PROGRESS'] }
+  });
+  const completedBookings = await Booking.countDocuments({ 
+    userId, 
+    status: 'COMPLETED' 
+  });
+
+  // Get recent bookings
+  const recentBookings = await Booking.find({ userId })
+    .populate('packageId', 'title category basePrice')
+    .sort({ createdAt: -1 })
+    .limit(5);
+
+  // Get total spent
+  const totalSpent = await Payment.aggregate([
+    { $match: { userId, status: 'COMPLETED' } },
+    { $group: { _id: null, total: { $sum: '$amount' } } }
+  ]);
+
+  // Get cart items count
+  const cartItemsCount = await Cart.countDocuments({ userId });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      stats: {
+        totalBookings,
+        activeBookings,
+        completedBookings,
+        totalSpent: totalSpent[0]?.total || 0,
+        cartItemsCount
+      },
+      recentBookings
+    }
+  });
+});
+
+// ==================== ADMIN CONTROLLERS ====================
+
+// @desc    Get all users (Admin only)
+// @route   GET /api/users
+// @access  Private/Admin
+export const getAllUsers = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const users = await User.find()
+    .select('-password')
+    .skip(skip)
+    .limit(limit)
+    .sort({ createdAt: -1 });
+
+  const total = await User.countDocuments();
+
+  res.status(200).json({
+    success: true,
+    data: {
+      users,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total
+      }
+    }
+  });
+});
+
+// @desc    Get user by ID
+// @route   GET /api/users/:id
+// @access  Private
+export const getUserById = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id).select('-password');
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'User not found'
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: { user }
+  });
+});
+
+// @desc    Update user by ID
+// @route   PUT /api/users/:id
+// @access  Private
+export const updateUserById = asyncHandler(async (req, res) => {
+  const { name, phone, profileImage, isActive } = req.body;
+
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'User not found'
+    });
+  }
+
+  // Check if phone number is already taken by another user
+  if (phone && phone !== user.phone) {
+    const existingUser = await User.findOne({ phone, _id: { $ne: req.params.id } });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number is already taken'
+      });
+    }
+  }
+
+  // Update user
+  if (name) user.name = name;
+  if (phone) user.phone = phone;
+  if (profileImage) user.profileImage = profileImage;
+  if (isActive !== undefined) user.isActive = isActive;
+
+  await user.save();
+
+  // Create audit log
+  // DISABLED: await AuditLog.create({
+  //     actorId: req.userId,
+  //     action: 'UPDATE',
+  //     targetId: user._id,
+  //     description: `User ${user.name} updated by ${req.user.name}`
+  //   });
+
+  res.status(200).json({
+    success: true,
+    message: 'User updated successfully',
+    data: {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        profileImage: user.profileImage,
+        isActive: user.isActive
+      }
+    }
+  });
+});
+
+// @desc    Delete user by ID
+// @route   DELETE /api/users/:id
+// @access  Private/Admin
+export const deleteUserById = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'User not found'
+    });
+  }
+
+  // Prevent admin from deleting themselves
+  if (user._id.toString() === req.userId.toString()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Cannot delete your own account'
+    });
+  }
+
+  await User.findByIdAndDelete(req.params.id);
+
+  // Create audit log
+  // DISABLED: await AuditLog.create({
+  //     actorId: req.userId,
+  //     action: 'DELETE',
+  //     targetId: user._id,
+  //     description: `User ${user.name} deleted by ${req.user.name}`
+  //   });
+
+  res.status(200).json({
+    success: true,
+    message: 'User deleted successfully'
+  });
+});
+
+// @desc    Search users
+// @route   GET /api/users/search
+// @access  Private/Admin
+export const searchUsers = asyncHandler(async (req, res) => {
+  const { q, role } = req.query;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  let query = {};
+
+  // Search by name, email, or phone
+  if (q) {
+    query.$or = [
+      { name: { $regex: q, $options: 'i' } },
+      { email: { $regex: q, $options: 'i' } },
+      { phone: { $regex: q, $options: 'i' } }
+    ];
+  }
+
+  // Filter by role
+  if (role) {
+    query.role = role;
+  }
+
+  const users = await User.find(query)
+    .select('-password')
+    .skip(skip)
+    .limit(limit)
+    .sort({ createdAt: -1 });
+
+  const total = await User.countDocuments(query);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      users,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total
+      }
+    }
+  });
+});
+
+// @desc    Get user statistics (Admin only)
+// @route   GET /api/users/stats
+// @access  Private/Admin
+export const getAdminUserStats = asyncHandler(async (req, res) => {
+  const totalUsers = await User.countDocuments();
+  const activeUsers = await User.countDocuments({ isActive: true });
+  const usersByRole = await User.aggregate([
+    {
+      $group: {
+        _id: '$role',
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+
+  const recentUsers = await User.find()
+    .select('-password')
+    .sort({ createdAt: -1 })
+    .limit(5);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      totalUsers,
+      activeUsers,
+      inactiveUsers: totalUsers - activeUsers,
+      usersByRole,
+      recentUsers
+    }
+  });
+});
+
+// ==================== ADDITIONAL USER ENDPOINTS ====================
+
+// @desc    Get user's upcoming bookings
+// @route   GET /api/users/bookings/upcoming
+// @access  Private
+export const getUpcomingBookings = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const upcomingBookings = await Booking.find({
+    userId,
+    eventDate: { $gte: new Date() },
+    status: { $in: ['PENDING_PARTIAL_PAYMENT', 'PARTIALLY_PAID', 'ASSIGNED', 'IN_PROGRESS'] }
+  })
+    .populate('packageId', 'title category basePrice images')
+    .populate('vendorId', 'businessName contactPhone')
+    .sort({ eventDate: 1 })
+    .skip(skip)
+    .limit(limit);
+
+  const total = await Booking.countDocuments({
+    userId,
+    eventDate: { $gte: new Date() },
+    status: { $in: ['PENDING_PARTIAL_PAYMENT', 'PARTIALLY_PAID', 'ASSIGNED', 'IN_PROGRESS'] }
+  });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      bookings: upcomingBookings,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total
+      }
+    }
+  });
+});
+
+// @desc    Get user's booking history
+// @route   GET /api/users/bookings/history
+// @access  Private
+export const getBookingHistory = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const historyBookings = await Booking.find({
+    userId,
+    status: { $in: ['COMPLETED', 'CANCELLED'] }
+  })
+    .populate('packageId', 'title category basePrice images')
+    .populate('vendorId', 'businessName contactPhone')
+    .sort({ eventDate: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const total = await Booking.countDocuments({
+    userId,
+    status: { $in: ['COMPLETED', 'CANCELLED'] }
+  });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      bookings: historyBookings,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total
+      }
+    }
+  });
+});
+
+// @desc    Get user's payment history
+// @route   GET /api/users/payments
+// @access  Private
+export const getUserPayments = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const payments = await Payment.find({ userId })
+    .populate('bookingId', 'packageId eventDate totalAmount')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const total = await Payment.countDocuments({ userId });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      payments,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total
+      }
+    }
+  });
+});
+
+// @desc    Get user's reviews
+// @route   GET /api/users/reviews
+// @access  Private
+export const getUserReviews = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const reviews = await Review.find({ userId })
+    .populate('bookingId', 'packageId eventDate')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const total = await Review.countDocuments({ userId });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      reviews,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total
+      }
+    }
+  });
+});
+
+// @desc    Create user review
+// @route   POST /api/users/reviews
+// @access  Private
+export const createUserReview = asyncHandler(async (req, res) => {
+  const { bookingId, rating, comment } = req.body;
+  const userId = req.userId;
+
+  // Check if booking exists and belongs to user
+  const booking = await Booking.findOne({ _id: bookingId, userId });
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found or does not belong to you'
+    });
+  }
+
+  // Check if booking is completed
+  if (booking.status !== 'COMPLETED') {
+    return res.status(400).json({
+      success: false,
+      message: 'Can only review completed bookings'
+    });
+  }
+
+  // Check if review already exists
+  const existingReview = await Review.findOne({ bookingId, userId });
+  if (existingReview) {
+    return res.status(400).json({
+      success: false,
+      message: 'Review already exists for this booking'
+    });
+  }
+
+  // Create review
+  const review = await Review.create({
+    userId,
+    bookingId,
+    rating,
+    comment
+  });
+
+  // Populate review data
+  await review.populate('bookingId', 'packageId eventDate');
+
+  // Create audit log
+  // DISABLED: await AuditLog.create({
+  //     actorId: userId,
+  //     action: 'CREATE',
+  //     targetId: review._id,
+  //     description: 'User created review'
+  //   });
+
+  res.status(201).json({
+    success: true,
+    message: 'Review created successfully',
+    data: { review }
+  });
+});
+
+// @desc    Get user notifications
+// @route   GET /api/users/notifications
+// @access  Private
+export const getUserNotifications = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  // For now, we'll use audit logs as notifications
+  // In a real app, you'd have a separate notifications collection
+  const notifications = await AuditLog.find({
+    targetId: userId,
+    action: { $in: ['BOOKING_CREATED', 'BOOKING_UPDATED', 'PAYMENT_RECEIVED', 'BOOKING_ASSIGNED'] }
+  })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const total = await AuditLog.countDocuments({
+    targetId: userId,
+    action: { $in: ['BOOKING_CREATED', 'BOOKING_UPDATED', 'PAYMENT_RECEIVED', 'BOOKING_ASSIGNED'] }
+  });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      notifications,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total
+      }
+    }
+  });
+});
+
+// @desc    Get user activity log
+// @route   GET /api/users/activity
+// @access  Private
+export const getUserActivity = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const activities = await AuditLog.find({
+    $or: [
+      { actorId: userId },
+      { targetId: userId }
+    ]
+  })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const total = await AuditLog.countDocuments({
+    $or: [
+      { actorId: userId },
+      { targetId: userId }
+    ]
+  });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      activities,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total
+      }
+    }
+  });
+});
+
+// @desc    Forgot password
+// @route   POST /api/users/forgot-password
+// @access  Public
+export const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'User not found with this email'
+    });
+  }
+
+  // Generate reset token (in a real app, you'd use crypto.randomBytes)
+  const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  const resetExpire = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  // Update user with reset token
+  user.resetPasswordToken = resetToken;
+  user.resetPasswordExpire = resetExpire;
+  await user.save();
+
+  try {
+    // Use the email service
+    const emailService = await import('../services/emailService.js');
+    await emailService.default.sendPasswordResetEmail(user.email, user.name, resetToken);
+    console.log('✅ Password reset email sent to:', user.email);
+
+    // Create audit log
+    // DISABLED: await AuditLog.create({
+  //       actorId: user._id,
+  //       action: 'PASSWORD_RESET_REQUEST',
+  //       targetId: user._id,
+  //       description: 'Password reset requested'
+  //     });
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset email sent successfully',
+      data: {
+        email: user.email,
+        expiresAt: resetExpire
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error sending password reset email:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send password reset email. Please try again.'
+    });
+  }
+});
+
+// @desc    Reset password
+// @route   POST /api/users/reset-password
+// @access  Public
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  const user = await User.findOne({
+    resetPasswordToken: token,
+    resetPasswordExpire: { $gt: new Date() }
+  });
+
+  if (!user) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid or expired reset token'
+    });
+  }
+
+  // Validate new password strength
+  const passwordValidation = PasswordService.validatePasswordStrength(newPassword);
+  if (!passwordValidation.isValid) {
+    return res.status(400).json({
+      success: false,
+      message: passwordValidation.message
+    });
+  }
+
+  // Hash new password
+  const hashedPassword = await PasswordService.hashPassword(newPassword);
+
+  // Update password and clear reset token
+  user.password = hashedPassword;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+  await user.save();
+
+  // Create audit log
+  // DISABLED: await AuditLog.create({
+  //     actorId: user._id,
+  //     action: 'PASSWORD_RESET',
+  //     targetId: user._id,
+  //     description: 'Password reset successfully'
+  //   });
+
+  res.status(200).json({
+    success: true,
+    message: 'Password reset successfully'
+  });
+});
+
+// @desc    Get user search history
+// @route   GET /api/users/search-history
+// @access  Private
+export const getSearchHistory = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  // For now, we'll use audit logs for search history
+  // In a real app, you'd have a separate search history collection
+  const searchHistory = await AuditLog.find({
+    actorId: userId,
+    action: 'SEARCH'
+  })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const total = await AuditLog.countDocuments({
+    actorId: userId,
+    action: 'SEARCH'
+  });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      searchHistory,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total
+      }
+    }
+  });
+});
+
+// @desc    Save user search preferences
+// @route   POST /api/users/save-search
+// @access  Private
+export const saveSearch = asyncHandler(async (req, res) => {
+  const { searchQuery, filters } = req.body;
+  const userId = req.userId;
+
+  // Create audit log for search
+  // DISABLED: await AuditLog.create({
+  //     actorId: userId,
+  //     action: 'SEARCH',
+  //     targetId: userId,
+  //     description: `User searched for: ${searchQuery}`,
+  //     metadata: { filters }
+  //   });
+
+  res.status(200).json({
+    success: true,
+    message: 'Search saved successfully'
+  });
+});
+
+// @desc    Get user statistics
+// @route   GET /api/users/stats
+// @access  Private
+export const getUserStats = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+
+  // Get booking statistics
+  const totalBookings = await Booking.countDocuments({ userId });
+  const activeBookings = await Booking.countDocuments({
+    userId,
+    status: { $in: ['PENDING_PARTIAL_PAYMENT', 'PARTIALLY_PAID', 'ASSIGNED', 'IN_PROGRESS'] }
+  });
+  const completedBookings = await Booking.countDocuments({
+    userId,
+    status: 'COMPLETED'
+  });
+
+  // Get payment statistics
+  const totalSpent = await Payment.aggregate([
+    { $match: { userId, status: 'COMPLETED' } },
+    { $group: { _id: null, total: { $sum: '$amount' } } }
+  ]);
+
+  // Get review statistics
+  const totalReviews = await Review.countDocuments({ userId });
+  const averageRating = await Review.aggregate([
+    { $match: { userId } },
+    { $group: { _id: null, average: { $avg: '$rating' } } }
+  ]);
+
+  // Get cart statistics
+  const cartItemsCount = await Cart.countDocuments({ userId });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      bookings: {
+        total: totalBookings,
+        active: activeBookings,
+        completed: completedBookings
+      },
+      payments: {
+        totalSpent: totalSpent[0]?.total || 0
+      },
+      reviews: {
+        total: totalReviews,
+        averageRating: averageRating[0]?.average || 0
+      },
+      cart: {
+        itemsCount: cartItemsCount
+      }
+    }
+  });
+});
+
+// @desc    Update booking status (for user)
+// @route   PUT /api/users/bookings/:id/status
+// @access  Private
+export const updateBookingStatus = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+  const { id } = req.params;
+  const userId = req.userId;
+
+  const booking = await Booking.findOne({ _id: id, userId });
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found or does not belong to you'
+    });
+  }
+
+  // Update booking status
+  booking.status = status;
+  await booking.save();
+
+  // Create audit log
+  // DISABLED: await AuditLog.create({
+  //     actorId: userId,
+  //     action: 'UPDATE',
+  //     targetId: booking._id,
+  //     description: `Booking status updated to ${status}`
+  //   });
+
+  res.status(200).json({
+    success: true,
+    message: 'Booking status updated successfully',
+    data: { booking }
+  });
+});
+
+// @desc    Get booking invoice
+// @route   GET /api/users/bookings/:id/invoice
+// @access  Private
+export const getBookingInvoice = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.userId;
+
+  const booking = await Booking.findOne({ _id: id, userId })
+    .populate('packageId', 'title category basePrice')
+    .populate('vendorId', 'businessName contactPhone')
+    .populate('userId', 'name email phone');
+
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found or does not belong to you'
+    });
+  }
+
+  // Get payments for this booking
+  const payments = await Payment.find({ bookingId: id });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      booking,
+      payments,
+      invoice: {
+        bookingId: booking._id,
+        customerName: booking.userId.name,
+        customerEmail: booking.userId.email,
+        customerPhone: booking.userId.phone,
+        packageName: booking.packageId.title,
+        eventDate: booking.eventDate,
+        totalAmount: booking.totalAmount,
+        amountPaid: booking.amountPaid,
+        balance: booking.totalAmount - booking.amountPaid,
+        status: booking.status,
+        createdAt: booking.createdAt
+      }
+    }
+  });
+});
+
+// @desc    Add testimonial
+// @route   POST /api/users/testimonial
+// @access  Private
+export const addTestimonial = asyncHandler(async (req, res) => {
+  const { rating, feedback } = req.body;
+
+  if (!rating || !feedback) {
+    return res.status(400).json({
+      success: false,
+      message: 'Rating and feedback are required'
+    });
+  }
+
+  if (rating < 1 || rating > 5) {
+    return res.status(400).json({
+      success: false,
+      message: 'Rating must be between 1 and 5'
+    });
+  }
+
+  // Create testimonial
+  const testimonial = await Review.create({
+    userId: req.userId,
+    rating,
+    feedback,
+    type: 'TESTIMONIAL',
+    isApproved: false // Admin needs to approve
+  });
+
+  // Create audit log
+  // DISABLED: await AuditLog.create({
+  //     actorId: req.userId,
+  //     action: 'CREATE',
+  //     targetId: testimonial._id,
+  //     description: 'User added testimonial'
+  //   });
+
+  res.status(201).json({
+    success: true,
+    message: 'Testimonial submitted successfully. It will be reviewed before being published.',
+    data: {
+      testimonial: {
+        id: testimonial._id,
+        rating: testimonial.rating,
+        feedback: testimonial.feedback,
+        type: testimonial.type,
+        isApproved: testimonial.isApproved,
+        createdAt: testimonial.createdAt
+      }
+    }
+  });
+});
+
+// @desc    Get user testimonials
+// @route   GET /api/users/testimonials
+// @access  Private
+export const getUserTestimonials = asyncHandler(async (req, res) => {
+  const testimonials = await Review.find({ 
+    userId: req.userId, 
+    type: 'TESTIMONIAL' 
+  }).sort({ createdAt: -1 });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      testimonials
+    }
+  });
+});
+
+// @desc    Send email verification
+// @route   POST /api/users/send-email-verification
+// @access  Private
+export const sendEmailVerification = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.userId);
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'User not found'
+    });
+  }
+
+  if (user.isEmailVerified) {
+    return res.status(400).json({
+      success: false,
+      message: 'Email is already verified'
+    });
+  }
+
+  // Generate verification token
+  const crypto = await import('crypto');
+  const verificationToken = crypto.randomBytes(32).toString('hex');
+  const verificationExpire = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+  user.emailVerificationToken = verificationToken;
+  user.emailVerificationExpire = verificationExpire;
+  await user.save();
+
+  try {
+    // Use the email service
+    const emailService = await import('../services/emailService.js');
+    await emailService.default.sendVerificationEmail(user.email, user.name, verificationToken);
+    console.log('✅ Verification email sent to:', user.email);
+
+    res.status(200).json({
+      success: true,
+      message: 'Verification email sent successfully',
+      data: {
+        email: user.email,
+        expiresAt: verificationExpire
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error sending verification email:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send verification email. Please try again.'
+    });
+  }
+});
+
+// @desc    Verify email
+// @route   POST /api/users/verify-email
+// @access  Public
+export const verifyEmail = asyncHandler(async (req, res) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(400).json({
+      success: false,
+      message: 'Verification token is required'
+    });
+  }
+
+  const user = await User.findOne({
+    emailVerificationToken: token,
+    emailVerificationExpire: { $gt: new Date() }
+  });
+
+  if (!user) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid or expired verification token'
+    });
+  }
+
+  user.isEmailVerified = true;
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpire = undefined;
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Email verified successfully',
+    data: {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isEmailVerified: user.isEmailVerified
+      }
+    }
+  });
+});
+

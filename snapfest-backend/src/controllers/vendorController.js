@@ -1,0 +1,1637 @@
+import { asyncHandler } from '../middleware/errorHandler.js';
+import { User, Vendor, Booking, Payment, OTP, Review } from '../models/index.js';
+import AuthService from '../services/authService.js';
+import PasswordService from '../services/passwordService.js';
+
+// ==================== VENDOR AUTHENTICATION & PROFILE ====================
+export const registerVendor = asyncHandler(async (req, res) => {
+  const { name, email, phone, password } = req.body;
+
+  // Check if vendor already exists
+  const existingVendor = await User.findOne({ 
+    $or: [{ email }, { phone }],
+    role: 'vendor'
+  });
+
+  if (existingVendor) {
+    return res.status(400).json({
+      success: false,
+      message: 'Vendor with this email or phone already exists'
+    });
+  }
+
+  // Check if user with same email/phone exists (but different role)
+  const existingUser = await User.findOne({ 
+    $or: [{ email }, { phone }],
+    role: { $ne: 'vendor' }
+  });
+
+  if (existingUser) {
+    return res.status(400).json({
+      success: false,
+      message: 'A user account with this email or phone already exists. Please use different credentials or contact support.'
+    });
+  }
+
+  // Hash password
+  const hashedPassword = await PasswordService.hashPassword(password);
+
+  // Create user with vendor role
+  const user = await User.create({
+    name,
+    email,
+    phone,
+    password: hashedPassword,
+    role: 'vendor',
+    isActive: false // Admin needs to approve
+  });
+
+  // Create minimal vendor profile (will be updated later in profile section)
+  const vendor = await Vendor.create({
+    userId: user._id,
+    businessName: `${name}'s Business`, // Default business name
+    servicesOffered: [], // Empty initially
+    experience: 0, // Default to 0
+    availability: 'AVAILABLE', // Use correct field name
+    earningsSummary: {
+      totalEarnings: 0,
+      thisMonthEarnings: 0,
+      totalBookings: 0
+    }
+  });
+
+  res.status(201).json({
+    success: true,
+    message: 'Vendor registered successfully. Please complete your profile and await admin approval.',
+    data: {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        isActive: user.isActive
+      },
+      vendor: {
+        id: vendor._id,
+        businessName: vendor.businessName,
+        servicesOffered: vendor.servicesOffered,
+        experience: vendor.experience,
+        profileComplete: false // Indicates profile needs completion
+      }
+    }
+  });
+});
+
+export const loginVendor = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  // Find vendor user
+  const user = await User.findOne({ email, role: 'vendor' }).select('+password');
+  
+  if (!user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid credentials'
+    });
+  }
+
+  // Check if vendor is active
+  if (!user.isActive) {
+    return res.status(401).json({
+      success: false,
+      message: 'Vendor account is not active. Contact admin for approval.'
+    });
+  }
+
+  // Check password
+  const isPasswordValid = await PasswordService.comparePassword(password, user.password);
+  
+  if (!isPasswordValid) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid credentials'
+    });
+  }
+
+  // Get vendor profile
+  const vendor = await Vendor.findOne({ userId: user._id });
+
+  // If vendor profile doesn't exist, create a minimal one
+  if (!vendor) {
+    const newVendor = await Vendor.create({
+      userId: user._id,
+      businessName: `${user.name}'s Business`,
+      servicesOffered: [],
+      experience: 0,
+      isAvailable: true,
+      rating: 0,
+      totalBookings: 0,
+      totalEarnings: 0
+    });
+    
+    // Generate token
+    const token = AuthService.generateToken(user._id, user.role);
+
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Vendor logged in successfully',
+      data: {
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+          profileImage: user.profileImage
+        },
+        vendor: {
+          id: newVendor._id,
+          businessName: newVendor.businessName,
+          servicesOffered: newVendor.servicesOffered,
+          experience: newVendor.experience,
+          isAvailable: newVendor.isAvailable,
+          rating: newVendor.rating,
+          totalBookings: newVendor.totalBookings,
+          totalEarnings: newVendor.totalEarnings
+        }
+      }
+    });
+  }
+
+  // Generate token
+  const token = AuthService.generateToken(user._id, user.role);
+
+  // Update last login
+  user.lastLogin = new Date();
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Vendor logged in successfully',
+    data: {
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        profileImage: user.profileImage
+      },
+      vendor: {
+        id: vendor._id,
+        businessName: vendor.businessName,
+        servicesOffered: vendor.servicesOffered,
+        experience: vendor.experience,
+        isAvailable: vendor.isAvailable,
+        rating: vendor.rating
+      }
+    }
+  });
+});
+
+export const getVendorProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.userId).select('-password');
+  let vendor = await Vendor.findOne({ userId: req.userId });
+
+  // If vendor profile doesn't exist, create a minimal one
+  if (!vendor) {
+    vendor = await Vendor.create({
+      userId: req.userId,
+      businessName: `${user.name}'s Business`,
+      servicesOffered: [],
+      experience: 0,
+      isAvailable: true,
+      rating: 0,
+      totalBookings: 0,
+      totalEarnings: 0
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        profileImage: user.profileImage,
+        isActive: user.isActive,
+        lastLogin: user.lastLogin
+      },
+      vendor: {
+        id: vendor._id,
+        businessName: vendor.businessName,
+        businessType: vendor.businessType,
+        servicesOffered: vendor.servicesOffered,
+        experience: vendor.experience,
+        location: vendor.location,
+        bio: vendor.bio,
+        portfolio: vendor.portfolio,
+        pricing: vendor.pricing,
+        availability: vendor.availability,
+        profileComplete: vendor.profileComplete,
+        isAvailable: vendor.isAvailable,
+        rating: vendor.rating,
+        totalBookings: vendor.totalBookings,
+        totalEarnings: vendor.totalEarnings,
+        createdAt: vendor.createdAt
+      }
+    }
+  });
+});
+
+export const updateVendorProfile = asyncHandler(async (req, res) => {
+  const { 
+    name, 
+    phone, 
+    businessName, 
+    servicesOffered, 
+    experience, 
+    businessType,
+    location,
+    bio,
+    availability,
+    portfolio,
+    pricing
+  } = req.body;
+
+  // Update user profile
+  const user = await User.findById(req.userId);
+  if (name) user.name = name;
+  if (phone) {
+    // Check if phone is already taken
+    const existingUser = await User.findOne({ phone, _id: { $ne: req.userId } });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number is already taken'
+      });
+    }
+    user.phone = phone;
+  }
+  await user.save();
+
+  // Update vendor profile
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  if (businessName) vendor.businessName = businessName;
+  if (servicesOffered) vendor.servicesOffered = servicesOffered;
+  if (experience !== undefined) vendor.experience = experience;
+  if (businessType) vendor.businessType = businessType;
+  if (location) vendor.location = location;
+  if (bio) vendor.bio = bio;
+  if (availability) vendor.availability = availability;
+  if (portfolio) vendor.portfolio = portfolio;
+  if (pricing) vendor.pricing = pricing;
+  
+  // Mark profile as complete if essential fields are filled
+  vendor.profileComplete = !!(businessName && servicesOffered && servicesOffered.length > 0);
+  
+  await vendor.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Vendor profile updated successfully',
+    data: {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        profileImage: user.profileImage
+      },
+      vendor: {
+        id: vendor._id,
+        businessName: vendor.businessName,
+        servicesOffered: vendor.servicesOffered,
+        experience: vendor.experience
+      }
+    }
+  });
+});
+
+export const changeVendorPassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  const user = await User.findById(req.userId).select('+password');
+
+  // Check current password
+  const isCurrentPasswordValid = await PasswordService.comparePassword(currentPassword, user.password);
+  
+  if (!isCurrentPasswordValid) {
+    return res.status(400).json({
+      success: false,
+      message: 'Current password is incorrect'
+    });
+  }
+
+  // Hash new password
+  const hashedNewPassword = await PasswordService.hashPassword(newPassword);
+  user.password = hashedNewPassword;
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Password changed successfully'
+  });
+});
+
+export const logoutVendor = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Vendor logged out successfully'
+  });
+});
+
+// ==================== VENDOR DASHBOARD & ANALYTICS ====================
+export const getVendorDashboard = asyncHandler(async (req, res) => {
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  // Get recent bookings
+  const recentBookings = await Booking.find({ vendorId: vendor._id })
+    .populate('userId', 'name email phone')
+    .populate('packageId', 'name category')
+    .sort({ createdAt: -1 })
+    .limit(5);
+
+  // Get pending bookings
+  const pendingBookings = await Booking.countDocuments({ 
+    vendorId: vendor._id, 
+    status: { $in: ['ASSIGNED', 'IN_PROGRESS'] } 
+  });
+
+  // Get completed bookings this month
+  const currentMonth = new Date();
+  currentMonth.setDate(1);
+  const completedThisMonth = await Booking.countDocuments({
+    vendorId: vendor._id,
+    status: 'COMPLETED',
+    completedAt: { $gte: currentMonth }
+  });
+
+  // Get total earnings this month
+  const earningsThisMonth = await Payment.aggregate([
+    {
+      $match: {
+        vendorId: vendor._id,
+        status: 'COMPLETED',
+        createdAt: { $gte: currentMonth }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: '$amount' }
+      }
+    }
+  ]);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      vendor: {
+        id: vendor._id,
+        businessName: vendor.businessName,
+        isAvailable: vendor.isAvailable,
+        rating: vendor.rating,
+        totalBookings: vendor.totalBookings,
+        totalEarnings: vendor.totalEarnings
+      },
+      dashboard: {
+        pendingBookings,
+        completedThisMonth,
+        earningsThisMonth: earningsThisMonth[0]?.total || 0,
+        recentBookings
+      }
+    }
+  });
+});
+
+export const getVendorStats = asyncHandler(async (req, res) => {
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  // Get booking statistics
+  const bookingStats = await Booking.aggregate([
+    { $match: { vendorId: vendor._id } },
+    {
+      $group: {
+        _id: '$status',
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+
+  // Get monthly earnings for last 6 months
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  
+  const monthlyEarnings = await Payment.aggregate([
+    {
+      $match: {
+        vendorId: vendor._id,
+        status: 'COMPLETED',
+        createdAt: { $gte: sixMonthsAgo }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' }
+        },
+        total: { $sum: '$amount' },
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { '_id.year': 1, '_id.month': 1 } }
+  ]);
+
+  // Get average rating from reviews
+  const reviewStats = await Review.aggregate([
+    {
+      $lookup: {
+        from: 'bookings',
+        localField: 'bookingId',
+        foreignField: '_id',
+        as: 'booking'
+      }
+    },
+    {
+      $match: {
+        'booking.vendorId': vendor._id
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        averageRating: { $avg: '$rating' },
+        totalReviews: { $sum: 1 }
+      }
+    }
+  ]);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      bookingStats,
+      monthlyEarnings,
+      reviewStats: reviewStats[0] || { averageRating: 0, totalReviews: 0 }
+    }
+  });
+});
+
+export const getVendorEarnings = asyncHandler(async (req, res) => {
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  const { period = 'month' } = req.query;
+  
+  let startDate;
+  const endDate = new Date();
+  
+  switch (period) {
+    case 'week':
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - 7);
+      break;
+    case 'month':
+      startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - 1);
+      break;
+    case 'year':
+      startDate = new Date();
+      startDate.setFullYear(startDate.getFullYear() - 1);
+      break;
+    default:
+      startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - 1);
+  }
+
+  // Get earnings for the period
+  const earnings = await Payment.aggregate([
+    {
+      $match: {
+        vendorId: vendor._id,
+        status: 'COMPLETED',
+        createdAt: { $gte: startDate, $lte: endDate }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        totalEarnings: { $sum: '$amount' },
+        totalTransactions: { $sum: 1 },
+        averageEarning: { $avg: '$amount' }
+      }
+    }
+  ]);
+
+  // Get daily earnings breakdown
+  const dailyEarnings = await Payment.aggregate([
+    {
+      $match: {
+        vendorId: vendor._id,
+        status: 'COMPLETED',
+        createdAt: { $gte: startDate, $lte: endDate }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' },
+          day: { $dayOfMonth: '$createdAt' }
+        },
+        total: { $sum: '$amount' },
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
+  ]);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      period,
+      startDate,
+      endDate,
+      earnings: earnings[0] || { totalEarnings: 0, totalTransactions: 0, averageEarning: 0 },
+      dailyEarnings
+    }
+  });
+});
+
+export const getVendorPerformance = asyncHandler(async (req, res) => {
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  // Get performance metrics
+  const totalBookings = await Booking.countDocuments({ vendorId: vendor._id });
+  const completedBookings = await Booking.countDocuments({ 
+    vendorId: vendor._id, 
+    status: 'COMPLETED' 
+  });
+  const cancelledBookings = await Booking.countDocuments({ 
+    vendorId: vendor._id, 
+    status: 'CANCELLED' 
+  });
+
+  // Calculate completion rate
+  const completionRate = totalBookings > 0 ? (completedBookings / totalBookings) * 100 : 0;
+  const cancellationRate = totalBookings > 0 ? (cancelledBookings / totalBookings) * 100 : 0;
+
+  // Get average response time (time from assignment to start)
+  const responseTimeData = await Booking.aggregate([
+    {
+      $match: {
+        vendorId: vendor._id,
+        status: { $in: ['IN_PROGRESS', 'COMPLETED'] }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        avgResponseTime: {
+          $avg: {
+            $subtract: ['$startedAt', '$assignedAt']
+          }
+        }
+      }
+    }
+  ]);
+
+  // Get recent reviews and ratings
+  const recentReviews = await Review.aggregate([
+    {
+      $lookup: {
+        from: 'bookings',
+        localField: 'bookingId',
+        foreignField: '_id',
+        as: 'booking'
+      }
+    },
+    {
+      $match: {
+        'booking.vendorId': vendor._id
+      }
+    },
+    {
+      $sort: { createdAt: -1 }
+    },
+    {
+      $limit: 5
+    },
+    {
+      $project: {
+        rating: 1,
+        comment: 1,
+        createdAt: 1,
+        'booking.eventDate': 1
+      }
+    }
+  ]);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      performance: {
+        totalBookings,
+        completedBookings,
+        cancelledBookings,
+        completionRate: Math.round(completionRate * 100) / 100,
+        cancellationRate: Math.round(cancellationRate * 100) / 100,
+        avgResponseTime: responseTimeData[0]?.avgResponseTime || 0
+      },
+      recentReviews
+    }
+  });
+});
+
+// ==================== BOOKING MANAGEMENT ====================
+export const getVendorBookings = asyncHandler(async (req, res) => {
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+  const { status, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+
+  // Build query
+  let query = { vendorId: vendor._id };
+  if (status) {
+    query.status = status;
+  }
+
+  // Build sort object
+  const sort = {};
+  sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+
+  const bookings = await Booking.find(query)
+    .populate('userId', 'name email phone')
+    .populate('packageId', 'name category price')
+    .sort(sort)
+    .skip(skip)
+    .limit(limit);
+
+  const total = await Booking.countDocuments(query);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      bookings,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total
+      }
+    }
+  });
+});
+
+export const getVendorBookingById = asyncHandler(async (req, res) => {
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  const booking = await Booking.findOne({
+    _id: req.params.id,
+    vendorId: vendor._id
+  })
+    .populate('userId', 'name email phone')
+    .populate('packageId', 'name category price description')
+    .populate('addOns', 'name price');
+
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found'
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: { booking }
+  });
+});
+
+export const updateBookingStatus = asyncHandler(async (req, res) => {
+  const { status, notes } = req.body;
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  const booking = await Booking.findOne({
+    _id: req.params.id,
+    vendorId: vendor._id
+  });
+
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found'
+    });
+  }
+
+  // Validate status transition
+  const validTransitions = {
+    'ASSIGNED': ['IN_PROGRESS', 'CANCELLED'],
+    'IN_PROGRESS': ['COMPLETED', 'CANCELLED'],
+    'COMPLETED': [],
+    'CANCELLED': []
+  };
+
+  if (!validTransitions[booking.status]?.includes(status)) {
+    return res.status(400).json({
+      success: false,
+      message: `Cannot change status from ${booking.status} to ${status}`
+    });
+  }
+
+  // Update booking
+  booking.status = status;
+  if (notes) booking.vendorNotes = notes;
+
+  // Set timestamps based on status
+  if (status === 'IN_PROGRESS') {
+    booking.startedAt = new Date();
+  } else if (status === 'COMPLETED') {
+    booking.completedAt = new Date();
+  } else if (status === 'CANCELLED') {
+    booking.cancelledAt = new Date();
+  }
+
+  await booking.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Booking status updated successfully',
+    data: { booking }
+  });
+});
+
+export const startBooking = asyncHandler(async (req, res) => {
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  const booking = await Booking.findOne({
+    _id: req.params.id,
+    assignedVendorId: req.userId,
+    status: 'FULLY_PAID'
+  });
+
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found or not ready to start. Payment must be completed and OTP verified.'
+    });
+  }
+
+  // Check if OTP has been verified
+  if (!booking.otpVerified) {
+    return res.status(400).json({
+      success: false,
+      message: 'OTP verification required before starting the event'
+    });
+  }
+
+  booking.status = 'IN_PROGRESS';
+  booking.startedAt = new Date();
+  await booking.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Booking started successfully',
+    data: { booking }
+  });
+});
+
+export const completeBooking = asyncHandler(async (req, res) => {
+  const { completionNotes } = req.body;
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  const booking = await Booking.findOne({
+    _id: req.params.id,
+    vendorId: vendor._id,
+    status: 'IN_PROGRESS'
+  });
+
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found or not in IN_PROGRESS status'
+    });
+  }
+
+  booking.status = 'COMPLETED';
+  booking.completedAt = new Date();
+  if (completionNotes) booking.completionNotes = completionNotes;
+
+  // Update vendor stats
+  vendor.totalBookings += 1;
+  await vendor.save();
+
+  await booking.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Booking completed successfully',
+    data: { booking }
+  });
+});
+
+export const cancelBooking = asyncHandler(async (req, res) => {
+  const { cancellationReason } = req.body;
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  const booking = await Booking.findOne({
+    _id: req.params.id,
+    vendorId: vendor._id,
+    status: { $in: ['ASSIGNED', 'IN_PROGRESS'] }
+  });
+
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found or cannot be cancelled'
+    });
+  }
+
+  booking.status = 'CANCELLED';
+  booking.cancelledAt = new Date();
+  if (cancellationReason) booking.cancellationReason = cancellationReason;
+
+  await booking.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Booking cancelled successfully',
+    data: { booking }
+  });
+});
+
+// ==================== OTP VERIFICATION SYSTEM ====================
+export const getPendingOTPs = asyncHandler(async (req, res) => {
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  // Get bookings that need OTP verification
+  const bookings = await Booking.find({
+    assignedVendorId: req.userId,
+    status: 'FULLY_PAID',
+    otpVerified: false
+  })
+    .populate('userId', 'name phone')
+    .populate('packageId', 'title')
+    .sort({ createdAt: -1 });
+
+  res.status(200).json({
+    success: true,
+    data: { bookings }
+  });
+});
+
+export const verifyOTP = asyncHandler(async (req, res) => {
+  const { bookingId, otpCode } = req.body;
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  // Find the booking
+  const booking = await Booking.findOne({
+    _id: bookingId,
+    assignedVendorId: req.userId,
+    status: 'FULLY_PAID'
+  });
+
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found or not ready for OTP verification'
+    });
+  }
+
+  // Find the OTP
+  const otp = await OTP.findOne({
+    bookingId: booking._id,
+    code: otpCode,
+    isUsed: false,
+    expiresAt: { $gt: new Date() }
+  });
+
+  if (!otp) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid or expired OTP'
+    });
+  }
+
+  // Verify OTP
+  otp.isUsed = true;
+  otp.verifiedAt = new Date();
+  otp.verifiedBy = req.userId;
+  await otp.save();
+
+  // Update booking
+  booking.otpVerified = true;
+  booking.otpVerifiedAt = new Date();
+  await booking.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'OTP verified successfully',
+    data: { booking }
+  });
+});
+
+export const getOTPHistory = asyncHandler(async (req, res) => {
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const otps = await OTP.find({ verifiedBy: req.userId })
+    .populate('bookingId', 'eventDate status')
+    .sort({ verifiedAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const total = await OTP.countDocuments({ verifiedBy: req.userId });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      otps,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total
+      }
+    }
+  });
+});
+
+export const requestNewOTP = asyncHandler(async (req, res) => {
+  const { bookingId } = req.body;
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  const booking = await Booking.findOne({
+    _id: bookingId,
+    vendorId: vendor._id,
+    status: 'FULLY_PAID'
+  });
+
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found'
+    });
+  }
+
+  // Generate new OTP
+  const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  const otp = await OTP.create({
+    bookingId: booking._id,
+    code: otpCode,
+    expiresAt,
+    isUsed: false
+  });
+
+  res.status(200).json({
+    success: true,
+    message: 'New OTP generated successfully',
+    data: { 
+      otp: {
+        id: otp._id,
+        code: otpCode,
+        expiresAt
+      }
+    }
+  });
+});
+
+// ==================== PAYMENT MANAGEMENT ====================
+export const confirmCashPayment = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Confirm cash payment endpoint - To be implemented',
+    data: { payment: 'Coming soon' }
+  });
+});
+
+export const getPendingPayments = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Get pending payments endpoint - To be implemented',
+    data: { payments: 'Coming soon' }
+  });
+});
+
+export const verifyPaymentCompletion = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Verify payment completion endpoint - To be implemented',
+    data: { payment: 'Coming soon' }
+  });
+});
+
+// ==================== AVAILABILITY & SETTINGS ====================
+export const getVendorAvailability = asyncHandler(async (req, res) => {
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: {
+      isAvailable: vendor.isAvailable,
+      availabilitySchedule: vendor.availabilitySchedule || [],
+      workingHours: vendor.workingHours || {},
+      holidays: vendor.holidays || []
+    }
+  });
+});
+
+export const updateVendorAvailability = asyncHandler(async (req, res) => {
+  const { isAvailable, availabilitySchedule, workingHours, holidays } = req.body;
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  if (isAvailable !== undefined) vendor.isAvailable = isAvailable;
+  if (availabilitySchedule) vendor.availabilitySchedule = availabilitySchedule;
+  if (workingHours) vendor.workingHours = workingHours;
+  if (holidays) vendor.holidays = holidays;
+
+  await vendor.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Vendor availability updated successfully',
+    data: {
+      isAvailable: vendor.isAvailable,
+      availabilitySchedule: vendor.availabilitySchedule,
+      workingHours: vendor.workingHours,
+      holidays: vendor.holidays
+    }
+  });
+});
+
+export const toggleVendorActive = asyncHandler(async (req, res) => {
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  vendor.isAvailable = !vendor.isAvailable;
+  await vendor.save();
+
+  res.status(200).json({
+    success: true,
+    message: `Vendor ${vendor.isAvailable ? 'activated' : 'deactivated'} successfully`,
+    data: {
+      isAvailable: vendor.isAvailable
+    }
+  });
+});
+
+export const getVendorSettings = asyncHandler(async (req, res) => {
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: {
+      notificationSettings: vendor.notificationSettings || {},
+      privacySettings: vendor.privacySettings || {},
+      businessSettings: vendor.businessSettings || {},
+      paymentSettings: vendor.paymentSettings || {}
+    }
+  });
+});
+
+export const updateVendorSettings = asyncHandler(async (req, res) => {
+  const { notificationSettings, privacySettings, businessSettings, paymentSettings } = req.body;
+  const vendor = await Vendor.findOne({ userId: req.userId });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  if (notificationSettings) vendor.notificationSettings = notificationSettings;
+  if (privacySettings) vendor.privacySettings = privacySettings;
+  if (businessSettings) vendor.businessSettings = businessSettings;
+  if (paymentSettings) vendor.paymentSettings = paymentSettings;
+
+  await vendor.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Vendor settings updated successfully',
+    data: {
+      notificationSettings: vendor.notificationSettings,
+      privacySettings: vendor.privacySettings,
+      businessSettings: vendor.businessSettings,
+      paymentSettings: vendor.paymentSettings
+    }
+  });
+});
+
+// ==================== NOTIFICATIONS & COMMUNICATION ====================
+export const getVendorNotifications = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Get vendor notifications endpoint - To be implemented',
+    data: { notifications: 'Coming soon' }
+  });
+});
+
+export const markNotificationRead = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Mark notification read endpoint - To be implemented',
+    data: { notification: 'Coming soon' }
+  });
+});
+
+export const getVendorMessages = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Get vendor messages endpoint - To be implemented',
+    data: { messages: 'Coming soon' }
+  });
+});
+
+export const sendMessageToAdmin = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Send message to admin endpoint - To be implemented',
+    data: { message: 'Coming soon' }
+  });
+});
+
+// ==================== EARNINGS & PAYOUTS ====================
+export const getMonthlyEarnings = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Get monthly earnings endpoint - To be implemented',
+    data: { earnings: 'Coming soon' }
+  });
+});
+
+export const getPayoutHistory = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Get payout history endpoint - To be implemented',
+    data: { payouts: 'Coming soon' }
+  });
+});
+
+export const getPendingPayouts = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Get pending payouts endpoint - To be implemented',
+    data: { payouts: 'Coming soon' }
+  });
+});
+
+export const requestPayout = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Request payout endpoint - To be implemented',
+    data: { payout: 'Coming soon' }
+  });
+});
+
+// ==================== WORKFLOW MANAGEMENT ====================
+export const getPreparationTasks = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Get preparation tasks endpoint - To be implemented',
+    data: { tasks: 'Coming soon' }
+  });
+});
+
+export const completeTask = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Complete task endpoint - To be implemented',
+    data: { task: 'Coming soon' }
+  });
+});
+
+export const getEventChecklist = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Get event checklist endpoint - To be implemented',
+    data: { checklist: 'Coming soon' }
+  });
+});
+
+export const startEventExecution = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Start event execution endpoint - To be implemented',
+    data: { event: 'Coming soon' }
+  });
+});
+
+export const completeEvent = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Complete event endpoint - To be implemented',
+    data: { event: 'Coming soon' }
+  });
+});
+
+export const reportIssues = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Report issues endpoint - To be implemented',
+    data: { issue: 'Coming soon' }
+  });
+});
+
+// ==================== ADDITIONAL VENDOR ENDPOINTS ====================
+
+// @desc    Get OTP by ID
+// @route   GET /api/vendors/otps/:id
+// @access  Private/Vendor
+export const getOTPById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const vendorId = req.userId;
+
+  const otp = await OTP.findOne({
+    _id: id,
+    vendorId
+  });
+
+  if (!otp) {
+    return res.status(404).json({
+      success: false,
+      message: 'OTP not found'
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: { otp }
+  });
+});
+
+// @desc    Verify specific OTP
+// @route   POST /api/vendors/otps/:id/verify
+// @access  Private/Vendor
+export const verifySpecificOTP = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { otpCode } = req.body;
+  const vendorId = req.userId;
+
+  const otp = await OTP.findOne({
+    _id: id,
+    vendorId,
+    isUsed: false,
+    expiresAt: { $gt: new Date() }
+  });
+
+  if (!otp) {
+    return res.status(404).json({
+      success: false,
+      message: 'OTP not found or expired'
+    });
+  }
+
+  if (otp.code !== otpCode) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid OTP code'
+    });
+  }
+
+  // Mark OTP as used
+  otp.isUsed = true;
+  otp.verifiedAt = new Date();
+  otp.verifiedBy = vendorId;
+  await otp.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'OTP verified successfully',
+    data: { otp }
+  });
+});
+
+// @desc    Process payment
+// @route   POST /api/vendors/process-payment
+// @access  Private/Vendor
+export const processPayment = asyncHandler(async (req, res) => {
+  const { bookingId, paymentMethod, amount } = req.body;
+  const vendorId = req.userId;
+
+  if (!bookingId || !paymentMethod || !amount) {
+    return res.status(400).json({
+      success: false,
+      message: 'Booking ID, payment method, and amount are required'
+    });
+  }
+
+  const booking = await Booking.findById(bookingId);
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found'
+    });
+  }
+
+  if (booking.assignedVendorId.toString() !== vendorId.toString()) {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. This booking is not assigned to you'
+    });
+  }
+
+  // Create payment record
+  const payment = await Payment.create({
+    bookingId,
+    vendorId,
+    amount,
+    paymentMethod,
+    status: 'PENDING',
+    processedAt: new Date()
+  });
+
+  res.status(200).json({
+    success: true,
+    message: 'Payment processed successfully',
+    data: { payment }
+  });
+});
+
+// @desc    Get vendor payments
+// @route   GET /api/vendors/payments
+// @access  Private/Vendor
+export const getVendorPayments = asyncHandler(async (req, res) => {
+  const vendorId = req.userId;
+  const { page = 1, limit = 10, status } = req.query;
+
+  const filter = { vendorId };
+  if (status) filter.status = status;
+
+  const payments = await Payment.find(filter)
+    .populate('bookingId', 'eventName eventDate')
+    .sort({ createdAt: -1 })
+    .limit(limit * 1)
+    .skip((page - 1) * limit);
+
+  const total = await Payment.countDocuments(filter);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      payments,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total
+      }
+    }
+  });
+});
+
+// @desc    Get payment by ID
+// @route   GET /api/vendors/payments/:id
+// @access  Private/Vendor
+export const getPaymentById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const vendorId = req.userId;
+
+  const payment = await Payment.findOne({
+    _id: id,
+    vendorId
+  }).populate('bookingId', 'eventName eventDate customerName');
+
+  if (!payment) {
+    return res.status(404).json({
+      success: false,
+      message: 'Payment not found'
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: { payment }
+  });
+});
+
+// @desc    Accept booking
+// @route   PUT /api/vendors/bookings/:id/accept
+// @access  Private/Vendor
+export const acceptBooking = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const vendorId = req.userId;
+
+  const booking = await Booking.findById(id);
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found'
+    });
+  }
+
+  if (booking.assignedVendorId.toString() !== vendorId.toString()) {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. This booking is not assigned to you'
+    });
+  }
+
+  booking.status = 'CONFIRMED';
+  booking.vendorAcceptedAt = new Date();
+  await booking.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Booking accepted successfully',
+    data: { booking }
+  });
+});
+
+// @desc    Reject booking
+// @route   PUT /api/vendors/bookings/:id/reject
+// @access  Private/Vendor
+export const rejectBooking = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+  const vendorId = req.userId;
+
+  const booking = await Booking.findById(id);
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found'
+    });
+  }
+
+  if (booking.assignedVendorId.toString() !== vendorId.toString()) {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. This booking is not assigned to you'
+    });
+  }
+
+  booking.status = 'REJECTED';
+  booking.vendorRejectedAt = new Date();
+  booking.rejectionReason = reason;
+  await booking.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Booking rejected successfully',
+    data: { booking }
+  });
+});
+
+// @desc    Get booking by ID
+// @route   GET /api/vendors/bookings/:id
+// @access  Private/Vendor
+export const getBookingById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const vendorId = req.userId;
+
+  const booking = await Booking.findOne({
+    _id: id,
+    assignedVendorId: vendorId
+  }).populate('customerId', 'name email phone');
+
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found'
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: { booking }
+  });
+});

@@ -1,0 +1,804 @@
+import { Payment, Booking, AuditLog, OTP, User } from '../models/index.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
+import OTPService from '../services/otpService.js';
+import RazorpayService from '../services/razorpayService.js';
+import emailService from '../services/emailService.js';
+
+// @desc    Get user payments
+// @route   GET /api/payments
+// @access  Private
+export const getUserPayments = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  // Filter by status if provided
+  let query = { userId };
+  if (req.query.status) {
+    query.status = req.query.status;
+  }
+
+  const payments = await Payment.find(query)
+    .populate('bookingId', 'packageId eventDate location guests')
+    .populate('bookingId.packageId', 'title category basePrice')
+    .skip(skip)
+    .limit(limit)
+    .sort({ createdAt: -1 });
+
+  const total = await Payment.countDocuments(query);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      payments,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total
+      }
+    }
+  });
+});
+
+// @desc    Get payment by ID
+// @route   GET /api/payments/:id
+// @access  Private
+export const getPaymentById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.userId;
+
+  const payment = await Payment.findOne({ _id: id, userId })
+    .populate('bookingId', 'packageId eventDate location guests status')
+    .populate('bookingId.packageId', 'title category basePrice description');
+
+  if (!payment) {
+    return res.status(404).json({
+      success: false,
+      message: 'Payment not found'
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: { payment }
+  });
+});
+
+// @desc    Create payment
+// @route   POST /api/payments
+// @access  Private
+export const createPayment = asyncHandler(async (req, res) => {
+  const { bookingId, method, amount, transactionId } = req.body;
+  const userId = req.userId;
+
+  // Verify booking exists and belongs to user
+  const booking = await Booking.findOne({ _id: bookingId, userId });
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found'
+    });
+  }
+
+  // Check if payment already exists for this booking
+  const existingPayment = await Payment.findOne({ bookingId });
+  if (existingPayment) {
+    return res.status(400).json({
+      success: false,
+      message: 'Payment already exists for this booking'
+    });
+  }
+
+  // Create payment
+  const payment = await Payment.create({
+    userId,
+    bookingId,
+    method,
+    amount,
+    transactionId,
+    status: 'PENDING'
+  });
+
+  // Populate the payment
+  await payment.populate('bookingId', 'packageId eventDate location guests');
+
+  // Create audit log
+  // DISABLED: await AuditLog.create({
+  //     actorId: userId,
+  //     action: 'CREATE',
+  //     targetId: payment._id,
+  //     description: `Payment created for booking ${bookingId}`
+  //   });
+
+  res.status(201).json({
+    success: true,
+    message: 'Payment created successfully',
+    data: { payment }
+  });
+});
+
+// @desc    Get payment statistics
+// @route   GET /api/payments/stats
+// @access  Private
+export const getPaymentStats = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+
+  const totalPayments = await Payment.countDocuments({ userId });
+  const completedPayments = await Payment.countDocuments({ userId, status: 'COMPLETED' });
+  const pendingPayments = await Payment.countDocuments({ userId, status: 'PENDING' });
+  const failedPayments = await Payment.countDocuments({ userId, status: 'FAILED' });
+
+  const totalAmount = await Payment.aggregate([
+    { $match: { userId, status: 'COMPLETED' } },
+    { $group: { _id: null, total: { $sum: '$amount' } } }
+  ]);
+
+  const paymentsByMethod = await Payment.aggregate([
+    { $match: { userId } },
+    { $group: { _id: '$method', count: { $sum: 1 }, total: { $sum: '$amount' } } }
+  ]);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      totalPayments,
+      completedPayments,
+      pendingPayments,
+      failedPayments,
+      totalAmount: totalAmount[0]?.total || 0,
+      paymentsByMethod
+    }
+  });
+});
+
+// ==================== RAZORPAY PAYMENT INTEGRATION ====================
+
+// @desc    Create Razorpay order for partial payment (20%)
+// @route   POST /api/payments/create-order/partial
+// @access  Private
+export const createPartialPaymentOrder = asyncHandler(async (req, res) => {
+  const { bookingId } = req.body;
+  const userId = req.userId;
+
+  console.log('💳 Payment Controller: Creating partial payment order');
+  console.log('💳 Payment Controller: Booking ID:', bookingId);
+  console.log('💳 Payment Controller: User ID:', userId);
+
+  // Find booking
+  const booking = await Booking.findOne({ _id: bookingId, userId });
+  console.log('💳 Payment Controller: Found booking:', booking);
+  
+  if (!booking) {
+    console.log('💳 Payment Controller: Booking not found');
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found'
+    });
+  }
+
+  // Check if booking is in correct status
+  if (booking.status !== 'PENDING_PARTIAL_PAYMENT') {
+    return res.status(400).json({
+      success: false,
+      message: 'Booking is not ready for partial payment'
+    });
+  }
+
+  // Calculate partial amount (20%)
+  const partialAmount = Math.round(booking.totalAmount * 0.2);
+
+  // Create Razorpay order
+  const orderResult = await RazorpayService.createOrder(
+    partialAmount,
+    'INR',
+    `partial_${bookingId}_${Date.now()}`
+  );
+
+  if (!orderResult.success) {
+    return res.status(400).json({
+      success: false,
+      message: 'Failed to create payment order',
+      error: orderResult.error
+    });
+  }
+
+  // Create payment record (pending)
+  const payment = await Payment.create({
+    userId,
+    bookingId,
+    method: 'online',
+    amount: partialAmount,
+    transactionId: orderResult.order.id,
+    razorpayOrderId: orderResult.order.id,
+    status: 'PENDING'
+  });
+
+  res.status(200).json({
+    success: true,
+    message: 'Partial payment order created successfully',
+    data: {
+      order: orderResult.order,
+      payment,
+      amount: partialAmount,
+      remainingAmount: booking.totalAmount - partialAmount
+    }
+  });
+});
+
+// @desc    Create Razorpay order for full payment (remaining 80%)
+// @route   POST /api/payments/create-order/full
+// @access  Private
+export const createFullPaymentOrder = asyncHandler(async (req, res) => {
+  const { bookingId } = req.body;
+  const userId = req.userId;
+
+  // Find booking
+  const booking = await Booking.findOne({ _id: bookingId, userId });
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found'
+    });
+  }
+
+  // Check if booking is in correct status
+  if (booking.status !== 'PARTIALLY_PAID' && booking.status !== 'ASSIGNED') {
+    return res.status(400).json({
+      success: false,
+      message: 'Booking is not ready for full payment'
+    });
+  }
+
+  // Calculate remaining amount
+  const remainingAmount = booking.totalAmount - booking.amountPaid;
+
+  // Create Razorpay order
+  const orderResult = await RazorpayService.createOrder(
+    remainingAmount,
+    'INR',
+    `full_${bookingId}_${Date.now()}`
+  );
+
+  if (!orderResult.success) {
+    return res.status(400).json({
+      success: false,
+      message: 'Failed to create payment order',
+      error: orderResult.error
+    });
+  }
+
+  // Create payment record (pending)
+  const payment = await Payment.create({
+    userId,
+    bookingId,
+    method: 'online',
+    amount: remainingAmount,
+    transactionId: orderResult.order.id,
+    razorpayOrderId: orderResult.order.id,
+    status: 'PENDING'
+  });
+
+  res.status(200).json({
+    success: true,
+    message: 'Full payment order created successfully',
+    data: {
+      order: orderResult.order,
+      payment,
+      amount: remainingAmount
+    }
+  });
+});
+
+// @desc    Verify Razorpay payment
+// @route   POST /api/payments/verify
+// @access  Private
+export const verifyPayment = asyncHandler(async (req, res) => {
+  const { orderId, paymentId, signature } = req.body;
+  const userId = req.userId;
+
+  // Verify payment signature
+  const verificationResult = RazorpayService.verifyPaymentSignature(
+    orderId,
+    paymentId,
+    signature
+  );
+
+  if (!verificationResult.success) {
+    return res.status(400).json({
+      success: false,
+      message: verificationResult.message
+    });
+  }
+
+  // Find payment record
+  const payment = await Payment.findOne({
+    razorpayOrderId: orderId,
+    userId
+  });
+
+  if (!payment) {
+    return res.status(404).json({
+      success: false,
+      message: 'Payment record not found'
+    });
+  }
+
+  // Update payment status
+  payment.status = 'SUCCESS';
+  payment.razorpayPaymentId = paymentId;
+  await payment.save();
+
+  // Update booking
+  const booking = await Booking.findById(payment.bookingId);
+  if (booking) {
+    booking.amountPaid = booking.amountPaid + payment.amount;
+    
+    // Check if this completes the payment
+    if (booking.amountPaid >= booking.totalAmount) {
+      booking.status = 'FULLY_PAID';
+      
+      // Generate OTP for vendor verification
+      const otp = await OTPService.createOTP(booking._id, 'FULL_PAYMENT');
+      
+      await booking.save();
+
+      // Get user details for sending OTP
+      const user = await User.findById(userId);
+      
+      // Send OTP to user via email
+      if (user && user.email) {
+        try {
+          await emailService.sendEmail(
+            user.email,
+            'SnapFest - Full Payment OTP Verification',
+            `
+              <h2>Full Payment Completed Successfully!</h2>
+              <p>Dear ${user.name},</p>
+              <p>Your full payment for booking has been completed successfully.</p>
+              <p><strong>Your OTP for vendor verification: ${otp.code}</strong></p>
+              <p>Please share this OTP with your assigned vendor on the event day.</p>
+              <p>The OTP will expire at: ${otp.expiresAt.toLocaleString()}</p>
+              <p>Thank you for choosing SnapFest!</p>
+            `
+          );
+        } catch (emailError) {
+          console.error('Failed to send OTP email:', emailError);
+        }
+      }
+
+      // Create audit log
+      // DISABLED: await AuditLog.create({
+  //         actorId: userId,
+  //         action: 'FULL_PAYMENT_VERIFIED',
+  //         targetId: booking._id,
+  //         description: `Full payment of ₹${payment.amount} verified. OTP: ${otp.code}`
+  //       });
+
+      res.status(200).json({
+        success: true,
+        message: 'Payment verified successfully. OTP generated for vendor verification.',
+        data: {
+          payment,
+          booking,
+          otp: {
+            code: otp.code,
+            expiresAt: otp.expiresAt
+          }
+        }
+      });
+    } else {
+      // Partial payment completed
+      booking.status = 'PARTIALLY_PAID';
+      await booking.save();
+
+      // Create audit log
+      // DISABLED: await AuditLog.create({
+  //         actorId: userId,
+  //         action: 'PARTIAL_PAYMENT_VERIFIED',
+  //         targetId: booking._id,
+  //         description: `Partial payment of ₹${payment.amount} verified`
+  //       });
+
+      res.status(200).json({
+        success: true,
+        message: 'Partial payment verified successfully',
+        data: {
+          payment,
+          booking,
+          remainingAmount: booking.totalAmount - booking.amountPaid
+        }
+      });
+    }
+  }
+});
+
+// ==================== PAYMENT FLOW WITH OTP ====================
+
+// @desc    Process partial payment (20%) - Legacy method
+// @route   POST /api/payments/partial
+// @access  Private
+export const processPartialPayment = asyncHandler(async (req, res) => {
+  const { bookingId, method, transactionId } = req.body;
+  const userId = req.userId;
+
+  // Find booking
+  const booking = await Booking.findOne({ _id: bookingId, userId });
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found'
+    });
+  }
+
+  // Check if booking is in correct status
+  if (booking.status !== 'PENDING_PARTIAL_PAYMENT') {
+    return res.status(400).json({
+      success: false,
+      message: 'Booking is not ready for partial payment'
+    });
+  }
+
+  // Calculate partial amount (20%)
+  const partialAmount = Math.round(booking.totalAmount * 0.2);
+
+  // Create payment record
+  const payment = await Payment.create({
+    userId,
+    bookingId,
+    method,
+    amount: partialAmount,
+    transactionId,
+    status: 'SUCCESS'
+  });
+
+  // Update booking
+  booking.amountPaid = partialAmount;
+  booking.partialAmount = partialAmount;
+  booking.status = 'PARTIALLY_PAID';
+  await booking.save();
+
+  // Create audit log
+  // DISABLED: await AuditLog.create({
+  //     actorId: userId,
+  //     action: 'PARTIAL_PAYMENT',
+  //     targetId: booking._id,
+  //     description: `Partial payment of ₹${partialAmount} processed for booking ${bookingId}`
+  //   });
+
+  res.status(200).json({
+    success: true,
+    message: 'Partial payment processed successfully',
+    data: {
+      payment,
+      booking,
+      remainingAmount: booking.totalAmount - partialAmount
+    }
+  });
+});
+
+// @desc    Process full payment (remaining 80%)
+// @route   POST /api/payments/full
+// @access  Private
+export const processFullPayment = asyncHandler(async (req, res) => {
+  const { bookingId, method, transactionId } = req.body;
+  const userId = req.userId;
+
+  // Find booking
+  const booking = await Booking.findOne({ _id: bookingId, userId });
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found'
+    });
+  }
+
+  // Check if booking is in correct status
+  if (booking.status !== 'PARTIALLY_PAID' && booking.status !== 'ASSIGNED') {
+    return res.status(400).json({
+      success: false,
+      message: 'Booking is not ready for full payment'
+    });
+  }
+
+  // Calculate remaining amount
+  const remainingAmount = booking.totalAmount - booking.amountPaid;
+  
+  // Create payment record
+  const payment = await Payment.create({
+    userId,
+    bookingId,
+    method,
+    amount: remainingAmount,
+    transactionId,
+    status: 'SUCCESS'
+  });
+
+  // Update booking
+  booking.amountPaid = booking.totalAmount;
+  booking.status = 'FULLY_PAID';
+  await booking.save();
+
+  // Generate OTP for vendor verification
+  const otp = await OTPService.createOTP(bookingId, 'FULL_PAYMENT');
+
+  // Create audit log
+  // DISABLED: await AuditLog.create({
+  //     actorId: userId,
+  //     action: 'FULL_PAYMENT',
+  //     targetId: booking._id,
+  //     description: `Full payment of ₹${remainingAmount} processed for booking ${bookingId}. OTP: ${otp.code}`
+  //   });
+
+  res.status(200).json({
+    success: true,
+    message: 'Full payment processed successfully. OTP generated for vendor verification.',
+    data: { 
+      payment,
+      booking,
+      otp: {
+        code: otp.code,
+        expiresAt: otp.expiresAt
+      }
+    }
+  });
+});
+
+// @desc    Confirm cash payment (Vendor)
+// @route   POST /api/payments/confirm-cash
+// @access  Private/Vendor
+export const confirmCashPayment = asyncHandler(async (req, res) => {
+  const { bookingId, amount } = req.body;
+  const vendorId = req.userId;
+
+  // Find booking assigned to this vendor
+  const booking = await Booking.findOne({ 
+    _id: bookingId, 
+    assignedVendorId: vendorId 
+  });
+
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found or not assigned to you'
+    });
+  }
+
+  // Update booking with cash payment
+  booking.amountPaid = booking.amountPaid + amount;
+  
+  // If this completes the payment
+  if (booking.amountPaid >= booking.totalAmount) {
+    booking.status = 'FULLY_PAID';
+    
+    // Generate OTP for verification
+    const otp = await OTPService.createOTP(bookingId, 'FULL_PAYMENT');
+    
+    await booking.save();
+
+    // Get user details for sending OTP
+    const user = await User.findById(booking.userId);
+    
+    // Send OTP to user via email
+    if (user && user.email) {
+      try {
+        await emailService.sendEmail(
+          user.email,
+          'SnapFest - Cash Payment OTP Verification',
+          `
+            <h2>Cash Payment Received Successfully!</h2>
+            <p>Dear ${user.name},</p>
+            <p>Your cash payment of ₹${amount} has been confirmed by the vendor.</p>
+            <p><strong>Your OTP for final verification: ${otp.code}</strong></p>
+            <p>Please share this OTP with your assigned vendor to complete the payment process.</p>
+            <p>The OTP will expire at: ${otp.expiresAt.toLocaleString()}</p>
+            <p>Thank you for choosing SnapFest!</p>
+          `
+        );
+      } catch (emailError) {
+        console.error('Failed to send OTP email:', emailError);
+      }
+    }
+
+    // Create audit log
+    // DISABLED: await AuditLog.create({
+  //       actorId: vendorId,
+  //       action: 'CASH_PAYMENT_CONFIRMED',
+  //       targetId: booking._id,
+  //       description: `Cash payment of ₹${amount} confirmed. OTP: ${otp.code}`
+  //     });
+
+    res.status(200).json({
+      success: true,
+      message: 'Cash payment confirmed. OTP generated for verification.',
+      data: { 
+        booking,
+        otp: {
+          code: otp.code,
+          expiresAt: otp.expiresAt
+        }
+      }
+    });
+  } else {
+    await booking.save();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Cash payment recorded. Partial payment received.',
+      data: { 
+        booking,
+        remainingAmount: booking.totalAmount - booking.amountPaid
+      }
+    });
+  }
+});
+
+// @desc    Verify OTP for full payment (Vendor)
+// @route   POST /api/payments/verify-otp
+// @access  Private/Vendor
+export const verifyPaymentOTP = asyncHandler(async (req, res) => {
+  const { bookingId, otpCode } = req.body;
+  const vendorId = req.userId;
+
+  // Find booking assigned to this vendor
+  const booking = await Booking.findOne({ 
+    _id: bookingId, 
+    assignedVendorId: vendorId,
+    status: 'FULLY_PAID'
+  });
+
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found or not ready for OTP verification'
+    });
+  }
+
+  // Verify OTP
+  const otpResult = await OTPService.verifyOTP(bookingId, otpCode);
+  
+  if (!otpResult.isValid) {
+    return res.status(400).json({
+      success: false,
+      message: otpResult.message
+    });
+  }
+
+  // Update booking
+  booking.otpVerified = true;
+  booking.otpVerifiedAt = new Date();
+  booking.status = 'IN_PROGRESS';
+  await booking.save();
+
+  // Create audit log
+  // DISABLED: await AuditLog.create({
+  //     actorId: vendorId,
+  //     action: 'OTP_VERIFIED',
+  //     targetId: booking._id,
+  //     description: `OTP verified for booking ${bookingId}. Event can now start.`
+  //   });
+
+  res.status(200).json({
+    success: true,
+    message: 'OTP verified successfully. Event can now start.',
+    data: { booking }
+  });
+});
+
+// ==================== REFUND MANAGEMENT ====================
+
+// @desc    Process refund
+// @route   POST /api/payments/refund
+// @access  Private
+export const processRefund = asyncHandler(async (req, res) => {
+  const { paymentId, amount, reason } = req.body;
+  const userId = req.userId;
+
+  // Find payment record
+  const payment = await Payment.findOne({
+    _id: paymentId,
+    userId
+  });
+
+  if (!payment) {
+    return res.status(404).json({
+      success: false,
+      message: 'Payment not found'
+    });
+  }
+
+  if (payment.status !== 'SUCCESS') {
+    return res.status(400).json({
+      success: false,
+      message: 'Only successful payments can be refunded'
+    });
+  }
+
+  // Process refund through Razorpay
+  const refundResult = await RazorpayService.processRefund(
+    payment.razorpayPaymentId,
+    amount || payment.amount,
+    reason || 'Customer requested refund'
+  );
+
+  if (!refundResult.success) {
+    return res.status(400).json({
+      success: false,
+      message: 'Refund processing failed',
+      error: refundResult.error
+    });
+  }
+
+  // Update payment status
+  payment.status = 'REFUNDED';
+  payment.refundId = refundResult.refund.id;
+  payment.refundAmount = amount || payment.amount;
+  await payment.save();
+
+  // Update booking status
+  const booking = await Booking.findById(payment.bookingId);
+  if (booking) {
+    booking.amountPaid = booking.amountPaid - (amount || payment.amount);
+    booking.status = 'CANCELLED';
+    await booking.save();
+  }
+
+  // Create audit log
+  // DISABLED: await AuditLog.create({
+  //     actorId: userId,
+  //     action: 'REFUND_PROCESSED',
+  //     targetId: payment._id,
+  //     description: `Refund of ₹${amount || payment.amount} processed for payment ${paymentId}`
+  //   });
+
+  res.status(200).json({
+    success: true,
+    message: 'Refund processed successfully',
+    data: {
+      refund: refundResult.refund,
+      payment,
+      booking
+    }
+  });
+});
+
+// @desc    Get refund details
+// @route   GET /api/payments/refund/:refundId
+// @access  Private
+export const getRefundDetails = asyncHandler(async (req, res) => {
+  const { refundId } = req.params;
+  const userId = req.userId;
+
+  // Find payment with refund
+  const payment = await Payment.findOne({
+    refundId,
+    userId
+  });
+
+  if (!payment) {
+    return res.status(404).json({
+      success: false,
+      message: 'Refund not found'
+    });
+  }
+
+  // Get refund details from Razorpay
+  const refundResult = await RazorpayService.getRefundDetails(refundId);
+
+  if (!refundResult.success) {
+    return res.status(400).json({
+      success: false,
+      message: 'Failed to fetch refund details',
+      error: refundResult.error
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: {
+      refund: refundResult.refund,
+      payment
+    }
+  });
+});
+

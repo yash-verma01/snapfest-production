@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Package Detail Flow Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        .package-card { border: 1px solid #ddd; margin: 10px 0; padding: 15px; border-radius: 5px; }
+        .package-card h3 { margin: 0 0 10px 0; color: #333; }
+        .package-card p { margin: 5px 0; color: #666; }
+        .view-details-btn { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+        .view-details-btn:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>📦 Package Detail Flow Test</h1>
+    
+    <div class="test-section">
+        <h2>🌐 API Status</h2>
+        <div id="api-status">Testing...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📦 Available Packages</h2>
+        <div id="packages-list">Loading...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔍 Package Detail Test</h2>
+        <div id="package-detail">Select a package to test...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🎨 Customization Options Test</h2>
+        <div id="customization-test">Testing customizations...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>💰 Dynamic Pricing Test</h2>
+        <div id="pricing-test">Testing pricing calculations...</div>
+    </div>
+    
+    <script>
+        let packages = [];
+        
+        // Test API status
+        async function testAPIStatus() {
+            const statusDiv = document.getElementById('api-status');
+            try {
+                const response = await fetch('http://localhost:5001/api/health');
+                const data = await response.json();
+                if (data.success) {
+                    statusDiv.innerHTML = '<div class="success">✅ Backend API: Running</div>';
+                    return true;
+                } else {
+                    statusDiv.innerHTML = '<div class="error">❌ Backend API: Error</div>';
+                    return false;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">❌ Backend API: ${error.message}</div>`;
+                return false;
+            }
+        }
+        
+        // Load packages
+        async function loadPackages() {
+            const packagesDiv = document.getElementById('packages-list');
+            try {
+                const response = await fetch('http://localhost:5001/api/packages');
+                const data = await response.json();
+                
+                if (data.success && data.data.packages) {
+                    packages = data.data.packages;
+                    let html = `<h3>Found ${packages.length} packages:</h3>`;
+                    
+                    packages.forEach((pkg, index) => {
+                        html += `
+                            <div class="package-card">
+                                <h3>${pkg.title}</h3>
+                                <p><strong>Category:</strong> ${pkg.category}</p>
+                                <p><strong>Base Price:</strong> ₹${pkg.basePrice}</p>
+                                <p><strong>Per Guest:</strong> ₹${pkg.perGuestPrice}</p>
+                                <p><strong>Description:</strong> ${pkg.description}</p>
+                                <button class="view-details-btn" onclick="testPackageDetail('${pkg._id}')">
+                                    View Details
+                                </button>
+                            </div>
+                        `;
+                    });
+                    
+                    packagesDiv.innerHTML = html;
+                } else {
+                    packagesDiv.innerHTML = '<div class="error">❌ No packages found</div>';
+                }
+            } catch (error) {
+                packagesDiv.innerHTML = `<div class="error">❌ Error loading packages: ${error.message}</div>`;
+            }
+        }
+        
+        // Test package detail
+        async function testPackageDetail(packageId) {
+            const detailDiv = document.getElementById('package-detail');
+            detailDiv.innerHTML = '<div class="info">Loading package details...</div>';
+            
+            try {
+                const response = await fetch(`http://localhost:5001/api/packages/${packageId}`);
+                const data = await response.json();
+                
+                if (data.success && data.data.package) {
+                    const pkg = data.data.package;
+                    let html = `
+                        <div class="success">
+                            <h3>✅ Package Detail Loaded Successfully</h3>
+                            <h4>${pkg.title}</h4>
+                            <p><strong>ID:</strong> ${pkg._id}</p>
+                            <p><strong>Category:</strong> ${pkg.category}</p>
+                            <p><strong>Base Price:</strong> ₹${pkg.basePrice}</p>
+                            <p><strong>Per Guest Price:</strong> ₹${pkg.perGuestPrice}</p>
+                            <p><strong>Description:</strong> ${pkg.description}</p>
+                            <p><strong>Images:</strong> ${pkg.images.length} images available</p>
+                            <p><strong>Active:</strong> ${pkg.isActive ? 'Yes' : 'No'}</p>
+                            <p><strong>Premium:</strong> ${pkg.isPremium ? 'Yes' : 'No'}</p>
+                        </div>
+                    `;
+                    detailDiv.innerHTML = html;
+                    
+                    // Test customizations
+                    testCustomizations(pkg);
+                    // Test pricing
+                    testPricing(pkg);
+                } else {
+                    detailDiv.innerHTML = '<div class="error">❌ Package not found</div>';
+                }
+            } catch (error) {
+                detailDiv.innerHTML = `<div class="error">❌ Error loading package: ${error.message}</div>`;
+            }
+        }
+        
+        // Test customization options
+        function testCustomizations(pkg) {
+            const customizationDiv = document.getElementById('customization-test');
+            
+            const customizations = {
+                theme: [
+                    { value: 'classic', label: 'Classic', price: 0 },
+                    { value: 'modern', label: 'Modern', price: 5000 },
+                    { value: 'vintage', label: 'Vintage', price: 3000 },
+                    { value: 'rustic', label: 'Rustic', price: 2000 },
+                    { value: 'luxury', label: 'Luxury', price: 10000 }
+                ],
+                cake: [
+                    { value: 'none', label: 'No Cake', price: 0 },
+                    { value: 'basic', label: 'Basic Cake (1kg)', price: 2000 },
+                    { value: 'premium', label: 'Premium Cake (2kg)', price: 5000 },
+                    { value: 'custom', label: 'Custom Design Cake', price: 8000 }
+                ],
+                decorations: [
+                    { value: 'minimal', label: 'Minimal Decorations', price: 0 },
+                    { value: 'standard', label: 'Standard Decorations', price: 3000 },
+                    { value: 'premium', label: 'Premium Decorations', price: 7000 },
+                    { value: 'luxury', label: 'Luxury Decorations', price: 15000 }
+                ],
+                music: [
+                    { value: 'none', label: 'No Music', price: 0 },
+                    { value: 'playlist', label: 'Custom Playlist', price: 1000 },
+                    { value: 'dj', label: 'DJ Service', price: 8000 },
+                    { value: 'live', label: 'Live Band', price: 15000 }
+                ],
+                photography: [
+                    { value: 'basic', label: 'Basic Photography', price: 0 },
+                    { value: 'premium', label: 'Premium Photography', price: 5000 },
+                    { value: 'cinematic', label: 'Cinematic Video', price: 12000 },
+                    { value: 'drone', label: 'Drone Photography', price: 8000 }
+                ]
+            };
+            
+            let html = '<h3>🎨 Customization Options Available:</h3>';
+            
+            Object.keys(customizations).forEach(key => {
+                html += `<h4>${key.charAt(0).toUpperCase() + key.slice(1)} Options:</h4>`;
+                html += '<ul>';
+                customizations[key].forEach(option => {
+                    html += `<li>${option.label} ${option.price > 0 ? `(+₹${option.price})` : ''}</li>`;
+                });
+                html += '</ul>';
+            });
+            
+            customizationDiv.innerHTML = html;
+        }
+        
+        // Test dynamic pricing
+        function testPricing(pkg) {
+            const pricingDiv = document.getElementById('pricing-test');
+            
+            // Simulate different guest counts and customizations
+            const testScenarios = [
+                { guests: 1, theme: 'classic', cake: 'none', decorations: 'minimal', music: 'none', photography: 'basic' },
+                { guests: 10, theme: 'modern', cake: 'basic', decorations: 'standard', music: 'playlist', photography: 'premium' },
+                { guests: 50, theme: 'luxury', cake: 'custom', decorations: 'luxury', music: 'live', photography: 'cinematic' }
+            ];
+            
+            let html = '<h3>💰 Dynamic Pricing Test:</h3>';
+            
+            testScenarios.forEach((scenario, index) => {
+                const basePrice = pkg.basePrice;
+                const perGuestPrice = pkg.perGuestPrice;
+                const guestCount = scenario.guests;
+                
+                // Calculate base total
+                const baseTotal = basePrice + (perGuestPrice * guestCount);
+                
+                // Calculate customization costs
+                const customizationCosts = {
+                    classic: 0, modern: 5000, vintage: 3000, rustic: 2000, luxury: 10000,
+                    none: 0, basic: 2000, premium: 5000, custom: 8000,
+                    minimal: 0, standard: 3000, premium: 7000, luxury: 15000,
+                    playlist: 1000, dj: 8000, live: 15000,
+                    basic: 0, premium: 5000, cinematic: 12000, drone: 8000
+                };
+                
+                const themeCost = customizationCosts[scenario.theme] || 0;
+                const cakeCost = customizationCosts[scenario.cake] || 0;
+                const decorationCost = customizationCosts[scenario.decorations] || 0;
+                const musicCost = customizationCosts[scenario.music] || 0;
+                const photographyCost = customizationCosts[scenario.photography] || 0;
+                
+                const customizationTotal = themeCost + cakeCost + decorationCost + musicCost + photographyCost;
+                const subtotal = baseTotal + customizationTotal;
+                const tax = subtotal * 0.18;
+                const total = subtotal + tax;
+                
+                html += `
+                    <div class="package-card">
+                        <h4>Scenario ${index + 1}: ${guestCount} guests</h4>
+                        <p><strong>Base Price:</strong> ₹${basePrice} + (₹${perGuestPrice} × ${guestCount}) = ₹${baseTotal}</p>
+                        <p><strong>Customizations:</strong></p>
+                        <ul>
+                            <li>Theme: ${scenario.theme} (+₹${themeCost})</li>
+                            <li>Cake: ${scenario.cake} (+₹${cakeCost})</li>
+                            <li>Decorations: ${scenario.decorations} (+₹${decorationCost})</li>
+                            <li>Music: ${scenario.music} (+₹${musicCost})</li>
+                            <li>Photography: ${scenario.photography} (+₹${photographyCost})</li>
+                        </ul>
+                        <p><strong>Customization Total:</strong> ₹${customizationTotal}</p>
+                        <p><strong>Subtotal:</strong> ₹${subtotal}</p>
+                        <p><strong>Tax (18%):</strong> ₹${Math.round(tax)}</p>
+                        <p><strong>Total:</strong> ₹${Math.round(total)}</p>
+                    </div>
+                `;
+            });
+            
+            pricingDiv.innerHTML = html;
+        }
+        
+        // Run all tests
+        async function runTests() {
+            console.log('Starting package detail flow tests...');
+            
+            const apiStatus = await testAPIStatus();
+            if (apiStatus) {
+                await loadPackages();
+            }
+            
+            console.log('Tests completed');
+        }
+        
+        // Run tests when page loads
+        runTests();
+    </script>
+</body>
+</html>
+
+
+
+
+

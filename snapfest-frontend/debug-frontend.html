@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 SnapFest Frontend Debug Test</h1>
+    
+    <div class="test-section">
+        <h2>🌐 Server Status</h2>
+        <div id="server-status">Testing...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📦 API Endpoints Test</h2>
+        <div id="api-test">Testing...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔐 Authentication Test</h2>
+        <div id="auth-test">Testing...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🛒 Cart Functionality Test</h2>
+        <div id="cart-test">Testing...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📊 Dashboard Test</h2>
+        <div id="dashboard-test">Testing...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>👤 Profile Test</h2>
+        <div id="profile-test">Testing...</div>
+    </div>
+    
+    <script>
+        // Test server connectivity
+        async function testServerStatus() {
+            const statusDiv = document.getElementById('server-status');
+            try {
+                const response = await fetch('http://localhost:5001/api/health');
+                const data = await response.json();
+                if (data.success) {
+                    statusDiv.innerHTML = '<div class="success">✅ Backend Server: Running</div>';
+                } else {
+                    statusDiv.innerHTML = '<div class="error">❌ Backend Server: Error</div>';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '<div class="error">❌ Backend Server: Not accessible</div>';
+            }
+            
+            try {
+                const response = await fetch('http://localhost:5179');
+                if (response.ok) {
+                    statusDiv.innerHTML += '<div class="success">✅ Frontend Server: Running</div>';
+                } else {
+                    statusDiv.innerHTML += '<div class="error">❌ Frontend Server: Error</div>';
+                }
+            } catch (error) {
+                statusDiv.innerHTML += '<div class="error">❌ Frontend Server: Not accessible</div>';
+            }
+        }
+        
+        // Test API endpoints
+        async function testAPIEndpoints() {
+            const apiDiv = document.getElementById('api-test');
+            const endpoints = [
+                { name: 'Packages', url: 'http://localhost:5001/api/packages' },
+                { name: 'Events', url: 'http://localhost:5001/api/events' },
+                { name: 'Add-ons', url: 'http://localhost:5001/api/addons' }
+            ];
+            
+            let results = '';
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(endpoint.url);
+                    const data = await response.json();
+                    if (data.success) {
+                        results += `<div class="success">✅ ${endpoint.name}: Working</div>`;
+                    } else {
+                        results += `<div class="error">❌ ${endpoint.name}: Error</div>`;
+                    }
+                } catch (error) {
+                    results += `<div class="error">❌ ${endpoint.name}: Failed</div>`;
+                }
+            }
+            apiDiv.innerHTML = results;
+        }
+        
+        // Test authentication
+        async function testAuthentication() {
+            const authDiv = document.getElementById('auth-test');
+            try {
+                // Test user registration endpoint
+                const registerResponse = await fetch('http://localhost:5001/api/users/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: 'Test User',
+                        email: 'test@example.com',
+                        password: 'password123',
+                        role: 'user'
+                    })
+                });
+                
+                if (registerResponse.ok) {
+                    authDiv.innerHTML = '<div class="success">✅ User Registration: Working</div>';
+                } else {
+                    authDiv.innerHTML = '<div class="warning">⚠️ User Registration: May have issues</div>';
+                }
+            } catch (error) {
+                authDiv.innerHTML = '<div class="error">❌ Authentication: Failed</div>';
+            }
+        }
+        
+        // Test cart functionality
+        async function testCartFunctionality() {
+            const cartDiv = document.getElementById('cart-test');
+            try {
+                const response = await fetch('http://localhost:5001/api/cart', {
+                    headers: { 'Authorization': 'Bearer test-token' }
+                });
+                
+                if (response.status === 401) {
+                    cartDiv.innerHTML = '<div class="success">✅ Cart API: Protected (requires auth)</div>';
+                } else if (response.ok) {
+                    cartDiv.innerHTML = '<div class="success">✅ Cart API: Working</div>';
+                } else {
+                    cartDiv.innerHTML = '<div class="warning">⚠️ Cart API: May have issues</div>';
+                }
+            } catch (error) {
+                cartDiv.innerHTML = '<div class="error">❌ Cart API: Failed</div>';
+            }
+        }
+        
+        // Test dashboard
+        async function testDashboard() {
+            const dashboardDiv = document.getElementById('dashboard-test');
+            try {
+                const response = await fetch('http://localhost:5001/api/users/dashboard', {
+                    headers: { 'Authorization': 'Bearer test-token' }
+                });
+                
+                if (response.status === 401) {
+                    dashboardDiv.innerHTML = '<div class="success">✅ Dashboard API: Protected (requires auth)</div>';
+                } else if (response.ok) {
+                    dashboardDiv.innerHTML = '<div class="success">✅ Dashboard API: Working</div>';
+                } else {
+                    dashboardDiv.innerHTML = '<div class="warning">⚠️ Dashboard API: May have issues</div>';
+                }
+            } catch (error) {
+                dashboardDiv.innerHTML = '<div class="error">❌ Dashboard API: Failed</div>';
+            }
+        }
+        
+        // Test profile
+        async function testProfile() {
+            const profileDiv = document.getElementById('profile-test');
+            try {
+                const response = await fetch('http://localhost:5001/api/users/profile', {
+                    headers: { 'Authorization': 'Bearer test-token' }
+                });
+                
+                if (response.status === 401) {
+                    profileDiv.innerHTML = '<div class="success">✅ Profile API: Protected (requires auth)</div>';
+                } else if (response.ok) {
+                    profileDiv.innerHTML = '<div class="success">✅ Profile API: Working</div>';
+                } else {
+                    profileDiv.innerHTML = '<div class="warning">⚠️ Profile API: May have issues</div>';
+                }
+            } catch (error) {
+                profileDiv.innerHTML = '<div class="error">❌ Profile API: Failed</div>';
+            }
+        }
+        
+        // Run all tests
+        async function runAllTests() {
+            await testServerStatus();
+            await testAPIEndpoints();
+            await testAuthentication();
+            await testCartFunctionality();
+            await testDashboard();
+            await testProfile();
+        }
+        
+        // Run tests when page loads
+        runAllTests();
+    </script>
+</body>
+</html>
+
+
+
+
+
