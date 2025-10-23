@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, ArrowRight } from 'lucide-react';
+import { Star, ArrowRight, ShoppingCart } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
+import BookingModal from '../modals/BookingModal';
+import { useCart } from '../../hooks';
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const PackageCard = ({
   packageData: pkg,
@@ -13,6 +17,11 @@ const PackageCard = ({
   showViewDetails = true,
   className = ''
 }) => {
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const {
     _id,
     title = 'Untitled Package',
@@ -51,6 +60,27 @@ const PackageCard = ({
         }`}
       />
     ));
+  };
+
+  const handleAddToCart = async (packageId, customization, extra) => {
+    setIsAddingToCart(true);
+    try {
+      await addToCart(packageId, customization, extra);
+      // Success handled by the modal
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      throw error; // Re-throw to let the modal handle the error
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
+
+  const handleAddToCartClick = () => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: `/packages/${_id}` } });
+      return;
+    }
+    setShowBookingModal(true);
   };
 
   return (
@@ -162,9 +192,10 @@ const PackageCard = ({
               variant="primary"
               size="sm"
               className="flex-1"
-              onClick={() => onBookNow?.(pkg)}
+              onClick={handleAddToCartClick}
             >
-              Book Now
+              <ShoppingCart className="w-4 h-4 mr-1" />
+              Add to Cart
             </Button>
           )}
         </div>
@@ -176,14 +207,22 @@ const PackageCard = ({
             size="sm"
             className="w-full text-sm"
             onClick={() => {
-              // TODO: Implement hire event manager flow
-              console.log('Hire Event Manager clicked');
+              navigate('/contact');
             }}
           >
             Hire Event Manager
           </Button>
         </div>
       </div>
+
+      {/* Booking Modal */}
+      <BookingModal
+        isOpen={showBookingModal}
+        onClose={() => setShowBookingModal(false)}
+        onAddToCart={handleAddToCart}
+        packageData={pkg}
+        loading={isAddingToCart}
+      />
     </Card>
   );
 };

@@ -387,13 +387,6 @@ const Packages = () => {
                   <PackageCard
                     key={pkg._id}
                     packageData={pkg}
-                    onBookNow={(pkg) => {
-                      if (!isAuthenticated) {
-                        navigate('/login', { state: { from: `/packages/${pkg._id}` } });
-                        return;
-                      }
-                      // TODO: Implement booking flow
-                    }}
                     onViewDetails={(pkg) => {
                       navigate(`/packages/${pkg._id}`);
                     }}
