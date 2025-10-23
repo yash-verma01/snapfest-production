@@ -2,8 +2,8 @@
 // This file contains the SECRET key - NEVER commit to version control!
 
 const razorpayConfig = {
-  keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_RWUolG3GI32kTt',
-  keySecret: process.env.RAZORPAY_KEY_SECRET || 'irmrpkk9MKojXKUlA0OT8FCp',
+  keyId: 'rzp_test_RWpCivnUSkVbTS',
+  keySecret: 'hlA0mfH2eHc3BNh1iSGYshtw',
   
   // Instructions for getting Razorpay keys:
   setupInstructions: `

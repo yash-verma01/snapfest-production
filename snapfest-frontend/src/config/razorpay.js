@@ -3,7 +3,7 @@
 
 export const RAZORPAY_CONFIG = {
   // ✅ SAFE: Only Key ID on frontend (public key)
-  keyId: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_RWUolG3GI32kTt',
+  keyId: 'rzp_test_RWpCivnUSkVbTS',
   
   // ❌ SECURITY: Secret key should NEVER be on frontend
   // keySecret: 'your_secret_key_here' // DON'T PUT SECRET HERE!

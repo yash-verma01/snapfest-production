@@ -17,6 +17,10 @@ const USE_MOCK_API = false;
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
+    console.log('🔗 API: Making request to:', config.url);
+    console.log('🔗 API: Request method:', config.method);
+    console.log('🔗 API: Request data:', config.data);
+    console.log('🔗 API: Auth token present:', !!token);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -29,8 +33,13 @@ api.interceptors.request.use(
 
 // Response interceptor to handle errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('🔗 API: Response received:', response.status, response.config.url);
+    return response;
+  },
   (error) => {
+    console.error('🔗 API: Request failed:', error.response?.status, error.config?.url);
+    console.error('🔗 API: Error details:', error.response?.data);
     if (error.response?.status === 401) {
       // Token expired or invalid
       localStorage.removeItem('token');

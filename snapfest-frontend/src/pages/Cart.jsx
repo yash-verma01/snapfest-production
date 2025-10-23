@@ -120,33 +120,56 @@ const Cart = () => {
         }
 
         console.log('🛒 Cart: Booking created successfully:', result.data);
+        console.log('🛒 Cart: Booking data structure:', result.data.booking);
+        console.log('🛒 Cart: Booking ID:', result.data.booking._id);
+        console.log('🛒 Cart: Booking partial amount:', result.data.booking.partialAmount);
         return result.data;
       });
 
-      const bookings = await Promise.all(bookingPromises);
-      console.log('🛒 Cart: Created bookings:', bookings);
+      const bookingResponses = await Promise.all(bookingPromises);
+      console.log('🛒 Cart: Created booking responses:', bookingResponses);
+
+      // Extract actual booking data from responses
+      const bookings = bookingResponses.map(response => response.booking);
+      console.log('🛒 Cart: Extracted bookings:', bookings);
 
       // Step 2: Process partial payment for each booking
       const paymentPromises = bookings.map(async (booking) => {
+        // Validate booking data
+        if (!booking || !booking._id) {
+          throw new Error('Invalid booking data received');
+        }
+        
         const partialAmount = booking.partialAmount;
         console.log('🛒 Cart: Processing partial payment for booking:', booking._id, 'Amount:', partialAmount);
+        
+        // Validate amount
+        if (!partialAmount || partialAmount <= 0) {
+          throw new Error(`Invalid partial amount: ${partialAmount}`);
+        }
 
         // Create partial payment order
         console.log('🛒 Cart: Creating payment order for booking:', booking._id, 'Amount:', partialAmount);
         
-        const orderResponse = await paymentAPI.createPartialPaymentOrder({
+        const requestData = {
           bookingId: booking._id,
           amount: partialAmount
-        });
+        };
+        
+        console.log('🛒 Cart: Sending payment order request:', requestData);
+        
+        const orderResponse = await paymentAPI.createPartialPaymentOrder(requestData);
 
         console.log('🛒 Cart: Payment order response:', orderResponse);
 
-        if (!orderResponse.success) {
+        if (!orderResponse.data.success) {
           console.error('🛒 Cart: Payment order creation failed:', orderResponse);
-          throw new Error(orderResponse.message || 'Failed to create payment order');
+          console.error('🛒 Cart: Booking ID used:', booking._id);
+          console.error('🛒 Cart: Amount used:', partialAmount);
+          throw new Error(orderResponse.data.message || 'Failed to create payment order');
         }
 
-        const orderData = orderResponse.data;
+        const orderData = orderResponse.data.data;
         console.log('🛒 Cart: Created payment order:', orderData);
 
         // Open Razorpay checkout
@@ -173,12 +196,12 @@ const Cart = () => {
           signature: paymentResult.razorpay_signature
         });
 
-        if (!verifyResponse.success) {
-          throw new Error(verifyResponse.message || 'Payment verification failed');
+        if (!verifyResponse.data.success) {
+          throw new Error(verifyResponse.data.message || 'Payment verification failed');
         }
 
         console.log('🛒 Cart: Payment verified successfully for booking:', booking._id);
-        return verifyResponse.data;
+        return verifyResponse.data.data;
       });
 
       const paymentResults = await Promise.all(paymentPromises);

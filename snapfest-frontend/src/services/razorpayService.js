@@ -31,7 +31,7 @@ class RazorpayService {
       await this.loadScript();
       
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_1234567890',
+        key: 'rzp_test_RWpCivnUSkVbTS',
         amount: orderData.amount,
         currency: orderData.currency || 'INR',
         name: orderData.name || 'SnapFest',
@@ -67,7 +67,7 @@ class RazorpayService {
     try {
       const crypto = require('crypto');
       const expectedSignature = crypto
-        .createHmac('sha256', import.meta.env.VITE_RAZORPAY_KEY_SECRET || 'dummy_secret')
+        .createHmac('sha256', 'hlA0mfH2eHc3BNh1iSGYshtw')
         .update(paymentData)
         .digest('hex');
       

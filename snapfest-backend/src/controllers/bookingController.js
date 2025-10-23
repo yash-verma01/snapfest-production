@@ -9,6 +9,8 @@ export const getUserBookings = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
+  console.log('📅 Booking Controller: Getting bookings for user:', req.userId);
+
   let query = { userId: req.userId };
 
   // Filter by status
@@ -24,6 +26,8 @@ export const getUserBookings = asyncHandler(async (req, res) => {
     };
   }
 
+  console.log('📅 Booking Controller: Query:', query);
+
   const bookings = await Booking.find(query)
     .populate('userId', 'name email phone')
     .populate('packageId', 'title category basePrice')
@@ -33,6 +37,8 @@ export const getUserBookings = asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 });
 
   const total = await Booking.countDocuments(query);
+
+  console.log('📅 Booking Controller: Found bookings:', bookings.length);
 
   res.status(200).json({
     success: true,

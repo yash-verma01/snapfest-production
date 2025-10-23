@@ -637,6 +637,17 @@ export const getUpcomingBookings = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
+  console.log('📅 User Controller: Getting upcoming bookings for user:', userId);
+
+  // First, let's see ALL bookings for this user
+  const allUserBookings = await Booking.find({ userId }).select('status eventDate createdAt');
+  console.log('📅 User Controller: All user bookings:', allUserBookings.length);
+  console.log('📅 User Controller: Booking statuses:', allUserBookings.map(b => ({ status: b.status, eventDate: b.eventDate, createdAt: b.createdAt })));
+
+  const currentDate = new Date();
+  console.log('📅 User Controller: Current date:', currentDate);
+  console.log('📅 User Controller: Looking for bookings with eventDate >=', currentDate);
+
   const upcomingBookings = await Booking.find({
     userId,
     eventDate: { $gte: new Date() },
@@ -653,6 +664,8 @@ export const getUpcomingBookings = asyncHandler(async (req, res) => {
     eventDate: { $gte: new Date() },
     status: { $in: ['PENDING_PARTIAL_PAYMENT', 'PARTIALLY_PAID', 'ASSIGNED', 'IN_PROGRESS'] }
   });
+
+  console.log('📅 User Controller: Found upcoming bookings:', upcomingBookings.length);
 
   res.status(200).json({
     success: true,
@@ -676,6 +689,8 @@ export const getBookingHistory = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
+  console.log('📅 User Controller: Getting booking history for user:', userId);
+
   const historyBookings = await Booking.find({
     userId,
     status: { $in: ['COMPLETED', 'CANCELLED'] }
@@ -690,6 +705,8 @@ export const getBookingHistory = asyncHandler(async (req, res) => {
     userId,
     status: { $in: ['COMPLETED', 'CANCELLED'] }
   });
+
+  console.log('📅 User Controller: Found history bookings:', historyBookings.length);
 
   res.status(200).json({
     success: true,
@@ -713,13 +730,30 @@ export const getUserPayments = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
-  const payments = await Payment.find({ userId })
-    .populate('bookingId', 'packageId eventDate totalAmount')
+  console.log('👤 User Controller: Getting payments for user:', userId);
+
+  // First get all bookings for this user
+  const userBookings = await Booking.find({ userId }).select('_id');
+  const bookingIds = userBookings.map(booking => booking._id);
+  
+  console.log('👤 User Controller: Found user bookings:', bookingIds.length);
+
+  // Get payments for these bookings
+  let query = { bookingId: { $in: bookingIds } };
+  if (req.query.status) {
+    query.status = req.query.status;
+  }
+
+  const payments = await Payment.find(query)
+    .populate('bookingId', 'packageId eventDate totalAmount amountPaid location guests')
+    .populate('bookingId.packageId', 'title category basePrice')
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
 
-  const total = await Payment.countDocuments({ userId });
+  const total = await Payment.countDocuments(query);
+
+  console.log('👤 User Controller: Found payments:', payments.length);
 
   res.status(200).json({
     success: true,

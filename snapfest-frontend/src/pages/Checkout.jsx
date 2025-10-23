@@ -132,9 +132,13 @@ const Checkout = () => {
       const firstResult = results[0];
       
       // Initialize Razorpay payment
+      // Ensure minimum amount for UPI payments (₹50 minimum for better UPI support)
+      const minAmount = Math.max(firstResult.payment.amount, 50);
+      const amountInPaise = minAmount * 100;
+      
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_RWUolG3GI32kTt',
-        amount: firstResult.payment.amount * 100, // Convert to paise
+        key: 'rzp_test_RWpCivnUSkVbTS',
+        amount: amountInPaise, // Convert to paise
         currency: 'INR',
         name: 'SnapFest',
         description: `Partial payment for ${cart.items.length} package(s)`,
@@ -184,6 +188,15 @@ const Checkout = () => {
         },
         theme: {
           color: '#e91e63' // Pink theme to match SnapFest
+        },
+        // Enable all payment methods including UPI
+        notes: {
+          source: 'snapfest_web'
+        },
+        // Additional options for better UPI support
+        retry: {
+          enabled: true,
+          max_count: 3
         },
         modal: {
           ondismiss: () => {

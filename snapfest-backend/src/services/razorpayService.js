@@ -3,28 +3,44 @@ import crypto from 'crypto';
 
 // Initialize Razorpay with test credentials
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_RWUolG3GI32kTt',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || 'irmrpkk9MKojXKUlA0OT8FCp'
+  key_id: 'rzp_test_RWpCivnUSkVbTS',
+  key_secret: 'hlA0mfH2eHc3BNh1iSGYshtw'
 });
+
+console.log('💳 RazorpayService: Initialized with key_id:', 'rzp_test_RWpCivnUSkVbTS');
+console.log('💳 RazorpayService: Key secret present:', true);
 
 // Razorpay Service for Payment Gateway Integration
 class RazorpayService {
   // Create payment order
   static async createOrder(amount, currency = 'INR', receipt = null) {
     try {
+      console.log('💳 RazorpayService: Creating order');
+      console.log('💳 RazorpayService: Amount:', amount);
+      console.log('💳 RazorpayService: Currency:', currency);
+      console.log('💳 RazorpayService: Receipt:', receipt);
+      
       const options = {
         amount: amount * 100, // Convert to paise
         currency,
-        receipt: receipt || `receipt_${Date.now()}`,
+        receipt: receipt || `rcpt_${Date.now().toString().slice(-8)}`,
         payment_capture: 1
       };
 
+      console.log('💳 RazorpayService: Order options:', options);
+
       const order = await razorpay.orders.create(options);
+      console.log('💳 RazorpayService: Order created successfully:', order);
+      
       return {
         success: true,
         order
       };
     } catch (error) {
+      console.error('💳 RazorpayService: Order creation failed:', error);
+      console.error('💳 RazorpayService: Error message:', error.message);
+      console.error('💳 RazorpayService: Error details:', error);
+      
       return {
         success: false,
         error: error.message
@@ -37,7 +53,7 @@ class RazorpayService {
     try {
       const body = orderId + '|' + paymentId;
       const expectedSignature = crypto
-        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'irmrpkk9MKojXKUlA0OT8FCp')
+        .createHmac('sha256', 'hlA0mfH2eHc3BNh1iSGYshtw')
         .update(body.toString())
         .digest('hex');
 
@@ -128,7 +144,7 @@ class RazorpayService {
   static verifyWebhookSignature(body, signature) {
     try {
       const expectedSignature = crypto
-        .createHmac('sha256', process.env.RAZORPAY_WEBHOOK_SECRET || 'irmrpkk9MKojXKUlA0OT8FCp')
+        .createHmac('sha256', 'hlA0mfH2eHc3BNh1iSGYshtw')
         .update(body)
         .digest('hex');
 

@@ -1,45 +1,11 @@
-import Razorpay from 'razorpay';
-
-// Initialize Razorpay (Frontend only needs Key ID)
-const razorpay = new Razorpay({
-  key_id: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_RWUolG3GI32kTt', // Public key - safe on frontend
-  // key_secret: NEVER on frontend - security risk!
-  // Secret key is handled by backend only
-});
-
 // Payment service functions
 export const paymentService = {
-  // Create Razorpay order
-  createOrder: async (amount, currency = 'INR', receipt = null) => {
-    try {
-      const options = {
-        amount: amount * 100, // Convert to paise
-        currency,
-        receipt: receipt || `receipt_${Date.now()}`,
-        payment_capture: 1
-      };
-
-      const order = await razorpay.orders.create(options);
-      return {
-        success: true,
-        orderId: order.id,
-        amount: order.amount,
-        currency: order.currency
-      };
-    } catch (error) {
-      console.error('Error creating Razorpay order:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  },
 
   // Verify payment signature
   verifyPayment: (paymentData, signature) => {
     try {
       const crypto = require('crypto');
-      const hmac = crypto.createHmac('sha256', import.meta.env.VITE_RAZORPAY_KEY_SECRET || 'irmrpkk9MKojXKUlA0OT8FCp');
+      const hmac = crypto.createHmac('sha256', 'hlA0mfH2eHc3BNh1iSGYshtw');
       hmac.update(paymentData);
       const generatedSignature = hmac.digest('hex');
       
@@ -51,11 +17,26 @@ export const paymentService = {
   },
 
   // Open Razorpay checkout
-  openCheckout: (orderId, amount, currency, name, description, prefill = {}) => {
+  openCheckout: async (orderId, amount, currency, name, description, prefill = {}) => {
+    // Load Razorpay script if not already loaded
+    await loadRazorpayScript();
+    
     return new Promise((resolve, reject) => {
+      if (!window.Razorpay) {
+        reject({
+          success: false,
+          error: 'Razorpay script failed to load'
+        });
+        return;
+      }
+
+      // Ensure minimum amount for UPI payments (₹50 minimum for better UPI support)
+      const minAmount = Math.max(amount, 50);
+      const amountInPaise = minAmount * 100;
+
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_RWUolG3GI32kTt',
-        amount: amount * 100,
+        key: 'rzp_test_RWpCivnUSkVbTS',
+        amount: amountInPaise,
         currency,
         name: 'SnapFest',
         description,
@@ -68,12 +49,21 @@ export const paymentService = {
         theme: {
           color: '#ec4899' // Pink color matching your theme
         },
+        // Enable all payment methods including UPI
+        notes: {
+          source: 'snapfest_web'
+        },
+        // Additional options for better UPI support
+        retry: {
+          enabled: true,
+          max_count: 3
+        },
         handler: function (response) {
           resolve({
             success: true,
-            paymentId: response.razorpay_payment_id,
-            orderId: response.razorpay_order_id,
-            signature: response.razorpay_signature
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_signature: response.razorpay_signature
           });
         },
         modal: {
