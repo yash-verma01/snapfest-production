@@ -5,9 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:user": "vite --config vite.user.config.js",
+    "dev:vendor": "vite --config vite.vendor.config.js",
+    "dev:admin": "vite --config vite.admin.config.js",
     "build": "vite build",
+    "build:user": "vite build --config vite.user.config.js",
+    "build:vendor": "vite build --config vite.vendor.config.js",
+    "build:admin": "vite build --config vite.admin.config.js",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:user": "vite preview --config vite.user.config.js",
+    "preview:vendor": "vite preview --config vite.vendor.config.js",
+    "preview:admin": "vite preview --config vite.admin.config.js"
   },
   "dependencies": {
     "autoprefixer": "^10.4.21",
