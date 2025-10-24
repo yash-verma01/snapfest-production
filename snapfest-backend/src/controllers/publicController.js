@@ -169,45 +169,84 @@ export const getPackageById = asyncHandler(async (req, res) => {
 
 export const getFeaturedPackages = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 6;
+  
+  console.log('🔍 Getting featured packages with limit:', limit);
 
-  // First try to get packages with bookings (most popular)
-  let featuredPackages = await Package.aggregate([
-    {
-      $lookup: {
-        from: 'bookings',
-        localField: '_id',
-        foreignField: 'packageId',
-        as: 'bookings'
-      }
-    },
-    {
-      $match: {
+  try {
+    // Get all active packages with booking information
+    const allPackages = await Package.aggregate([
+      {
+        $lookup: {
+          from: 'bookings',
+          localField: '_id',
+          foreignField: 'packageId',
+          as: 'bookings'
+        }
+      },
+      {
+        $match: {
+          isActive: true
+        }
+      },
+      {
+        $addFields: {
+          bookingCount: { $size: '$bookings' },
+          hasBookings: { $gt: [{ $size: '$bookings' }, 0] }
+        }
+      },
+      {
+        $sort: [
+          { hasBookings: -1 }, // Packages with bookings first
+          { bookingCount: -1 }, // Then by booking count
+          { createdAt: -1 } // Then by creation date
+        ]
+      },
+      { $limit: limit }
+    ]);
+
+    console.log('📦 Featured packages found:', allPackages.length);
+    
+    // If we still don't have enough packages, get more without the booking filter
+    if (allPackages.length < limit) {
+      console.log('🔄 Not enough packages, getting additional active packages...');
+      const additionalPackages = await Package.find({ 
         isActive: true,
-        'bookings.0': { $exists: true }
-      }
-    },
-    {
-      $addFields: {
-        bookingCount: { $size: '$bookings' }
-      }
-    },
-    { $sort: { bookingCount: -1 } },
-    { $limit: limit }
-  ]);
+        _id: { $nin: allPackages.map(pkg => pkg._id) }
+      })
+      .sort({ createdAt: -1 })
+      .limit(limit - allPackages.length);
+      
+      console.log('📦 Additional packages found:', additionalPackages.length);
+      allPackages.push(...additionalPackages);
+    }
 
-  // If no packages with bookings, get any active packages
-  if (featuredPackages.length === 0) {
-    featuredPackages = await Package.find({ 
-      isActive: true 
-    })
-    .sort({ createdAt: -1 })
-    .limit(limit);
+    console.log('✅ Final featured packages count:', allPackages.length);
+    
+    res.status(200).json({
+      success: true,
+      data: { packages: allPackages }
+    });
+  } catch (error) {
+    console.error('❌ Error in getFeaturedPackages:', error);
+    
+    // Fallback: get any packages without complex queries
+    try {
+      const fallbackPackages = await Package.find({ isActive: true }).limit(limit);
+      console.log('🔄 Fallback packages found:', fallbackPackages.length);
+      
+      res.status(200).json({
+        success: true,
+        data: { packages: fallbackPackages }
+      });
+    } catch (fallbackError) {
+      console.error('❌ Fallback also failed:', fallbackError);
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching featured packages',
+        error: error.message
+      });
+    }
   }
-
-  res.status(200).json({
-    success: true,
-    data: { packages: featuredPackages }
-  });
 });
 
 export const getPackagesByCategory = asyncHandler(async (req, res) => {

@@ -12,7 +12,14 @@ import {
   ArrowRight,
   Receipt,
   Banknote,
-  Smartphone
+  Smartphone,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Users,
+  Package,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { Card, Button, Badge } from '../components/ui';
 import { userAPI } from '../services/api';
@@ -20,51 +27,30 @@ import { dummyBookings } from '../data';
 import { dateUtils } from '../utils';
 
 const Payments = () => {
-  const [payments, setPayments] = useState([]);
+  const [paymentDetails, setPaymentDetails] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [expandedBookings, setExpandedBookings] = useState(new Set());
 
   useEffect(() => {
     const loadPayments = async () => {
       try {
         setLoading(true);
+        console.log('💳 Loading payment details...');
         const response = await userAPI.getPayments();
-        setPayments(response.data.data.payments);
+        console.log('💳 Payment details response:', response.data);
+        console.log('💳 Payment details structure:', JSON.stringify(response.data, null, 2));
+        const paymentDetails = response.data.data?.paymentDetails || [];
+        console.log('💳 Payment details received:', paymentDetails.length, 'bookings');
+        setPaymentDetails(paymentDetails);
       } catch (err) {
-        console.error('Error loading payments:', err);
+        console.error('💳 Error loading payments:', err);
+        console.error('💳 Error response:', err.response?.data);
+        console.error('💳 Error status:', err.response?.status);
         setError(err.message);
-        // Fallback to dummy data
-        setPayments([
-          {
-            _id: 'payment_001',
-            bookingId: 'booking_001',
-            amount: 20000,
-            status: 'COMPLETED',
-            paymentMethod: 'RAZORPAY',
-            paidAt: '2024-02-15T10:30:00Z',
-            booking: {
-              _id: 'booking_001',
-              packageData: { title: 'Wedding Photography - Premium Package' },
-              eventDate: '2024-06-15T10:00:00Z',
-              location: 'Taj Palace Hotel, Mumbai'
-            }
-          },
-          {
-            _id: 'payment_002',
-            bookingId: 'booking_002',
-            amount: 16000,
-            status: 'PENDING',
-            paymentMethod: 'RAZORPAY',
-            createdAt: '2024-02-01T14:15:00Z',
-            booking: {
-              _id: 'booking_002',
-              packageData: { title: 'Birthday Party Photography' },
-              eventDate: '2024-05-20T16:00:00Z',
-              location: 'Community Center, Delhi'
-            }
-          }
-        ]);
+        // Don't use dummy data, show empty state instead
+        setPaymentDetails([]);
       } finally {
         setLoading(false);
       }
@@ -73,14 +59,28 @@ const Payments = () => {
     loadPayments();
   }, []);
 
-  const filteredPayments = payments.filter(payment => {
+  const filteredPaymentDetails = paymentDetails.filter(detail => {
     if (filter === 'all') return true;
-    return payment.status.toLowerCase() === filter.toLowerCase();
+    if (filter === 'fully_paid') return detail.paymentSummary.isFullyPaid;
+    if (filter === 'partially_paid') return detail.paymentSummary.isPartiallyPaid;
+    if (filter === 'pending') return detail.paymentSummary.hasPendingPayments;
+    if (filter === 'failed') return detail.paymentSummary.hasFailedPayments;
+    return true;
   });
 
-  const getStatusColor = (status) => {
+  const toggleBookingExpansion = (bookingId) => {
+    const newExpanded = new Set(expandedBookings);
+    if (newExpanded.has(bookingId)) {
+      newExpanded.delete(bookingId);
+    } else {
+      newExpanded.add(bookingId);
+    }
+    setExpandedBookings(newExpanded);
+  };
+
+  const getPaymentStatusColor = (status) => {
     switch (status) {
-      case 'COMPLETED':
+      case 'SUCCESS':
         return 'success';
       case 'PENDING':
         return 'warning';
@@ -93,18 +93,51 @@ const Payments = () => {
     }
   };
 
-  const getStatusIcon = (status) => {
+  const getPaymentStatusIcon = (status) => {
     switch (status) {
-      case 'COMPLETED':
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
+      case 'SUCCESS':
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
       case 'PENDING':
-        return <Clock className="w-5 h-5 text-yellow-600" />;
+        return <Clock className="w-4 h-4 text-yellow-600" />;
       case 'FAILED':
-        return <AlertCircle className="w-5 h-5 text-red-600" />;
+        return <AlertCircle className="w-4 h-4 text-red-600" />;
       case 'REFUNDED':
-        return <ArrowRight className="w-5 h-5 text-blue-600" />;
+        return <ArrowRight className="w-4 h-4 text-blue-600" />;
       default:
-        return <CreditCard className="w-5 h-5 text-gray-600" />;
+        return <CreditCard className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
+  const getBookingStatusColor = (status) => {
+    switch (status) {
+      case 'FULLY_PAID':
+        return 'success';
+      case 'PARTIALLY_PAID':
+        return 'warning';
+      case 'PENDING_PARTIAL_PAYMENT':
+        return 'danger';
+      case 'COMPLETED':
+        return 'success';
+      case 'CANCELLED':
+        return 'danger';
+      default:
+        return 'default';
+    }
+  };
+
+  const getBookingStatusIcon = (status) => {
+    switch (status) {
+      case 'FULLY_PAID':
+      case 'COMPLETED':
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
+      case 'PARTIALLY_PAID':
+        return <TrendingUp className="w-4 h-4 text-yellow-600" />;
+      case 'PENDING_PARTIAL_PAYMENT':
+        return <AlertCircle className="w-4 h-4 text-red-600" />;
+      case 'CANCELLED':
+        return <AlertCircle className="w-4 h-4 text-red-600" />;
+      default:
+        return <Clock className="w-4 h-4 text-gray-600" />;
     }
   };
 
@@ -187,11 +220,11 @@ const Payments = () => {
                 onChange={(e) => setFilter(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
-                <option value="all">All Payments</option>
-                <option value="completed">Completed</option>
-                <option value="pending">Pending</option>
-                <option value="failed">Failed</option>
-                <option value="refunded">Refunded</option>
+                <option value="all">All Bookings</option>
+                <option value="fully_paid">Fully Paid</option>
+                <option value="partially_paid">Partially Paid</option>
+                <option value="pending">Pending Payments</option>
+                <option value="failed">Failed Payments</option>
               </select>
             </div>
           </div>
@@ -199,14 +232,14 @@ const Payments = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {filteredPayments.length === 0 ? (
+        {filteredPaymentDetails.length === 0 ? (
           <Card className="p-8 text-center">
             <CreditCard className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Payments Found</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Payment History</h3>
             <p className="text-gray-600 mb-6">
               {filter === 'all' 
-                ? "You haven't made any payments yet"
-                : `No ${filter} payments found`
+                ? "You haven't made any bookings yet. Book a package to see your payment history here."
+                : `No ${filter.replace('_', ' ')} bookings found`
               }
             </p>
             <Link to="/packages">
@@ -215,125 +248,207 @@ const Payments = () => {
           </Card>
         ) : (
           <div className="space-y-6">
-            {filteredPayments.map((payment) => (
-              <Card key={payment._id} className="p-6">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                  {/* Payment Info */}
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                          {payment.booking?.package?.title || 'Photography Package'}
+            {filteredPaymentDetails.map((detail) => {
+              const isExpanded = expandedBookings.has(detail.booking._id);
+              const { booking, payments, paymentSummary } = detail;
+              
+              return (
+                <Card key={booking._id} className="p-6">
+                  {/* Booking Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <Package className="w-5 h-5 text-primary-600" />
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {booking.packageId?.title || 'Photography Package'}
                         </h3>
-                        <p className="text-sm text-gray-600">
-                          Payment ID: #{payment._id}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {getStatusIcon(payment.status)}
-                        <Badge variant={getStatusColor(payment.status)} size="sm">
-                          {payment.status}
+                        <Badge variant={getBookingStatusColor(booking.status)} size="sm">
+                          {booking.status.replace('_', ' ')}
                         </Badge>
                       </div>
+                      <p className="text-sm text-gray-600">
+                        Booking ID: #{booking._id}
+                      </p>
                     </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleBookingExpansion(booking._id)}
+                      className="flex items-center"
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="w-4 h-4 mr-1" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 mr-1" />
+                      )}
+                      {isExpanded ? 'Hide' : 'Show'} Details
+                    </Button>
+                  </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        <span>
-                          {payment.paidAt 
-                            ? dateUtils.formatDate(payment.paidAt)
-                            : dateUtils.formatDate(payment.createdAt)
-                          }
-                        </span>
+                  {/* Booking Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      <span>{dateUtils.formatDate(booking.eventDate)}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <MapPin className="w-4 h-4 mr-2" />
+                      <span>{booking.location}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Users className="w-4 h-4 mr-2" />
+                      <span>{booking.guests} guests</span>
+                    </div>
+                  </div>
+
+                  {/* Payment Summary */}
+                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-green-600">
+                          {formatPrice(paymentSummary.totalPaid)}
+                        </div>
+                        <div className="text-xs text-gray-600">Paid</div>
                       </div>
-                      <div className="flex items-center text-sm text-gray-600">
-                        <MapPin className="w-4 h-4 mr-2" />
-                        <span>{payment.booking?.location || 'Location not specified'}</span>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-red-600">
+                          {formatPrice(paymentSummary.remainingAmount)}
+                        </div>
+                        <div className="text-xs text-gray-600">Remaining</div>
                       </div>
-                      <div className="flex items-center text-sm text-gray-600">
-                        {getPaymentMethodIcon(payment.paymentMethod)}
-                        <span className="ml-2 capitalize">{payment.paymentMethod}</span>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-blue-600">
+                          {formatPrice(booking.totalAmount)}
+                        </div>
+                        <div className="text-xs text-gray-600">Total</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-primary-600">
+                          {paymentSummary.paymentProgress}%
+                        </div>
+                        <div className="text-xs text-gray-600">Progress</div>
                       </div>
                     </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-2xl font-bold text-primary-600">
-                          {formatPrice(payment.amount)}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {payment.paymentMethod === 'RAZORPAY' ? 'Online Payment' : 'Cash Payment'}
-                        </div>
+                    
+                    {/* Progress Bar */}
+                    <div className="mt-3">
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${paymentSummary.paymentProgress}%` }}
+                        ></div>
                       </div>
                     </div>
                   </div>
 
+                  {/* Expanded Payment Details */}
+                  {isExpanded && (
+                    <div className="border-t pt-4">
+                      <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
+                        <Receipt className="w-4 h-4 mr-2" />
+                        Payment History ({payments.length} payments)
+                      </h4>
+                      
+                      {payments.length === 0 ? (
+                        <p className="text-gray-500 text-sm">No payments made yet</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {payments.map((payment) => (
+                            <div key={payment._id} className="bg-white border rounded-lg p-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                  {getPaymentStatusIcon(payment.status)}
+                                  <div>
+                                    <div className="font-medium text-gray-900">
+                                      {formatPrice(payment.amount)}
+                                    </div>
+                                    <div className="text-sm text-gray-500">
+                                      {dateUtils.formatDate(payment.createdAt)}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Badge variant={getPaymentStatusColor(payment.status)} size="sm">
+                                    {payment.status}
+                                  </Badge>
+                                  <div className="flex items-center text-sm text-gray-500">
+                                    {getPaymentMethodIcon(payment.method)}
+                                    <span className="ml-1 capitalize">{payment.method}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Actions */}
-                  <div className="flex flex-col sm:flex-row gap-2 mt-4 lg:mt-0 lg:ml-6">
+                  <div className="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleViewDetails(payment._id)}
+                      onClick={() => handleViewDetails(booking._id)}
                       className="flex items-center justify-center"
                     >
                       <Eye className="w-4 h-4 mr-1" />
-                      View Details
+                      View Booking
                     </Button>
+                    {paymentSummary.remainingAmount > 0 && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleRetryPayment(booking._id)}
+                        className="flex items-center justify-center"
+                      >
+                        <CreditCard className="w-4 h-4 mr-1" />
+                        Pay Remaining
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDownloadInvoice(payment._id)}
+                      onClick={() => handleDownloadInvoice(booking._id)}
                       className="flex items-center justify-center"
                     >
                       <Download className="w-4 h-4 mr-1" />
                       Invoice
                     </Button>
-                    {payment.status === 'FAILED' && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleRetryPayment(payment._id)}
-                        className="flex items-center justify-center"
-                      >
-                        <CreditCard className="w-4 h-4 mr-1" />
-                        Retry
-                      </Button>
-                    )}
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
         )}
 
         {/* Payment Summary */}
-        {filteredPayments.length > 0 && (
+        {filteredPaymentDetails.length > 0 && (
           <Card className="mt-8 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Summary</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Overall Payment Summary</h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600">
-                  {formatPrice(filteredPayments.reduce((sum, p) => p.status === 'COMPLETED' ? sum + p.amount : sum, 0))}
+                  {formatPrice(filteredPaymentDetails.reduce((sum, d) => sum + d.paymentSummary.totalPaid, 0))}
                 </div>
                 <div className="text-sm text-gray-600">Total Paid</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {formatPrice(filteredPayments.reduce((sum, p) => p.status === 'PENDING' ? sum + p.amount : sum, 0))}
-                </div>
-                <div className="text-sm text-gray-600">Pending</div>
-              </div>
-              <div className="text-center">
                 <div className="text-2xl font-bold text-red-600">
-                  {formatPrice(filteredPayments.reduce((sum, p) => p.status === 'FAILED' ? sum + p.amount : sum, 0))}
+                  {formatPrice(filteredPaymentDetails.reduce((sum, d) => sum + d.paymentSummary.remainingAmount, 0))}
                 </div>
-                <div className="text-sm text-gray-600">Failed</div>
+                <div className="text-sm text-gray-600">Remaining</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600">
-                  {formatPrice(filteredPayments.reduce((sum, p) => p.status === 'REFUNDED' ? sum + p.amount : sum, 0))}
+                  {formatPrice(filteredPaymentDetails.reduce((sum, d) => sum + d.booking.totalAmount, 0))}
                 </div>
-                <div className="text-sm text-gray-600">Refunded</div>
+                <div className="text-sm text-gray-600">Total Bookings</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary-600">
+                  {Math.round(filteredPaymentDetails.reduce((sum, d) => sum + d.paymentSummary.paymentProgress, 0) / filteredPaymentDetails.length)}%
+                </div>
+                <div className="text-sm text-gray-600">Avg Progress</div>
               </div>
             </div>
           </Card>

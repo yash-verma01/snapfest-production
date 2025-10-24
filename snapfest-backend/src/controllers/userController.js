@@ -721,7 +721,7 @@ export const getBookingHistory = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Get user's payment history
+// @desc    Get user's payment history with detailed breakdown
 // @route   GET /api/users/payments
 // @access  Private
 export const getUserPayments = asyncHandler(async (req, res) => {
@@ -732,40 +732,104 @@ export const getUserPayments = asyncHandler(async (req, res) => {
 
   console.log('👤 User Controller: Getting payments for user:', userId);
 
-  // First get all bookings for this user
-  const userBookings = await Booking.find({ userId }).select('_id');
-  const bookingIds = userBookings.map(booking => booking._id);
-  
-  console.log('👤 User Controller: Found user bookings:', bookingIds.length);
+  try {
+    // Get all bookings for this user with package details
+    const userBookings = await Booking.find({ userId })
+      .populate('packageId', 'title category basePrice images primaryImage')
+      .sort({ createdAt: -1 });
 
-  // Get payments for these bookings
-  let query = { bookingId: { $in: bookingIds } };
-  if (req.query.status) {
-    query.status = req.query.status;
-  }
+    console.log('👤 User Controller: Found user bookings:', userBookings.length);
 
-  const payments = await Payment.find(query)
-    .populate('bookingId', 'packageId eventDate totalAmount amountPaid location guests')
-    .populate('bookingId.packageId', 'title category basePrice')
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit);
-
-  const total = await Payment.countDocuments(query);
-
-  console.log('👤 User Controller: Found payments:', payments.length);
-
-  res.status(200).json({
-    success: true,
-    data: {
-      payments,
-      pagination: {
-        current: page,
-        pages: Math.ceil(total / limit),
-        total
-      }
+    // Get all payments for these bookings
+    const bookingIds = userBookings.map(booking => booking._id);
+    
+    let paymentQuery = { bookingId: { $in: bookingIds } };
+    if (req.query.status) {
+      paymentQuery.status = req.query.status;
     }
-  });
+
+    const allPayments = await Payment.find(paymentQuery)
+      .sort({ createdAt: -1 });
+
+    console.log('👤 User Controller: Found payments:', allPayments.length);
+
+    // Group payments by booking and create detailed payment info
+    const paymentDetails = userBookings.map(booking => {
+      const bookingPayments = allPayments.filter(payment => 
+        payment.bookingId.toString() === booking._id.toString()
+      );
+
+      // Calculate payment totals
+      const totalPaid = bookingPayments
+        .filter(p => p.status === 'SUCCESS')
+        .reduce((sum, p) => sum + p.amount, 0);
+      
+      const pendingAmount = bookingPayments
+        .filter(p => p.status === 'PENDING')
+        .reduce((sum, p) => sum + p.amount, 0);
+      
+      const failedAmount = bookingPayments
+        .filter(p => p.status === 'FAILED')
+        .reduce((sum, p) => sum + p.amount, 0);
+
+      const remainingAmount = booking.totalAmount - totalPaid;
+      const paymentProgress = booking.totalAmount > 0 ? (totalPaid / booking.totalAmount) * 100 : 0;
+
+      return {
+        booking: {
+          _id: booking._id,
+          packageId: booking.packageId,
+          eventDate: booking.eventDate,
+          location: booking.location,
+          guests: booking.guests,
+          status: booking.status,
+          totalAmount: booking.totalAmount,
+          amountPaid: booking.amountPaid,
+          partialAmount: booking.partialAmount,
+          createdAt: booking.createdAt,
+          updatedAt: booking.updatedAt
+        },
+        payments: bookingPayments,
+        paymentSummary: {
+          totalPaid,
+          pendingAmount,
+          failedAmount,
+          remainingAmount,
+          paymentProgress: Math.round(paymentProgress),
+          isFullyPaid: totalPaid >= booking.totalAmount,
+          isPartiallyPaid: totalPaid > 0 && totalPaid < booking.totalAmount,
+          hasPendingPayments: pendingAmount > 0,
+          hasFailedPayments: failedAmount > 0
+        }
+      };
+    });
+
+    // Apply pagination to the detailed results
+    const paginatedResults = paymentDetails.slice(skip, skip + limit);
+    const total = paymentDetails.length;
+
+    console.log('👤 User Controller: Returning payment details for', paginatedResults.length, 'bookings');
+
+    res.status(200).json({
+      success: true,
+      data: {
+        paymentDetails: paginatedResults,
+        pagination: {
+          current: page,
+          pages: Math.ceil(total / limit),
+          total
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('👤 User Controller: Error getting payments:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching payment details',
+      error: error.message
+    });
+  }
 });
 
 // @desc    Get user's reviews
