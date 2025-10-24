@@ -7,7 +7,7 @@ import connectDB from './src/config/database.js';
 import userRoutes from './src/routes/userRoutes.js';
 import vendorRoutes from './src/routes/vendorRoutes.js';
 import adminRoutes from './src/routes/adminRoutes.js';
-import adminAuthRoutes from './src/routes/adminAuthRoutes.js';
+import adminAuthRoutes, { ensureAdminUserExists } from './src/routes/adminAuthRoutes.js';
 import authRoutes from './src/routes/authRoutes.js';
 import publicRoutes from './src/routes/publicRoutes.js';
 import cartRoutes from './src/routes/cartRoutes.js';
@@ -24,6 +24,9 @@ const PORT = process.env.PORT || 5001;
 
 // Connect Database
 connectDB();
+
+// Ensure admin user exists
+ensureAdminUserExists();
 
 // Security middleware
 app.use(helmet());
