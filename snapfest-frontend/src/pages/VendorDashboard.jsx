@@ -13,7 +13,8 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  User
+  User,
+  UserCheck
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { vendorAPI } from '../services/api';
@@ -42,7 +43,7 @@ const VendorDashboard = () => {
         const dashboardResponse = await vendorAPI.getDashboard();
         setDashboardData(dashboardResponse.data.data.dashboard);
         
-        // Load bookings
+        // Load bookings (backend will prioritize assigned bookings)
         const bookingsResponse = await vendorAPI.getBookings({ limit: 10 });
         setBookings(bookingsResponse.data.data.bookings || []);
         
@@ -296,6 +297,18 @@ const VendorDashboard = () => {
                   View All
                 </Button>
               </div>
+              
+              {/* Assigned Bookings Alert */}
+              {bookings.some(booking => booking.assignedVendorId) && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center">
+                    <UserCheck className="w-5 h-5 text-green-600 mr-2" />
+                    <span className="text-sm font-medium text-green-800">
+                      You have {bookings.filter(booking => booking.assignedVendorId).length} assigned booking(s) - these appear first
+                    </span>
+                  </div>
+                </div>
+              )}
               
               {!bookings || bookings.length === 0 ? (
                 <div className="text-center py-8">

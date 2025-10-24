@@ -713,11 +713,30 @@ export const searchVendors = asyncHandler(async (req, res) => {
 });
 
 export const assignVendorToBooking = asyncHandler(async (req, res) => {
-  const { bookingId, vendorId } = req.body;
+  console.log('🚀 assignVendorToBooking function called!');
+  const { vendorId, bookingId } = req.body;
+
+  console.log('🔍 Assign Vendor Debug:', {
+    bookingId,
+    vendorId,
+    body: req.body,
+    url: req.url,
+    method: req.method
+  });
+
+  // Debug: Check if booking ID is valid ObjectId format
+  if (!bookingId.match(/^[0-9a-fA-F]{24}$/)) {
+    console.log('❌ Invalid booking ID format:', bookingId);
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid booking ID format'
+    });
+  }
 
   // Find booking
   const booking = await Booking.findById(bookingId);
   if (!booking) {
+    console.log('❌ Booking not found with ID:', bookingId);
     return res.status(404).json({
       success: false,
       message: 'Booking not found'
@@ -725,8 +744,11 @@ export const assignVendorToBooking = asyncHandler(async (req, res) => {
   }
 
   // Find vendor
-  const vendor = await User.findById(vendorId);
-  if (!vendor || vendor.role !== 'vendor') {
+  const vendor = await Vendor.findById(vendorId);
+  console.log('🔍 Vendor lookup result:', vendor);
+  
+  if (!vendor) {
+    console.log('❌ Vendor not found with ID:', vendorId);
     return res.status(404).json({
       success: false,
       message: 'Vendor not found'
@@ -748,7 +770,6 @@ export const assignVendorToBooking = asyncHandler(async (req, res) => {
   });
 });
 
-// ==================== PACKAGE MANAGEMENT ====================
 export const getAllPackages = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;

@@ -276,7 +276,23 @@ export const adminAPI = {
   getPackageStats: () => api.get('/admin/packages/stats'),
   getBookingStats: () => api.get('/admin/bookings/stats'),
   getPaymentStats: () => api.get('/admin/payments/stats'),
-  assignVendorToBooking: (id, data) => api.post(`/admin/bookings/${id}/assign-vendor`, data),
+  assignVendorToBooking: (id, data) => {
+    console.log('🔍 API Debug - assignVendorToBooking called with:', { id, data });
+    console.log('🔍 API Debug - URL will be:', `/admin/bookings/assign-vendor`);
+    return api.post(`/admin/bookings/assign-vendor`, data);
+  },
+  
+  // Test method to verify routing
+  testAssign: () => {
+    console.log('🧪 Testing route...');
+    return api.post(`/admin/bookings/test-assign`, {});
+  },
+  
+  // Simple test method
+  simpleTest: () => {
+    console.log('🧪 Simple test...');
+    return api.post(`/admin/bookings/simple-test`, {});
+  },
   
   // Testimonial Management
   getTestimonials: (params) => api.get('/admin/testimonials', { params }),
