@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Search, Filter, Eye, Edit, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Calendar, Search, Filter, Eye, Edit, CheckCircle, XCircle, Clock, UserPlus } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { Card, Button, Badge } from '../ui';
+import VendorAssignmentModal from './VendorAssignmentModal';
 
 const BookingManagement = () => {
   const [bookings, setBookings] = useState([]);
@@ -10,6 +11,9 @@ const BookingManagement = () => {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [showVendorModal, setShowVendorModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [assigningVendor, setAssigningVendor] = useState(false);
 
   useEffect(() => {
     loadBookings();
@@ -52,6 +56,52 @@ const BookingManagement = () => {
       } catch (error) {
         console.error('Error cancelling booking:', error);
       }
+    }
+  };
+
+  const handleAssignVendor = (booking) => {
+    setSelectedBooking(booking);
+    setShowVendorModal(true);
+  };
+
+  const handleVendorAssign = async (bookingId, vendorId) => {
+    try {
+      setAssigningVendor(true);
+      console.log('🔍 Frontend Debug - Assigning vendor:', { bookingId, vendorId });
+      await adminAPI.assignVendorToBooking(bookingId, { vendorId, bookingId });
+      loadBookings(); // Reload bookings
+      setShowVendorModal(false);
+      setSelectedBooking(null);
+    } catch (error) {
+      console.error('Error assigning vendor:', error);
+      alert('Failed to assign vendor. Please try again.');
+    } finally {
+      setAssigningVendor(false);
+    }
+  };
+
+  const handleCloseVendorModal = () => {
+    setShowVendorModal(false);
+    setSelectedBooking(null);
+  };
+
+  const testRoute = async () => {
+    try {
+      console.log('🧪 Testing route...');
+      const response = await adminAPI.testAssign();
+      console.log('✅ Test route response:', response);
+    } catch (error) {
+      console.error('❌ Test route error:', error);
+    }
+  };
+
+  const simpleTest = async () => {
+    try {
+      console.log('🧪 Simple test...');
+      const response = await adminAPI.simpleTest();
+      console.log('✅ Simple test response:', response);
+    } catch (error) {
+      console.error('❌ Simple test error:', error);
     }
   };
 
@@ -129,6 +179,22 @@ const BookingManagement = () => {
               <Filter className="w-4 h-4 mr-2" />
               Apply Filters
             </Button>
+            
+            <Button
+              variant="outline"
+              onClick={testRoute}
+              className="w-full mt-2"
+            >
+              🧪 Test Route
+            </Button>
+            
+            <Button
+              variant="outline"
+              onClick={simpleTest}
+              className="w-full mt-2"
+            >
+              🧪 Simple Test
+            </Button>
           </div>
         </div>
       </Card>
@@ -150,6 +216,7 @@ const BookingManagement = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Package</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
@@ -189,6 +256,20 @@ const BookingManagement = () => {
                         </span>
                       </Badge>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {booking.assignedVendorId ? (
+                        <div className="text-sm">
+                          <div className="font-medium text-gray-900">
+                            {booking.assignedVendorId.name || 'Assigned Vendor'}
+                          </div>
+                          <div className="text-gray-500">
+                            {booking.assignedVendorId.email}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-500 italic">Not assigned</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(booking.eventDate).toLocaleDateString()}
                     </td>
@@ -200,6 +281,16 @@ const BookingManagement = () => {
                         <Button variant="outline" size="sm">
                           <Edit className="w-4 h-4" />
                         </Button>
+                        {!booking.assignedVendorId && booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleAssignVendor(booking)}
+                            className="text-blue-600 hover:text-blue-700"
+                          >
+                            <UserPlus className="w-4 h-4" />
+                          </Button>
+                        )}
                         {booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED' && (
                           <Button
                             variant="outline"
@@ -248,6 +339,15 @@ const BookingManagement = () => {
           </div>
         )}
       </Card>
+
+      {/* Vendor Assignment Modal */}
+      <VendorAssignmentModal
+        isOpen={showVendorModal}
+        onClose={handleCloseVendorModal}
+        booking={selectedBooking}
+        onAssign={handleVendorAssign}
+        loading={assigningVendor}
+      />
     </div>
   );
 };

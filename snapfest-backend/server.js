@@ -16,6 +16,8 @@ import bookingRoutes from './src/routes/bookingRoutes.js';
 import webhookRoutes from './src/routes/webhookRoutes.js';
 import uploadRoutes from './src/routes/uploadRoutes.js';
 import { errorHandler, notFound } from './src/middleware/errorHandler.js';
+import requestLogger, { enhancedRequestLogger, errorLogger } from './src/middleware/requestLogger.js';
+import { logInfo, logError } from './src/config/logger.js';
 
 dotenv.config();
 
@@ -27,6 +29,13 @@ connectDB();
 
 // Ensure admin user exists
 ensureAdminUserExists();
+
+// Log server startup
+logInfo('SnapFest Backend Server starting...', {
+  port: PORT,
+  environment: process.env.NODE_ENV || 'development',
+  nodeVersion: process.version
+});
 
 // Security middleware
 app.use(helmet());
@@ -83,6 +92,10 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Request logging middleware
+app.use(enhancedRequestLogger);
+app.use(requestLogger);
+
 // Static files
 app.use('/uploads', express.static('uploads'));
 
@@ -111,14 +124,24 @@ app.get(['/api/health', '/'], (req, res) => {
 // 404 handler
 app.use(notFound);
 
+// Error logging middleware
+app.use(errorLogger);
+
 // Error handler
 app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
+  logInfo('SnapFest Backend Server started successfully', {
+    port: PORT,
+    healthCheck: `http://localhost:${PORT}/api/health`,
+    environment: process.env.NODE_ENV || 'development'
+  });
+  
   console.log(`🚀 SnapFest Backend Server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
   console.log(`📊 Health check: http://localhost:${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+  console.log(`📝 Logs are being written to: ./logs/`);
 });
 

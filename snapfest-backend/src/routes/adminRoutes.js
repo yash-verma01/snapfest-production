@@ -208,7 +208,6 @@ router.post('/vendors', createVendor);
 router.put('/vendors/:id', updateVendor);
 router.put('/vendors/:id/toggle-status', toggleVendorStatus);
 router.delete('/vendors/:id', deleteVendor);
-router.post('/vendors/:id/assign-booking', assignVendorToBooking);
 
 // ==================== PACKAGE MANAGEMENT ====================
 router.get('/packages', validatePagination, getAllPackages);
@@ -220,12 +219,31 @@ router.put('/packages/:id/toggle-status', togglePackageStatus);
 router.delete('/packages/:id', deletePackage);
 
 // ==================== BOOKING MANAGEMENT ====================
-router.get('/bookings', validatePagination, getAllBookings);
-router.get('/bookings/stats', getBookingStats);
-router.get('/bookings/:id', getBookingById);
-router.put('/bookings/:id/status', updateBookingStatus);
-router.put('/bookings/:id/cancel', cancelBooking);
-router.post('/bookings/:id/assign-vendor', assignVendorToBooking);
+// Simple test route
+router.post('/bookings/simple-test', (req, res) => {
+  console.log('🧪 Simple test route hit!');
+  res.json({ success: true, message: 'Simple test working' });
+});
+
+router.get('/bookings', authenticate, adminOnly, validatePagination, getAllBookings);
+router.get('/bookings/stats', authenticate, adminOnly, getBookingStats);
+router.get('/bookings/:id', authenticate, adminOnly, getBookingById);
+router.put('/bookings/:id/status', authenticate, adminOnly, updateBookingStatus);
+router.put('/bookings/:id/cancel', authenticate, adminOnly, cancelBooking);
+router.post('/bookings/assign-vendor', authenticate, adminOnly, assignVendorToBooking);
+// Test route to verify routing is working
+router.post('/bookings/test-assign', authenticate, adminOnly, (req, res) => {
+  try {
+    console.log('🧪 Test route hit!');
+    console.log('🧪 Request URL:', req.url);
+    console.log('🧪 Request method:', req.method);
+    console.log('🧪 User:', req.user);
+    res.json({ success: true, message: 'Test route working' });
+  } catch (error) {
+    console.error('🧪 Test route error:', error);
+    res.status(500).json({ success: false, message: 'Test route error', error: error.message });
+  }
+});
 
 // ==================== PAYMENT MANAGEMENT ====================
 router.get('/payments', validatePagination, getAllPayments);

@@ -12,7 +12,9 @@ import {
   Download,
   Eye,
   Phone,
-  Mail
+  Mail,
+  UserCheck,
+  Star
 } from 'lucide-react';
 import { Card, Button, Badge } from '../ui';
 import { dateUtils } from '../../utils';
@@ -96,6 +98,8 @@ const VendorBookingCard = ({
         return <X className="w-4 h-4" />;
       case 'REJECTED':
         return <AlertCircle className="w-4 h-4" />;
+      case 'ASSIGNED':
+        return <UserCheck className="w-4 h-4" />;
       default:
         return <Clock className="w-4 h-4" />;
     }
@@ -186,7 +190,7 @@ const VendorBookingCard = ({
   };
 
   return (
-    <Card className={`p-6 ${className}`}>
+    <Card className={`p-6 ${booking.assignedVendorId ? 'border-l-4 border-l-green-500 bg-green-50' : ''} ${className}`}>
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between">
         {/* Booking Info */}
         <div className="flex-1">
@@ -204,6 +208,12 @@ const VendorBookingCard = ({
               <Badge variant={getStatusColor(booking.status)} size="sm">
                 {booking.status.replace('_', ' ')}
               </Badge>
+              {booking.assignedVendorId && (
+                <Badge variant="success" size="sm" className="bg-green-100 text-green-800">
+                  <UserCheck className="w-3 h-3 mr-1" />
+                  Assigned to You
+                </Badge>
+              )}
             </div>
           </div>
 

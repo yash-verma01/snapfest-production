@@ -696,34 +696,64 @@ export const getVendorBookings = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
   const { status, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
 
-  // Build query
-  let query = { vendorId: vendor._id };
+  // Build query for assigned bookings first
+  let assignedQuery = { assignedVendorId: vendor._id };
   if (status) {
-    query.status = status;
+    assignedQuery.status = status;
   }
 
-  // Build sort object
-  const sort = {};
-  sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+  console.log('🔍 Vendor Bookings Debug:', {
+    vendorId: vendor._id,
+    userId: req.userId,
+    assignedQuery,
+    vendor: vendor
+  });
 
-  const bookings = await Booking.find(query)
+  // Build query for other bookings (legacy vendorId field)
+  let otherQuery = { vendorId: vendor._id };
+  if (status) {
+    otherQuery.status = status;
+  }
+
+  // Get assigned bookings first (prioritized)
+  const assignedBookings = await Booking.find(assignedQuery)
     .populate('userId', 'name email phone')
     .populate('packageId', 'name category price')
-    .sort(sort)
-    .skip(skip)
+    .populate('assignedVendorId', 'name email')
+    .sort({ assignedAt: -1, createdAt: -1 })
     .limit(limit);
 
-  const total = await Booking.countDocuments(query);
+  // If we have space, get other bookings
+  const remainingLimit = limit - assignedBookings.length;
+  let otherBookings = [];
+  
+  if (remainingLimit > 0) {
+    otherBookings = await Booking.find(otherQuery)
+      .populate('userId', 'name email phone')
+      .populate('packageId', 'name category price')
+      .sort({ createdAt: -1 })
+      .limit(remainingLimit);
+  }
+
+  // Combine results with assigned bookings first
+  const allBookings = [...assignedBookings, ...otherBookings];
+
+  // Get total counts for pagination
+  const assignedTotal = await Booking.countDocuments(assignedQuery);
+  const otherTotal = await Booking.countDocuments(otherQuery);
+  const total = assignedTotal + otherTotal;
 
   res.status(200).json({
     success: true,
     data: {
-      bookings,
+      bookings: allBookings,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
         total
-      }
+      },
+      assignedCount: assignedTotal,
+      otherCount: otherTotal
     }
   });
 });

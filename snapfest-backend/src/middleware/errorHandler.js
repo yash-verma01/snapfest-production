@@ -1,10 +1,19 @@
+import { logError } from '../config/logger.js';
+
 // Global error handling middleware
 export const errorHandler = (err, req, res, next) => {
   let error = { ...err };
   error.message = err.message;
 
-  // Log error
-  console.error('Error:', err);
+  // Log error with enhanced details
+  logError('Application error occurred', err, {
+    reqId: req.reqId,
+    method: req.method,
+    url: req.url,
+    userAgent: req.get('User-Agent'),
+    ip: req.ip,
+    user: req.user ? `${req.user._id} (${req.user.role})` : 'anonymous'
+  });
 
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {
