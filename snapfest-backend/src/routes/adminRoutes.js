@@ -230,7 +230,7 @@ router.get('/bookings/stats', authenticate, adminOnly, getBookingStats);
 router.get('/bookings/:id', authenticate, adminOnly, getBookingById);
 router.put('/bookings/:id/status', authenticate, adminOnly, updateBookingStatus);
 router.put('/bookings/:id/cancel', authenticate, adminOnly, cancelBooking);
-router.post('/bookings/assign-vendor', authenticate, adminOnly, assignVendorToBooking);
+router.post('/bookings/:id/assign-vendor', authenticate, adminOnly, assignVendorToBooking);
 // Test route to verify routing is working
 router.post('/bookings/test-assign', authenticate, adminOnly, (req, res) => {
   try {

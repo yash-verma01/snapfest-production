@@ -16,6 +16,7 @@ import {
   // Booking Management
   getVendorBookings,
   getVendorBookingById,
+  getAssignedBookings,
   updateBookingStatus,
   startBooking,
   completeBooking,
@@ -93,6 +94,7 @@ router.get('/performance', getVendorPerformance);
 
 // ==================== BOOKING MANAGEMENT ====================
 router.get('/bookings', validatePagination, getVendorBookings);
+router.get('/bookings/assigned', validatePagination, getAssignedBookings);
 router.get('/bookings/:id', getVendorBookingById);
 router.put('/bookings/:id/status', updateBookingStatus);
 router.put('/bookings/:id/start', startBooking);

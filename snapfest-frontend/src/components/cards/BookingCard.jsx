@@ -44,8 +44,6 @@ const BookingCard = ({
     switch (status) {
       case 'PENDING':
         return 'warning';
-      case 'CONFIRMED':
-        return 'primary';
       case 'IN_PROGRESS':
         return 'info';
       case 'COMPLETED':
@@ -61,8 +59,6 @@ const BookingCard = ({
     switch (status) {
       case 'PENDING':
         return 'Pending';
-      case 'CONFIRMED':
-        return 'Confirmed';
       case 'IN_PROGRESS':
         return 'In Progress';
       case 'COMPLETED':

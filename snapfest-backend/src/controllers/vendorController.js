@@ -362,7 +362,7 @@ export const getVendorDashboard = asyncHandler(async (req, res) => {
   }
 
   // Get recent bookings
-  const recentBookings = await Booking.find({ vendorId: vendor._id })
+  const recentBookings = await Booking.find({ assignedVendorId: vendor._id })
     .populate('userId', 'name email phone')
     .populate('packageId', 'name category')
     .sort({ createdAt: -1 })
@@ -370,7 +370,7 @@ export const getVendorDashboard = asyncHandler(async (req, res) => {
 
   // Get pending bookings
   const pendingBookings = await Booking.countDocuments({ 
-    vendorId: vendor._id, 
+    assignedVendorId: vendor._id, 
     status: { $in: ['ASSIGNED', 'IN_PROGRESS'] } 
   });
 
@@ -378,7 +378,7 @@ export const getVendorDashboard = asyncHandler(async (req, res) => {
   const currentMonth = new Date();
   currentMonth.setDate(1);
   const completedThisMonth = await Booking.countDocuments({
-    vendorId: vendor._id,
+    assignedVendorId: vendor._id,
     status: 'COMPLETED',
     completedAt: { $gte: currentMonth }
   });
@@ -1595,7 +1595,7 @@ export const acceptBooking = asyncHandler(async (req, res) => {
     });
   }
 
-  booking.status = 'CONFIRMED';
+  booking.status = 'IN_PROGRESS';
   booking.vendorAcceptedAt = new Date();
   await booking.save();
 
@@ -1638,6 +1638,37 @@ export const rejectBooking = asyncHandler(async (req, res) => {
     success: true,
     message: 'Booking rejected successfully',
     data: { booking }
+  });
+});
+
+// @desc    Get assigned bookings for vendor
+// @route   GET /api/vendors/bookings/assigned
+// @access  Private/Vendor
+export const getAssignedBookings = asyncHandler(async (req, res) => {
+  const vendorId = req.userId;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const bookings = await Booking.find({ assignedVendorId: vendorId })
+    .populate('userId', 'name email phone')
+    .populate('packageId', 'title category basePrice')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const total = await Booking.countDocuments({ assignedVendorId: vendorId });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      bookings,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total
+      }
+    }
   });
 });
 

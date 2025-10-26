@@ -133,6 +133,7 @@ export const vendorAPI = {
   // Booking management
   getBookings: (params) => api.get('/vendors/bookings', { params }),
   getBookingById: (id) => api.get(`/vendors/bookings/${id}`),
+  getAssignedBookings: (params) => api.get('/vendors/bookings/assigned', { params }),
   updateBookingStatus: (id, data) => api.put(`/vendors/bookings/${id}/status`, data),
   acceptBooking: (id) => api.put(`/vendors/bookings/${id}/accept`),
   rejectBooking: (id, data) => api.put(`/vendors/bookings/${id}/reject`, data),
@@ -278,8 +279,8 @@ export const adminAPI = {
   getPaymentStats: () => api.get('/admin/payments/stats'),
   assignVendorToBooking: (id, data) => {
     console.log('🔍 API Debug - assignVendorToBooking called with:', { id, data });
-    console.log('🔍 API Debug - URL will be:', `/admin/bookings/assign-vendor`);
-    return api.post(`/admin/bookings/assign-vendor`, data);
+    console.log('🔍 API Debug - URL will be:', `/admin/bookings/${id}/assign-vendor`);
+    return api.post(`/admin/bookings/${id}/assign-vendor`, data);
   },
   
   // Test method to verify routing

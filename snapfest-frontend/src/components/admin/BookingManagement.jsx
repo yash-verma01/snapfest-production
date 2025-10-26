@@ -67,8 +67,7 @@ const BookingManagement = () => {
   const handleVendorAssign = async (bookingId, vendorId) => {
     try {
       setAssigningVendor(true);
-      console.log('🔍 Frontend Debug - Assigning vendor:', { bookingId, vendorId });
-      await adminAPI.assignVendorToBooking(bookingId, { vendorId, bookingId });
+      await adminAPI.assignVendorToBooking(bookingId, { vendorId });
       loadBookings(); // Reload bookings
       setShowVendorModal(false);
       setSelectedBooking(null);
@@ -345,8 +344,11 @@ const BookingManagement = () => {
         isOpen={showVendorModal}
         onClose={handleCloseVendorModal}
         booking={selectedBooking}
-        onAssign={handleVendorAssign}
-        loading={assigningVendor}
+        onAssignmentSuccess={() => {
+          loadBookings();
+          setShowVendorModal(false);
+          setSelectedBooking(null);
+        }}
       />
     </div>
   );

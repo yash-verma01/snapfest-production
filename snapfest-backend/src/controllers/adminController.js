@@ -522,7 +522,6 @@ export const getAllVendors = asyncHandler(async (req, res) => {
 
   const vendors = await Vendor.find()
     .populate('userId', 'name email phone isActive profileImage lastLogin')
-    .select('-password')
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
@@ -544,8 +543,7 @@ export const getAllVendors = asyncHandler(async (req, res) => {
 
 export const getVendorById = asyncHandler(async (req, res) => {
   const vendor = await Vendor.findById(req.params.id)
-    .populate('userId', 'name email phone isActive profileImage lastLogin')
-    .select('-password');
+    .populate('userId', 'name email phone isActive profileImage lastLogin');
 
   if (!vendor) {
     return res.status(404).json({
@@ -713,30 +711,12 @@ export const searchVendors = asyncHandler(async (req, res) => {
 });
 
 export const assignVendorToBooking = asyncHandler(async (req, res) => {
-  console.log('🚀 assignVendorToBooking function called!');
-  const { vendorId, bookingId } = req.body;
-
-  console.log('🔍 Assign Vendor Debug:', {
-    bookingId,
-    vendorId,
-    body: req.body,
-    url: req.url,
-    method: req.method
-  });
-
-  // Debug: Check if booking ID is valid ObjectId format
-  if (!bookingId.match(/^[0-9a-fA-F]{24}$/)) {
-    console.log('❌ Invalid booking ID format:', bookingId);
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid booking ID format'
-    });
-  }
+  const { vendorId } = req.body;
+  const bookingId = req.params.id;
 
   // Find booking
   const booking = await Booking.findById(bookingId);
   if (!booking) {
-    console.log('❌ Booking not found with ID:', bookingId);
     return res.status(404).json({
       success: false,
       message: 'Booking not found'
@@ -745,10 +725,7 @@ export const assignVendorToBooking = asyncHandler(async (req, res) => {
 
   // Find vendor
   const vendor = await Vendor.findById(vendorId);
-  console.log('🔍 Vendor lookup result:', vendor);
-  
   if (!vendor) {
-    console.log('❌ Vendor not found with ID:', vendorId);
     return res.status(404).json({
       success: false,
       message: 'Vendor not found'
@@ -759,7 +736,7 @@ export const assignVendorToBooking = asyncHandler(async (req, res) => {
   booking.assignedVendorId = vendorId;
   booking.status = 'ASSIGNED';
   booking.assignedAt = new Date();
-  booking.assignedBy = req.user.id;
+  booking.assignedBy = req.userId;
 
   await booking.save();
 
@@ -1322,7 +1299,7 @@ export const updateBookingStatus = asyncHandler(async (req, res) => {
 export const getBookingStats = asyncHandler(async (req, res) => {
   const totalBookings = await Booking.countDocuments();
   const pendingBookings = await Booking.countDocuments({ status: 'PENDING_PARTIAL_PAYMENT' });
-  const confirmedBookings = await Booking.countDocuments({ status: 'CONFIRMED' });
+  const confirmedBookings = await Booking.countDocuments({ status: 'IN_PROGRESS' });
   const completedBookings = await Booking.countDocuments({ status: 'COMPLETED' });
   const cancelledBookings = await Booking.countDocuments({ status: 'CANCELLED' });
 

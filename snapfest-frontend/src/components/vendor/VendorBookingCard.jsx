@@ -69,8 +69,6 @@ const VendorBookingCard = ({
     switch (status) {
       case 'PENDING':
         return 'warning';
-      case 'CONFIRMED':
-        return 'success';
       case 'IN_PROGRESS':
         return 'info';
       case 'COMPLETED':
@@ -88,8 +86,6 @@ const VendorBookingCard = ({
     switch (status) {
       case 'PENDING':
         return <Clock className="w-4 h-4" />;
-      case 'CONFIRMED':
-        return <CheckCircle className="w-4 h-4" />;
       case 'IN_PROGRESS':
         return <Camera className="w-4 h-4" />;
       case 'COMPLETED':
@@ -134,7 +130,7 @@ const VendorBookingCard = ({
           </Button>
         );
         break;
-      case 'CONFIRMED':
+      case 'IN_PROGRESS':
         buttons.push(
           <Button
             key="start"

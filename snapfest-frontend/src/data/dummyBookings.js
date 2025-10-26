@@ -11,7 +11,7 @@ export const dummyBookings = [
     location: 'Taj Palace Hotel, Mumbai',
     guests: 150,
     totalAmount: 100000,
-    status: 'CONFIRMED',
+    status: 'IN_PROGRESS',
     createdAt: '2024-01-15T10:30:00Z',
     vendor: {
       _id: 'vendor_001',
@@ -159,8 +159,7 @@ export const bookingStats = {
 
 export const bookingStatuses = [
   { value: 'PENDING', label: 'Pending', color: 'yellow' },
-  { value: 'CONFIRMED', label: 'Confirmed', color: 'blue' },
-  { value: 'IN_PROGRESS', label: 'In Progress', color: 'purple' },
+  { value: 'IN_PROGRESS', label: 'In Progress', color: 'blue' },
   { value: 'COMPLETED', label: 'Completed', color: 'green' },
   { value: 'CANCELLED', label: 'Cancelled', color: 'red' }
 ];

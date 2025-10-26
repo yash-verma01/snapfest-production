@@ -1,277 +1,209 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Search, 
-  X, 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  CheckCircle, 
-  Clock,
-  Star,
-  Building2
-} from 'lucide-react';
-import { Card, Button, Badge } from '../ui';
+import { X, Search, Filter, UserCheck, Star, MapPin, Briefcase, DollarSign, Clock, Calendar, Users, Mail, Phone, Info, Camera, Utensils, Sparkles, Mic, Video, Sun, Volume2, Car, Shield } from 'lucide-react';
 import { adminAPI } from '../../services/api';
+import { Card, Button, Badge } from '../ui';
 
-const VendorAssignmentModal = ({ 
-  isOpen, 
-  onClose, 
-  booking, 
-  onAssign, 
-  loading = false 
-}) => {
+const VendorAssignmentModal = ({ isOpen, onClose, booking, onAssignmentSuccess }) => {
   const [vendors, setVendors] = useState([]);
-  const [filteredVendors, setFilteredVendors] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedVendor, setSelectedVendor] = useState(null);
-  const [loadingVendors, setLoadingVendors] = useState(false);
+  const [selectedService, setSelectedService] = useState('');
+  const [assigning, setAssigning] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
       loadVendors();
     }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredVendors(vendors);
-    } else {
-      const filtered = vendors.filter(vendor => 
-        vendor.userId?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        vendor.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        vendor.userId?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        vendor.businessType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        vendor.location?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredVendors(filtered);
-    }
-  }, [searchQuery, vendors]);
+  }, [isOpen, searchQuery, selectedService]);
 
   const loadVendors = async () => {
     try {
-      setLoadingVendors(true);
+      setLoading(true);
       setError(null);
-      const response = await adminAPI.getVendors({ limit: 100 });
-      setVendors(response.data.data.vendors || []);
+      const params = {
+        page: 1,
+        limit: 100, // Fetch enough vendors
+        ...(searchQuery && { q: searchQuery }),
+        ...(selectedService && { service: selectedService }),
+      };
+      const response = await adminAPI.getVendors(params);
+      setVendors(response.data.data.vendors);
     } catch (err) {
       console.error('Error loading vendors:', err);
       setError('Failed to load vendors. Please try again.');
     } finally {
-      setLoadingVendors(false);
+      setLoading(false);
     }
   };
 
-  const handleVendorSelect = (vendor) => {
-    setSelectedVendor(vendor);
-  };
-
-  const handleAssign = async () => {
-    if (!selectedVendor || !booking) {
-      console.log('❌ Missing data:', { selectedVendor: !!selectedVendor, booking: !!booking });
+  const handleAssignVendor = async (vendorId) => {
+    if (!booking?._id) {
+      setError('No booking selected for assignment.');
+      return;
+    }
+    if (!window.confirm(`Are you sure you want to assign this vendor to booking #${booking._id.slice(-8)}?`)) {
       return;
     }
 
-    console.log('🔍 Modal Debug - Booking object:', booking);
-    console.log('🔍 Modal Debug - Booking ID:', booking._id);
-    console.log('🔍 Modal Debug - Selected Vendor:', selectedVendor);
-    console.log('🔍 Modal Debug - Vendor User ID:', selectedVendor.userId._id);
-
     try {
-      await onAssign(booking._id, selectedVendor._id);
+      setAssigning(true);
+      setError(null);
+      await adminAPI.assignVendorToBooking(booking._id, { vendorId });
+      alert('Vendor assigned successfully!');
+      onAssignmentSuccess();
       onClose();
     } catch (err) {
       console.error('Error assigning vendor:', err);
+      setError(err.response?.data?.message || 'Failed to assign vendor. Please try again.');
+    } finally {
+      setAssigning(false);
     }
   };
 
-  const getAvailabilityBadge = (availability) => {
-    switch (availability) {
-      case 'AVAILABLE':
-        return <Badge variant="success" size="sm">Available</Badge>;
-      case 'BUSY':
-        return <Badge variant="warning" size="sm">Busy</Badge>;
-      case 'UNAVAILABLE':
-        return <Badge variant="danger" size="sm">Unavailable</Badge>;
-      default:
-        return <Badge variant="default" size="sm">Unknown</Badge>;
+  const getServiceIcon = (service) => {
+    switch (service) {
+      case 'PHOTOGRAPHY': return <Camera className="w-4 h-4" />;
+      case 'VIDEOGRAPHY': return <Video className="w-4 h-4" />;
+      case 'CATERING': return <Utensils className="w-4 h-4" />;
+      case 'DECORATION': return <Sparkles className="w-4 h-4" />;
+      case 'ENTERTAINMENT': return <Mic className="w-4 h-4" />;
+      case 'VENUE': return <MapPin className="w-4 h-4" />;
+      case 'LIGHTING': return <Sun className="w-4 h-4" />;
+      case 'SOUND': return <Volume2 className="w-4 h-4" />;
+      case 'TRANSPORTATION': return <Car className="w-4 h-4" />;
+      case 'SECURITY': return <Shield className="w-4 h-4" />;
+      default: return <Info className="w-4 h-4" />;
     }
   };
 
-  const formatServices = (services) => {
-    if (!services || services.length === 0) return 'No services specified';
-    return services.slice(0, 3).join(', ') + (services.length > 3 ? '...' : '');
+  const getStatusBadgeColor = (status) => {
+    switch (status) {
+      case 'AVAILABLE': return 'bg-green-100 text-green-800';
+      case 'BUSY': return 'bg-yellow-100 text-yellow-800';
+      case 'UNAVAILABLE': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[95vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              Assign Vendor to Booking
-            </h3>
-            <p className="text-sm text-gray-600 mt-1">
-              Booking #{booking?._id?.slice(-8)} - {booking?.packageId?.title}
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
+        <div className="flex justify-between items-center p-4 border-b">
+          <h2 className="text-xl font-semibold text-gray-800">
+            Assign Vendor to Booking #{booking?._id?.slice(-8) || 'N/A'}
+          </h2>
+          <Button variant="ghost" onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <X className="w-5 h-5" />
           </Button>
         </div>
 
-        {/* Search */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search vendors by name, business, email, or location..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
-        </div>
-
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {loadingVendors ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-              <span className="ml-2 text-gray-600">Loading vendors...</span>
-            </div>
-          ) : error ? (
-            <div className="text-center py-8">
-              <div className="text-red-600 mb-2">{error}</div>
-              <Button onClick={loadVendors} variant="outline" size="sm">
-                Try Again
-              </Button>
-            </div>
-          ) : filteredVendors.length === 0 ? (
-            <div className="text-center py-8">
-              <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-2">No vendors found</p>
-              <p className="text-sm text-gray-500">
-                {searchQuery ? 'Try adjusting your search terms' : 'No vendors available'}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredVendors.map((vendor) => (
-                <Card
-                  key={vendor._id}
-                  className={`p-4 cursor-pointer transition-all ${
-                    selectedVendor?._id === vendor._id
-                      ? 'ring-2 ring-primary-500 bg-primary-50'
-                      : 'hover:bg-gray-50'
-                  }`}
-                  onClick={() => handleVendorSelect(vendor)}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                          <Building2 className="w-5 h-5 text-primary-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-gray-900">
-                            {vendor.userId?.name || 'Unknown Vendor'}
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            {vendor.businessName || 'No business name'}
-                          </p>
-                        </div>
-                        {selectedVendor?._id === vendor._id && (
-                          <CheckCircle className="w-5 h-5 text-primary-600" />
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Mail className="w-4 h-4 mr-2" />
-                          <span>{vendor.userId?.email || 'No email'}</span>
-                        </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Phone className="w-4 h-4 mr-2" />
-                          <span>{vendor.userId?.phone || 'No phone'}</span>
-                        </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <MapPin className="w-4 h-4 mr-2" />
-                          <span>{vendor.location || 'No location'}</span>
-                        </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Star className="w-4 h-4 mr-2" />
-                          <span>{vendor.experience || 0} years experience</span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Services:</span>
-                          <span className="text-sm text-gray-900">
-                            {formatServices(vendor.servicesOffered)}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Status:</span>
-                          {getAvailabilityBadge(vendor.availability)}
-                        </div>
-                        {vendor.businessType && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">Type:</span>
-                            <span className="text-sm text-gray-900">
-                              {vendor.businessType}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
-          <div className="text-sm text-gray-600">
-            {selectedVendor ? (
-              <span>
-                Selected: <strong>{selectedVendor.userId?.name}</strong>
-              </span>
+        <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
+          {/* Left Panel: Booking Details */}
+          <div className="w-full lg:w-1/3 p-6 border-b lg:border-b-0 lg:border-r overflow-y-auto">
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">Booking Details</h3>
+            {booking ? (
+              <div className="space-y-3 text-sm text-gray-700">
+                <p className="flex items-center"><Users className="w-4 h-4 mr-2 text-primary-500" /> <strong>Customer:</strong> {booking.userId?.name} ({booking.userId?.email})</p>
+                <p className="flex items-center"><Mail className="w-4 h-4 mr-2 text-primary-500" /> <strong>Customer Email:</strong> {booking.userId?.email}</p>
+                <p className="flex items-center"><Phone className="w-4 h-4 mr-2 text-primary-500" /> <strong>Customer Phone:</strong> {booking.userId?.phone}</p>
+                <p className="flex items-center"><Briefcase className="w-4 h-4 mr-2 text-primary-500" /> <strong>Package:</strong> {booking.packageId?.title} ({booking.packageId?.category})</p>
+                <p className="flex items-center"><DollarSign className="w-4 h-4 mr-2 text-primary-500" /> <strong>Total Amount:</strong> ₹{booking.totalAmount?.toLocaleString()}</p>
+                <p className="flex items-center"><DollarSign className="w-4 h-4 mr-2 text-primary-500" /> <strong>Amount Paid:</strong> ₹{booking.amountPaid?.toLocaleString()}</p>
+                <p className="flex items-center"><Calendar className="w-4 h-4 mr-2 text-primary-500" /> <strong>Event Date:</strong> {new Date(booking.eventDate).toLocaleDateString()}</p>
+                <p className="flex items-center"><MapPin className="w-4 h-4 mr-2 text-primary-500" /> <strong>Location:</strong> {booking.location}</p>
+                <p className="flex items-center"><Users className="w-4 h-4 mr-2 text-primary-500" /> <strong>Guests:</strong> {booking.guests}</p>
+                <p className="flex items-center"><Info className="w-4 h-4 mr-2 text-primary-500" /> <strong>Status:</strong> <Badge className={`ml-2 ${getStatusBadgeColor(booking.status)}`}>{booking.status}</Badge></p>
+                {booking.assignedVendorId && (
+                  <p className="flex items-center"><UserCheck className="w-4 h-4 mr-2 text-green-500" /> <strong>Assigned Vendor:</strong> {booking.assignedVendorId?.businessName || booking.assignedVendorId?.name}</p>
+                )}
+              </div>
             ) : (
-              <span>Please select a vendor to assign</span>
+              <p className="text-gray-500">No booking details available.</p>
             )}
           </div>
-          <div className="flex space-x-3">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAssign}
-              disabled={!selectedVendor || loading}
-              className="bg-primary-600 hover:bg-primary-700"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Assigning...
-                </>
-              ) : (
-                'Assign Vendor'
-              )}
-            </Button>
+
+          {/* Right Panel: Vendor Selection */}
+          <div className="w-full lg:w-2/3 p-6 overflow-y-auto">
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">Select Vendor</h3>
+            
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search vendors by name or service..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <select
+                value={selectedService}
+                onChange={(e) => setSelectedService(e.target.value)}
+                className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="">All Services</option>
+                {['PHOTOGRAPHY', 'CATERING', 'DECORATION', 'ENTERTAINMENT', 'VENUE', 'LIGHTING', 'SOUND', 'TRANSPORTATION', 'SECURITY', 'OTHER'].map(service => (
+                  <option key={service} value={service}>{service.replace('_', ' ')}</option>
+                ))}
+              </select>
+            </div>
+
+            {error && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <span className="block sm:inline">{error}</span>
+              </div>
+            )}
+
+            {loading ? (
+              <div className="flex items-center justify-center h-32">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                <p className="ml-3 text-gray-600">Loading vendors...</p>
+              </div>
+            ) : vendors.length === 0 ? (
+              <p className="text-gray-500 text-center">No vendors found matching your criteria.</p>
+            ) : (
+              <div className="space-y-4">
+                {vendors.map((vendor) => (
+                  <Card key={vendor._id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                    <div className="flex-1 mb-3 sm:mb-0">
+                      <h4 className="font-semibold text-lg text-gray-900 flex items-center">
+                        {vendor.businessName || vendor.userId?.name || 'N/A'}
+                        <Badge className={`ml-2 ${getStatusBadgeColor(vendor.availability)}`}>
+                          {vendor.availability}
+                        </Badge>
+                      </h4>
+                      <p className="text-sm text-gray-600 flex items-center mt-1">
+                        <Star className="w-4 h-4 mr-1 text-yellow-500" /> {vendor.rating?.toFixed(1) || 'N/A'} ({vendor.reviewCount || 0} reviews)
+                        <MapPin className="w-4 h-4 ml-3 mr-1 text-gray-500" /> {vendor.location || 'N/A'}
+                      </p>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {vendor.servicesOffered?.map(service => (
+                          <Badge key={service} variant="outline" className="flex items-center text-blue-700 bg-blue-50 border-blue-200">
+                            {getServiceIcon(service)}
+                            <span className="ml-1">{service.replace('_', ' ')}</span>
+                          </Badge>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2 line-clamp-2">{vendor.bio || 'No bio provided.'}</p>
+                    </div>
+                    <Button
+                      onClick={() => handleAssignVendor(vendor._id)}
+                      disabled={assigning || vendor.availability !== 'AVAILABLE'}
+                      className="w-full sm:w-auto bg-primary-600 hover:bg-primary-700"
+                    >
+                      {assigning ? 'Assigning...' : 'Assign Vendor'}
+                    </Button>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -22,6 +22,7 @@ import { dummyVendor, dummyBookings } from '../data';
 import VendorStatsCard from '../components/vendor/VendorStatsCard';
 import OTPVerification from '../components/vendor/OTPVerification';
 import VendorBookingCard from '../components/vendor/VendorBookingCard';
+import AssignedBookings from '../components/vendor/AssignedBookings';
 import { Card, Button, Badge } from '../components/ui';
 
 const VendorDashboard = () => {
@@ -338,6 +339,9 @@ const VendorDashboard = () => {
                 </div>
               )}
             </Card>
+
+            {/* Assigned Bookings */}
+            <AssignedBookings />
           </div>
 
           {/* Sidebar */}
