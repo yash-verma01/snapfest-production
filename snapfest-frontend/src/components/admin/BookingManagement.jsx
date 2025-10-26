@@ -14,6 +14,8 @@ const BookingManagement = () => {
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [assigningVendor, setAssigningVendor] = useState(false);
+  const [showEditVendorModal, setShowEditVendorModal] = useState(false);
+  const [editingBooking, setEditingBooking] = useState(null);
 
   useEffect(() => {
     loadBookings();
@@ -74,6 +76,32 @@ const BookingManagement = () => {
     } catch (error) {
       console.error('Error assigning vendor:', error);
       alert('Failed to assign vendor. Please try again.');
+    } finally {
+      setAssigningVendor(false);
+    }
+  };
+
+  const handleEditVendor = (booking) => {
+    setEditingBooking(booking);
+    setShowEditVendorModal(true);
+  };
+
+  const handleCloseEditVendorModal = () => {
+    setShowEditVendorModal(false);
+    setEditingBooking(null);
+  };
+
+  const handleVendorChange = async (bookingId, vendorId) => {
+    try {
+      setAssigningVendor(true);
+      await adminAPI.assignVendorToBooking(bookingId, { vendorId });
+      loadBookings(); // Reload bookings
+      setShowEditVendorModal(false);
+      setEditingBooking(null);
+      alert('Vendor changed successfully!');
+    } catch (error) {
+      console.error('Error changing vendor:', error);
+      alert('Failed to change vendor. Please try again.');
     } finally {
       setAssigningVendor(false);
     }
@@ -277,7 +305,13 @@ const BookingManagement = () => {
                         <Button variant="outline" size="sm">
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEditVendor(booking)}
+                          className="text-blue-600 hover:text-blue-700"
+                          title="Change Vendor"
+                        >
                           <Edit className="w-4 h-4" />
                         </Button>
                         {!booking.assignedVendorId && booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED' && (
@@ -349,6 +383,20 @@ const BookingManagement = () => {
           setShowVendorModal(false);
           setSelectedBooking(null);
         }}
+      />
+
+      {/* Edit Vendor Modal */}
+      <VendorAssignmentModal
+        isOpen={showEditVendorModal}
+        onClose={handleCloseEditVendorModal}
+        booking={editingBooking}
+        onAssignmentSuccess={() => {
+          loadBookings();
+          setShowEditVendorModal(false);
+          setEditingBooking(null);
+        }}
+        isEditMode={true}
+        currentVendor={editingBooking?.assignedVendorId}
       />
     </div>
   );

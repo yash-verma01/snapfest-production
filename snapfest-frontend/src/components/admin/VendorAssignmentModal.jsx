@@ -3,7 +3,7 @@ import { X, Search, Filter, UserCheck, Star, MapPin, Briefcase, DollarSign, Cloc
 import { adminAPI } from '../../services/api';
 import { Card, Button, Badge } from '../ui';
 
-const VendorAssignmentModal = ({ isOpen, onClose, booking, onAssignmentSuccess }) => {
+const VendorAssignmentModal = ({ isOpen, onClose, booking, onAssignmentSuccess, isEditMode = false, currentVendor = null }) => {
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -94,7 +94,7 @@ const VendorAssignmentModal = ({ isOpen, onClose, booking, onAssignmentSuccess }
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="text-xl font-semibold text-gray-800">
-            Assign Vendor to Booking #{booking?._id?.slice(-8) || 'N/A'}
+            {isEditMode ? 'Change Vendor for Booking' : 'Assign Vendor to Booking'} #{booking?._id?.slice(-8) || 'N/A'}
           </h2>
           <Button variant="ghost" onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <X className="w-5 h-5" />
@@ -121,6 +121,18 @@ const VendorAssignmentModal = ({ isOpen, onClose, booking, onAssignmentSuccess }
                 {booking.assignedVendorId && (
                   <p className="flex items-center"><UserCheck className="w-4 h-4 mr-2 text-green-500" /> <strong>Assigned Vendor:</strong> {booking.assignedVendorId?.businessName || booking.assignedVendorId?.name}</p>
                 )}
+                {isEditMode && currentVendor && (
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center">
+                      <UserCheck className="w-4 h-4 mr-2 text-blue-500" />
+                      <div>
+                        <p className="font-semibold text-blue-900">Current Vendor</p>
+                        <p className="text-sm text-blue-700">{currentVendor.businessName || currentVendor.name || 'Current Vendor'}</p>
+                        <p className="text-xs text-blue-600">Click on a new vendor below to change</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-gray-500">No booking details available.</p>
@@ -129,7 +141,9 @@ const VendorAssignmentModal = ({ isOpen, onClose, booking, onAssignmentSuccess }
 
           {/* Right Panel: Vendor Selection */}
           <div className="w-full lg:w-2/3 p-6 overflow-y-auto">
-            <h3 className="text-lg font-semibold text-gray-700 mb-4">Select Vendor</h3>
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">
+              {isEditMode ? 'Select New Vendor' : 'Select Vendor'}
+            </h3>
             
             {/* Filters */}
             <div className="flex flex-col sm:flex-row gap-4 mb-4">
@@ -198,7 +212,7 @@ const VendorAssignmentModal = ({ isOpen, onClose, booking, onAssignmentSuccess }
                       disabled={assigning || vendor.availability !== 'AVAILABLE'}
                       className="w-full sm:w-auto bg-primary-600 hover:bg-primary-700"
                     >
-                      {assigning ? 'Assigning...' : 'Assign Vendor'}
+                      {assigning ? (isEditMode ? 'Changing...' : 'Assigning...') : (isEditMode ? 'Change Vendor' : 'Assign Vendor')}
                     </Button>
                   </Card>
                 ))}
