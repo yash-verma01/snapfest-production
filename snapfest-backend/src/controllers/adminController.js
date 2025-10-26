@@ -1228,7 +1228,7 @@ export const getAllBookings = asyncHandler(async (req, res) => {
 
   const bookings = await Booking.find(query)
     .populate('userId', 'name email phone')
-    .populate('vendorId', 'businessName email phone')
+    .populate('assignedVendorId', 'businessName email phone')
     .populate('packageId', 'title category basePrice')
     .skip(skip)
     .limit(limit)

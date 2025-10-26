@@ -133,20 +133,6 @@ const VendorBookingCard = ({
       case 'IN_PROGRESS':
         buttons.push(
           <Button
-            key="start"
-            size="sm"
-            onClick={() => handleAction('start')}
-            disabled={isLoading && action === 'start'}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <Camera className="w-4 h-4 mr-1" />
-            Start Event
-          </Button>
-        );
-        break;
-      case 'IN_PROGRESS':
-        buttons.push(
-          <Button
             key="complete"
             size="sm"
             onClick={() => handleAction('complete')}
@@ -154,7 +140,7 @@ const VendorBookingCard = ({
             className="bg-green-600 hover:bg-green-700"
           >
             <CheckCircle className="w-4 h-4 mr-1" />
-            Complete
+            Mark as Completed
           </Button>
         );
         break;

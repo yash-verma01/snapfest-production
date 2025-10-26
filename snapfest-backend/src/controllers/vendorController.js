@@ -790,7 +790,7 @@ export const getVendorBookingById = asyncHandler(async (req, res) => {
 });
 
 export const updateBookingStatus = asyncHandler(async (req, res) => {
-  const { status, notes } = req.body;
+  const { status, notes } = req.body || {};
   const vendor = await Vendor.findOne({ userId: req.userId });
   
   if (!vendor) {
@@ -892,7 +892,7 @@ export const startBooking = asyncHandler(async (req, res) => {
 });
 
 export const completeBooking = asyncHandler(async (req, res) => {
-  const { completionNotes } = req.body;
+  const { completionNotes } = req.body || {};
   const vendor = await Vendor.findOne({ userId: req.userId });
   
   if (!vendor) {
@@ -904,7 +904,7 @@ export const completeBooking = asyncHandler(async (req, res) => {
 
   const booking = await Booking.findOne({
     _id: req.params.id,
-    vendorId: vendor._id,
+    assignedVendorId: vendor._id,
     status: 'IN_PROGRESS'
   });
 
@@ -933,7 +933,7 @@ export const completeBooking = asyncHandler(async (req, res) => {
 });
 
 export const cancelBooking = asyncHandler(async (req, res) => {
-  const { cancellationReason } = req.body;
+  const { cancellationReason } = req.body || {};
   const vendor = await Vendor.findOne({ userId: req.userId });
   
   if (!vendor) {

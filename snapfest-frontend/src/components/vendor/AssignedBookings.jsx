@@ -52,6 +52,19 @@ const AssignedBookings = () => {
     }
   };
 
+  const handleCompleteBooking = async (bookingId) => {
+    if (window.confirm('Are you sure you want to mark this booking as completed?')) {
+      try {
+        await vendorAPI.completeBooking(bookingId, {});
+        loadAssignedBookings();
+        alert('Booking marked as completed successfully!');
+      } catch (error) {
+        console.error('Error completing booking:', error);
+        alert('Failed to complete booking. Please try again.');
+      }
+    }
+  };
+
   const getStatusBadgeColor = (status) => {
     switch (status) {
       case 'ASSIGNED': return 'bg-purple-100 text-purple-800';
@@ -215,6 +228,18 @@ const AssignedBookings = () => {
                       >
                         <XCircle className="w-4 h-4 mr-2" />
                         Reject Booking
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {booking.status === 'IN_PROGRESS' && (
+                    <div className="flex flex-col space-y-2">
+                      <Button
+                        onClick={() => handleCompleteBooking(booking._id)}
+                        className="w-full lg:w-auto bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Mark as Completed
                       </Button>
                     </div>
                   )}

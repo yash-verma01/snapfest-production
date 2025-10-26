@@ -259,14 +259,14 @@ const BookingManagement = () => {
                       {booking.assignedVendorId ? (
                         <div className="text-sm">
                           <div className="font-medium text-gray-900">
-                            {booking.assignedVendorId.name || 'Assigned Vendor'}
+                            {booking.assignedVendorId.businessName || booking.assignedVendorId.name || 'Assigned Vendor'}
                           </div>
                           <div className="text-gray-500">
-                            {booking.assignedVendorId.email}
+                            {booking.assignedVendorId.email || 'Vendor assigned'}
                           </div>
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-500 italic">Not assigned</span>
+                        <span className="text-sm text-gray-500 italic">Not Assigned</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
