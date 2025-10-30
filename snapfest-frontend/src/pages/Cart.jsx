@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useUser, useAuth as useClerkAuth } from '@clerk/clerk-react';
 import { 
   ShoppingCart, 
   Trash2, 
@@ -22,7 +22,8 @@ import { paymentService } from '../services/paymentService';
 
 const Cart = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isSignedIn, user } = useUser();
+  const { getToken } = useClerkAuth();
   const { cart, loading, error, removeFromCart, clearCart, calculateTotal, refreshCart } = useCart();
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState(null);
@@ -42,11 +43,11 @@ const Cart = () => {
 
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isSignedIn) {
       navigate('/login', { state: { from: '/cart' } });
       return;
     }
-  }, [isAuthenticated, navigate]);
+  }, [isSignedIn, navigate]);
 
 
 
@@ -76,6 +77,8 @@ const Cart = () => {
     setPaymentError(null);
 
     try {
+      const authToken = await getToken();
+
       // Step 1: Create booking for each cart item
       console.log('🛒 Cart: Creating bookings...');
       console.log('🛒 Cart: Cart items structure:', cart.items);
@@ -106,7 +109,7 @@ const Cart = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${authToken}`
           },
           body: JSON.stringify(bookingData)
         });
@@ -158,7 +161,9 @@ const Cart = () => {
         
         console.log('🛒 Cart: Sending payment order request:', requestData);
         
-        const orderResponse = await paymentAPI.createPartialPaymentOrder(requestData);
+        const orderResponse = await paymentAPI.createPartialPaymentOrder(requestData, {
+          headers: { Authorization: `Bearer ${authToken}` }
+        });
 
         console.log('🛒 Cart: Payment order response:', orderResponse);
 
@@ -180,9 +185,9 @@ const Cart = () => {
           `SnapFest - ${booking.packageId?.title || 'Photography Package'}`,
           `Partial payment (20%) for ${booking.packageId?.title || 'Photography Package'}`,
           {
-            name: user?.name || 'Customer',
-            email: user?.email || '',
-            contact: user?.phone || ''
+            name: user?.fullName || 'Customer',
+            email: user?.primaryEmailAddress?.emailAddress || '',
+            contact: user?.phoneNumbers?.[0]?.phoneNumber || ''
           }
         );
 
@@ -194,6 +199,8 @@ const Cart = () => {
           paymentId: paymentResult.razorpay_payment_id,
           orderId: paymentResult.razorpay_order_id,
           signature: paymentResult.razorpay_signature
+        }, {
+          headers: { Authorization: `Bearer ${authToken}` }
         });
 
         if (!verifyResponse.data.success) {

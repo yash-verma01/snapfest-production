@@ -1,57 +1,75 @@
 import AuthService from '../services/authService.js';
 import { User } from '../models/index.js';
 import dotenv from 'dotenv';
+import fetch from 'node-fetch';
 
 // Load environment variables
 dotenv.config();
 
+async function verifyClerkToken(token) {
+  const response = await fetch('https://api.clerk.dev/v1/tokens/verify', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ token })
+  });
+  if (!response.ok) throw new Error('Invalid Clerk token');
+  return await response.json();
+}
+
 // Authentication middleware
 export const authenticate = async (req, res, next) => {
   try {
-    // Get token from header
     const authHeader = req.headers.authorization;
-    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        success: false,
-        message: 'Access denied. No token provided.'
-      });
+      return res.status(401).json({ success: false, message: 'Access denied. No token provided.' });
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    const token = authHeader.substring(7);
 
-    // Verify token
+    // Try Clerk JWT first
+    try {
+      const clerkVerification = await verifyClerkToken(token);
+      const clerkPayload = clerkVerification.payload;
+      if (clerkPayload && clerkPayload.sub) {
+        // Find or create user in DB by clerkId/email
+        let user = await User.findOne({ clerkId: clerkPayload.sub });
+        if (!user) {
+          user = await User.create({
+            clerkId: clerkPayload.sub,
+            name: clerkPayload.name || clerkPayload.email || 'User',
+            email: clerkPayload.email,
+            isActive: true,
+            isEmailVerified: clerkPayload.email_verified || false,
+            // other fields as needed
+          });
+        }
+        req.user = user;
+        req.userId = user._id;
+        req.userRole = user.role;
+        return next();
+      }
+    } catch (clerkErr) {
+      // Not a Clerk JWT or invalid. Fall through to legacy JWT.
+    }
+
+    // Fallback: legacy system JWT
     const decoded = AuthService.verifyToken(token);
-    
-    // Get user from database
     const user = await User.findById(decoded.userId).select('-password');
-    
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid token. User not found.'
-      });
+      return res.status(401).json({ success: false, message: 'Invalid token. User not found.' });
     }
-
     if (!user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Account is deactivated.'
-      });
+      return res.status(401).json({ success: false, message: 'Account is deactivated.' });
     }
-
-    // Add user to request object
     req.user = user;
     req.userId = user._id;
     req.userRole = user.role;
-
     next();
   } catch (error) {
-    return res.status(401).json({
-      success: false,
-      message: 'Invalid token.',
-      error: error.message
-    });
+    return res.status(401).json({ success: false, message: 'Invalid token.', error: error.message });
   }
 };
 

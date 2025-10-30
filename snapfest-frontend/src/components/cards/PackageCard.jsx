@@ -6,7 +6,7 @@ import Button from '../ui/Button';
 import Badge from '../ui/Badge';
 import BookingModal from '../modals/BookingModal';
 import { useCart } from '../../hooks';
-import { useAuth } from '../../context/AuthContext';
+import { useUser } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 
 const PackageCard = ({
@@ -20,7 +20,7 @@ const PackageCard = ({
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const { addToCart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { isSignedIn } = useUser();
   const navigate = useNavigate();
   const {
     _id,
@@ -76,7 +76,7 @@ const PackageCard = ({
   };
 
   const handleAddToCartClick = () => {
-    if (!isAuthenticated) {
+    if (!isSignedIn) {
       navigate('/login', { state: { from: `/packages/${_id}` } });
       return;
     }

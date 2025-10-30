@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useUser, useClerk, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 import { Menu, X, User, LogOut, Settings, Package, Calendar, Home, Camera, Heart, ShoppingCart } from 'lucide-react';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const { isAuthenticated, user, logout, role } = useAuth();
+  const { user } = useUser();
+  const { signOut } = useClerk();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await logout();
+    await signOut();
     navigate('/');
     setIsProfileOpen(false);
   };
 
   const getDashboardLink = () => {
-    switch (role) {
+    switch (user?.publicMetadata?.role) {
       case 'admin':
         return '/admin/dashboard';
       case 'vendor':
@@ -29,7 +30,7 @@ const Navbar = () => {
   };
 
   const getProfileLink = () => {
-    switch (role) {
+    switch (user?.publicMetadata?.role) {
       case 'admin':
         return '/admin/profile';
       case 'vendor':
@@ -42,7 +43,7 @@ const Navbar = () => {
   };
 
   const getRoleDisplayName = () => {
-    switch (role) {
+    switch (user?.publicMetadata?.role) {
       case 'admin':
         return 'Admin';
       case 'vendor':
@@ -104,7 +105,7 @@ const Navbar = () => {
             >
               Contact
             </Link>
-            {isAuthenticated && (
+            {user && (
               <Link
                 to="/cart"
                 className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300 flex items-center space-x-1"
@@ -117,7 +118,7 @@ const Navbar = () => {
 
           {/* Desktop Auth Section - Professional Style */}
           <div className="hidden md:flex items-center space-x-3">
-            {isAuthenticated ? (
+            {user ? (
               <div className="relative">
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -127,7 +128,7 @@ const Navbar = () => {
                     <User className="w-3 h-3 text-white" />
                   </div>
                   <div className="text-left">
-                    <div className="font-semibold text-xs">{user?.name || 'User'}</div>
+                    <div className="font-semibold text-xs">{user?.firstName || 'User'}</div>
                     <div className="text-xs text-pink-600 font-medium">
                       {getRoleDisplayName()}
                     </div>
@@ -137,7 +138,7 @@ const Navbar = () => {
                 {/* Profile Dropdown */}
                 {isProfileOpen && (
                   <div className="absolute right-0 mt-3 w-56 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-primary-100 py-2 z-50">
-                    {(role === 'admin' || role === 'vendor') && (
+                    {(user?.publicMetadata?.role === 'admin' || user?.publicMetadata?.role === 'vendor') && (
                       <Link
                         to={getDashboardLink()}
                         className="flex items-center px-4 py-3 text-sm text-neutral-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300"
@@ -155,7 +156,7 @@ const Navbar = () => {
                       <Settings className="w-4 h-4 mr-3 text-primary-500" />
                       Profile
                     </Link>
-                    {role === 'user' && (
+                    {user?.publicMetadata?.role === 'user' && (
                       <>
                         <Link
                           to="/user/bookings"
@@ -189,13 +190,13 @@ const Navbar = () => {
             ) : (
               <div className="flex items-center space-x-3">
                 <Link
-                  to="/login"
+                  to="/sign-in"
                   className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300"
                 >
                   Login
                 </Link>
                 <Link
-                  to="/register"
+                  to="/sign-up"
                   className="px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
                 >
                   Register
@@ -267,7 +268,7 @@ const Navbar = () => {
                 <span className="w-5 h-5 mr-3 text-primary-500 font-bold text-lg">@</span>
                 Contact
               </Link>
-              {isAuthenticated && (
+              {user && (
                 <>
                   <Link
                     to="/cart"
@@ -278,7 +279,7 @@ const Navbar = () => {
                     Cart
                   </Link>
                   <div className="border-t border-primary-100 my-2"></div>
-                  {(role === 'admin' || role === 'vendor') && (
+                  {(user?.publicMetadata?.role === 'admin' || user?.publicMetadata?.role === 'vendor') && (
                     <Link
                       to={getDashboardLink()}
                       className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
@@ -296,7 +297,7 @@ const Navbar = () => {
                     <Settings className="w-5 h-5 mr-3 text-primary-500" />
                     Profile
                   </Link>
-                  {role === 'user' && (
+                  {user?.publicMetadata?.role === 'user' && (
                     <>
                       <Link
                         to="/user/bookings"
@@ -325,11 +326,11 @@ const Navbar = () => {
                   </button>
                 </>
               )}
-              {!isAuthenticated && (
+              {!user && (
                 <>
                   <div className="border-t border-primary-100 my-2"></div>
                   <Link
-                    to="/login"
+                    to="/sign-in"
                     className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -337,7 +338,7 @@ const Navbar = () => {
                     Login
                   </Link>
                   <Link
-                    to="/register"
+                    to="/sign-up"
                     className="flex items-center px-4 py-3 text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 transition-all duration-300 rounded-xl font-semibold"
                     onClick={() => setIsMenuOpen(false)}
                   >

@@ -17,14 +17,20 @@ const userSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    required: true,
-    unique: true,
+    required: false,
+    unique: false,
     trim: true
   },
   password: {
     type: String,
-    required: true,
+    required: false,
     minlength: 6
+  },
+  clerkId: {
+    type: String,
+    required: false,
+    unique: true,
+    default: null
   },
   role: {
     type: String,

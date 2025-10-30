@@ -4,11 +4,10 @@ import { Search, Grid, List, SlidersHorizontal, Star, Crown, Sparkles, Award, Za
 import { PackageCard } from '../components/cards';
 import { Button } from '../components/ui';
 import { usePackages } from '../hooks';
-import { useAuth } from '../context/AuthContext';
+// Auth handled by Clerk globally; no local auth hook needed
 
 const Packages = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
   const [viewMode, setViewMode] = useState('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
