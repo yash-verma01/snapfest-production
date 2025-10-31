@@ -1,51 +1,46 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { AuthProvider, useAuth } from './context/AuthContext';
+// Auth handled by Clerk
+import { SignedIn, SignedOut, RedirectToSignIn, useUser } from '@clerk/clerk-react';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Components
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
-// Pages
-import Home from './pages/Home';
-import Packages from './pages/Packages';
-import Events from './pages/Events';
-import EventDetail from './pages/EventDetail';
-import Gallery from './pages/Gallery';
-import About from './pages/About';
-import Contact from './pages/Contact';
-import Venues from './pages/Venues';
-import VenueDetail from './pages/VenueDetail';
-import Login from './pages/Login';
-import Register from './pages/Register';
+// Admin Pages only
+import { SignIn, SignUp } from '@clerk/clerk-react';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminAnalytics from './pages/AdminAnalytics';
 import AdminProfile from './pages/AdminProfile';
-import VerifyEmail from './pages/VerifyEmail';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
 import NotFound from './pages/NotFound';
 
 // Protected Route Component
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Component to handle root redirect for admins
-function AdminRootRedirect() {
-  const { isAuthenticated, user } = useAuth();
-  
-  if (isAuthenticated && user?.role === 'admin') {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
-  
-  return <Navigate to="/login" replace />;
+// Guard: Only allow admins inside the admin app
+function AdminGuard({ children }) {
+  const { user } = useUser();
+  return (
+    <>
+      <SignedOut>
+        <RedirectToSignIn redirectUrl="/admin/dashboard" />
+      </SignedOut>
+      <SignedIn>
+        {user?.publicMetadata?.role === 'admin' ? (
+          children
+        ) : (
+          <Navigate to="/sign-in" replace />
+        )}
+      </SignedIn>
+    </>
+  );
 }
 
 function AdminApp() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
         <Router>
           <div className="min-h-screen bg-gray-50">
             <Navbar />
@@ -53,38 +48,14 @@ function AdminApp() {
             <main className="min-h-screen">
             <Routes>
               {/* Root redirect for admins */}
-              <Route path="/" element={<AdminRootRedirect />} />
-              <Route path="/packages" element={<Packages />} />
-              <Route path="/packages/:id" element={<PackageDetail />} />
-              <Route path="/verify-email" element={<VerifyEmail />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/events" element={<Events />} />
-              <Route path="/events/:id" element={<EventDetail />} />
-              <Route path="/gallery" element={<Gallery />} />
-              <Route path="/venues" element={<Venues />} />
-              <Route path="/venues/:id" element={<VenueDetail />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+              <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="/sign-in/*" element={<SignIn />} />
+              <Route path="/sign-up/*" element={<SignUp />} />
               
               {/* Protected Routes - Admin Only */}
-              <Route path="/admin/dashboard" element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/analytics" element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminAnalytics />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/profile" element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminProfile />
-                </ProtectedRoute>
-              } />
+              <Route path="/admin/dashboard" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
+              <Route path="/admin/analytics" element={<AdminGuard><AdminAnalytics /></AdminGuard>} />
+              <Route path="/admin/profile" element={<AdminGuard><AdminProfile /></AdminGuard>} />
               
               {/* 404 Route */}
               <Route path="*" element={<NotFound />} />
@@ -120,7 +91,6 @@ function AdminApp() {
           />
         </div>
         </Router>
-      </AuthProvider>
     </ErrorBoundary>
   );
 }

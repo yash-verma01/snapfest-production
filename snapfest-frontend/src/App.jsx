@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { SignIn, SignUp, RedirectToSignIn, SignedIn, SignedOut } from '@clerk/clerk-react';
+import { SignIn, SignUp, RedirectToSignIn, SignedIn, SignedOut, useAuth } from '@clerk/clerk-react';
+import { userAPI } from './services/api';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Components
@@ -47,6 +48,33 @@ import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
+  // Sync Clerk user to backend on sign-in
+  // NOTE: Switched to cookie-based sessions - no JWT tokens needed
+  // The browser automatically sends session cookies with requests (withCredentials: true in api.js)
+  const { isSignedIn } = useAuth();
+  
+  useEffect(() => {
+    const sync = async () => {
+      if (!isSignedIn) return;
+      
+      try {
+        // Simply call sync endpoint - cookies are sent automatically by axios
+        // No need to get tokens or set Authorization headers
+        await userAPI.sync();
+        console.log('✅ User synced with backend via cookie session');
+      } catch (e) {
+        // Non-blocking - don't prevent app from loading if sync fails
+        console.warn('⚠️ User sync failed (non-blocking):', e.message);
+      }
+    };
+    
+    // Small delay to ensure Clerk session cookie is fully established
+    const timeoutId = setTimeout(() => {
+      sync();
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [isSignedIn]);
   return (
     <ErrorBoundary>
       <Router>

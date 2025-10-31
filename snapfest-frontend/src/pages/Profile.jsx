@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useUser } from '@clerk/clerk-react';
 import { 
   User, 
   Mail, 
@@ -19,7 +19,7 @@ import { Card, Button, Badge } from '../components/ui';
 import { userAPI } from '../services/api';
 
 const Profile = () => {
-  const { user, updateUser } = useAuth();
+  const { user } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [userStats, setUserStats] = useState(null);
@@ -52,9 +52,9 @@ const Profile = () => {
       console.log('🔍 Frontend: User address type:', typeof user.address);
       console.log('🔍 Frontend: User address keys:', user.address ? Object.keys(user.address) : 'No address');
       setFormData({
-        name: user.name || '',
-        email: user.email || '',
-        phone: user.phone || '',
+        name: user.fullName || '',
+        email: user.primaryEmailAddress?.emailAddress || '',
+        phone: user.phoneNumbers?.[0]?.phoneNumber || '',
         address: user.address || {
           street: '',
           city: '',
@@ -167,7 +167,7 @@ const Profile = () => {
       console.log('🔍 Frontend: Profile update response:', response.data);
       console.log('🔍 Frontend: User data from response:', response.data.data.user);
       console.log('🔍 Frontend: Address from response:', response.data.data.user.address);
-      updateUser(response.data.data.user);
+      // Clerk handles identity; backend profile is already persisted
       setIsEditing(false);
       alert('Profile updated successfully!');
     } catch (error) {
@@ -202,7 +202,7 @@ const Profile = () => {
           <User className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Please Login</h2>
           <p className="text-gray-600 mb-4">You need to be logged in to view your profile.</p>
-          <Button onClick={() => window.location.href = '/login'}>
+          <Button onClick={() => window.location.href = '/sign-in'}>
             Go to Login
           </Button>
         </Card>
@@ -385,8 +385,8 @@ const Profile = () => {
                       <User className="w-8 h-8 text-primary-600" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{user.name}</h3>
-                      <p className="text-gray-600">{user.email}</p>
+                      <h3 className="text-lg font-semibold text-gray-900">{user.fullName}</h3>
+                      <p className="text-gray-600">{user.primaryEmailAddress?.emailAddress}</p>
                       <Badge className="mt-1 bg-green-100 text-green-800">
                         {user.role === 'user' ? 'Customer' : user.role}
                       </Badge>

@@ -27,7 +27,7 @@ import {
   Palette
 } from 'lucide-react';
 import { Button, Card, Badge } from '../components/ui';
-import { useAuth } from '../context/AuthContext';
+import { useUser } from '@clerk/clerk-react';
 import { useCart } from '../hooks';
 import { publicAPI } from '../services/api';
 import toast from 'react-hot-toast';
@@ -35,7 +35,7 @@ import toast from 'react-hot-toast';
 const PackageDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isSignedIn } = useUser();
   const { addToCart, loading: cartLoading } = useCart();
   
   const [packageData, setPackageData] = useState(null);
@@ -74,9 +74,9 @@ const PackageDetail = () => {
   }, [id]);
 
   const handleAddToCart = async () => {
-    if (!isAuthenticated) {
+    if (!isSignedIn) {
       toast.error('Please login to add items to cart');
-      navigate('/login');
+      navigate('/sign-in');
       return;
     }
 
@@ -134,9 +134,9 @@ const PackageDetail = () => {
   };
 
   const handleBookNow = () => {
-    if (!isAuthenticated) {
+    if (!isSignedIn) {
       toast.error('Please login to book packages');
-      navigate('/login');
+      navigate('/sign-in');
       return;
     }
     

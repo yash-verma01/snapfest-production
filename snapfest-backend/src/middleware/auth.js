@@ -1,75 +1,186 @@
-import AuthService from '../services/authService.js';
 import { User } from '../models/index.js';
 import dotenv from 'dotenv';
-import fetch from 'node-fetch';
+import { getAuth } from '@clerk/express';
+import { clerkClient } from '@clerk/clerk-sdk-node';
 
 // Load environment variables
 dotenv.config();
 
-async function verifyClerkToken(token) {
-  const response = await fetch('https://api.clerk.dev/v1/tokens/verify', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ token })
-  });
-  if (!response.ok) throw new Error('Invalid Clerk token');
-  return await response.json();
-}
-
-// Authentication middleware
+/**
+ * Authentication middleware using Clerk cookie-based sessions.
+ * 
+ * Switched from JWT/token-based authentication to Clerk cookie sessions:
+ * - Removed JWT token verification and Authorization header parsing
+ * - Removed legacy system JWT fallback
+ * - All authentication now comes from Clerk middleware (cookie/session-based)
+ * - Frontend sends session cookies automatically (no getToken() needed)
+ */
 export const authenticate = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ success: false, message: 'Access denied. No token provided.' });
+    // Get authenticated user from Clerk middleware (parsed from session cookies)
+    const clerkAuth = getAuth(req);
+    
+    if (!clerkAuth?.userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Access denied. Please sign in.' 
+      });
     }
 
-    const token = authHeader.substring(7);
+    // Extract user information from Clerk session claims
+    // Clerk provides email in various claim formats - try all possibilities
+    const email = clerkAuth?.claims?.email || 
+                  clerkAuth?.claims?.primary_email_address ||
+                  clerkAuth?.claims?.emailAddress ||
+                  null;
+    
+    // Extract name - try multiple formats
+    let name = null;
+    if (clerkAuth?.claims?.name) {
+      name = clerkAuth.claims.name;
+    } else if (clerkAuth?.claims?.firstName && clerkAuth?.claims?.lastName) {
+      name = `${clerkAuth.claims.firstName} ${clerkAuth.claims.lastName}`;
+    } else if (clerkAuth?.claims?.first_name && clerkAuth?.claims?.last_name) {
+      name = `${clerkAuth.claims.first_name} ${clerkAuth.claims.last_name}`;
+    } else if (clerkAuth?.claims?.firstName) {
+      name = clerkAuth.claims.firstName;
+    } else if (clerkAuth?.claims?.first_name) {
+      name = clerkAuth.claims.first_name;
+    } else if (email) {
+      name = email.split('@')[0];
+    }
+    const sanitizedName = (name || 'User').trim();
+    
+    const emailVerified = clerkAuth?.claims?.email_verified || 
+                          clerkAuth?.claims?.emailVerified || 
+                          false;
 
-    // Try Clerk JWT first
-    try {
-      const clerkVerification = await verifyClerkToken(token);
-      const clerkPayload = clerkVerification.payload;
-      if (clerkPayload && clerkPayload.sub) {
-        // Find or create user in DB by clerkId/email
-        let user = await User.findOne({ clerkId: clerkPayload.sub });
-        if (!user) {
-          user = await User.create({
-            clerkId: clerkPayload.sub,
-            name: clerkPayload.name || clerkPayload.email || 'User',
-            email: clerkPayload.email,
-            isActive: true,
-            isEmailVerified: clerkPayload.email_verified || false,
-            // other fields as needed
-          });
+    // Debug logging (only in development)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 Clerk Auth Debug:', {
+        userId: clerkAuth.userId,
+        hasClaims: !!clerkAuth.claims,
+        claimKeys: clerkAuth.claims ? Object.keys(clerkAuth.claims) : [],
+        email: email || 'MISSING',
+        name: name || 'MISSING'
+      });
+    }
+
+    // Email is required - if missing, fetch from Clerk API as fallback
+    let finalEmail = email;
+    let finalName = sanitizedName;
+    let finalEmailVerified = emailVerified;
+    
+    if (!finalEmail) {
+      console.warn('⚠️ Email not found in claims, fetching from Clerk API for userId:', clerkAuth.userId);
+      try {
+        const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+        
+        // Get primary email address
+        finalEmail = clerkUser.emailAddresses?.find(email => email.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
+                     clerkUser.emailAddresses?.[0]?.emailAddress ||
+                     clerkUser.emailAddress ||
+                     null;
+        
+        // Get name from Clerk user
+        finalName = clerkUser.firstName && clerkUser.lastName 
+          ? `${clerkUser.firstName} ${clerkUser.lastName}`.trim()
+          : clerkUser.firstName || clerkUser.lastName || finalName;
+        
+        // Get email verified status
+        finalEmailVerified = clerkUser.emailAddresses?.find(email => email.id === clerkUser.primaryEmailAddressId)?.verification?.status === 'verified' ||
+                            clerkUser.emailAddresses?.[0]?.verification?.status === 'verified' ||
+                            false;
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Fetched from Clerk API:', { email: finalEmail, name: finalName, emailVerified: finalEmailVerified });
         }
-        req.user = user;
-        req.userId = user._id;
-        req.userRole = user.role;
-        return next();
+      } catch (apiError) {
+        console.error('❌ Failed to fetch user from Clerk API:', apiError.message);
+        console.error('Available claims:', clerkAuth.claims);
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Authentication failed: email not found. Please ensure your Clerk account has an email address.' 
+        });
       }
-    } catch (clerkErr) {
-      // Not a Clerk JWT or invalid. Fall through to legacy JWT.
+    }
+    
+    // Final validation - email is required
+    if (!finalEmail) {
+      console.error('❌ No email found after fallback for userId:', clerkAuth.userId);
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Authentication failed: email not found. Please ensure your Clerk account has an email address.' 
+      });
+    }
+    
+    // Update sanitizedName with final name
+    const finalSanitizedName = (finalName || finalEmail.split('@')[0] || 'User').trim();
+
+
+    // Find or create user in local database
+    let user = await User.findOne({ clerkId: clerkAuth.userId });
+    
+    if (!user) {
+      // Create new user document if it doesn't exist (idempotent operation)
+      // Email and name are required fields, so we've validated them above
+      user = await User.create({
+        clerkId: clerkAuth.userId,
+        name: finalSanitizedName,
+        email: finalEmail.toLowerCase().trim(), // Ensure lowercase and trimmed
+        isActive: true,
+        isEmailVerified: !!finalEmailVerified,
+        role: 'user', // Default role for new Clerk users
+      });
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Created new user:', { userId: user._id, email: user.email, clerkId: user.clerkId });
+      }
+    } else {
+      // Update user if email/name changed in Clerk (sync metadata)
+      const needsUpdate = user.email !== finalEmail.toLowerCase().trim() || 
+                         user.name !== finalSanitizedName ||
+                         user.isEmailVerified !== !!finalEmailVerified;
+      
+      if (needsUpdate) {
+        user.email = finalEmail.toLowerCase().trim();
+        user.name = finalSanitizedName;
+        user.isEmailVerified = !!finalEmailVerified;
+        await user.save();
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Updated user:', { userId: user._id, email: user.email });
+        }
+      }
     }
 
-    // Fallback: legacy system JWT
-    const decoded = AuthService.verifyToken(token);
-    const user = await User.findById(decoded.userId).select('-password');
-    if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid token. User not found.' });
-    }
+    // Check if user account is active
     if (!user.isActive) {
-      return res.status(401).json({ success: false, message: 'Account is deactivated.' });
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Account is deactivated.' 
+      });
     }
+
+    // Attach user to request object for use in route handlers
     req.user = user;
     req.userId = user._id;
     req.userRole = user.role;
+    
     next();
   } catch (error) {
-    return res.status(401).json({ success: false, message: 'Invalid token.', error: error.message });
+    console.error('Authentication error:', error);
+    
+    // More detailed error logging
+    if (error.name === 'ValidationError') {
+      console.error('Validation errors:', error.errors);
+    }
+    
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Authentication failed.', 
+      error: error.message 
+    });
   }
 };
 
@@ -136,16 +247,32 @@ export const vendorOrAdmin = (req, res, next) => {
   next();
 };
 
-// Optional authentication (doesn't fail if no token)
+/**
+ * Optional authentication - doesn't fail if user is not signed in.
+ * Uses Clerk cookie sessions (not JWT tokens).
+ */
 export const optionalAuth = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
+    const clerkAuth = getAuth(req);
     
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      const decoded = AuthService.verifyToken(token);
-      const user = await User.findById(decoded.userId).select('-password');
+    if (clerkAuth?.userId) {
+      const email = clerkAuth?.claims?.email || null;
+      const name = clerkAuth?.claims?.name || email?.split('@')[0] || 'User';
+      const emailVerified = clerkAuth?.claims?.email_verified || false;
+
+      let user = await User.findOne({ clerkId: clerkAuth.userId });
       
+      if (!user) {
+        user = await User.create({
+          clerkId: clerkAuth.userId,
+          name,
+          email,
+          isActive: true,
+          isEmailVerified: !!emailVerified,
+          role: 'user',
+        });
+      }
+
       if (user && user.isActive) {
         req.user = user;
         req.userId = user._id;
@@ -225,24 +352,33 @@ export const authRateLimit = (req, res, next) => {
   next();
 };
 
-// Validate token and return user info
-export const validateToken = async (req, res, next) => {
+/**
+ * Validate session and return user info.
+ * Now uses Clerk cookie sessions instead of JWT tokens.
+ */
+export const validateToken = async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
+    const clerkAuth = getAuth(req);
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!clerkAuth?.userId) {
       return res.status(401).json({
         success: false,
-        message: 'No token provided'
+        message: 'No active session'
       });
     }
 
-    const token = authHeader.substring(7);
-    const user = await AuthService.getUserFromToken(token);
+    const user = await User.findOne({ clerkId: clerkAuth.userId }).select('-password');
+    
+    if (!user || !user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not found or inactive'
+      });
+    }
     
     return res.status(200).json({
       success: true,
-      message: 'Token is valid',
+      message: 'Session is valid',
       user: {
         id: user._id,
         name: user.name,
@@ -254,7 +390,7 @@ export const validateToken = async (req, res, next) => {
   } catch (error) {
     return res.status(401).json({
       success: false,
-      message: 'Invalid token',
+      message: 'Session validation failed',
       error: error.message
     });
   }

@@ -5,6 +5,7 @@ import mockApi from './mockApi';
 const api = axios.create({
   baseURL: 'http://localhost:5001/api',
   timeout: 10000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -13,22 +14,27 @@ const api = axios.create({
 // Use mock API for development (set to false for backend integration)
 const USE_MOCK_API = false;
 
-// Request interceptor to add auth token
+/**
+ * Request interceptor - cookie-based authentication
+ * 
+ * Switched from JWT tokens to Clerk cookie sessions:
+ * - Removed getToken() calls and Authorization header injection for Clerk
+ * - Session cookies are sent automatically via withCredentials: true
+ * - Legacy token support kept for backward compatibility (if needed)
+ */
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    console.log('🔗 API: Making request to:', config.url);
-    console.log('🔗 API: Request method:', config.method);
-    console.log('🔗 API: Request data:', config.data);
-    console.log('🔗 API: Auth token present:', !!token);
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Only add legacy token if explicitly present (for non-Clerk routes)
+    // Clerk authentication uses HTTP-only session cookies, not Authorization headers
+    const legacyToken = localStorage.getItem('token');
+    if (legacyToken && !config.headers.Authorization) {
+      // Only add if Authorization header wasn't explicitly set in the request
+      config.headers.Authorization = `Bearer ${legacyToken}`;
     }
+    // Note: Clerk session cookies are automatically included via withCredentials: true
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Response interceptor to handle errors
@@ -40,12 +46,7 @@ api.interceptors.response.use(
   (error) => {
     console.error('🔗 API: Request failed:', error.response?.status, error.config?.url);
     console.error('🔗 API: Error details:', error.response?.data);
-    if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-    }
+    // Do not force redirect; Clerk handles auth UI and ProtectedRoute gates access
     return Promise.reject(error);
   }
 );
@@ -111,6 +112,9 @@ export const userAPI = {
   
   // Additional missing endpoints
   getUserStats: () => api.get('/users/stats'),
+  // Sync Clerk user to backend DB (uses cookie-based authentication)
+  // No config needed - cookies are sent automatically
+  sync: () => api.post('/users/sync'),
 };
 
 export const vendorAPI = {

@@ -8,7 +8,7 @@ const CLERK_PK = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_d2VsY29t
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ClerkProvider publishableKey={CLERK_PK}>
+    <ClerkProvider publishableKey={CLERK_PK} afterSignInUrl="/user/profile" afterSignUpUrl="/user/profile">
       <App />
     </ClerkProvider>
   </StrictMode>,

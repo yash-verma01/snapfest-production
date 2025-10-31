@@ -1460,3 +1460,33 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Sync Clerk user to local DB (idempotent)
+// @route   POST /api/users/sync
+// @access  Private (Clerk cookie session)
+export const syncClerkUser = asyncHandler(async (req, res) => {
+  // The authenticate middleware already verified the session cookie and attached req.user.
+  // If the user didn't exist, it was created by the middleware.
+  // This endpoint simply returns the user data.
+  const user = await User.findById(req.userId).select('-password');
+  if (!user) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+  return res.status(200).json({
+    success: true,
+    message: 'User synced',
+    data: {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        profileImage: user.profileImage,
+        address: user.address,
+        isEmailVerified: user.isEmailVerified,
+        isPhoneVerified: user.isPhoneVerified,
+      }
+    }
+  });
+});
+

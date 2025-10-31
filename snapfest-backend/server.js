@@ -18,8 +18,24 @@ import uploadRoutes from './src/routes/uploadRoutes.js';
 import { errorHandler, notFound } from './src/middleware/errorHandler.js';
 import requestLogger, { enhancedRequestLogger, errorLogger } from './src/middleware/requestLogger.js';
 import { logInfo, logError } from './src/config/logger.js';
+import { clerkMiddleware } from '@clerk/express';
 
 dotenv.config();
+
+// Validate Clerk environment variables (required for cookie-based authentication)
+if (!process.env.CLERK_PUBLISHABLE_KEY) {
+  console.error('❌ CLERK_PUBLISHABLE_KEY is missing in .env file!');
+  console.error('   Please add: CLERK_PUBLISHABLE_KEY=pk_test_...');
+  process.exit(1);
+}
+
+if (!process.env.CLERK_SECRET_KEY) {
+  console.error('❌ CLERK_SECRET_KEY is missing in .env file!');
+  console.error('   Please add: CLERK_SECRET_KEY=sk_test_...');
+  process.exit(1);
+}
+
+console.log('✅ Clerk keys loaded successfully');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -85,8 +101,13 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Clerk-Authorization']
 }));
+
+// Clerk middleware - parses session from HTTP-only cookies automatically
+// This replaces the JWT token flow: authentication now comes from secure session cookies
+// Frontend no longer needs to call getToken() or send Authorization headers
+app.use(clerkMiddleware());
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
