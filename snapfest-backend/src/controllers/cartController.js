@@ -6,6 +6,23 @@ import { asyncHandler } from '../middleware/errorHandler.js';
 // @access  Private
 export const getCart = asyncHandler(async (req, res) => {
   const userId = req.userId;
+  const userRole = req.userRole; // Set by authenticate middleware
+  
+  // Return empty cart for admin users (temporary fix to prevent 401 errors in admin UI)
+  // Admin UI doesn't use cart functionality - they manage packages/events through admin dashboard
+  if (userRole === 'admin') {
+    console.log('🛒 Cart Controller: Admin user detected, returning empty cart (not applicable for admin UI)');
+    return res.status(200).json({
+      success: true,
+      data: {
+        cartItems: [],
+        totalAmount: 0,
+        itemCount: 0
+      },
+      message: 'Cart not applicable for admin UI'
+    });
+  }
+  
   console.log('🛒 Cart Controller: Getting cart for user:', userId);
 
   try {

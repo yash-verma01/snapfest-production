@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import { cartAPI } from '../services/api';
 import priceCalculator from '../utils/priceCalculator';
 
@@ -6,12 +7,29 @@ const useCart = () => {
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { user, isLoaded } = useUser(); // Add isLoaded to wait for Clerk data
+  
+  // Skip cart functionality for admin users (temporary fix)
+  // IMPORTANT: Only set isAdmin when user is loaded to avoid false negatives
+  const isAdmin = isLoaded && user?.publicMetadata?.role === 'admin';
 
   const fetchCart = useCallback(async () => {
+    // Skip cart fetching for admin users (temporary fix)
+    // Check only if user is loaded to avoid false negatives
+    if (isLoaded && user?.publicMetadata?.role === 'admin') {
+      console.log('🛒 useCart: Admin user detected, skipping cart fetch');
+      setCart({ items: [], totalAmount: 0, itemCount: 0 });
+      setLoading(false);
+      return;
+    }
+    
+    // Don't proceed if user data isn't loaded yet
+    if (!isLoaded) {
+      console.log('🛒 useCart: Waiting for user data to load...');
+      return;
+    }
+    
     console.log('🛒 useCart: Starting fetchCart...');
-    console.log('🛒 useCart: Current localStorage token:', localStorage.getItem('token') ? 'Present' : 'Missing');
-    console.log('🛒 useCart: Current localStorage user:', localStorage.getItem('user') ? 'Present' : 'Missing');
-    console.log('🛒 useCart: API base URL:', 'http://localhost:5001/api');
     setLoading(true);
     setError(null);
 
@@ -69,7 +87,7 @@ const useCart = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isLoaded, user]); // Update dependencies to include isLoaded and user
 
   const addToCart = useCallback(async (packageId, customization = {}, extra = {}) => {
     console.log('🛒 useCart: Starting addToCart...');
@@ -278,57 +296,52 @@ const useCart = () => {
   }, [cart, calculateTotal]);
 
   useEffect(() => {
-    // Check authentication and fetch cart
-    const checkAuthAndFetchCart = () => {
-      const token = localStorage.getItem('token');
-      const user = localStorage.getItem('user');
-      
-      console.log('🛒 useCart: Checking authentication...');
-      console.log('🛒 useCart: Token exists:', !!token);
-      console.log('🛒 useCart: User exists:', !!user);
-      
-      if (token && user) {
-        console.log('🛒 useCart: User authenticated, fetching cart...');
-        fetchCart();
-      } else {
-        console.log('🛒 useCart: User not authenticated, setting empty cart');
-        setCart({ items: [], totalAmount: 0, itemCount: 0 });
-        setLoading(false);
-      }
-    };
-
-    // Initial check
-    checkAuthAndFetchCart();
+    // Wait for Clerk user data to load first
+    if (!isLoaded) {
+      console.log('🛒 useCart: Waiting for Clerk user data to load...');
+      return;
+    }
     
-    // Also listen for storage changes (login/logout)
-    const handleStorageChange = (e) => {
-      if (e.key === 'token' || e.key === 'user') {
-        console.log('🛒 useCart: Storage changed, rechecking auth...');
-        checkAuthAndFetchCart();
-      }
-    };
+    // Skip cart fetching for admin users (temporary fix to prevent 401 errors)
+    if (isAdmin) {
+      console.log('🛒 useCart: Admin user detected, skipping cart fetch (not applicable for admin UI)');
+      setCart({ items: [], totalAmount: 0, itemCount: 0 });
+      setLoading(false);
+      return;
+    }
     
-    window.addEventListener('storage', handleStorageChange);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [fetchCart]);
-
-  const refreshCart = useCallback(() => {
-    console.log('🛒 useCart: Manual cart refresh requested...');
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-    
-    if (token && user) {
-      console.log('🛒 useCart: Refreshing cart with authentication...');
+    // Check authentication and fetch cart using Clerk authentication
+    // Don't check localStorage - rely on Clerk authentication instead
+    if (user) {
+      console.log('🛒 useCart: User authenticated via Clerk, fetching cart...');
       fetchCart();
     } else {
-      console.log('🛒 useCart: No authentication, cannot refresh cart');
+      console.log('🛒 useCart: User not authenticated, setting empty cart');
       setCart({ items: [], totalAmount: 0, itemCount: 0 });
       setLoading(false);
     }
-  }, [fetchCart]);
+    
+    // Note: Clerk handles auth state changes automatically via useUser hook
+    // No need for localStorage listeners - Clerk manages authentication state
+  }, [fetchCart, isAdmin, isLoaded, user]); // Add dependencies
+
+  const refreshCart = useCallback(() => {
+    console.log('🛒 useCart: Manual cart refresh requested...');
+    
+    // Use Clerk authentication instead of localStorage
+    if (isLoaded && user && user?.publicMetadata?.role !== 'admin') {
+      console.log('🛒 useCart: Refreshing cart with Clerk authentication...');
+      fetchCart();
+    } else if (isLoaded && user?.publicMetadata?.role === 'admin') {
+      console.log('🛒 useCart: Admin user detected, skipping cart refresh');
+      setCart({ items: [], totalAmount: 0, itemCount: 0 });
+      setLoading(false);
+    } else {
+      console.log('🛒 useCart: No authentication or user not loaded, cannot refresh cart');
+      setCart({ items: [], totalAmount: 0, itemCount: 0 });
+      setLoading(false);
+    }
+  }, [fetchCart, isLoaded, user]); // Update dependencies
 
   return {
     cart,

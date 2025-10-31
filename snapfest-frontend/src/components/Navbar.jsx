@@ -55,6 +55,9 @@ const Navbar = () => {
     }
   };
 
+  // Check if current user is admin - hide browsing features in admin UI
+  const isAdmin = user?.publicMetadata?.role === 'admin';
+
   return (
     <nav className="bg-white/95 backdrop-blur-xl shadow-lg sticky top-0 z-50 border-b border-pink-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -75,44 +78,49 @@ const Navbar = () => {
             >
               Home
             </Link>
-            <Link
-              to="/packages"
-              className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300"
-            >
-              Packages
-            </Link>
-            <Link
-              to="/events"
-              className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300"
-            >
-              Events
-            </Link>
-            <Link
-              to="/venues"
-              className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300"
-            >
-              Venues
-            </Link>
-            <Link
-              to="/about"
-              className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300"
-            >
-              About
-            </Link>
-            <Link
-              to="/contact"
-              className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300"
-            >
-              Contact
-            </Link>
-            {user && (
-              <Link
-                to="/cart"
-                className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300 flex items-center space-x-1"
-              >
-                <ShoppingCart className="w-4 h-4" />
-                <span>Cart</span>
-              </Link>
+            {/* Removed packages/events/venue/about/contact/cart links for admin UI (temporary) */}
+            {!isAdmin && (
+              <>
+                <Link
+                  to="/packages"
+                  className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300"
+                >
+                  Packages
+                </Link>
+                <Link
+                  to="/events"
+                  className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300"
+                >
+                  Events
+                </Link>
+                <Link
+                  to="/venues"
+                  className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300"
+                >
+                  Venues
+                </Link>
+                <Link
+                  to="/about"
+                  className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300"
+                >
+                  About
+                </Link>
+                <Link
+                  to="/contact"
+                  className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300"
+                >
+                  Contact
+                </Link>
+                {user && (
+                  <Link
+                    to="/cart"
+                    className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300 flex items-center space-x-1"
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                    <span>Cart</span>
+                  </Link>
+                )}
+              </>
             )}
           </div>
 
@@ -228,56 +236,63 @@ const Navbar = () => {
                 <Home className="w-5 h-5 mr-3 text-primary-500" />
                 Home
               </Link>
-              <Link
-                to="/packages"
-                className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Package className="w-5 h-5 mr-3 text-primary-500" />
-                Packages
-              </Link>
-              <Link
-                to="/events"
-                className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Calendar className="w-5 h-5 mr-3 text-primary-500" />
-                Events
-              </Link>
-              <Link
-                to="/venues"
-                className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Heart className="w-5 h-5 mr-3 text-primary-500" />
-                Venues
-              </Link>
-              <Link
-                to="/about"
-                className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <span className="w-5 h-5 mr-3 text-primary-500 font-bold text-lg">i</span>
-                About
-              </Link>
-              <Link
-                to="/contact"
-                className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <span className="w-5 h-5 mr-3 text-primary-500 font-bold text-lg">@</span>
-                Contact
-              </Link>
-              {user && (
+              {/* Removed packages/events/venue/about/contact/cart links for admin UI (temporary) */}
+              {!isAdmin && (
                 <>
                   <Link
-                    to="/cart"
+                    to="/packages"
                     className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    <ShoppingCart className="w-5 h-5 mr-3 text-primary-500" />
-                    Cart
+                    <Package className="w-5 h-5 mr-3 text-primary-500" />
+                    Packages
                   </Link>
+                  <Link
+                    to="/events"
+                    className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Calendar className="w-5 h-5 mr-3 text-primary-500" />
+                    Events
+                  </Link>
+                  <Link
+                    to="/venues"
+                    className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Heart className="w-5 h-5 mr-3 text-primary-500" />
+                    Venues
+                  </Link>
+                  <Link
+                    to="/about"
+                    className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <span className="w-5 h-5 mr-3 text-primary-500 font-bold text-lg">i</span>
+                    About
+                  </Link>
+                  <Link
+                    to="/contact"
+                    className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <span className="w-5 h-5 mr-3 text-primary-500 font-bold text-lg">@</span>
+                    Contact
+                  </Link>
+                  {user && (
+                    <Link
+                      to="/cart"
+                      className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <ShoppingCart className="w-5 h-5 mr-3 text-primary-500" />
+                      Cart
+                    </Link>
+                  )}
+                </>
+              )}
+              {user && (
+                <>
                   <div className="border-t border-primary-100 my-2"></div>
                   {(user?.publicMetadata?.role === 'admin' || user?.publicMetadata?.role === 'vendor') && (
                     <Link
