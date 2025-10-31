@@ -177,8 +177,16 @@ export const logout = asyncHandler(async (req, res) => {
 // @route   GET /api/users/profile
 // @access  Private
 export const getProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.userId).select('-password');
+  // Clerk handles authentication - removed old auth fields (isEmailVerified, password, etc.)
+  const user = await User.findById(req.userId);
   
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'User not found'
+    });
+  }
+
   console.log('🔍 Backend getProfile - user.address:', user.address);
   console.log('🔍 Backend getProfile - full user object:', {
     id: user._id,
@@ -192,16 +200,17 @@ export const getProfile = asyncHandler(async (req, res) => {
     data: {
       user: {
         id: user._id,
+        clerkId: user.clerkId,
         name: user.name,
         email: user.email,
         phone: user.phone,
         role: user.role,
         profileImage: user.profileImage,
         address: user.address,
-        isEmailVerified: user.isEmailVerified,
-        isPhoneVerified: user.isPhoneVerified,
+        isActive: user.isActive,
         lastLogin: user.lastLogin,
-        createdAt: user.createdAt
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
       }
     }
   });
@@ -1462,29 +1471,185 @@ export const verifyEmail = asyncHandler(async (req, res) => {
 
 // @desc    Sync Clerk user to local DB (idempotent)
 // @route   POST /api/users/sync
-// @access  Private (Clerk cookie session)
+// @access  Private (Clerk cookie session) - uses optionalAuth to handle session edge cases
 export const syncClerkUser = asyncHandler(async (req, res) => {
-  // The authenticate middleware already verified the session cookie and attached req.user.
-  // If the user didn't exist, it was created by the middleware.
-  // This endpoint simply returns the user data.
-  const user = await User.findById(req.userId).select('-password');
-  if (!user) {
-    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  // This endpoint uses optionalAuth middleware, which means req.user might not exist yet
+  // We need to handle both cases: when user is already synced (req.user exists) 
+  // and when user needs to be created from Clerk session
+  
+  // If req.user already exists (from optionalAuth middleware), return it
+  if (req.user && req.userId) {
+    const user = await User.findById(req.userId);
+    if (user) {
+      return res.status(200).json({
+        success: true,
+        message: 'User synced',
+        data: {
+          user: {
+            id: user._id,
+            clerkId: user.clerkId,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+            profileImage: user.profileImage,
+            address: user.address,
+            isActive: user.isActive,
+            lastLogin: user.lastLogin,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+          }
+        }
+      });
+    }
   }
+  
+  // If req.user doesn't exist, get Clerk session and create/find user
+  const { getAuth } = await import('@clerk/express');
+  const { clerkClient } = await import('@clerk/clerk-sdk-node');
+  
+  // Try getAuth(req) first, then fallback to req.auth
+  let clerkAuth = getAuth(req);
+  
+  // Fallback: Check if req.auth exists
+  if (!clerkAuth?.userId && req.auth?.userId) {
+    clerkAuth = req.auth;
+    if (process.env.NODE_ENV === 'development') {
+      console.log('⚠️ syncClerkUser: Using req.auth fallback');
+    }
+  }
+  
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    if (!clerkAuth?.userId) {
+      console.log('🔍 syncClerkUser: No Clerk session found');
+      console.log('   getAuth(req):', getAuth(req));
+      console.log('   req.auth:', req.auth);
+      console.log('   Request cookies:', Object.keys(req.cookies || {}));
+    }
+  }
+  
+  if (!clerkAuth?.userId) {
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Access denied. Please sign in.' 
+    });
+  }
+  
+  // Extract email and name from Clerk session
+  let email = clerkAuth?.claims?.email || 
+              clerkAuth?.claims?.primary_email_address ||
+              clerkAuth?.claims?.emailAddress ||
+              null;
+  
+  let name = null;
+  if (clerkAuth?.claims?.name) {
+    name = clerkAuth.claims.name;
+  } else if (clerkAuth?.claims?.firstName && clerkAuth?.claims?.lastName) {
+    name = `${clerkAuth.claims.firstName} ${clerkAuth.claims.lastName}`;
+  } else if (clerkAuth?.claims?.firstName) {
+    name = clerkAuth.claims.firstName;
+  } else if (email) {
+    name = email.split('@')[0];
+  }
+  const sanitizedName = (name || 'User').trim();
+  
+  // If email not in claims, fetch from Clerk API
+  let finalEmail = email;
+  let finalName = sanitizedName;
+  
+  if (!finalEmail) {
+    try {
+      const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+      finalEmail = clerkUser.emailAddresses?.find(email => email.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
+                   clerkUser.emailAddresses?.[0]?.emailAddress ||
+                   clerkUser.emailAddress ||
+                   null;
+      
+      finalName = clerkUser.firstName && clerkUser.lastName 
+        ? `${clerkUser.firstName} ${clerkUser.lastName}`.trim()
+        : clerkUser.firstName || clerkUser.lastName || finalName;
+    } catch (apiError) {
+      console.error('❌ Failed to fetch user from Clerk API:', apiError.message);
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Authentication failed: email not found. Please ensure your Clerk account has an email address.' 
+      });
+    }
+  }
+  
+  if (!finalEmail) {
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Authentication failed: email not found.' 
+    });
+  }
+  
+  // Find or create user
+  let user = await User.findOne({ clerkId: clerkAuth.userId });
+  
+  if (!user) {
+    // Check if this should be an admin user (based on Clerk publicMetadata or ADMIN_EMAILS)
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin100@gmail.com';
+    const adminEmailsEnv = process.env.ADMIN_EMAILS;
+    const adminEmails = adminEmailsEnv ? adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()) : [];
+    const normalizedEmail = finalEmail.toLowerCase().trim();
+    
+    // Check if user has admin role in Clerk publicMetadata
+    let publicMetadata = clerkAuth?.claims?.publicMetadata || null;
+    if (!publicMetadata) {
+      try {
+        const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+        publicMetadata = clerkUser.publicMetadata || null;
+      } catch (e) {
+        // Non-blocking
+      }
+    }
+    
+    const isAdmin = publicMetadata?.role === 'admin' || 
+                    normalizedEmail === adminEmail.toLowerCase() ||
+                    adminEmails.includes(normalizedEmail);
+    
+    user = await User.create({
+      clerkId: clerkAuth.userId,
+      name: finalName || finalEmail.split('@')[0],
+      email: finalEmail.toLowerCase().trim(),
+      isActive: true,
+      role: isAdmin ? 'admin' : 'user',
+    });
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ Created new user via sync:', { userId: user._id, email: user.email, role: user.role, clerkId: user.clerkId });
+    }
+  } else {
+    // Update user if email/name changed
+    const needsUpdate = user.email !== finalEmail.toLowerCase().trim() || 
+                         user.name !== finalName;
+    
+    if (needsUpdate) {
+      user.email = finalEmail.toLowerCase().trim();
+      user.name = finalName;
+      await user.save();
+    }
+  }
+  
   return res.status(200).json({
     success: true,
     message: 'User synced',
     data: {
       user: {
         id: user._id,
+        clerkId: user.clerkId,
         name: user.name,
         email: user.email,
         phone: user.phone,
         role: user.role,
         profileImage: user.profileImage,
         address: user.address,
-        isEmailVerified: user.isEmailVerified,
-        isPhoneVerified: user.isPhoneVerified,
+        isActive: user.isActive,
+        lastLogin: user.lastLogin,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
       }
     }
   });

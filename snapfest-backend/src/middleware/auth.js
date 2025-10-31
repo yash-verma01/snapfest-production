@@ -18,7 +18,53 @@ dotenv.config();
 export const authenticate = async (req, res, next) => {
   try {
     // Get authenticated user from Clerk middleware (parsed from session cookies)
-    const clerkAuth = getAuth(req);
+    // getAuth(req) should return the auth object, but if it's not authenticated, try calling req.auth() as function
+    let clerkAuth = getAuth(req);
+    
+    // Fallback: If getAuth returns unauthenticated, try calling req.auth as function
+    if (!clerkAuth?.userId && req.auth && typeof req.auth === 'function') {
+      try {
+        const authFromFunc = req.auth();
+        if (authFromFunc?.userId) {
+          clerkAuth = authFromFunc;
+          if (process.env.NODE_ENV === 'development') {
+            console.log('⚠️ Using req.auth() fallback');
+          }
+        }
+      } catch (e) {
+        // Ignore errors from calling req.auth()
+      }
+    }
+    
+    // Also check if req.auth has properties directly (Proxy behavior)
+    if (!clerkAuth?.userId && req.auth && req.auth.userId) {
+      clerkAuth = req.auth;
+      if (process.env.NODE_ENV === 'development') {
+        console.log('⚠️ Using req.auth properties directly');
+      }
+    }
+    
+    // Debug logging in development
+    if (process.env.NODE_ENV === 'development') {
+      if (!clerkAuth?.userId) {
+        console.log('🔍 authenticate: No Clerk session found');
+        console.log('   getAuth(req).isAuthenticated:', getAuth(req).isAuthenticated);
+        console.log('   getAuth(req).userId:', getAuth(req).userId);
+        console.log('   req.auth type:', typeof req.auth);
+        if (typeof req.auth === 'function') {
+          try {
+            console.log('   req.auth() result:', req.auth());
+          } catch (e) {
+            console.log('   req.auth() error:', e.message);
+          }
+        }
+        console.log('   Request cookies:', Object.keys(req.cookies || {}));
+        console.log('   Cookie header present:', !!req.headers.cookie);
+        if (req.cookies) {
+          console.log('   __session cookie value (first 50 chars):', req.cookies.__session?.substring(0, 50));
+        }
+      }
+    }
     
     if (!clerkAuth?.userId) {
       return res.status(401).json({ 
@@ -29,31 +75,29 @@ export const authenticate = async (req, res, next) => {
 
     // Extract user information from Clerk session claims
     // Clerk provides email in various claim formats - try all possibilities
-    const email = clerkAuth?.claims?.email || 
-                  clerkAuth?.claims?.primary_email_address ||
-                  clerkAuth?.claims?.emailAddress ||
+    // Note: claims might be in sessionClaims, not directly in clerkAuth
+    const sessionClaims = clerkAuth?.sessionClaims || clerkAuth?.claims || {};
+    const email = sessionClaims?.email || 
+                  sessionClaims?.primary_email_address ||
+                  sessionClaims?.emailAddress ||
                   null;
     
     // Extract name - try multiple formats
     let name = null;
-    if (clerkAuth?.claims?.name) {
-      name = clerkAuth.claims.name;
-    } else if (clerkAuth?.claims?.firstName && clerkAuth?.claims?.lastName) {
-      name = `${clerkAuth.claims.firstName} ${clerkAuth.claims.lastName}`;
-    } else if (clerkAuth?.claims?.first_name && clerkAuth?.claims?.last_name) {
-      name = `${clerkAuth.claims.first_name} ${clerkAuth.claims.last_name}`;
-    } else if (clerkAuth?.claims?.firstName) {
-      name = clerkAuth.claims.firstName;
-    } else if (clerkAuth?.claims?.first_name) {
-      name = clerkAuth.claims.first_name;
+    if (sessionClaims?.name) {
+      name = sessionClaims.name;
+    } else if (sessionClaims?.firstName && sessionClaims?.lastName) {
+      name = `${sessionClaims.firstName} ${sessionClaims.lastName}`;
+    } else if (sessionClaims?.first_name && sessionClaims?.last_name) {
+      name = `${sessionClaims.first_name} ${sessionClaims.last_name}`;
+    } else if (sessionClaims?.firstName) {
+      name = sessionClaims.firstName;
+    } else if (sessionClaims?.first_name) {
+      name = sessionClaims.first_name;
     } else if (email) {
       name = email.split('@')[0];
     }
     const sanitizedName = (name || 'User').trim();
-    
-    const emailVerified = clerkAuth?.claims?.email_verified || 
-                          clerkAuth?.claims?.emailVerified || 
-                          false;
 
     // Debug logging (only in development)
     if (process.env.NODE_ENV === 'development') {
@@ -67,9 +111,9 @@ export const authenticate = async (req, res, next) => {
     }
 
     // Email is required - if missing, fetch from Clerk API as fallback
+    // Clerk handles authentication - email verification status is managed by Clerk
     let finalEmail = email;
     let finalName = sanitizedName;
-    let finalEmailVerified = emailVerified;
     
     if (!finalEmail) {
       console.warn('⚠️ Email not found in claims, fetching from Clerk API for userId:', clerkAuth.userId);
@@ -87,13 +131,8 @@ export const authenticate = async (req, res, next) => {
           ? `${clerkUser.firstName} ${clerkUser.lastName}`.trim()
           : clerkUser.firstName || clerkUser.lastName || finalName;
         
-        // Get email verified status
-        finalEmailVerified = clerkUser.emailAddresses?.find(email => email.id === clerkUser.primaryEmailAddressId)?.verification?.status === 'verified' ||
-                            clerkUser.emailAddresses?.[0]?.verification?.status === 'verified' ||
-                            false;
-        
         if (process.env.NODE_ENV === 'development') {
-          console.log('✅ Fetched from Clerk API:', { email: finalEmail, name: finalName, emailVerified: finalEmailVerified });
+          console.log('✅ Fetched from Clerk API:', { email: finalEmail, name: finalName });
         }
       } catch (apiError) {
         console.error('❌ Failed to fetch user from Clerk API:', apiError.message);
@@ -123,13 +162,13 @@ export const authenticate = async (req, res, next) => {
     
     if (!user) {
       // Create new user document if it doesn't exist (idempotent operation)
+      // Clerk handles authentication, removed old auth fields (isEmailVerified, password, etc.)
       // Email and name are required fields, so we've validated them above
       user = await User.create({
-        clerkId: clerkAuth.userId,
+        clerkId: clerkAuth.userId, // req.auth.userId from Clerk middleware
         name: finalSanitizedName,
         email: finalEmail.toLowerCase().trim(), // Ensure lowercase and trimmed
         isActive: true,
-        isEmailVerified: !!finalEmailVerified,
         role: 'user', // Default role for new Clerk users
       });
       
@@ -138,14 +177,13 @@ export const authenticate = async (req, res, next) => {
       }
     } else {
       // Update user if email/name changed in Clerk (sync metadata)
+      // Clerk handles authentication, removed old auth fields (isEmailVerified, password, etc.)
       const needsUpdate = user.email !== finalEmail.toLowerCase().trim() || 
-                         user.name !== finalSanitizedName ||
-                         user.isEmailVerified !== !!finalEmailVerified;
+                         user.name !== finalSanitizedName;
       
       if (needsUpdate) {
         user.email = finalEmail.toLowerCase().trim();
         user.name = finalSanitizedName;
-        user.isEmailVerified = !!finalEmailVerified;
         await user.save();
         
         if (process.env.NODE_ENV === 'development') {
@@ -205,7 +243,15 @@ export const authorize = (...roles) => {
   };
 };
 
-// Admin only middleware
+/**
+ * @deprecated Use requireAdminClerk middleware instead.
+ * 
+ * This middleware checked DB role and env email/password, which is outdated.
+ * Admin access is now handled by Clerk's publicMetadata.role via requireAdminClerk middleware.
+ * 
+ * Kept for backward compatibility but should not be used for new routes.
+ * All admin routes should use requireAdminClerk middleware at router level.
+ */
 export const adminOnly = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({
@@ -250,37 +296,110 @@ export const vendorOrAdmin = (req, res, next) => {
 /**
  * Optional authentication - doesn't fail if user is not signed in.
  * Uses Clerk cookie sessions (not JWT tokens).
+ * Clerk handles authentication - removed old auth fields.
+ * 
+ * This middleware is used for routes that should work even if user isn't authenticated yet,
+ * but will attach user info if a valid Clerk session exists.
  */
 export const optionalAuth = async (req, res, next) => {
   try {
-    const clerkAuth = getAuth(req);
+    // Try getAuth(req) first, then fallback to req.auth
+    let clerkAuth = getAuth(req);
+    
+    // Fallback: Check if req.auth exists
+    if (!clerkAuth?.userId && req.auth?.userId) {
+      clerkAuth = req.auth;
+      if (process.env.NODE_ENV === 'development') {
+        console.log('⚠️ optionalAuth: Using req.auth fallback');
+      }
+    }
+    
+    // Debug logging in development to help diagnose session issues
+    if (process.env.NODE_ENV === 'development') {
+      if (!clerkAuth?.userId) {
+        console.log('🔍 optionalAuth: No Clerk session found');
+        console.log('   getAuth(req):', getAuth(req));
+        console.log('   req.auth:', req.auth);
+        console.log('   Request cookies:', Object.keys(req.cookies || {}));
+        console.log('   Request headers:', {
+          cookie: req.headers.cookie ? 'present' : 'missing',
+          origin: req.headers.origin,
+          referer: req.headers.referer
+        });
+      }
+    }
     
     if (clerkAuth?.userId) {
-      const email = clerkAuth?.claims?.email || null;
-      const name = clerkAuth?.claims?.name || email?.split('@')[0] || 'User';
-      const emailVerified = clerkAuth?.claims?.email_verified || false;
+      // Extract email and name from Clerk claims
+      const email = clerkAuth?.claims?.email || 
+                    clerkAuth?.claims?.primary_email_address ||
+                    clerkAuth?.claims?.emailAddress ||
+                    null;
+      
+      let name = null;
+      if (clerkAuth?.claims?.name) {
+        name = clerkAuth.claims.name;
+      } else if (clerkAuth?.claims?.firstName && clerkAuth?.claims?.lastName) {
+        name = `${clerkAuth.claims.firstName} ${clerkAuth.claims.lastName}`;
+      } else if (clerkAuth?.claims?.firstName) {
+        name = clerkAuth.claims.firstName;
+      } else if (email) {
+        name = email.split('@')[0];
+      }
+      const sanitizedName = (name || 'User').trim();
 
       let user = await User.findOne({ clerkId: clerkAuth.userId });
       
-      if (!user) {
+      if (!user && email) {
+        // Clerk handles authentication, removed old auth fields (isEmailVerified, password, etc.)
+        // Check if this should be an admin user
+        let publicMetadata = clerkAuth?.claims?.publicMetadata || null;
+        if (!publicMetadata) {
+          try {
+            const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+            publicMetadata = clerkUser.publicMetadata || null;
+          } catch (e) {
+            // Non-blocking
+          }
+        }
+        
+        const adminEmail = process.env.ADMIN_EMAIL || 'admin100@gmail.com';
+        const adminEmailsEnv = process.env.ADMIN_EMAILS;
+        const adminEmails = adminEmailsEnv ? adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()) : [];
+        const normalizedEmail = email.toLowerCase().trim();
+        
+        const isAdmin = publicMetadata?.role === 'admin' || 
+                        normalizedEmail === adminEmail.toLowerCase() ||
+                        adminEmails.includes(normalizedEmail);
+        
         user = await User.create({
           clerkId: clerkAuth.userId,
-          name,
-          email,
+          name: sanitizedName,
+          email: email.toLowerCase().trim(),
           isActive: true,
-          isEmailVerified: !!emailVerified,
-          role: 'user',
+          role: isAdmin ? 'admin' : 'user',
         });
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ optionalAuth: Created new user:', { userId: user._id, email: user.email, role: user.role });
+        }
       }
 
       if (user && user.isActive) {
         req.user = user;
         req.userId = user._id;
         req.userRole = user.role;
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ optionalAuth: User attached to request:', { userId: user._id, email: user.email, role: user.role });
+        }
       }
     }
   } catch (error) {
-    // Ignore errors for optional auth
+    // Ignore errors for optional auth - log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('⚠️ optionalAuth error (non-blocking):', error.message);
+    }
   }
   
   next();

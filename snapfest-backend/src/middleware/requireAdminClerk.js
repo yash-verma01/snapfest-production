@@ -1,0 +1,215 @@
+import { getAuth } from '@clerk/express';
+import { clerkClient } from '@clerk/clerk-sdk-node';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+/**
+ * Admin access middleware using Clerk publicMetadata.role
+ * 
+ * Grants admin access if:
+ * 1. User has Clerk session with publicMetadata.role === 'admin', OR
+ * 2. User email is in ADMIN_EMAILS env (fallback - optional)
+ * 
+ * This middleware relies on Clerk's publicMetadata which is set in Clerk Dashboard.
+ * To make a user admin: Clerk Dashboard → Users → [User] → Public metadata → { "role": "admin" }
+ * 
+ * NOTE: publicMetadata is readable client-side. Only use for role flags, not secrets.
+ * 
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
+export const requireAdminClerk = async (req, res, next) => {
+  try {
+    // 1. Check Clerk session exists
+    // Try getAuth(req) first, then fallback to req.auth() as function
+    let clerkAuth = getAuth(req);
+    
+    // Fallback: If getAuth returns unauthenticated, try calling req.auth as function
+    if (!clerkAuth?.userId && req.auth && typeof req.auth === 'function') {
+      try {
+        const authFromFunc = req.auth();
+        if (authFromFunc?.userId) {
+          clerkAuth = authFromFunc;
+          if (process.env.NODE_ENV === 'development') {
+            console.log('⚠️ requireAdminClerk: Using req.auth() fallback');
+          }
+        }
+      } catch (e) {
+        // Ignore errors
+      }
+    }
+    
+    // Also check if req.auth has properties directly (Proxy behavior)
+    if (!clerkAuth?.userId && req.auth && req.auth.userId) {
+      clerkAuth = req.auth;
+      if (process.env.NODE_ENV === 'development') {
+        console.log('⚠️ requireAdminClerk: Using req.auth properties directly');
+      }
+    }
+    
+    // Debug logging in development
+    if (process.env.NODE_ENV === 'development') {
+      if (!clerkAuth?.userId) {
+        console.log('🔍 requireAdminClerk: No Clerk session found');
+        console.log('   getAuth(req).isAuthenticated:', getAuth(req).isAuthenticated);
+        console.log('   getAuth(req).userId:', getAuth(req).userId);
+        if (typeof req.auth === 'function') {
+          try {
+            console.log('   req.auth() result:', req.auth());
+          } catch (e) {
+            console.log('   req.auth() error:', e.message);
+          }
+        }
+      }
+    }
+    
+    if (!clerkAuth?.userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required',
+        message: 'Please sign in to access admin routes.'
+      });
+    }
+
+    const userId = clerkAuth.userId;
+
+    // 2. Extract email from session (for fallback check)
+    // Note: claims might be in sessionClaims, not directly in clerkAuth
+    const sessionClaims = clerkAuth?.sessionClaims || clerkAuth?.claims || {};
+    const email = sessionClaims?.email || 
+                  sessionClaims?.primary_email_address ||
+                  sessionClaims?.emailAddress ||
+                  null;
+
+    // 3. Try to get publicMetadata from session claims first (preferred - no API call)
+    // Session claims may include publicMetadata if Clerk middleware includes it
+    let publicMetadata = sessionClaims?.publicMetadata || clerkAuth?.claims?.publicMetadata || null;
+    
+    // If not in claims, fetch from Clerk API (fallback)
+    if (!publicMetadata) {
+      try {
+        // Only fetch if CLERK_SECRET_KEY is available (should be, but check for safety)
+        if (!process.env.CLERK_SECRET_KEY) {
+          console.warn('⚠️ CLERK_SECRET_KEY not found - cannot fetch publicMetadata from API');
+        } else {
+          const clerkUser = await clerkClient.users.getUser(userId);
+          publicMetadata = clerkUser.publicMetadata || null;
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('📋 Fetched publicMetadata from Clerk API for userId:', userId);
+          }
+        }
+      } catch (apiError) {
+        console.warn('⚠️ Failed to fetch user from Clerk API:', apiError.message);
+        // Continue to fallback check below - don't block if API fails
+      }
+    }
+
+    // 4. Primary check: publicMetadata.role === 'admin'
+    const isAdminFromMetadata = publicMetadata?.role === 'admin';
+    
+    if (isAdminFromMetadata) {
+      // Grant access - set req.admin for audit/logging purposes
+      req.admin = {
+        email: email || 'unknown',
+        userId: userId,
+        method: 'clerk'
+      };
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Admin access granted via publicMetadata.role for userId:', userId);
+      }
+      
+      // Optional: Update admin audit log (non-blocking)
+      await updateAdminAuditLog(userId, email);
+      
+      return next();
+    }
+
+    // 5. Fallback check: ADMIN_EMAILS env var (optional)
+    const adminEmailsEnv = process.env.ADMIN_EMAILS;
+    if (adminEmailsEnv && email) {
+      const adminEmails = adminEmailsEnv
+        .split(',')
+        .map(e => e.trim().toLowerCase())
+        .filter(e => e.length > 0);
+      
+      const normalizedEmail = email.toLowerCase().trim();
+      
+      if (adminEmails.includes(normalizedEmail)) {
+        // Grant access via email fallback
+        req.admin = {
+          email: email,
+          userId: userId,
+          method: 'clerk-email-fallback'
+        };
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Admin access granted via ADMIN_EMAILS fallback for:', email);
+        }
+        
+        // Optional: Update admin audit log (non-blocking)
+        await updateAdminAuditLog(userId, email);
+        
+        return next();
+      }
+    }
+
+    // 6. Access denied - authenticated but not admin
+    if (process.env.NODE_ENV === 'development') {
+      console.log('❌ Admin access denied for userId:', userId, 'email:', email);
+      console.log('   publicMetadata:', publicMetadata);
+    }
+    
+    return res.status(403).json({
+      success: false,
+      error: 'Admin access required',
+      message: 'You do not have permission to access this resource. Admin role required.'
+    });
+
+  } catch (error) {
+    console.error('❌ Error in requireAdminClerk middleware:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: 'Failed to verify admin access.'
+    });
+  }
+};
+
+/**
+ * Optional: Update admin audit log (non-blocking)
+ * Creates or updates an Admin document in MongoDB for audit purposes.
+ * Does NOT store passwords - only audit fields.
+ * 
+ * @param {string} userId - Clerk user ID
+ * @param {string} email - User email address
+ */
+async function updateAdminAuditLog(userId, email) {
+  try {
+    // Dynamic import to avoid circular dependencies and keep it optional
+    const { Admin } = await import('../models/index.js');
+    
+    await Admin.findOneAndUpdate(
+      { clerkId: userId },
+      { 
+        $set: { 
+          email: email || 'unknown',
+          lastLogin: new Date() 
+        },
+        $setOnInsert: {
+          role: 'admin'
+        }
+      },
+      { upsert: true, setDefaultsOnInsert: true }
+    );
+  } catch (auditError) {
+    // Non-blocking - don't fail request if audit write fails
+    // This ensures DB outages don't block admin operations
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('⚠️ Failed to update admin audit log (non-blocking):', auditError.message);
+    }
+  }
+}

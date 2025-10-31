@@ -27,7 +27,7 @@ import {
   verifyEmail
   , syncClerkUser
 } from '../controllers/userController.js';
-import { authenticate, authRateLimit } from '../middleware/auth.js';
+import { authenticate, optionalAuth, authRateLimit } from '../middleware/auth.js';
 import {
   validateUserRegistration,
   validateUserLogin,
@@ -49,11 +49,13 @@ router.post('/forgot-password', authRateLimit, validateForgotPassword, forgotPas
 router.post('/reset-password', authRateLimit, validateResetPassword, resetPassword);
 router.post('/verify-email', verifyEmail);
 
+// Clerk sync route - needs to be BEFORE authenticate middleware
+// This route handles the initial user sync when Clerk session might not be fully established
+// It uses optionalAuth which doesn't fail if session isn't available yet
+router.post('/sync', optionalAuth, syncClerkUser);
+
 // Protected routes (require authentication)
 router.use(authenticate);
-
-// Clerk sync (create user if needed via middleware, then return profile)
-router.post('/sync', syncClerkUser);
 
 // The next line ensures the module import tree is updated to include syncClerkUser
 // Profile management

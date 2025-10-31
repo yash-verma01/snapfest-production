@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import connectDB from './src/config/database.js';
 import userRoutes from './src/routes/userRoutes.js';
@@ -19,6 +20,7 @@ import { errorHandler, notFound } from './src/middleware/errorHandler.js';
 import requestLogger, { enhancedRequestLogger, errorLogger } from './src/middleware/requestLogger.js';
 import { logInfo, logError } from './src/config/logger.js';
 import { clerkMiddleware } from '@clerk/express';
+import { requireAdminClerk } from './src/middleware/requireAdminClerk.js';
 
 dotenv.config();
 
@@ -69,13 +71,13 @@ app.use(rateLimit({
   }
 }));
 
-// CORS configuration
+// CORS configuration - Explicitly allow credentials for cross-origin requests
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    // Allow all localhost ports for development
+    // Allow all localhost ports for development (critical for cookie transmission)
     if (origin.startsWith('http://localhost:')) {
       return callback(null, true);
     }
@@ -96,18 +98,54 @@ app.use(cors({
     }
     
     // Log the origin for debugging
-    console.log('CORS: Blocked origin:', origin);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('⚠️ CORS: Blocked origin:', origin);
+    }
     callback(new Error('Not allowed by CORS'));
   },
-  credentials: true,
+  credentials: true, // CRITICAL: Must be true for cookies to be sent cross-origin
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Clerk-Authorization']
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Clerk-Authorization',
+    'Cookie',
+    'Set-Cookie'
+  ],
+  exposedHeaders: ['Set-Cookie'], // Allow frontend to see Set-Cookie headers
+  maxAge: 86400 // Cache preflight requests for 24 hours
 }));
+
+// Cookie parser - needed to parse Clerk session cookies
+app.use(cookieParser());
+
+// DEBUG: Cookie debugging middleware (remove after fixing)
+if (process.env.NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api/')) {
+      console.log('🍪 Cookie Debug:', {
+        path: req.path,
+        cookies: Object.keys(req.cookies || {}),
+        hasSession: !!req.cookies.__session,
+        hasSessionInstance: !!req.cookies.__session_R_SCx821,
+        cookieHeader: req.headers.cookie ? 'present' : 'missing',
+        origin: req.headers.origin,
+      });
+    }
+    next();
+  });
+}
 
 // Clerk middleware - parses session from HTTP-only cookies automatically
 // This replaces the JWT token flow: authentication now comes from secure session cookies
 // Frontend no longer needs to call getToken() or send Authorization headers
-app.use(clerkMiddleware());
+// The middleware automatically uses CLERK_SECRET_KEY from env
+app.use(clerkMiddleware({
+  // Explicitly configure Clerk middleware
+  publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
+  secretKey: process.env.CLERK_SECRET_KEY,
+}));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -125,7 +163,7 @@ app.use('/api/auth', authRoutes);            // Authentication routes (register,
 app.use('/api/users', userRoutes);           // User-specific routes
 app.use('/api/vendors', vendorRoutes);       // Vendor-specific routes  
 app.use('/api/admin/auth', adminAuthRoutes); // Admin authentication routes (no auth required)
-app.use('/api/admin', adminRoutes);          // Admin-specific routes
+app.use('/api/admin', requireAdminClerk, adminRoutes); // Admin routes protected by Clerk publicMetadata.role
 app.use('/api', publicRoutes);               // Public routes (packages, events, search)
 app.use('/api/cart', cartRoutes);            // User cart management
 app.use('/api/payments', paymentRoutes);     // User payment management
@@ -140,6 +178,59 @@ app.get(['/api/health', '/'], (req, res) => {
     message: 'SnapFest Backend Server is running!',
     timestamp: new Date().toISOString()
   });
+});
+
+// Test route to verify Clerk session parsing
+app.get('/api/test/clerk', async (req, res) => {
+  try {
+    const { getAuth } = await import('@clerk/express');
+    const { clerkClient } = await import('@clerk/clerk-sdk-node');
+    
+    const clerkAuth = getAuth(req);
+    const hasSession = clerkAuth?.userId ? true : false;
+    
+    let userData = null;
+    if (clerkAuth?.userId) {
+      try {
+        const user = await clerkClient.users.getUser(clerkAuth.userId);
+        userData = {
+          userId: user.id,
+          email: user.emailAddresses?.[0]?.emailAddress || null,
+          publicMetadata: user.publicMetadata || null,
+          role: user.publicMetadata?.role || null,
+        };
+      } catch (apiError) {
+        console.error('❌ Failed to fetch user from Clerk API:', apiError.message);
+      }
+    }
+    
+    res.json({
+      success: true,
+      hasSession,
+      auth: {
+        isAuthenticated: clerkAuth?.isAuthenticated || false,
+        userId: clerkAuth?.userId || null,
+        sessionId: clerkAuth?.sessionId || null,
+        sessionClaims: clerkAuth?.sessionClaims ? Object.keys(clerkAuth.sessionClaims) : null,
+      },
+      cookies: {
+        all: Object.keys(req.cookies || {}),
+        hasSession: !!req.cookies.__session,
+        sessionValue: req.cookies.__session ? req.cookies.__session.substring(0, 50) + '...' : null,
+      },
+      user: userData,
+      headers: {
+        cookie: req.headers.cookie ? 'present' : 'missing',
+        origin: req.headers.origin,
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
 });
 
 // 404 handler

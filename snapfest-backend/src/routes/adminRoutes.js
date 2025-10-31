@@ -1,7 +1,4 @@
 import express from 'express';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { User } from '../models/index.js';
 import {
   // User Management
   getAllUsers,
@@ -109,85 +106,32 @@ import {
   getEventStats,
   searchEventsAdmin
 } from '../controllers/eventControllerAdmin.js';
-import { authenticate, adminOnly } from '../middleware/auth.js';
 import { validatePagination, validateSearch, validateBeatBloom, validateBeatBloomUpdate, validateVenue, validateVenueUpdate } from '../middleware/validation.js';
 
 const router = express.Router();
 
+// NOTE: All routes in this router are protected by requireAdminClerk middleware
+// which is applied at the router level in server.js
+// The middleware checks Clerk's publicMetadata.role === 'admin' or ADMIN_EMAILS fallback
+// Old authenticate + adminOnly middleware removed - protection handled at router level
+
 // Test route to check if admin routes are working
 router.get('/test', (req, res) => {
-  res.json({ message: 'Admin routes are working!' });
+  res.json({ 
+    message: 'Admin routes are working!',
+    admin: req.admin || 'Not set',
+    note: 'This route is protected by requireAdminClerk middleware'
+  });
 });
 
-// Admin login route (no auth required)
-router.post('/login', async (req, res) => {
-  try {
-    console.log('Admin login attempt:', req.body);
-    const { email, password } = req.body;
-    
-    // Find admin user
-    const admin = await User.findOne({ email, role: 'admin' });
-    if (!admin) {
-      console.log('Admin not found:', email);
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials'
-      });
-    }
-    
-    // Check password
-    const isPasswordValid = await bcrypt.compare(password, admin.password);
-    if (!isPasswordValid) {
-      console.log('Invalid password for admin:', email);
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials'
-      });
-    }
-    
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: admin._id, role: admin.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-    
-    // Update last login
-    admin.lastLogin = new Date();
-    await admin.save();
-    
-    console.log('Admin login successful:', admin.email);
-    res.status(200).json({
-      success: true,
-      message: 'Admin login successful',
-      data: {
-        user: {
-          id: admin._id,
-          name: admin.name,
-          email: admin.email,
-          role: admin.role,
-          isActive: admin.isActive
-        },
-        token
-      }
-    });
-  } catch (error) {
-    console.error('Admin login error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
-  }
-});
-
-// All other admin routes require authentication and admin role
-// Note: Authentication middleware is applied to individual routes below
+// NOTE: Admin login route moved to /api/admin/auth/login (see adminAuthRoutes.js)
+// All routes below are protected by requireAdminClerk middleware (applied at router level)
+// No need for authenticate/adminOnly on individual routes
 
 // ==================== DASHBOARD & ANALYTICS ====================
-router.get('/dashboard', authenticate, adminOnly, getDashboard);
-router.get('/analytics', authenticate, adminOnly, getAnalytics);
-router.get('/stats', authenticate, adminOnly, getSystemStats);
+router.get('/dashboard', getDashboard);
+router.get('/analytics', getAnalytics);
+router.get('/stats', getSystemStats);
 router.get('/audit-logs', validatePagination, getAuditLogs);
 
 // ==================== USER MANAGEMENT ====================
@@ -225,14 +169,14 @@ router.post('/bookings/simple-test', (req, res) => {
   res.json({ success: true, message: 'Simple test working' });
 });
 
-router.get('/bookings', authenticate, adminOnly, validatePagination, getAllBookings);
-router.get('/bookings/stats', authenticate, adminOnly, getBookingStats);
-router.get('/bookings/:id', authenticate, adminOnly, getBookingById);
-router.put('/bookings/:id/status', authenticate, adminOnly, updateBookingStatus);
-router.put('/bookings/:id/cancel', authenticate, adminOnly, cancelBooking);
-router.post('/bookings/:id/assign-vendor', authenticate, adminOnly, assignVendorToBooking);
+router.get('/bookings', validatePagination, getAllBookings);
+router.get('/bookings/stats', getBookingStats);
+router.get('/bookings/:id', getBookingById);
+router.put('/bookings/:id/status', updateBookingStatus);
+router.put('/bookings/:id/cancel', cancelBooking);
+router.post('/bookings/:id/assign-vendor', assignVendorToBooking);
 // Test route to verify routing is working
-router.post('/bookings/test-assign', authenticate, adminOnly, (req, res) => {
+router.post('/bookings/test-assign', (req, res) => {
   try {
     console.log('🧪 Test route hit!');
     console.log('🧪 Request URL:', req.url);
@@ -268,14 +212,14 @@ router.put('/events/:id/toggle-status', toggleEventStatus);
 router.delete('/events/:id', deleteEvent);
 
 // ==================== BEAT & BLOOM MANAGEMENT ====================
-router.get('/beatbloom', authenticate, adminOnly, validatePagination, getAllBeatBloomsAdmin);
-router.get('/beatbloom/stats', authenticate, adminOnly, getBeatBloomStats);
-router.get('/beatbloom/search', authenticate, adminOnly, validateSearch, searchBeatBlooms);
-router.get('/beatbloom/:id', authenticate, adminOnly, getBeatBloomByIdAdmin);
-router.post('/beatbloom', authenticate, adminOnly, validateBeatBloom, createBeatBloom);
-router.put('/beatbloom/:id', authenticate, adminOnly, validateBeatBloomUpdate, updateBeatBloom);
-router.put('/beatbloom/:id/toggle-status', authenticate, adminOnly, toggleBeatBloomStatus);
-router.delete('/beatbloom/:id', authenticate, adminOnly, deleteBeatBloom);
+router.get('/beatbloom', validatePagination, getAllBeatBloomsAdmin);
+router.get('/beatbloom/stats', getBeatBloomStats);
+router.get('/beatbloom/search', validateSearch, searchBeatBlooms);
+router.get('/beatbloom/:id', getBeatBloomByIdAdmin);
+router.post('/beatbloom', validateBeatBloom, createBeatBloom);
+router.put('/beatbloom/:id', validateBeatBloomUpdate, updateBeatBloom);
+router.put('/beatbloom/:id/toggle-status', toggleBeatBloomStatus);
+router.delete('/beatbloom/:id', deleteBeatBloom);
 
 // ==================== VENUE MANAGEMENT ====================
 router.get('/venues', validatePagination, getAllVenuesAdmin);
@@ -305,8 +249,8 @@ router.post('/email/custom', sendCustomEmail);
 router.post('/email/bulk', sendBulkEmail);
 
 // ==================== ADMIN PROFILE MANAGEMENT ====================
-router.get('/profile', authenticate, adminOnly, getAdminProfile);
-router.put('/profile', authenticate, adminOnly, updateAdminProfile);
+router.get('/profile', getAdminProfile);
+router.put('/profile', updateAdminProfile);
 
 export default router;
 

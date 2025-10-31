@@ -21,7 +21,7 @@ import {
   Star,
   Mail
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useUser, useClerk } from '@clerk/clerk-react';
 import { adminAPI } from '../services/api';
 import { dummyAdmin } from '../data';
 import { Card, Button, Badge } from '../components/ui';
@@ -36,7 +36,15 @@ import VenueManagement from '../components/admin/VenueManagement';
 import BeatBloomManagement from '../components/admin/BeatBloomManagement';
 
 const AdminDashboard = () => {
-  const { user, logout } = useAuth();
+  // Use Clerk hooks instead of AuthContext (AdminApp uses ClerkProvider)
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  
+  // Create logout function for compatibility
+  const logout = async () => {
+    await signOut();
+    window.location.href = '/sign-in';
+  };
   const [dashboardData, setDashboardData] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [systemStats, setSystemStats] = useState(null);

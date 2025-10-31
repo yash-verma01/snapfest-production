@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, MapPin, Calendar, Shield, Save, Edit3, Camera } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useUser } from '@clerk/clerk-react';
 import { adminAPI } from '../services/api';
 import { Card, Button, Badge } from '../components/ui';
 
 const AdminProfile = () => {
-  const { user } = useAuth();
+  // Use Clerk hook instead of AuthContext (AdminApp uses ClerkProvider)
+  const { user } = useUser();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
