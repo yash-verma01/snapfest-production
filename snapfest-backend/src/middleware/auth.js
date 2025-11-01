@@ -156,11 +156,155 @@ export const authenticate = async (req, res, next) => {
     // Update sanitizedName with final name
     const finalSanitizedName = (finalName || finalEmail.split('@')[0] || 'User').trim();
 
+    // Check if request came from specific ports for role auto-detection
+    const origin = req.headers.origin || req.headers.referer || '';
+    const isUserPort = origin.includes('localhost:3000') || 
+                       origin.includes(':3000');
+    const isVendorPort = origin.includes('localhost:3001') || 
+                         origin.includes(':3001');
+    const isAdminPort = origin.includes('localhost:3002') || 
+                        origin.includes(':3002');
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 authenticate: Origin check', { origin, isUserPort, isVendorPort, isAdminPort });
+    }
 
+    // Check Clerk publicMetadata for role (admin, vendor, or default user)
+    let publicMetadata = sessionClaims?.publicMetadata || clerkAuth?.claims?.publicMetadata || null;
+    if (!publicMetadata) {
+      try {
+        const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+        publicMetadata = clerkUser.publicMetadata || null;
+      } catch (e) {
+        // Non-blocking, will default to 'user'
+      }
+    }
+    
+    // Auto-set role based on port if not already set
+    let role = publicMetadata?.role;
+    if (!role) {
+      if (isVendorPort) {
+        // Vendor port - auto-set vendor role
+        try {
+          await clerkClient.users.updateMetadata(clerkAuth.userId, {
+            publicMetadata: { 
+              ...publicMetadata,
+              role: 'vendor' 
+            }
+          });
+          role = 'vendor';
+          publicMetadata = { ...publicMetadata, role: 'vendor' };
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ authenticate: Auto-set vendor role for user:', clerkAuth.userId);
+          }
+        } catch (e) {
+          console.error('❌ authenticate: Failed to set vendor role:', e.message);
+          role = 'user'; // Fallback to user
+        }
+      } else if (isAdminPort) {
+        // Admin port - don't auto-set (security - must be set manually)
+        role = 'user'; // Default to user
+      } else if (isUserPort) {
+        // User port - auto-set user role
+        try {
+          await clerkClient.users.updateMetadata(clerkAuth.userId, {
+            publicMetadata: { 
+              ...publicMetadata,
+              role: 'user' 
+            }
+          });
+          role = 'user';
+          publicMetadata = { ...publicMetadata, role: 'user' };
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ authenticate: Auto-set user role for user:', clerkAuth.userId);
+          }
+        } catch (e) {
+          console.error('❌ authenticate: Failed to set user role:', e.message);
+          role = 'user'; // Fallback
+        }
+      } else {
+        // Unknown origin - default to user
+        role = 'user';
+      }
+    }
+    
+    // If role is 'vendor', create/update in Vendor collection instead of User
+    if (role === 'vendor') {
+      const { default: Vendor } = await import('../models/Vendor.js');
+      
+      let vendor = await Vendor.findOne({ clerkId: clerkAuth.userId });
+      
+      if (!vendor) {
+        // Create new vendor document in Vendor collection
+        vendor = await Vendor.create({
+          clerkId: clerkAuth.userId,
+          name: finalSanitizedName,
+          email: finalEmail.toLowerCase().trim(),
+          businessName: `${finalSanitizedName}'s Business`,
+          servicesOffered: [],
+          experience: 0,
+          availability: 'AVAILABLE',
+          profileComplete: false,
+          earningsSummary: {
+            totalEarnings: 0,
+            thisMonthEarnings: 0,
+            totalBookings: 0
+          }
+        });
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Created new vendor:', { vendorId: vendor._id, email: vendor.email, clerkId: vendor.clerkId });
+        }
+      } else {
+        // Update vendor if email/name changed
+        const needsUpdate = vendor.email !== finalEmail.toLowerCase().trim() || 
+                           vendor.name !== finalSanitizedName;
+        
+        if (needsUpdate) {
+          vendor.email = finalEmail.toLowerCase().trim();
+          vendor.name = finalSanitizedName;
+          await vendor.save();
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ Updated vendor:', { vendorId: vendor._id, email: vendor.email });
+          }
+        }
+      }
+      
+      // Attach vendor to request object
+      req.vendor = vendor;
+      req.vendorId = vendor._id;
+      req.userRole = 'vendor';
+      
+      // For backward compatibility, also set req.user and req.userId (pointing to vendor)
+      req.user = vendor;
+      req.userId = vendor._id;
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Vendor authenticated:', { vendorId: vendor._id, email: vendor.email });
+      }
+      
+      next();
+      return;
+    }
+    
+    // For admin and user roles, use User collection
     // Find or create user in local database
     let user = await User.findOne({ clerkId: clerkAuth.userId });
     
     if (!user) {
+      // Check if this should be an admin user
+      const adminEmail = process.env.ADMIN_EMAIL || 'admin100@gmail.com';
+      const adminEmailsEnv = process.env.ADMIN_EMAILS;
+      const adminEmails = adminEmailsEnv ? adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()) : [];
+      const normalizedEmail = finalEmail.toLowerCase().trim();
+      
+      const isAdmin = role === 'admin' || 
+                      normalizedEmail === adminEmail.toLowerCase() ||
+                      adminEmails.includes(normalizedEmail);
+      
       // Create new user document if it doesn't exist (idempotent operation)
       // Clerk handles authentication, removed old auth fields (isEmailVerified, password, etc.)
       // Email and name are required fields, so we've validated them above
@@ -169,25 +313,30 @@ export const authenticate = async (req, res, next) => {
         name: finalSanitizedName,
         email: finalEmail.toLowerCase().trim(), // Ensure lowercase and trimmed
         isActive: true,
-        role: 'user', // Default role for new Clerk users
+        role: isAdmin ? 'admin' : 'user',
       });
       
       if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Created new user:', { userId: user._id, email: user.email, clerkId: user.clerkId });
+        console.log('✅ Created new user:', { userId: user._id, email: user.email, role: user.role, clerkId: user.clerkId });
       }
     } else {
       // Update user if email/name changed in Clerk (sync metadata)
-      // Clerk handles authentication, removed old auth fields (isEmailVerified, password, etc.)
+      // Also update role if it changed in Clerk publicMetadata
       const needsUpdate = user.email !== finalEmail.toLowerCase().trim() || 
-                         user.name !== finalSanitizedName;
+                         user.name !== finalSanitizedName ||
+                         (role !== 'vendor' && user.role !== role);
       
       if (needsUpdate) {
         user.email = finalEmail.toLowerCase().trim();
         user.name = finalSanitizedName;
+        if (role !== 'vendor' && role !== user.role) {
+          // Only update role if it's not vendor (vendor uses Vendor collection)
+          user.role = role;
+        }
         await user.save();
         
         if (process.env.NODE_ENV === 'development') {
-          console.log('✅ Updated user:', { userId: user._id, email: user.email });
+          console.log('✅ Updated user:', { userId: user._id, email: user.email, role: user.role });
         }
       }
     }

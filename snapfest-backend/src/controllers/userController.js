@@ -1585,6 +1585,19 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
     });
   }
   
+  // Check if request came from specific ports for role auto-detection
+  const origin = req.headers.origin || req.headers.referer || '';
+  const isUserPort = origin.includes('localhost:3000') || 
+                     origin.includes(':3000');
+  const isVendorPort = origin.includes('localhost:3001') || 
+                       origin.includes(':3001');
+  const isAdminPort = origin.includes('localhost:3002') || 
+                      origin.includes(':3002');
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 syncClerkUser: Origin check', { origin, isUserPort, isVendorPort, isAdminPort });
+  }
+  
   // Find or create user
   let user = await User.findOne({ clerkId: clerkAuth.userId });
   
@@ -1595,7 +1608,7 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
     const adminEmails = adminEmailsEnv ? adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()) : [];
     const normalizedEmail = finalEmail.toLowerCase().trim();
     
-    // Check if user has admin role in Clerk publicMetadata
+    // Check if user has role in Clerk publicMetadata
     let publicMetadata = clerkAuth?.claims?.publicMetadata || null;
     if (!publicMetadata) {
       try {
@@ -1606,9 +1619,58 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
       }
     }
     
+    // Auto-set role based on port if not already set
+    if (!publicMetadata?.role) {
+      if (isVendorPort) {
+        // Vendor port - don't set here, vendor sync endpoint handles it
+        // But we still create user with 'user' role (vendor will be in Vendor collection)
+        try {
+          await clerkClient.users.updateMetadata(clerkAuth.userId, {
+            publicMetadata: { 
+              ...publicMetadata,
+              role: 'vendor' 
+            }
+          });
+          publicMetadata = { ...publicMetadata, role: 'vendor' };
+        } catch (e) {
+          // Non-blocking
+        }
+      } else if (isAdminPort) {
+        // Admin port - don't auto-set (security)
+      } else if (isUserPort) {
+        // User port - auto-set user role
+        try {
+          await clerkClient.users.updateMetadata(clerkAuth.userId, {
+            publicMetadata: { 
+              ...publicMetadata,
+              role: 'user' 
+            }
+          });
+          publicMetadata = { ...publicMetadata, role: 'user' };
+        } catch (e) {
+          // Non-blocking
+        }
+      }
+    }
+    
     const isAdmin = publicMetadata?.role === 'admin' || 
                     normalizedEmail === adminEmail.toLowerCase() ||
                     adminEmails.includes(normalizedEmail);
+    
+    // If vendor role detected, don't create in User collection (vendor collection handles it)
+    if (publicMetadata?.role === 'vendor') {
+      return res.status(200).json({
+        success: true,
+        message: 'User is a vendor. Please use /api/vendors/sync endpoint.',
+        data: {
+          user: {
+            clerkId: clerkAuth.userId,
+            email: finalEmail.toLowerCase().trim(),
+            role: 'vendor'
+          }
+        }
+      });
+    }
     
     user = await User.create({
       clerkId: clerkAuth.userId,

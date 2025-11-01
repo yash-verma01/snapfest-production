@@ -1,12 +1,38 @@
 import mongoose from 'mongoose';
 
 // SIMPLE Vendor Model - Exactly as per requirements
+// Updated to support Clerk authentication - vendors are stored directly in Vendor collection
 const vendorSchema = new mongoose.Schema({
+  clerkId: {
+    type: String,
+    required: true,
+    unique: true,
+    index: true
+  },
+  // Basic user info (stored in Vendor, not User table)
+  name: {
+    type: String,
+    required: true
+  },
+  email: {
+    type: String,
+    required: true,
+    lowercase: true,
+    trim: true,
+    index: true
+  },
+  phone: {
+    type: String
+  },
+  profileImage: {
+    type: String
+  },
+  // Legacy userId for backward compatibility (optional now)
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-    unique: true
+    required: false,
+    unique: false
   },
   businessName: {
     type: String,

@@ -3,6 +3,7 @@ import {
   // Vendor Authentication & Profile
   registerVendor,
   loginVendor,
+  syncClerkVendor,
   getVendorProfile,
   updateVendorProfile,
   changeVendorPassword,
@@ -68,7 +69,7 @@ import {
   completeEvent,
   reportIssues
 } from '../controllers/vendorController.js';
-import { authenticate, vendorOnly } from '../middleware/auth.js';
+import { authenticate, vendorOnly, optionalAuth } from '../middleware/auth.js';
 import { validatePagination } from '../middleware/validation.js';
 
 const router = express.Router();
@@ -76,6 +77,10 @@ const router = express.Router();
 // ==================== PUBLIC ROUTES ====================
 router.post('/register', registerVendor);
 router.post('/login', loginVendor);
+
+// ==================== VENDOR SYNC (Clerk) ====================
+// Vendor sync endpoint - uses optionalAuth to handle session edge cases
+router.post('/sync', optionalAuth, syncClerkVendor);
 
 // ==================== PROTECTED ROUTES ====================
 router.use(authenticate);

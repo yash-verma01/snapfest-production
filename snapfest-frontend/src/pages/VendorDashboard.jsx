@@ -16,7 +16,7 @@ import {
   User,
   UserCheck
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useUser, useClerk } from '@clerk/clerk-react';
 import { vendorAPI } from '../services/api';
 import { dummyVendor, dummyBookings } from '../data';
 import VendorStatsCard from '../components/vendor/VendorStatsCard';
@@ -26,7 +26,14 @@ import AssignedBookings from '../components/vendor/AssignedBookings';
 import { Card, Button, Badge } from '../components/ui';
 
 const VendorDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  
+  // Create logout function for compatibility
+  const logout = async () => {
+    await signOut();
+    window.location.href = '/sign-in';
+  };
   const [dashboardData, setDashboardData] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [pendingOTPs, setPendingOTPs] = useState([]);

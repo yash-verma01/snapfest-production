@@ -197,37 +197,57 @@ export const loginVendor = asyncHandler(async (req, res) => {
 });
 
 export const getVendorProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.userId).select('-password');
-  let vendor = await Vendor.findOne({ userId: req.userId });
-
-  // If vendor profile doesn't exist, create a minimal one
-  if (!vendor) {
-    vendor = await Vendor.create({
-      userId: req.userId,
-      businessName: `${user.name}'s Business`,
-      servicesOffered: [],
-      experience: 0,
-      isAvailable: true,
-      rating: 0,
-      totalBookings: 0,
-      totalEarnings: 0
-    });
+  // Use req.vendor if available (from Clerk auth), otherwise fall back to req.userId lookup
+  let vendor;
+  
+  if (req.vendor) {
+    // Vendor authenticated via Clerk - use req.vendor directly
+    vendor = req.vendor;
+  } else {
+    // Legacy path - find vendor by userId (for backward compatibility)
+    const user = await User.findById(req.userId).select('-password');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Vendor not found'
+      });
+    }
+    
+    vendor = await Vendor.findOne({ userId: req.userId });
+    
+    // If vendor profile doesn't exist, create a minimal one (legacy behavior)
+    if (!vendor) {
+      vendor = await Vendor.create({
+        userId: req.userId,
+        clerkId: user.clerkId || null,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        profileImage: user.profileImage,
+        businessName: `${user.name}'s Business`,
+        servicesOffered: [],
+        experience: 0,
+        availability: 'AVAILABLE',
+        profileComplete: false,
+        earningsSummary: {
+          totalEarnings: 0,
+          thisMonthEarnings: 0,
+          totalBookings: 0
+        }
+      });
+    }
   }
 
   res.status(200).json({
     success: true,
     data: {
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        profileImage: user.profileImage,
-        isActive: user.isActive,
-        lastLogin: user.lastLogin
-      },
       vendor: {
         id: vendor._id,
+        clerkId: vendor.clerkId,
+        name: vendor.name,
+        email: vendor.email,
+        phone: vendor.phone,
+        profileImage: vendor.profileImage,
         businessName: vendor.businessName,
         businessType: vendor.businessType,
         servicesOffered: vendor.servicesOffered,
@@ -238,11 +258,9 @@ export const getVendorProfile = asyncHandler(async (req, res) => {
         pricing: vendor.pricing,
         availability: vendor.availability,
         profileComplete: vendor.profileComplete,
-        isAvailable: vendor.isAvailable,
-        rating: vendor.rating,
-        totalBookings: vendor.totalBookings,
-        totalEarnings: vendor.totalEarnings,
-        createdAt: vendor.createdAt
+        earningsSummary: vendor.earningsSummary,
+        createdAt: vendor.createdAt,
+        updatedAt: vendor.updatedAt
       }
     }
   });
@@ -1694,5 +1712,230 @@ export const getBookingById = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     data: { booking }
+  });
+});
+
+// @desc    Sync Clerk vendor to local DB (idempotent)
+// @route   POST /api/vendors/sync
+// @access  Private (Clerk cookie session) - uses optionalAuth to handle session edge cases
+export const syncClerkVendor = asyncHandler(async (req, res) => {
+  // If req.vendor already exists (from optionalAuth middleware), return it
+  if (req.vendor && req.vendorId) {
+    const vendor = await Vendor.findById(req.vendorId);
+    if (vendor) {
+      return res.status(200).json({
+        success: true,
+        message: 'Vendor synced',
+        data: {
+          vendor: {
+            id: vendor._id,
+            clerkId: vendor.clerkId,
+            name: vendor.name,
+            email: vendor.email,
+            phone: vendor.phone,
+            businessName: vendor.businessName,
+            businessType: vendor.businessType,
+            servicesOffered: vendor.servicesOffered,
+            availability: vendor.availability,
+            profileComplete: vendor.profileComplete,
+            createdAt: vendor.createdAt,
+            updatedAt: vendor.updatedAt,
+          }
+        }
+      });
+    }
+  }
+  
+  // If req.vendor doesn't exist, get Clerk session and create/find vendor
+  const { getAuth } = await import('@clerk/express');
+  const { clerkClient } = await import('@clerk/clerk-sdk-node');
+  
+  // Try getAuth(req) first, then fallback to req.auth
+  let clerkAuth = getAuth(req);
+  
+  // Fallback: Check if req.auth exists
+  if (!clerkAuth?.userId && req.auth?.userId) {
+    clerkAuth = req.auth;
+    if (process.env.NODE_ENV === 'development') {
+      console.log('⚠️ syncClerkVendor: Using req.auth fallback');
+    }
+  }
+  
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    if (!clerkAuth?.userId) {
+      console.log('🔍 syncClerkVendor: No Clerk session found');
+      console.log('   getAuth(req):', getAuth(req));
+      console.log('   req.auth:', req.auth);
+      console.log('   Request cookies:', Object.keys(req.cookies || {}));
+    }
+  }
+  
+  if (!clerkAuth?.userId) {
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Access denied. Please sign in.' 
+    });
+  }
+  
+  // Check if request came from vendor port (3001)
+  const origin = req.headers.origin || req.headers.referer || '';
+  const isVendorPort = origin.includes('localhost:3001') || 
+                       origin.includes(':3001');
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 syncClerkVendor: Origin check', { origin, isVendorPort });
+  }
+  
+  // Get Clerk user metadata
+  let publicMetadata = clerkAuth?.claims?.publicMetadata || null;
+  if (!publicMetadata) {
+    try {
+      const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+      publicMetadata = clerkUser.publicMetadata || null;
+    } catch (e) {
+      // Non-blocking
+    }
+  }
+  
+  // If request came from vendor port (3001) and user doesn't have vendor role,
+  // automatically set vendor role in Clerk
+  if (isVendorPort && publicMetadata?.role !== 'vendor') {
+    try {
+      // Update Clerk user metadata to set vendor role
+      await clerkClient.users.updateMetadata(clerkAuth.userId, {
+        publicMetadata: { 
+          ...publicMetadata,
+          role: 'vendor' 
+        }
+      });
+      
+      // Refresh metadata after update
+      const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
+      publicMetadata = updatedUser.publicMetadata || { role: 'vendor' };
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Automatically set vendor role for user:', clerkAuth.userId);
+      }
+    } catch (updateError) {
+      console.error('❌ Failed to update Clerk metadata:', updateError.message);
+      // Continue anyway - we'll check again below
+    }
+  }
+  
+  // Verify this is a vendor user (after auto-setting role)
+  if (publicMetadata?.role !== 'vendor') {
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Access denied. Vendor role required. Please sign up from the vendor portal (port 3001) or ensure your Clerk account has role: vendor in public metadata.' 
+    });
+  }
+  
+  // Extract email and name from Clerk session
+  let email = clerkAuth?.claims?.email || 
+              clerkAuth?.claims?.primary_email_address ||
+              clerkAuth?.claims?.emailAddress ||
+              null;
+  
+  let name = null;
+  if (clerkAuth?.claims?.name) {
+    name = clerkAuth.claims.name;
+  } else if (clerkAuth?.claims?.firstName && clerkAuth?.claims?.lastName) {
+    name = `${clerkAuth.claims.firstName} ${clerkAuth.claims.lastName}`;
+  } else if (clerkAuth?.claims?.firstName) {
+    name = clerkAuth.claims.firstName;
+  } else if (email) {
+    name = email.split('@')[0];
+  }
+  const sanitizedName = (name || 'Vendor').trim();
+  
+  // If email not in claims, fetch from Clerk API
+  let finalEmail = email;
+  let finalName = sanitizedName;
+  
+  if (!finalEmail) {
+    try {
+      const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+      finalEmail = clerkUser.emailAddresses?.find(email => email.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
+                   clerkUser.emailAddresses?.[0]?.emailAddress ||
+                   clerkUser.emailAddress ||
+                   null;
+      
+      finalName = clerkUser.firstName && clerkUser.lastName 
+        ? `${clerkUser.firstName} ${clerkUser.lastName}`.trim()
+        : clerkUser.firstName || clerkUser.lastName || finalName;
+    } catch (apiError) {
+      console.error('❌ Failed to fetch vendor from Clerk API:', apiError.message);
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Authentication failed: email not found. Please ensure your Clerk account has an email address.' 
+      });
+    }
+  }
+  
+  if (!finalEmail) {
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Authentication failed: email not found.' 
+    });
+  }
+  
+  // Find or create vendor in Vendor collection (not User)
+  let vendor = await Vendor.findOne({ clerkId: clerkAuth.userId });
+  
+  if (!vendor) {
+    // Create new vendor document in Vendor collection
+    vendor = await Vendor.create({
+      clerkId: clerkAuth.userId,
+      name: finalName || finalEmail.split('@')[0],
+      email: finalEmail.toLowerCase().trim(),
+      businessName: `${finalName || finalEmail.split('@')[0]}'s Business`,
+      servicesOffered: [],
+      experience: 0,
+      availability: 'AVAILABLE',
+      profileComplete: false,
+      earningsSummary: {
+        totalEarnings: 0,
+        thisMonthEarnings: 0,
+        totalBookings: 0
+      }
+    });
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ Created new vendor via sync:', { vendorId: vendor._id, email: vendor.email, clerkId: vendor.clerkId });
+    }
+  } else {
+    // Update vendor if email/name changed
+    const needsUpdate = vendor.email !== finalEmail.toLowerCase().trim() || 
+                         vendor.name !== finalName;
+    
+    if (needsUpdate) {
+      vendor.email = finalEmail.toLowerCase().trim();
+      vendor.name = finalName;
+      await vendor.save();
+    }
+  }
+  
+  return res.status(200).json({
+    success: true,
+    message: 'Vendor synced',
+    data: {
+      vendor: {
+        id: vendor._id,
+        clerkId: vendor.clerkId,
+        name: vendor.name,
+        email: vendor.email,
+        phone: vendor.phone,
+        profileImage: vendor.profileImage,
+        businessName: vendor.businessName,
+        businessType: vendor.businessType,
+        servicesOffered: vendor.servicesOffered,
+        availability: vendor.availability,
+        profileComplete: vendor.profileComplete,
+        earningsSummary: vendor.earningsSummary,
+        createdAt: vendor.createdAt,
+        updatedAt: vendor.updatedAt,
+      }
+    }
   });
 });

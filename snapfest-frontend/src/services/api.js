@@ -124,6 +124,9 @@ export const vendorAPI = {
   loginVendor: (credentials) => api.post('/vendors/login', credentials),
   logoutVendor: () => api.post('/vendors/logout'),
   
+  // Clerk sync (idempotent - creates/updates vendor in Vendor collection)
+  sync: () => api.post('/vendors/sync'),
+  
   // Profile management
   getVendorProfile: () => api.get('/vendors/profile'),
   updateVendorProfile: (data) => api.put('/vendors/profile', data),
