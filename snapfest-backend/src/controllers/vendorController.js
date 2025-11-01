@@ -1803,7 +1803,7 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
   if (isVendorPort && publicMetadata?.role !== 'vendor') {
     try {
       // Update Clerk user metadata to set vendor role
-      await clerkClient.users.updateMetadata(clerkAuth.userId, {
+      await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
         publicMetadata: { 
           ...publicMetadata,
           role: 'vendor' 
@@ -1883,6 +1883,18 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
   // Find or create vendor in Vendor collection (not User)
   let vendor = await Vendor.findOne({ clerkId: clerkAuth.userId });
   
+  // Check if a User document exists with the same clerkId (edge case: user signed in as user first)
+  const existingUser = await User.findOne({ clerkId: clerkAuth.userId });
+  if (existingUser && process.env.NODE_ENV === 'development') {
+    console.warn('⚠️ syncClerkVendor: User document exists with same clerkId:', {
+      userId: existingUser._id,
+      email: existingUser.email,
+      role: existingUser.role
+    });
+    console.warn('   This vendor should be in Vendor collection, not User collection.');
+    console.warn('   The User document will not be used - vendor will be created/used from Vendor collection.');
+  }
+  
   if (!vendor) {
     // Create new vendor document in Vendor collection
     vendor = await Vendor.create({
@@ -1913,6 +1925,10 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
       vendor.email = finalEmail.toLowerCase().trim();
       vendor.name = finalName;
       await vendor.save();
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Updated vendor via sync:', { vendorId: vendor._id, email: vendor.email });
+      }
     }
   }
   

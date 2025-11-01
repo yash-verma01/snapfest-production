@@ -19,6 +19,7 @@
     "preview:admin": "vite preview --config vite.admin.config.js"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.53.4",
     "autoprefixer": "^10.4.21",
     "axios": "^1.12.2",
     "framer-motion": "^12.23.22",

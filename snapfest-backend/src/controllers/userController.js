@@ -1619,28 +1619,94 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
       }
     }
     
-    // Auto-set role based on port if not already set
-    if (!publicMetadata?.role) {
-      if (isVendorPort) {
-        // Vendor port - don't set here, vendor sync endpoint handles it
-        // But we still create user with 'user' role (vendor will be in Vendor collection)
+    // CRITICAL: If request came from vendor port (3001), this is DEFINITELY a vendor
+    // Even if /api/users/sync was called by mistake, treat it as vendor
+    if (isVendorPort) {
+      // Set vendor role in Clerk
+      if (publicMetadata?.role !== 'vendor') {
         try {
-          await clerkClient.users.updateMetadata(clerkAuth.userId, {
+          await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
             publicMetadata: { 
               ...publicMetadata,
               role: 'vendor' 
             }
           });
-          publicMetadata = { ...publicMetadata, role: 'vendor' };
+          
+          // Refresh metadata
+          const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
+          publicMetadata = updatedUser.publicMetadata || { role: 'vendor' };
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ syncClerkUser: Auto-set vendor role for port 3001 user:', clerkAuth.userId);
+          }
         } catch (e) {
-          // Non-blocking
+          if (process.env.NODE_ENV === 'development') {
+            console.error('❌ syncClerkUser: Failed to set vendor role:', e.message);
+          }
+          // Set locally even if Clerk update fails
+          publicMetadata = { ...publicMetadata, role: 'vendor' };
         }
-      } else if (isAdminPort) {
+      }
+      
+      // If vendor role is set, redirect to vendor sync or handle vendor directly
+      if (publicMetadata?.role === 'vendor') {
+        // Import Vendor model and create/find vendor
+        const { default: Vendor } = await import('../models/Vendor.js');
+        let vendor = await Vendor.findOne({ clerkId: clerkAuth.userId });
+        
+        if (!vendor) {
+          vendor = await Vendor.create({
+            clerkId: clerkAuth.userId,
+            name: finalName || finalEmail.split('@')[0],
+            email: finalEmail.toLowerCase().trim(),
+            businessName: `${finalName || finalEmail.split('@')[0]}'s Business`,
+            servicesOffered: [],
+            experience: 0,
+            availability: 'AVAILABLE',
+            profileComplete: false,
+            earningsSummary: {
+              totalEarnings: 0,
+              thisMonthEarnings: 0,
+              totalBookings: 0
+            }
+          });
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ syncClerkUser: Created VENDOR (from port 3001) instead of user:', { vendorId: vendor._id, email: vendor.email });
+          }
+        }
+        
+        // Return vendor data, not user data
+        return res.status(200).json({
+          success: true,
+          message: 'Vendor synced (via user sync endpoint from port 3001)',
+          data: {
+            vendor: {
+              id: vendor._id,
+              clerkId: vendor.clerkId,
+              name: vendor.name,
+              email: vendor.email,
+              phone: vendor.phone,
+              businessName: vendor.businessName,
+              availability: vendor.availability,
+              profileComplete: vendor.profileComplete,
+              earningsSummary: vendor.earningsSummary,
+              createdAt: vendor.createdAt,
+              updatedAt: vendor.updatedAt,
+            }
+          }
+        });
+      }
+    }
+    
+    // Auto-set role based on port if not already set (for non-vendor ports)
+    if (!publicMetadata?.role && !isVendorPort) {
+      if (isAdminPort) {
         // Admin port - don't auto-set (security)
       } else if (isUserPort) {
         // User port - auto-set user role
         try {
-          await clerkClient.users.updateMetadata(clerkAuth.userId, {
+          await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
             publicMetadata: { 
               ...publicMetadata,
               role: 'user' 
@@ -1657,8 +1723,8 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
                     normalizedEmail === adminEmail.toLowerCase() ||
                     adminEmails.includes(normalizedEmail);
     
-    // If vendor role detected, don't create in User collection (vendor collection handles it)
-    if (publicMetadata?.role === 'vendor') {
+    // If vendor role detected (from non-vendor port), don't create in User collection
+    if (publicMetadata?.role === 'vendor' && !isVendorPort) {
       return res.status(200).json({
         success: true,
         message: 'User is a vendor. Please use /api/vendors/sync endpoint.',

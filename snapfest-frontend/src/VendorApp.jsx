@@ -33,7 +33,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 // Component to handle root redirect for vendors
 function VendorRootRedirect() {
-  const { user, isLoaded } = useUser(); // Changed from useAuth()
+  const { user, isLoaded } = useUser();
+  const { isSignedIn } = useAuth();
   
   if (!isLoaded) {
     return (
@@ -46,11 +47,17 @@ function VendorRootRedirect() {
     );
   }
   
-  if (user?.publicMetadata?.role === 'vendor') {
-    return <Navigate to="/vendor/dashboard" replace />;
+  // If signed in and on vendor port (3001), redirect to vendor dashboard
+  // Even if role isn't set yet, being on port 3001 means they're a vendor
+  if (isSignedIn) {
+    // Wait a moment for sync to complete and role to be set
+    const role = user?.publicMetadata?.role;
+    if (role === 'vendor' || window.location.port === '3001') {
+      return <Navigate to="/vendor/dashboard" replace />;
+    }
   }
   
-  return <Navigate to="/sign-in" replace />; // Changed from /login
+  return <Navigate to="/sign-in" replace />;
 }
 
 function VendorApp() {

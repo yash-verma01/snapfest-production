@@ -186,7 +186,7 @@ export const authenticate = async (req, res, next) => {
       if (isVendorPort) {
         // Vendor port - auto-set vendor role
         try {
-          await clerkClient.users.updateMetadata(clerkAuth.userId, {
+          await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
             publicMetadata: { 
               ...publicMetadata,
               role: 'vendor' 
@@ -208,7 +208,7 @@ export const authenticate = async (req, res, next) => {
       } else if (isUserPort) {
         // User port - auto-set user role
         try {
-          await clerkClient.users.updateMetadata(clerkAuth.userId, {
+          await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
             publicMetadata: { 
               ...publicMetadata,
               role: 'user' 
@@ -497,50 +497,136 @@ export const optionalAuth = async (req, res, next) => {
       }
       const sanitizedName = (name || 'User').trim();
 
-      let user = await User.findOne({ clerkId: clerkAuth.userId });
+      // CRITICAL: Check if request came from vendor port (3001) FIRST - this determines if user is a vendor
+      const origin = req.headers.origin || req.headers.referer || '';
+      const isVendorPort = origin.includes('localhost:3001') || origin.includes(':3001');
+      const isVendorRoute = req.path.includes('/vendors/');
       
-      if (!user && email) {
-        // Clerk handles authentication, removed old auth fields (isEmailVerified, password, etc.)
-        // Check if this should be an admin user
-        let publicMetadata = clerkAuth?.claims?.publicMetadata || null;
-        if (!publicMetadata) {
-          try {
-            const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
-            publicMetadata = clerkUser.publicMetadata || null;
-          } catch (e) {
-            // Non-blocking
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 optionalAuth: Route check', { 
+          path: req.path, 
+          origin, 
+          isVendorPort, 
+          isVendorRoute 
+        });
+      }
+      
+      let publicMetadata = clerkAuth?.claims?.publicMetadata || null;
+      
+      // Fetch publicMetadata from Clerk if needed
+      if (!publicMetadata) {
+        try {
+          const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+          publicMetadata = clerkUser.publicMetadata || null;
+        } catch (e) {
+          // Non-blocking
+        }
+      }
+      
+      // PRIORITY 1: If request came from vendor port (3001), this is DEFINITELY a vendor
+      // Set vendor role in Clerk if not already set
+      if (isVendorPort && publicMetadata?.role !== 'vendor') {
+        try {
+          await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
+            publicMetadata: { 
+              ...publicMetadata,
+              role: 'vendor' 
+            }
+          });
+          
+          // Refresh metadata after update
+          const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
+          publicMetadata = updatedUser.publicMetadata || { role: 'vendor' };
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ optionalAuth: Auto-set vendor role for port 3001 user:', clerkAuth.userId);
+          }
+        } catch (updateError) {
+          if (process.env.NODE_ENV === 'development') {
+            console.error('❌ optionalAuth: Failed to update Clerk metadata:', updateError.message);
+          }
+          // Set role locally even if Clerk update fails
+          publicMetadata = { ...publicMetadata, role: 'vendor' };
+        }
+      }
+      
+      // If this is a vendor (either from port 3001, vendor route, or has vendor role), handle vendor
+      if (isVendorPort || isVendorRoute || publicMetadata?.role === 'vendor') {
+        const { default: Vendor } = await import('../models/Vendor.js');
+        let vendor = await Vendor.findOne({ clerkId: clerkAuth.userId });
+        
+        if (!vendor && email) {
+          // Create vendor document - NOT a User document
+          vendor = await Vendor.create({
+            clerkId: clerkAuth.userId,
+            name: sanitizedName,
+            email: email.toLowerCase().trim(),
+            businessName: `${sanitizedName}'s Business`,
+            servicesOffered: [],
+            experience: 0,
+            availability: 'AVAILABLE',
+            profileComplete: false,
+            earningsSummary: {
+              totalEarnings: 0,
+              thisMonthEarnings: 0,
+              totalBookings: 0
+            }
+          });
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ optionalAuth: Created new VENDOR (not user):', { vendorId: vendor._id, email: vendor.email });
           }
         }
         
-        const adminEmail = process.env.ADMIN_EMAIL || 'admin100@gmail.com';
-        const adminEmailsEnv = process.env.ADMIN_EMAILS;
-        const adminEmails = adminEmailsEnv ? adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()) : [];
-        const normalizedEmail = email.toLowerCase().trim();
-        
-        const isAdmin = publicMetadata?.role === 'admin' || 
-                        normalizedEmail === adminEmail.toLowerCase() ||
-                        adminEmails.includes(normalizedEmail);
-        
-        user = await User.create({
-          clerkId: clerkAuth.userId,
-          name: sanitizedName,
-          email: email.toLowerCase().trim(),
-          isActive: true,
-          role: isAdmin ? 'admin' : 'user',
-        });
-        
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✅ optionalAuth: Created new user:', { userId: user._id, email: user.email, role: user.role });
+        if (vendor) {
+          req.vendor = vendor;
+          req.vendorId = vendor._id;
+          req.userRole = 'vendor';
+          // For backward compatibility, also set req.user (pointing to vendor)
+          req.user = vendor;
+          req.userId = vendor._id;
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ optionalAuth: VENDOR attached to request (not user):', { vendorId: vendor._id, email: vendor.email });
+          }
         }
-      }
-
-      if (user && user.isActive) {
-        req.user = user;
-        req.userId = user._id;
-        req.userRole = user.role;
+      } else {
+        // Only create User document if NOT a vendor (NOT from port 3001, NOT vendor route, NOT vendor role)
+        let user = await User.findOne({ clerkId: clerkAuth.userId });
         
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✅ optionalAuth: User attached to request:', { userId: user._id, email: user.email, role: user.role });
+        if (!user && email) {
+          // Clerk handles authentication, removed old auth fields (isEmailVerified, password, etc.)
+          // Check if this should be an admin user
+          const adminEmail = process.env.ADMIN_EMAIL || 'admin100@gmail.com';
+          const adminEmailsEnv = process.env.ADMIN_EMAILS;
+          const adminEmails = adminEmailsEnv ? adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()) : [];
+          const normalizedEmail = email.toLowerCase().trim();
+          
+          const isAdmin = publicMetadata?.role === 'admin' || 
+                          normalizedEmail === adminEmail.toLowerCase() ||
+                          adminEmails.includes(normalizedEmail);
+          
+          user = await User.create({
+            clerkId: clerkAuth.userId,
+            name: sanitizedName,
+            email: email.toLowerCase().trim(),
+            isActive: true,
+            role: isAdmin ? 'admin' : 'user',
+          });
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ optionalAuth: Created new USER (not vendor):', { userId: user._id, email: user.email, role: user.role });
+          }
+        }
+
+        if (user && user.isActive) {
+          req.user = user;
+          req.userId = user._id;
+          req.userRole = user.role;
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ optionalAuth: USER attached to request:', { userId: user._id, email: user.email, role: user.role });
+          }
         }
       }
     }
