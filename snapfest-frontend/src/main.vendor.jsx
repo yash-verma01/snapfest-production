@@ -4,7 +4,10 @@ import './index.css'
 import VendorApp from './VendorApp.jsx'
 import { ClerkProvider } from '@clerk/clerk-react';
 
-const CLERK_PK = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_d2VsY29tZWQtZ3JvdXBlci03MC5jbGVyay5hY2NvdW50cy5kZXYk';
+// Vendor portal uses VENDOR-specific key
+const CLERK_PK = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY_VENDOR || 
+                 import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 
+                 'pk_test_d2VsY29tZWQtZ3JvdXBlci03MC5jbGVyay5hY2NvdW50cy5kZXYk';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
