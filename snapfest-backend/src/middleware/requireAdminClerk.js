@@ -1,8 +1,34 @@
 import { getAuth } from '@clerk/express';
-import { clerkClient } from '@clerk/clerk-sdk-node';
-import dotenv from 'dotenv';
+import { createClerkClient } from '@clerk/clerk-sdk-node';
 
-dotenv.config();
+// Note: dotenv.config() is already called in server.js
+// No need to reload environment variables here
+
+// Create clerkClient instances for each portal with correct secret keys
+const getUserClerkClient = () => createClerkClient({ 
+  secretKey: process.env.CLERK_SECRET_KEY_USER 
+});
+
+const getVendorClerkClient = () => createClerkClient({ 
+  secretKey: process.env.CLERK_SECRET_KEY_VENDOR 
+});
+
+const getAdminClerkClient = () => createClerkClient({ 
+  secretKey: process.env.CLERK_SECRET_KEY_ADMIN 
+});
+
+// Helper function to get the correct clerkClient based on origin
+const getClerkClientForOrigin = (origin) => {
+  if (!origin) return getUserClerkClient(); // Default to user
+  
+  if (origin.includes('localhost:3001') || origin.includes(':3001')) {
+    return getVendorClerkClient();
+  } else if (origin.includes('localhost:3002') || origin.includes(':3002')) {
+    return getAdminClerkClient();
+  } else {
+    return getUserClerkClient(); // Default to user for port 3000 or unknown
+  }
+};
 
 /**
  * Admin access middleware using Clerk publicMetadata.role
@@ -90,16 +116,14 @@ export const requireAdminClerk = async (req, res, next) => {
     // If not in claims, fetch from Clerk API (fallback)
     if (!publicMetadata) {
       try {
-        // Only fetch if CLERK_SECRET_KEY is available (should be, but check for safety)
-        if (!process.env.CLERK_SECRET_KEY) {
-          console.warn('⚠️ CLERK_SECRET_KEY not found - cannot fetch publicMetadata from API');
-        } else {
-          const clerkUser = await clerkClient.users.getUser(userId);
-          publicMetadata = clerkUser.publicMetadata || null;
-          
-          if (process.env.NODE_ENV === 'development') {
-            console.log('📋 Fetched publicMetadata from Clerk API for userId:', userId);
-          }
+        // Get the correct clerkClient based on origin
+        const origin = req.headers.origin || req.headers.referer || '';
+        const clerkClient = getClerkClientForOrigin(origin);
+        const clerkUser = await clerkClient.users.getUser(userId);
+        publicMetadata = clerkUser.publicMetadata || null;
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('📋 Fetched publicMetadata from Clerk API for userId:', userId, 'origin:', origin);
         }
       } catch (apiError) {
         console.warn('⚠️ Failed to fetch user from Clerk API:', apiError.message);

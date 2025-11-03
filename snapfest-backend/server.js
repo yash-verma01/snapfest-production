@@ -4,11 +4,14 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import connectDB from './src/config/database.js';
 import userRoutes from './src/routes/userRoutes.js';
 import vendorRoutes from './src/routes/vendorRoutes.js';
 import adminRoutes from './src/routes/adminRoutes.js';
-import adminAuthRoutes, { ensureAdminUserExists } from './src/routes/adminAuthRoutes.js';
+import adminAuthRoutes from './src/routes/adminAuthRoutes.js';
+// Note: ensureAdminUserExists is no longer called - admins created via Clerk
 import authRoutes from './src/routes/authRoutes.js';
 import publicRoutes from './src/routes/publicRoutes.js';
 import cartRoutes from './src/routes/cartRoutes.js';
@@ -22,22 +25,51 @@ import { logInfo, logError } from './src/config/logger.js';
 import { clerkMiddleware } from '@clerk/express';
 import { requireAdminClerk } from './src/middleware/requireAdminClerk.js';
 
-dotenv.config();
+// Get the directory where server.js is located
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-// Validate Clerk environment variables (required for cookie-based authentication)
-if (!process.env.CLERK_PUBLISHABLE_KEY) {
-  console.error('❌ CLERK_PUBLISHABLE_KEY is missing in .env file!');
-  console.error('   Please add: CLERK_PUBLISHABLE_KEY=pk_test_...');
+// Load .env file from the same directory as server.js (snapfest-backend)
+const envResult = dotenv.config({ path: join(__dirname, '.env') });
+
+// Define required keys first (before using them in debug output)
+const requiredKeys = [
+  'CLERK_PUBLISHABLE_KEY_USER',
+  'CLERK_SECRET_KEY_USER',
+  'CLERK_PUBLISHABLE_KEY_VENDOR',
+  'CLERK_SECRET_KEY_VENDOR',
+  'CLERK_PUBLISHABLE_KEY_ADMIN',
+  'CLERK_SECRET_KEY_ADMIN'
+];
+
+// HARDCODE Clerk keys directly (as requested - for development/testing)
+// TODO: Move these to .env file for production
+process.env.CLERK_PUBLISHABLE_KEY_USER = 'pk_test_c3RpcnJpbmctYnJlYW0tNDkuY2xlcmsuYWNjb3VudHMuZGV2JA';
+process.env.CLERK_SECRET_KEY_USER = 'sk_test_8pcerRqj0saXidBCYyG0NDth2cwCvEASypUMdrGZqC';
+process.env.CLERK_PUBLISHABLE_KEY_VENDOR = 'pk_test_c3Ryb25nLWJsdWViaXJkLTc5LmNsZXJrLmFjY291bnRzLmRldiQ';
+process.env.CLERK_SECRET_KEY_VENDOR = 'sk_test_sAefFSVOUmWVzYUUPPCVAx1u4E7cZCBjH31GbZHB9a';
+process.env.CLERK_PUBLISHABLE_KEY_ADMIN = 'pk_test_Z3JhdGVmdWwtZ2xvd3dvcm0tMjUuY2xlcmsuYWNjb3VudHMuZGV2JA';
+process.env.CLERK_SECRET_KEY_ADMIN = 'sk_test_n1CurKKSuqtjqpEPxGG8XRN7Q8rLtDNbxo8c4Tp7r2';
+
+console.log('✅ Clerk keys loaded directly (hardcoded for development)');
+console.log(`   User Portal: ${process.env.CLERK_PUBLISHABLE_KEY_USER.substring(0, 30)}...`);
+console.log(`   Vendor Portal: ${process.env.CLERK_PUBLISHABLE_KEY_VENDOR.substring(0, 30)}...`);
+console.log(`   Admin Portal: ${process.env.CLERK_PUBLISHABLE_KEY_ADMIN.substring(0, 30)}...`);
+
+// Validate that all keys are set (they should be since we hardcoded them)
+const missingKeys = requiredKeys.filter(key => !process.env[key]);
+
+if (missingKeys.length > 0) {
+  console.error('\n❌ Error: Missing Clerk keys even after hardcoding!');
+  missingKeys.forEach(key => {
+    console.error(`   - ${key}`);
+  });
   process.exit(1);
 }
 
-if (!process.env.CLERK_SECRET_KEY) {
-  console.error('❌ CLERK_SECRET_KEY is missing in .env file!');
-  console.error('   Please add: CLERK_SECRET_KEY=sk_test_...');
-  process.exit(1);
-}
-
-console.log('✅ Clerk keys loaded successfully');
+// All keys are present - session isolation enabled
+console.log('✅ All Clerk keys loaded successfully (User, Vendor, Admin - separate applications)');
+console.log('✅ Session isolation enabled - each portal uses its own Clerk application');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -45,8 +77,9 @@ const PORT = process.env.PORT || 5001;
 // Connect Database
 connectDB();
 
-// Ensure admin user exists
-ensureAdminUserExists();
+// Note: Admin users are now created automatically via Clerk authentication
+// Legacy password-based admin creation has been removed
+// ensureAdminUserExists(); // Disabled - admins created via Clerk sign-up/sign-in
 
 // Log server startup
 logInfo('SnapFest Backend Server starting...', {
@@ -120,32 +153,431 @@ app.use(cors({
 // Cookie parser - needed to parse Clerk session cookies
 app.use(cookieParser());
 
-// DEBUG: Cookie debugging middleware (remove after fixing)
+// ============================================================================
+// COOKIE ISOLATION MIDDLEWARE - Fixes Issue #1: Cookie Domain Sharing
+// ============================================================================
+// Since cookies are domain-scoped (not port-scoped), all portals on localhost
+// share the same cookies. This middleware isolates cookies per portal by:
+// 1. Renaming cookies based on origin (__session_user, __session_vendor, __session_admin)
+// 2. Temporarily mapping to __session for Clerk middleware to process
+// 3. Ensuring responses set portal-specific cookie names
+// ============================================================================
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin || req.headers.referer || '';
+  
+  // Determine portal type based on origin
+  let portalType = 'user'; // default
+  let cookiePrefix = '__session_user';
+  
+  if (origin.includes('localhost:3001') || origin.includes(':3001')) {
+    portalType = 'vendor';
+    cookiePrefix = '__session_vendor';
+  } else if (origin.includes('localhost:3002') || origin.includes(':3002')) {
+    portalType = 'admin';
+    cookiePrefix = '__session_admin';
+  } else if (origin.includes('localhost:3000') || origin.includes(':3000')) {
+    portalType = 'user';
+    cookiePrefix = '__session_user';
+  }
+  
+  // Store portal info in request for later use
+  req._portalType = portalType;
+  req._cookiePrefix = cookiePrefix;
+  
+  // Intercept and rename cookies BEFORE Clerk middleware processes them
+  // CRITICAL: Handle cookies in both req.cookies (parsed) and req.headers.cookie (raw string)
+  
+  // Step 1: Filter cookie header string FIRST (before cookieParser creates req.cookies)
+  // CRITICAL: Remove ALL __session cookies that don't match current portal
+  if (req.headers.cookie) {
+    const cookieHeader = req.headers.cookie;
+    
+    // CRITICAL: Remove ALL generic __session cookies (they're from other portals)
+    // We only want to use portal-specific cookies for complete isolation
+    let filteredHeader = cookieHeader;
+    
+    // Step 1: Remove all generic __session cookies (__session= or __session_instanceId= but NOT __session_user/vendor/admin=)
+    // This regex matches __session followed by anything except _user, _vendor, _admin
+    filteredHeader = filteredHeader.replace(/__session(?![_](?:user|vendor|admin))[^=]*=[^;]+(?:;|$)/g, '');
+    
+    // Step 2: Remove cookies from OTHER portals (keep only current portal's cookies)
+    const otherPortals = ['__session_user', '__session_vendor', '__session_admin'].filter(
+      prefix => prefix !== cookiePrefix
+    );
+    otherPortals.forEach(prefix => {
+      // Escape special regex characters and match with any instance ID suffix
+      const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filteredHeader = filteredHeader.replace(
+        new RegExp(`${escapedPrefix}(?:_[^=]+)?=[^;]+(?:;|$)`, 'g'),
+        ''
+      );
+    });
+    
+    // Step 3: Clean up multiple semicolons and leading/trailing semicolons
+    filteredHeader = filteredHeader.replace(/;;+/g, ';').replace(/^;|;$/g, '');
+    
+    // Step 4: If we have a portal-specific cookie, we're good. 
+    // If we DON'T have one, check for generic __session and migrate it ONLY IF this is a new session
+    // But we can't reliably detect if it's from another portal, so we'll be conservative:
+    // Only migrate if there's no portal-specific cookie AND this might be a first-time sign-in
+    // However, to prevent cross-portal login, we should NOT migrate - just ignore generic cookies
+    // This means: users need to sign in fresh on each portal after clearing cookies
+    
+    // Actually, let's migrate ONLY on the first request after sign-in
+    // But this is tricky - we can't tell if a __session is from another portal or this portal
+    // So the safest approach is: NEVER use generic __session, only use portal-specific
+    // If no portal-specific cookie exists, the user is not logged in for this portal
+    
+    // Clean up the header one more time
+    filteredHeader = filteredHeader.replace(/;;+/g, ';').replace(/^;|;$/g, '');
+    
+    // Update the cookie header
+    if (filteredHeader !== cookieHeader) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🔧 Filtered cookies for ${portalType} portal: ${cookieHeader.substring(0, 100)} → ${filteredHeader.substring(0, 100)}`);
+      }
+      req.headers.cookie = filteredHeader;
+    }
+  }
+  
+  // Step 2: Update req.cookies (after cookieParser has parsed the header)
+  if (req.cookies) {
+    // CRITICAL: Remove ALL generic __session cookies (they're from other portals)
+    // Only keep portal-specific cookies
+    const genericSessionKeys = Object.keys(req.cookies).filter(key => 
+      key === '__session' || 
+      (key.startsWith('__session_') && !key.startsWith('__session_user') && !key.startsWith('__session_vendor') && !key.startsWith('__session_admin'))
+    );
+    genericSessionKeys.forEach(key => {
+      delete req.cookies[key];
+    });
+    
+    // Look for portal-specific cookie first
+    let portalCookie = req.cookies[cookiePrefix];
+    
+    // If portal-specific cookie doesn't exist, we shouldn't have any session
+    // (generic __session was already removed above)
+    // This ensures complete isolation - each portal only sees its own cookies
+    
+    // Now map portal-specific cookie to __session for Clerk middleware to process
+    if (portalCookie) {
+      // Map to __session for Clerk middleware (Clerk expects __session)
+      req.cookies.__session = portalCookie;
+    } else {
+      // No portal-specific cookie - remove __session if it somehow still exists
+      delete req.cookies.__session;
+    }
+    
+    // Filter out cookies from other portals to prevent interference
+    const otherPortals = ['__session_user', '__session_vendor', '__session_admin'].filter(
+      prefix => prefix !== cookiePrefix
+    );
+    otherPortals.forEach(prefix => {
+      if (req.cookies[prefix]) {
+        delete req.cookies[prefix];
+      }
+    });
+    
+    // Ensure __session only exists if we have a portal-specific cookie
+    if (!portalCookie && req.cookies.__session) {
+      delete req.cookies.__session;
+    }
+  }
+  
+  // Intercept Set-Cookie headers in responses to rename cookies back to portal-specific names
+  // CRITICAL: This MUST catch all cookies Clerk sets, otherwise they'll be shared across portals
+  const originalSetHeader = res.setHeader.bind(res);
+  res.setHeader = function(name, value) {
+    if (name.toLowerCase() === 'set-cookie') {
+      // Convert to array if single value
+      const cookies = Array.isArray(value) ? value : [value];
+      
+      // Rename __session cookie to portal-specific name in responses
+      let needsRenaming = false;
+      const renamedCookies = cookies.map(cookie => {
+        if (typeof cookie !== 'string') return cookie;
+        
+        // Handle __session=value (base session cookie) - CRITICAL: Must rename
+        if (cookie.startsWith('__session=') && !cookie.startsWith(cookiePrefix)) {
+          needsRenaming = true;
+          const renamed = cookie.replace(/^__session=/, `${cookiePrefix}=`);
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`🔄 [${portalType}] Renaming cookie in response: __session → ${cookiePrefix} (via setHeader)`);
+          }
+          return renamed;
+        }
+        
+        // Handle __session_instanceId=value (Clerk instance-specific cookies)
+        if (cookie.startsWith('__session_') && !cookie.startsWith(cookiePrefix)) {
+          // Check if it's NOT already a portal-specific cookie
+          if (!cookie.match(/^__session_(user|vendor|admin)(?:_[^=]+)?=/)) {
+            needsRenaming = true;
+            // Extract instance ID if present (e.g., __session_abc123=value)
+            const match = cookie.match(/^__session(_[^=]+)?=(.+)$/);
+            if (match) {
+              const instanceId = match[1] || ''; // e.g., "_abc123" or ""
+              const rest = match[2]; // The rest of the cookie string (value, attributes, etc.)
+              const renamed = `${cookiePrefix}${instanceId}=${rest}`;
+              if (process.env.NODE_ENV === 'development') {
+                console.log(`🔄 [${portalType}] Renaming cookie in response: __session${instanceId} → ${cookiePrefix}${instanceId} (via setHeader)`);
+              }
+              return renamed;
+            }
+          }
+        }
+        
+        // Handle cookies that contain __session in the middle (shouldn't happen, but safe)
+        if (cookie.includes('__session') && !cookie.includes(cookiePrefix) && 
+            !cookie.match(/__session_(user|vendor|admin)/)) {
+          needsRenaming = true;
+          const renamed = cookie.replace(/__session([^=;]*)/g, `${cookiePrefix}$1`);
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`🔄 [${portalType}] Renaming cookie containing __session → ${cookiePrefix} (via setHeader)`);
+          }
+          return renamed;
+        }
+        
+        return cookie;
+      });
+      
+      if (needsRenaming) {
+        // CRITICAL: Add deletion headers for generic __session cookies
+        // This ensures the browser removes old generic cookies when setting portal-specific ones
+        const cookiesToSet = [...renamedCookies];
+        
+        // Check if we're setting a portal-specific cookie
+        const isSettingPortalCookie = renamedCookies.some(c => 
+          typeof c === 'string' && c.startsWith(cookiePrefix)
+        );
+        
+        if (isSettingPortalCookie) {
+          // Extract attributes from a sample cookie to preserve them
+          const sampleCookie = renamedCookies.find(c => 
+            typeof c === 'string' && c.startsWith(cookiePrefix)
+          );
+          
+          if (sampleCookie) {
+            // Extract path and other attributes from the cookie string
+            const cookieParts = sampleCookie.split(';');
+            let path = '/';
+            let sameSite = 'Lax';
+            let httpOnly = 'HttpOnly';
+            let secure = '';
+            let domain = '';
+            
+            // Parse attributes
+            cookieParts.slice(1).forEach(attr => {
+              const trimmed = attr.trim();
+              if (trimmed.toLowerCase().startsWith('path=')) {
+                path = trimmed.split('=')[1];
+              } else if (trimmed.toLowerCase().startsWith('samesite=')) {
+                sameSite = trimmed.split('=')[1];
+              } else if (trimmed.toLowerCase() === 'httponly') {
+                httpOnly = 'HttpOnly';
+              } else if (trimmed.toLowerCase() === 'secure') {
+                secure = 'Secure';
+              } else if (trimmed.toLowerCase().startsWith('domain=')) {
+                domain = trimmed;
+              }
+            });
+            
+            // Build attribute string
+            const attributes = `${httpOnly}; SameSite=${sameSite}; Path=${path}${secure ? '; ' + secure : ''}${domain ? '; ' + domain : ''}`;
+            
+            // Delete generic __session cookie (base cookie without instance ID)
+            cookiesToSet.push(`__session=; Max-Age=0; ${attributes}`);
+            
+            // Also delete any __session_* cookies that aren't portal-specific
+            // We'll catch common patterns - Clerk may use instance IDs
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`🗑️ [${portalType}] Adding deletion headers for generic __session cookies`);
+            }
+          }
+        }
+        
+        return originalSetHeader('set-cookie', cookiesToSet);
+      }
+      return originalSetHeader('set-cookie', cookies);
+    }
+    return originalSetHeader(name, value);
+  };
+  
+  // Also intercept res.cookie() method to rename cookies
+  const originalCookie = res.cookie.bind(res);
+  res.cookie = function(name, value, options) {
+    // If Clerk is setting a __session cookie, rename it to portal-specific name
+    if (name === '__session' || (name.startsWith('__session_') && !name.startsWith(cookiePrefix))) {
+      const newName = name.replace(/^__session(_.*)?$/, `${cookiePrefix}$1`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🔄 Renaming cookie: ${name} → ${newName} (via res.cookie)`);
+      }
+      return originalCookie(newName, value, options);
+    }
+    return originalCookie(name, value, options);
+  };
+  
+  // Intercept res.end() to catch any cookies set during the response
+  // This is a final safety net to ensure all cookies are renamed
+  const originalEnd = res.end.bind(res);
+  res.end = function(chunk, encoding) {
+    // Get current Set-Cookie headers and rename them
+    const setCookieHeaders = res.getHeader('set-cookie');
+    if (setCookieHeaders) {
+      const cookies = Array.isArray(setCookieHeaders) ? setCookieHeaders : [setCookieHeaders];
+      let needsRenaming = false;
+      const renamedCookies = cookies.map(cookie => {
+        if (typeof cookie !== 'string') return cookie;
+        
+        // Handle __session=value
+        if (cookie.startsWith('__session=') && !cookie.startsWith(cookiePrefix)) {
+          needsRenaming = true;
+          const renamed = cookie.replace(/^__session=/, `${cookiePrefix}=`);
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`🔄 Final rename: __session → ${cookiePrefix} (via res.end)`);
+          }
+          return renamed;
+        }
+        
+        // Handle __session_instanceId=value (but not already renamed)
+        if (cookie.startsWith('__session_') && !cookie.startsWith(cookiePrefix)) {
+          // Check if it's NOT already a portal-specific cookie
+          if (!cookie.match(/^__session_(user|vendor|admin)(?:_[^=]+)?=/)) {
+            const match = cookie.match(/^__session(_[^=]+)?=(.+)$/);
+            if (match) {
+              needsRenaming = true;
+              const instanceId = match[1] || '';
+              const rest = match[2];
+              const renamed = `${cookiePrefix}${instanceId}=${rest}`;
+              if (process.env.NODE_ENV === 'development') {
+                console.log(`🔄 Final rename: __session${instanceId} → ${cookiePrefix}${instanceId} (via res.end)`);
+              }
+              return renamed;
+            }
+          }
+        }
+        
+        return cookie;
+      });
+      
+      if (needsRenaming) {
+        // CRITICAL: Also add deletion headers for generic __session cookies
+        const cookiesToSet = [...renamedCookies];
+        
+        // Check if we're setting a portal-specific cookie
+        const isSettingPortalCookie = renamedCookies.some(c => 
+          typeof c === 'string' && c.startsWith(cookiePrefix)
+        );
+        
+        if (isSettingPortalCookie) {
+          // Extract attributes from a sample cookie
+          const sampleCookie = renamedCookies.find(c => 
+            typeof c === 'string' && c.startsWith(cookiePrefix)
+          );
+          
+          if (sampleCookie) {
+            const cookieParts = sampleCookie.split(';');
+            let path = '/';
+            let sameSite = 'Lax';
+            let httpOnly = 'HttpOnly';
+            let secure = '';
+            let domain = '';
+            
+            // Parse attributes
+            cookieParts.slice(1).forEach(attr => {
+              const trimmed = attr.trim();
+              if (trimmed.toLowerCase().startsWith('path=')) {
+                path = trimmed.split('=')[1];
+              } else if (trimmed.toLowerCase().startsWith('samesite=')) {
+                sameSite = trimmed.split('=')[1];
+              } else if (trimmed.toLowerCase() === 'httponly') {
+                httpOnly = 'HttpOnly';
+              } else if (trimmed.toLowerCase() === 'secure') {
+                secure = 'Secure';
+              } else if (trimmed.toLowerCase().startsWith('domain=')) {
+                domain = trimmed;
+              }
+            });
+            
+            // Build attribute string
+            const attributes = `${httpOnly}; SameSite=${sameSite}; Path=${path}${secure ? '; ' + secure : ''}${domain ? '; ' + domain : ''}`;
+            
+            // Delete generic __session cookie
+            cookiesToSet.push(`__session=; Max-Age=0; ${attributes}`);
+            
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`🗑️ [${portalType}] Adding deletion headers for generic __session cookies in res.end`);
+            }
+          }
+        }
+        
+        res.removeHeader('set-cookie');
+        res.setHeader('set-cookie', cookiesToSet);
+      }
+    }
+    return originalEnd(chunk, encoding);
+  };
+  
+  next();
+});
+
+// DEBUG: Enhanced Cookie debugging middleware
 if (process.env.NODE_ENV === 'development') {
   app.use((req, res, next) => {
     if (req.path.startsWith('/api/')) {
-      console.log('🍪 Cookie Debug:', {
+      console.log('🍪 Cookie Isolation Debug:', {
         path: req.path,
-        cookies: Object.keys(req.cookies || {}),
-        hasSession: !!req.cookies.__session,
-        hasSessionInstance: !!req.cookies.__session_R_SCx821,
-        cookieHeader: req.headers.cookie ? 'present' : 'missing',
         origin: req.headers.origin,
+        portalType: req._portalType,
+        cookiePrefix: req._cookiePrefix,
+        cookies: Object.keys(req.cookies || {}),
+        hasGenericSession: !!req.cookies.__session,
+        hasPortalSession: !!req.cookies[req._cookiePrefix],
+        cookieHeader: req.headers.cookie ? 'present' : 'missing',
       });
     }
     next();
   });
 }
 
-// Clerk middleware - parses session from HTTP-only cookies automatically
-// This replaces the JWT token flow: authentication now comes from secure session cookies
-// Frontend no longer needs to call getToken() or send Authorization headers
-// The middleware automatically uses CLERK_SECRET_KEY from env
-app.use(clerkMiddleware({
-  // Explicitly configure Clerk middleware
-  publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
-  secretKey: process.env.CLERK_SECRET_KEY,
-}));
+// Create separate Clerk middleware instances for each portal
+// This ensures complete session isolation between User, Vendor, and Admin portals
+const userClerkMiddleware = clerkMiddleware({
+  publishableKey: process.env.CLERK_PUBLISHABLE_KEY_USER,
+  secretKey: process.env.CLERK_SECRET_KEY_USER,
+});
+
+const vendorClerkMiddleware = clerkMiddleware({
+  publishableKey: process.env.CLERK_PUBLISHABLE_KEY_VENDOR,
+  secretKey: process.env.CLERK_SECRET_KEY_VENDOR,
+});
+
+const adminClerkMiddleware = clerkMiddleware({
+  publishableKey: process.env.CLERK_PUBLISHABLE_KEY_ADMIN,
+  secretKey: process.env.CLERK_SECRET_KEY_ADMIN,
+});
+
+// Custom middleware to route requests to the correct Clerk middleware based on origin
+// This ensures each portal uses its own Clerk application and session cookies
+app.use((req, res, next) => {
+  const origin = req.headers.origin || req.headers.referer || '';
+  
+  // Determine which portal this request came from based on origin
+  if (origin.includes('localhost:3000') || origin.includes(':3000')) {
+    // User portal - use User Clerk app
+    return userClerkMiddleware(req, res, next);
+  } else if (origin.includes('localhost:3001') || origin.includes(':3001')) {
+    // Vendor portal - use Vendor Clerk app
+    return vendorClerkMiddleware(req, res, next);
+  } else if (origin.includes('localhost:3002') || origin.includes(':3002')) {
+    // Admin portal - use Admin Clerk app
+    return adminClerkMiddleware(req, res, next);
+  } else {
+    // Default fallback: Try user portal for requests without origin header
+    // This handles direct API calls or requests without origin
+    return userClerkMiddleware(req, res, next);
+  }
+});
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));

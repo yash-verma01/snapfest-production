@@ -1748,7 +1748,21 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
   
   // If req.vendor doesn't exist, get Clerk session and create/find vendor
   const { getAuth } = await import('@clerk/express');
-  const { clerkClient } = await import('@clerk/clerk-sdk-node');
+  const { createClerkClient } = await import('@clerk/clerk-sdk-node');
+  
+  // Helper function to get the correct clerkClient based on origin
+  const getClerkClientForOrigin = (origin) => {
+    if (!origin) {
+      return createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY_USER });
+    }
+    if (origin.includes('localhost:3001') || origin.includes(':3001')) {
+      return createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY_VENDOR });
+    } else if (origin.includes('localhost:3002') || origin.includes(':3002')) {
+      return createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY_ADMIN });
+    } else {
+      return createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY_USER });
+    }
+  };
   
   // Try getAuth(req) first, then fallback to req.auth
   let clerkAuth = getAuth(req);
@@ -1791,6 +1805,7 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
   let publicMetadata = clerkAuth?.claims?.publicMetadata || null;
   if (!publicMetadata) {
     try {
+      const clerkClient = getClerkClientForOrigin(origin);
       const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
       publicMetadata = clerkUser.publicMetadata || null;
     } catch (e) {
@@ -1803,6 +1818,7 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
   if (isVendorPort && publicMetadata?.role !== 'vendor') {
     try {
       // Update Clerk user metadata to set vendor role
+      const clerkClient = getClerkClientForOrigin(origin);
       await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
         publicMetadata: { 
           ...publicMetadata,
@@ -1855,6 +1871,7 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
   
   if (!finalEmail) {
     try {
+      const clerkClient = getClerkClientForOrigin(origin);
       const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
       finalEmail = clerkUser.emailAddresses?.find(email => email.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
                    clerkUser.emailAddresses?.[0]?.emailAddress ||

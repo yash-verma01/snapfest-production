@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import { SignedIn, SignedOut, RedirectToSignIn, useUser, useAuth } from '@clerk/clerk-react';
 import { userAPI } from './services/api';
 import ErrorBoundary from './components/ErrorBoundary';
+import PortGuard from './components/PortGuard';
 
 // Components
 import Navbar from './components/Navbar';
@@ -97,11 +98,12 @@ function AdminApp() {
   return (
     <ErrorBoundary>
         <Router>
-          <div className="min-h-screen bg-gray-50">
-            <Navbar />
-            
-            <main className="min-h-screen">
-            <Routes>
+          <PortGuard>
+            <div className="min-h-screen bg-gray-50">
+              <Navbar />
+              
+              <main className="min-h-screen">
+              <Routes>
               {/* Root redirect for admins */}
               <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/sign-in/*" element={<SignIn />} />
@@ -118,6 +120,8 @@ function AdminApp() {
           </main>
           
           <Footer />
+          </div>
+          </PortGuard>
           
           {/* Toast Notifications */}
           <Toaster

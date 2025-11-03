@@ -4,11 +4,28 @@ import './index.css'
 import VendorApp from './VendorApp.jsx'
 import { ClerkProvider } from '@clerk/clerk-react';
 
-const CLERK_PK = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_d2VsY29tZWQtZ3JvdXBlci03MC5jbGVyay5hY2NvdW50cy5kZXYk';
+// Vendor portal uses VENDOR-specific key
+const CLERK_PK = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY_VENDOR || 
+                 import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+// Debug logging to verify which key is being used
+console.log('🔑 Vendor Portal Clerk Key Debug:', {
+  vendorKey: import.meta.env.VITE_CLERK_PUBLISHABLE_KEY_VENDOR ? '✅ Found' : '❌ Missing',
+  fallbackKey: import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ? '✅ Found' : '❌ Missing',
+  finalKey: CLERK_PK ? CLERK_PK.substring(0, 30) + '...' : '❌ UNDEFINED!',
+  fullKey: CLERK_PK || 'NOT SET'
+});
+
+if (!CLERK_PK) {
+  console.error('❌ CRITICAL: No Clerk publishable key found for Vendor portal!');
+  console.error('   Expected: VITE_CLERK_PUBLISHABLE_KEY_VENDOR in .env file');
+  console.error('   Fallback: VITE_CLERK_PUBLISHABLE_KEY in .env file');
+  console.error('   Please check your .env file and restart the dev server.');
+}
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ClerkProvider publishableKey={CLERK_PK} afterSignInUrl="/vendor/dashboard" afterSignUpUrl="/vendor/dashboard">
+    <ClerkProvider publishableKey={CLERK_PK || ''} afterSignInUrl="/vendor/dashboard" afterSignUpUrl="/vendor/dashboard">
       <VendorApp />
     </ClerkProvider>
   </StrictMode>,

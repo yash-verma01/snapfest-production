@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import PortGuard from './components/PortGuard';
 
 // Components
 import Navbar from './components/Navbar';
@@ -55,11 +56,12 @@ function UserApp() {
     <ErrorBoundary>
       <AuthProvider>
         <Router>
-          <div className="min-h-screen bg-gray-50">
-            <Navbar />
-            
-            <main className="min-h-screen">
-            <Routes>
+          <PortGuard>
+            <div className="min-h-screen bg-gray-50">
+              <Navbar />
+              
+              <main className="min-h-screen">
+              <Routes>
               {/* Root redirect for users */}
               <Route path="/" element={<UserRootRedirect />} />
               <Route path="/packages" element={<Packages />} />
@@ -117,6 +119,8 @@ function UserApp() {
           </main>
           
           <Footer />
+          </div>
+          </PortGuard>
           
           {/* Toast Notifications */}
           <Toaster

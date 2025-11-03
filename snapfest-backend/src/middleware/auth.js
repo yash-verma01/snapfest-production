@@ -1,10 +1,35 @@
 import { User } from '../models/index.js';
-import dotenv from 'dotenv';
 import { getAuth } from '@clerk/express';
-import { clerkClient } from '@clerk/clerk-sdk-node';
+import { createClerkClient } from '@clerk/clerk-sdk-node';
 
-// Load environment variables
-dotenv.config();
+// Note: dotenv.config() is already called in server.js
+// No need to reload environment variables here
+
+// Create clerkClient instances for each portal with correct secret keys
+const getUserClerkClient = () => createClerkClient({ 
+  secretKey: process.env.CLERK_SECRET_KEY_USER 
+});
+
+const getVendorClerkClient = () => createClerkClient({ 
+  secretKey: process.env.CLERK_SECRET_KEY_VENDOR 
+});
+
+const getAdminClerkClient = () => createClerkClient({ 
+  secretKey: process.env.CLERK_SECRET_KEY_ADMIN 
+});
+
+// Helper function to get the correct clerkClient based on origin
+const getClerkClientForOrigin = (origin) => {
+  if (!origin) return getUserClerkClient(); // Default to user
+  
+  if (origin.includes('localhost:3001') || origin.includes(':3001')) {
+    return getVendorClerkClient();
+  } else if (origin.includes('localhost:3002') || origin.includes(':3002')) {
+    return getAdminClerkClient();
+  } else {
+    return getUserClerkClient(); // Default to user for port 3000 or unknown
+  }
+};
 
 /**
  * Authentication middleware using Clerk cookie-based sessions.
@@ -118,6 +143,8 @@ export const authenticate = async (req, res, next) => {
     if (!finalEmail) {
       console.warn('⚠️ Email not found in claims, fetching from Clerk API for userId:', clerkAuth.userId);
       try {
+        const origin = req.headers.origin || req.headers.referer || '';
+        const clerkClient = getClerkClientForOrigin(origin);
         const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
         
         // Get primary email address
@@ -170,6 +197,9 @@ export const authenticate = async (req, res, next) => {
     }
 
     // Check Clerk publicMetadata for role (admin, vendor, or default user)
+    // Get the correct clerkClient based on origin
+    const clerkClient = getClerkClientForOrigin(origin);
+    
     let publicMetadata = sessionClaims?.publicMetadata || clerkAuth?.claims?.publicMetadata || null;
     if (!publicMetadata) {
       try {
@@ -186,6 +216,7 @@ export const authenticate = async (req, res, next) => {
       if (isVendorPort) {
         // Vendor port - auto-set vendor role
         try {
+          const clerkClient = getClerkClientForOrigin(origin);
           await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
             publicMetadata: { 
               ...publicMetadata,
@@ -208,6 +239,7 @@ export const authenticate = async (req, res, next) => {
       } else if (isUserPort) {
         // User port - auto-set user role
         try {
+          const clerkClient = getClerkClientForOrigin(origin);
           await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
             publicMetadata: { 
               ...publicMetadata,
@@ -516,6 +548,7 @@ export const optionalAuth = async (req, res, next) => {
       // Fetch publicMetadata from Clerk if needed
       if (!publicMetadata) {
         try {
+          const clerkClient = getClerkClientForOrigin(origin);
           const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
           publicMetadata = clerkUser.publicMetadata || null;
         } catch (e) {
@@ -527,6 +560,7 @@ export const optionalAuth = async (req, res, next) => {
       // Set vendor role in Clerk if not already set
       if (isVendorPort && publicMetadata?.role !== 'vendor') {
         try {
+          const clerkClient = getClerkClientForOrigin(origin);
           await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
             publicMetadata: { 
               ...publicMetadata,

@@ -5,6 +5,7 @@ import { SignedIn, SignedOut, RedirectToSignIn, useUser, useAuth } from '@clerk/
 import { SignIn, SignUp } from '@clerk/clerk-react';
 import { vendorAPI } from './services/api';
 import ErrorBoundary from './components/ErrorBoundary';
+import PortGuard from './components/PortGuard';
 
 // Components
 import Navbar from './components/Navbar';
@@ -86,11 +87,12 @@ function VendorApp() {
   return (
     <ErrorBoundary>
       <Router>
-        <div className="min-h-screen bg-gray-50">
-          <Navbar />
-          
-          <main className="min-h-screen">
-          <Routes>
+        <PortGuard>
+          <div className="min-h-screen bg-gray-50">
+            <Navbar />
+            
+            <main className="min-h-screen">
+            <Routes>
             {/* Root redirect for vendors */}
             <Route path="/" element={<VendorRootRedirect />} />
             
@@ -142,6 +144,8 @@ function VendorApp() {
         </main>
         
         <Footer />
+        </div>
+        </PortGuard>
         
         {/* Toast Notifications */}
         <Toaster

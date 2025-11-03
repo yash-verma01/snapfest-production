@@ -3,37 +3,30 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/index.js';
 
-// Function to create default admin user if it doesn't exist
+// Function to check if admin user exists (legacy - now admins are created via Clerk)
+// This function is kept for backward compatibility but no longer creates users
 async function ensureAdminUserExists() {
   try {
     const adminEmail = process.env.ADMIN_EMAIL || 'admin100@gmail.com';
-    const adminPassword = process.env.ADMIN_PASSWORD || '1212121212';
     
     const existingAdmin = await User.findOne({ email: adminEmail, role: 'admin' });
     
     if (!existingAdmin) {
-      console.log('🔧 Creating default admin user...');
-      const hashedPassword = await bcrypt.hash(adminPassword, 10);
-      
-      const adminUser = new User({
-        name: 'Admin User',
-        email: adminEmail,
-        phone: '9999999999',
-        password: hashedPassword,
-        role: 'admin',
-        isActive: true,
-        isEmailVerified: true
-      });
-      
-      await adminUser.save();
-      console.log('✅ Default admin user created successfully');
-      console.log('📧 Email:', adminEmail);
-      console.log('🔑 Password:', adminPassword);
+      console.log('⚠️  Admin user does not exist yet.');
+      console.log('📧 Expected admin email:', adminEmail);
+      console.log('💡 Admin users are now created automatically when signing in via Clerk');
+      console.log('   - Sign up/sign in on the Admin portal (localhost:3002)');
+      console.log('   - User will be created with admin role based on email match');
     } else {
-      console.log('✅ Admin user already exists:', adminEmail);
+      console.log('✅ Admin user exists:', existingAdmin.email);
+      if (existingAdmin.clerkId) {
+        console.log('   Clerk ID:', existingAdmin.clerkId);
+      } else {
+        console.log('   ⚠️  Legacy admin user (no Clerk ID) - should migrate to Clerk');
+      }
     }
   } catch (error) {
-    console.error('❌ Error creating admin user:', error);
+    console.error('❌ Error checking admin user:', error);
   }
 }
 

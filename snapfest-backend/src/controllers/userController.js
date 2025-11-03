@@ -1506,7 +1506,21 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
   
   // If req.user doesn't exist, get Clerk session and create/find user
   const { getAuth } = await import('@clerk/express');
-  const { clerkClient } = await import('@clerk/clerk-sdk-node');
+  const { createClerkClient } = await import('@clerk/clerk-sdk-node');
+  
+  // Helper function to get the correct clerkClient based on origin
+  const getClerkClientForOrigin = (origin) => {
+    if (!origin) {
+      return createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY_USER });
+    }
+    if (origin.includes('localhost:3001') || origin.includes(':3001')) {
+      return createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY_VENDOR });
+    } else if (origin.includes('localhost:3002') || origin.includes(':3002')) {
+      return createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY_ADMIN });
+    } else {
+      return createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY_USER });
+    }
+  };
   
   // Try getAuth(req) first, then fallback to req.auth
   let clerkAuth = getAuth(req);
@@ -1558,8 +1572,12 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
   let finalEmail = email;
   let finalName = sanitizedName;
   
+  // Check if request came from specific ports for role auto-detection
+  const origin = req.headers.origin || req.headers.referer || '';
+  
   if (!finalEmail) {
     try {
+      const clerkClient = getClerkClientForOrigin(origin);
       const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
       finalEmail = clerkUser.emailAddresses?.find(email => email.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
                    clerkUser.emailAddresses?.[0]?.emailAddress ||
@@ -1585,8 +1603,6 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
     });
   }
   
-  // Check if request came from specific ports for role auto-detection
-  const origin = req.headers.origin || req.headers.referer || '';
   const isUserPort = origin.includes('localhost:3000') || 
                      origin.includes(':3000');
   const isVendorPort = origin.includes('localhost:3001') || 
@@ -1612,6 +1628,7 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
     let publicMetadata = clerkAuth?.claims?.publicMetadata || null;
     if (!publicMetadata) {
       try {
+        const clerkClient = getClerkClientForOrigin(origin);
         const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
         publicMetadata = clerkUser.publicMetadata || null;
       } catch (e) {
@@ -1625,6 +1642,7 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
       // Set vendor role in Clerk
       if (publicMetadata?.role !== 'vendor') {
         try {
+          const clerkClient = getClerkClientForOrigin(origin);
           await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
             publicMetadata: { 
               ...publicMetadata,
@@ -1633,7 +1651,7 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
           });
           
           // Refresh metadata
-          const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
+          const updatedUser = await clerkClient.users.getUser(clerkAuth.userId); // clerkClient already set above
           publicMetadata = updatedUser.publicMetadata || { role: 'vendor' };
           
           if (process.env.NODE_ENV === 'development') {
@@ -1706,6 +1724,7 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
       } else if (isUserPort) {
         // User port - auto-set user role
         try {
+          const clerkClient = getClerkClientForOrigin(origin);
           await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
             publicMetadata: { 
               ...publicMetadata,
