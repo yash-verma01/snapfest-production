@@ -36,6 +36,16 @@ const PortGuard = ({ children, allowedRoutes = [] }) => {
     return children;
   }
   
+  // CRITICAL: Explicitly block /user/* routes on vendor/admin portals
+  if ((isVendorPortal || isAdminPortal) && location.pathname.startsWith('/user/')) {
+    console.warn(`🚫 Port Guard: Blocking /user/* route on ${isVendorPortal ? 'vendor' : 'admin'} portal`);
+    if (isVendorPortal) {
+      return <Navigate to="/vendor/dashboard" replace />;
+    } else {
+      return <Navigate to="/admin/dashboard" replace />;
+    }
+  }
+  
   // Check if current route is allowed
   const isAllowedRoute = allowedPrefixes.some(prefix => 
     location.pathname === prefix || 

@@ -6,7 +6,8 @@ import OTPService from '../services/otpService.js';
 export const getDashboard = asyncHandler(async (req, res) => {
   // Get total counts
   const totalUsers = await User.countDocuments({ role: 'user' });
-  const totalVendors = await User.countDocuments({ role: 'vendor' });
+  // CRITICAL: Vendors are stored in Vendor collection, not User collection
+  const totalVendors = await Vendor.countDocuments();
   const totalBookings = await Booking.countDocuments();
   const totalPackages = await Package.countDocuments();
 
@@ -23,15 +24,16 @@ export const getDashboard = asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 })
     .limit(5);
 
-  const recentVendors = await User.find({ role: 'vendor' })
+  // CRITICAL: Vendors are stored in Vendor collection, not User collection
+  const recentVendors = await Vendor.find()
     .select('name email createdAt')
     .sort({ createdAt: -1 })
     .limit(5);
 
   // Get pending approvals
-  const pendingVendors = await User.countDocuments({ 
-    role: 'vendor', 
-    isActive: false 
+  // CRITICAL: Vendors are stored in Vendor collection, not User collection
+  const pendingVendors = await Vendor.countDocuments({ 
+    availability: { $ne: 'AVAILABLE' } 
   });
 
   const pendingBookings = await Booking.countDocuments({ 
@@ -209,7 +211,8 @@ export const getAnalytics = asyncHandler(async (req, res) => {
 export const getSystemStats = asyncHandler(async (req, res) => {
   // System-wide statistics
   const totalUsers = await User.countDocuments({ role: 'user' });
-  const totalVendors = await User.countDocuments({ role: 'vendor' });
+  // CRITICAL: Vendors are stored in Vendor collection, not User collection
+  const totalVendors = await Vendor.countDocuments();
   const totalAdmins = await User.countDocuments({ role: 'admin' });
   const totalBookings = await Booking.countDocuments();
   const totalPackages = await Package.countDocuments();

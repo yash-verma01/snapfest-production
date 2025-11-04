@@ -1573,7 +1573,43 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
   let finalName = sanitizedName;
   
   // Check if request came from specific ports for role auto-detection
-  const origin = req.headers.origin || req.headers.referer || '';
+  // Get origin from multiple sources for better reliability
+  const origin = req.headers.origin || 
+                 req.headers.referer || 
+                 req.headers['x-forwarded-host'] ||
+                 (req.protocol + '://' + req.get('host')) ||
+                 '';
+  
+  // Also check request URL and host for port number as fallback
+  const urlHost = req.get('host') || '';
+  const requestUrl = req.url || req.originalUrl || '';
+  
+  const isUserPort = origin.includes('localhost:3000') || 
+                     origin.includes(':3000') ||
+                     urlHost.includes(':3000') ||
+                     requestUrl.includes('/user/');
+  const isVendorPort = origin.includes('localhost:3001') || 
+                       origin.includes(':3001') ||
+                       urlHost.includes(':3001') ||
+                       requestUrl.includes('/vendor/');
+  const isAdminPort = origin.includes('localhost:3002') || 
+                      origin.includes(':3002') ||
+                      urlHost.includes(':3002') ||
+                      requestUrl.includes('/admin/');
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 syncClerkUser: Origin check', { origin, isUserPort, isVendorPort, isAdminPort, urlHost, requestUrl });
+  }
+  
+  // Auto-set roles based on port BEFORE checking/fetching metadata
+  let targetRole = 'user'; // default
+  if (isVendorPort) {
+    targetRole = 'vendor';
+  } else if (isAdminPort) {
+    targetRole = 'admin';
+  } else if (isUserPort) {
+    targetRole = 'user';
+  }
   
   if (!finalEmail) {
     try {
@@ -1603,28 +1639,11 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
     });
   }
   
-  const isUserPort = origin.includes('localhost:3000') || 
-                     origin.includes(':3000');
-  const isVendorPort = origin.includes('localhost:3001') || 
-                       origin.includes(':3001');
-  const isAdminPort = origin.includes('localhost:3002') || 
-                      origin.includes(':3002');
-  
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🔍 syncClerkUser: Origin check', { origin, isUserPort, isVendorPort, isAdminPort });
-  }
-  
   // Find or create user
   let user = await User.findOne({ clerkId: clerkAuth.userId });
   
   if (!user) {
-    // Check if this should be an admin user (based on Clerk publicMetadata or ADMIN_EMAILS)
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin100@gmail.com';
-    const adminEmailsEnv = process.env.ADMIN_EMAILS;
-    const adminEmails = adminEmailsEnv ? adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()) : [];
-    const normalizedEmail = finalEmail.toLowerCase().trim();
-    
-    // Check if user has role in Clerk publicMetadata
+    // Get or fetch publicMetadata BEFORE determining role
     let publicMetadata = clerkAuth?.claims?.publicMetadata || null;
     if (!publicMetadata) {
       try {
@@ -1636,35 +1655,53 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
       }
     }
     
+    // CRITICAL: Auto-set role in Clerk based on port if not already set
+    if (publicMetadata?.role !== targetRole) {
+      try {
+        const clerkClient = getClerkClientForOrigin(origin);
+        await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
+          publicMetadata: { 
+            ...publicMetadata,
+            role: targetRole 
+          }
+        });
+        
+        // Refresh metadata after update
+        const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
+        publicMetadata = updatedUser.publicMetadata || { role: targetRole };
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`✅ syncClerkUser: Auto-set ${targetRole} role for port ${isVendorPort ? '3001' : isAdminPort ? '3002' : '3000'} user:`, clerkAuth.userId);
+        }
+      } catch (updateError) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('❌ syncClerkUser: Failed to update Clerk metadata:', updateError.message);
+        }
+        // Set role locally even if Clerk update fails
+        publicMetadata = { ...publicMetadata, role: targetRole };
+      }
+    }
+    
+    // Force role locally if port-based but Clerk update failed
+    if (!publicMetadata?.role) {
+      publicMetadata = { ...publicMetadata, role: targetRole };
+    }
+    
+    // Determine role: admin from port 3002, user from port 3000, or from metadata
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin100@gmail.com';
+    const adminEmailsEnv = process.env.ADMIN_EMAILS;
+    const adminEmails = adminEmailsEnv ? adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()) : [];
+    const normalizedEmail = finalEmail.toLowerCase().trim();
+    
+    // Priority: Port-based role > Metadata role > Email-based admin
+    const isAdmin = isAdminPort || 
+                   publicMetadata?.role === 'admin' ||
+                   normalizedEmail === adminEmail.toLowerCase() ||
+                   adminEmails.includes(normalizedEmail);
+    
     // CRITICAL: If request came from vendor port (3001), this is DEFINITELY a vendor
     // Even if /api/users/sync was called by mistake, treat it as vendor
     if (isVendorPort) {
-      // Set vendor role in Clerk
-      if (publicMetadata?.role !== 'vendor') {
-        try {
-          const clerkClient = getClerkClientForOrigin(origin);
-          await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
-            publicMetadata: { 
-              ...publicMetadata,
-              role: 'vendor' 
-            }
-          });
-          
-          // Refresh metadata
-          const updatedUser = await clerkClient.users.getUser(clerkAuth.userId); // clerkClient already set above
-          publicMetadata = updatedUser.publicMetadata || { role: 'vendor' };
-          
-          if (process.env.NODE_ENV === 'development') {
-            console.log('✅ syncClerkUser: Auto-set vendor role for port 3001 user:', clerkAuth.userId);
-          }
-        } catch (e) {
-          if (process.env.NODE_ENV === 'development') {
-            console.error('❌ syncClerkUser: Failed to set vendor role:', e.message);
-          }
-          // Set locally even if Clerk update fails
-          publicMetadata = { ...publicMetadata, role: 'vendor' };
-        }
-      }
       
       // If vendor role is set, redirect to vendor sync or handle vendor directly
       if (publicMetadata?.role === 'vendor') {
@@ -1738,11 +1775,8 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
       }
     }
     
-    const isAdmin = publicMetadata?.role === 'admin' || 
-                    normalizedEmail === adminEmail.toLowerCase() ||
-                    adminEmails.includes(normalizedEmail);
-    
     // If vendor role detected (from non-vendor port), don't create in User collection
+    // Note: isAdmin is already declared above at line 1697, so we reuse it here
     if (publicMetadata?.role === 'vendor' && !isVendorPort) {
       return res.status(200).json({
         success: true,
@@ -1757,12 +1791,15 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
       });
     }
     
+    // Set role based on port or metadata: admin for port 3002, user for port 3000
+    const userRole = isAdmin ? 'admin' : (targetRole === 'admin' ? 'admin' : 'user');
+    
     user = await User.create({
       clerkId: clerkAuth.userId,
       name: finalName || finalEmail.split('@')[0],
       email: finalEmail.toLowerCase().trim(),
       isActive: true,
-      role: isAdmin ? 'admin' : 'user',
+      role: userRole,
     });
     
     if (process.env.NODE_ENV === 'development') {

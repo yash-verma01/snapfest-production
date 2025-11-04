@@ -164,19 +164,42 @@ app.use(cookieParser());
 // ============================================================================
 
 app.use((req, res, next) => {
-  const origin = req.headers.origin || req.headers.referer || '';
+  // Get origin from multiple sources for better reliability
+  const origin = req.headers.origin || 
+                 req.headers.referer || 
+                 req.headers['x-forwarded-host'] ||
+                 (req.protocol + '://' + req.get('host')) ||
+                 '';
   
-  // Determine portal type based on origin
+  // Also check request URL and host for port number as fallback
+  const urlHost = req.get('host') || '';
+  const requestUrl = req.url || req.originalUrl || '';
+  
+  // Determine portal type based on origin, host, and URL
   let portalType = 'user'; // default
   let cookiePrefix = '__session_user';
   
-  if (origin.includes('localhost:3001') || origin.includes(':3001')) {
+  // Check for vendor portal (port 3001)
+  if (origin.includes('localhost:3001') || 
+      origin.includes(':3001') ||
+      urlHost.includes(':3001') ||
+      requestUrl.includes('/vendor/')) {
     portalType = 'vendor';
     cookiePrefix = '__session_vendor';
-  } else if (origin.includes('localhost:3002') || origin.includes(':3002')) {
+  } 
+  // Check for admin portal (port 3002)
+  else if (origin.includes('localhost:3002') || 
+           origin.includes(':3002') ||
+           urlHost.includes(':3002') ||
+           requestUrl.includes('/admin/')) {
     portalType = 'admin';
     cookiePrefix = '__session_admin';
-  } else if (origin.includes('localhost:3000') || origin.includes(':3000')) {
+  } 
+  // Check for user portal (port 3000)
+  else if (origin.includes('localhost:3000') || 
+           origin.includes(':3000') ||
+           urlHost.includes(':3000') ||
+           requestUrl.includes('/user/')) {
     portalType = 'user';
     cookiePrefix = '__session_user';
   }
@@ -189,23 +212,26 @@ app.use((req, res, next) => {
   // CRITICAL: Handle cookies in both req.cookies (parsed) and req.headers.cookie (raw string)
   
   // Step 1: Filter cookie header string FIRST (before cookieParser creates req.cookies)
-  // CRITICAL: Allow one-time migration of generic __session to portal-specific on first sign-in
+  // CRITICAL: Only migrate generic __session if NO portal-specific cookies exist (including from other portals)
   if (req.headers.cookie) {
     const cookieHeader = req.headers.cookie;
     
-    // Check if we have a portal-specific cookie for this portal
+    // Check if this portal already has its own cookie
     const hasPortalCookie = cookieHeader.includes(`${cookiePrefix}=`) || 
                             cookieHeader.match(new RegExp(`${cookiePrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:_[^=]+)?=`));
     
     // Check if there's a generic __session cookie (from Clerk sign-in)
     const hasGenericSession = cookieHeader.match(/__session(?![_](?:user|vendor|admin))[^=]*=/);
     
+    // CRITICAL: Check if cookies from ANY portal exist (including other portals)
+    // This prevents cross-portal authentication
+    const hasAnyPortalCookie = cookieHeader.match(/__session_(user|vendor|admin)(?:_[^=]+)?=/);
+    
     let filteredHeader = cookieHeader;
     
-    // CRITICAL: If we DON'T have a portal-specific cookie but DO have a generic __session,
-    // this is likely a first-time sign-in - ADD portal-specific cookie but KEEP __session
-    // We need both: __session (for Clerk middleware) AND __session_user (for isolation)
-    if (!hasPortalCookie && hasGenericSession) {
+    // ✅ Case 1: First-time sign-in (no portal-specific cookies anywhere)
+    // Only migrate if NO portal-specific cookies exist (including from other portals)
+    if (!hasPortalCookie && !hasAnyPortalCookie && hasGenericSession) {
       // Extract the __session cookie value and instance ID
       const sessionMatch = cookieHeader.match(/__session(?![_](?:user|vendor|admin))([^=]*)=([^;]+)/);
       const sessionValue = sessionMatch ? sessionMatch[2] : null;
@@ -218,9 +244,10 @@ app.use((req, res, next) => {
         filteredHeader = cookieHeader ? `${cookieHeader}; ${portalCookieString}` : portalCookieString;
         
         if (process.env.NODE_ENV === 'development') {
-          console.log(`🔄 [${portalType}] Adding ${cookiePrefix} cookie alongside __session (first-time sign-in)`);
+          console.log(`🔄 [${portalType}] Adding ${cookiePrefix} alongside __session (first-time sign-in)`);
         }
       }
+    // ✅ Case 2: This portal already has its own cookie — ensure __session also matches
     } else if (hasPortalCookie) {
       // We have a portal-specific cookie - ensure __session is also present for Clerk middleware
       // Extract the portal-specific cookie value from the original cookieHeader (not filteredHeader yet)
@@ -232,26 +259,33 @@ app.use((req, res, next) => {
         // Check if __session already exists with the correct value in the original header
         const sessionMatch = cookieHeader.match(/__session(?![_](?:user|vendor|admin))([^=]*)=([^;]+)/);
         if (!sessionMatch || sessionMatch[2] !== portalValue) {
-          // Remove existing __session cookies from filteredHeader and add correct one
+          // Remove existing generic __session and add the correct one matching portal cookie
           filteredHeader = filteredHeader.replace(/__session(?![_](?:user|vendor|admin))[^=]*=[^;]+(?:;|$)/g, '');
           filteredHeader = filteredHeader.replace(/;;+/g, ';').replace(/^;|;$/g, '');
           // Add __session with the portal-specific cookie value
           filteredHeader = filteredHeader ? `${filteredHeader}; __session${portalInstanceId}=${portalValue}` : `__session${portalInstanceId}=${portalValue}`;
           
           if (process.env.NODE_ENV === 'development') {
-            console.log(`🔄 [${portalType}] Ensuring __session exists in header with portal-specific value (hasPortalCookie)`);
+            console.log(`🔄 [${portalType}] Ensuring __session matches portal-specific cookie`);
           }
         }
       } else {
         // Remove generic __session cookies if portal cookie value not found
         filteredHeader = filteredHeader.replace(/__session(?![_](?:user|vendor|admin))[^=]*=[^;]+(?:;|$)/g, '');
       }
+    // 🚫 Case 3: Portal-specific cookies from other portals exist — BLOCK migration
     } else {
-      // No portal-specific cookie and no generic session - remove everything
+      // No portal-specific cookie for THIS portal AND no generic session
+      // OR: We have portal-specific cookies from OTHER portals (cross-portal protection)
+      // Remove ALL generic __session cookies (they're from other portals or invalid)
       filteredHeader = filteredHeader.replace(/__session(?![_](?:user|vendor|admin))[^=]*=[^;]+(?:;|$)/g, '');
+      
+      if (hasAnyPortalCookie && process.env.NODE_ENV === 'development') {
+        console.log(`🚫 [${portalType}] Blocking cross-portal authentication: found cookies from other portals`);
+      }
     }
     
-    // Remove cookies from OTHER portals (keep only current portal's cookies)
+    // Remove cookies belonging to other portals entirely (keep only current portal cookies)
     const otherPortals = ['__session_user', '__session_vendor', '__session_admin'].filter(
       prefix => prefix !== cookiePrefix
     );
@@ -264,13 +298,13 @@ app.use((req, res, next) => {
       );
     });
     
-    // Clean up multiple semicolons and leading/trailing semicolons
+    // Clean up separators
     filteredHeader = filteredHeader.replace(/;;+/g, ';').replace(/^;|;$/g, '');
     
     // Update the cookie header
     if (filteredHeader !== cookieHeader) {
       if (process.env.NODE_ENV === 'development') {
-        console.log(`🔧 Filtered cookies for ${portalType} portal: ${cookieHeader.substring(0, 100)} → ${filteredHeader.substring(0, 100)}`);
+        console.log(`🔧 Filtered cookies for ${portalType}: ${cookieHeader.substring(0, 100)} → ${filteredHeader.substring(0, 100)}`);
       }
       req.headers.cookie = filteredHeader;
     }
@@ -278,15 +312,17 @@ app.use((req, res, next) => {
   
   // Step 2: Update req.cookies (after cookieParser has parsed the header)
   if (req.cookies) {
-    // Look for portal-specific cookie first
+    // Portal-specific cookie (if present)
     let portalCookie = req.cookies[cookiePrefix];
     
-    // CRITICAL: If we DON'T have a portal-specific cookie but DO have a generic __session,
-    // this is likely a first-time sign-in - migrate it to portal-specific
-    if (!portalCookie && req.cookies.__session) {
+    // CRITICAL: do we have ANY portal-specific cookie in req.cookies?
+    const hasAnyPortalCookieInReq = !!(req.cookies.__session_user || req.cookies.__session_vendor || req.cookies.__session_admin);
+    
+    // ✅ Case 1: First-time sign-in — migrate only if NO portal-specific cookies exist anywhere
+    if (!portalCookie && req.cookies.__session && !hasAnyPortalCookieInReq) {
       const genericSession = req.cookies.__session;
       
-      // Check if this is a generic __session (not portal-specific)
+      // Confirm it's a generic __session (no portal-specific names present)
       const isGenericSession = !req.cookies.__session_user && !req.cookies.__session_vendor && !req.cookies.__session_admin;
       
       if (isGenericSession) {
@@ -294,7 +330,7 @@ app.use((req, res, next) => {
         portalCookie = genericSession;
         req.cookies[cookiePrefix] = portalCookie;
         
-        // Also check for instance ID cookies (e.g., __session_R-SCx821)
+        // Also map instance-id style cookies (e.g., __session_R-Scx123) to portal-prefixed keys
         Object.keys(req.cookies).forEach(key => {
           if (key.startsWith('__session_') && !key.startsWith('__session_user') && 
               !key.startsWith('__session_vendor') && !key.startsWith('__session_admin')) {
@@ -304,9 +340,26 @@ app.use((req, res, next) => {
         });
         
         if (process.env.NODE_ENV === 'development') {
-          console.log(`🔄 [${portalType}] Migrating generic __session to ${cookiePrefix} in req.cookies (first-time sign-in)`);
+          console.log(`🔄 [${portalType}] Migrating generic __session → ${cookiePrefix} in req.cookies`);
         }
       }
+    // 🚫 Case 2: Cross-portal access detected — block it if other portal-specific cookies exist but not this portal's
+    } else if (hasAnyPortalCookieInReq && !portalCookie) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🚫 [${portalType}] Blocking cross-portal authentication in req.cookies`);
+      }
+      
+      // Remove generic session cookies (they are from other portals)
+      if (req.cookies.__session) delete req.cookies.__session;
+      
+      Object.keys(req.cookies).forEach(key => {
+        if (key.startsWith('__session_') && !key.startsWith('__session_user') && 
+            !key.startsWith('__session_vendor') && !key.startsWith('__session_admin')) {
+          delete req.cookies[key];
+        }
+      });
+      
+      portalCookie = null; // ensure no authentication
     }
     
     // Now map portal-specific cookie to __session for Clerk middleware to process
@@ -691,17 +744,48 @@ const adminClerkMiddleware = clerkMiddleware({
 // Custom middleware to route requests to the correct Clerk middleware based on origin
 // This ensures each portal uses its own Clerk application and session cookies
 app.use((req, res, next) => {
-  const origin = req.headers.origin || req.headers.referer || '';
+  // Get origin from multiple sources for better reliability (matching cookie isolation logic)
+  const origin = req.headers.origin || 
+                 req.headers.referer || 
+                 req.headers['x-forwarded-host'] ||
+                 (req.protocol + '://' + req.get('host')) ||
+                 '';
   
-  // Determine which portal this request came from based on origin
-  if (origin.includes('localhost:3000') || origin.includes(':3000')) {
+  // Also check request URL and host for port number as fallback
+  const urlHost = req.get('host') || '';
+  const requestUrl = req.url || req.originalUrl || '';
+  
+  // CRITICAL: Check request path FIRST - admin routes should ALWAYS use admin Clerk middleware
+  // This ensures /api/admin/* routes use admin Clerk app even if origin header is missing
+  if (requestUrl.startsWith('/api/admin/') || requestUrl.startsWith('/api/admin')) {
+    // Admin portal routes - ALWAYS use Admin Clerk app
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔐 Clerk Middleware: Routing to adminClerkMiddleware for path:', requestUrl);
+    }
+    return adminClerkMiddleware(req, res, next);
+  }
+  
+  // Determine which portal this request came from based on origin, host, and URL
+  if (origin.includes('localhost:3000') || 
+      origin.includes(':3000') ||
+      urlHost.includes(':3000') ||
+      requestUrl.includes('/user/')) {
     // User portal - use User Clerk app
     return userClerkMiddleware(req, res, next);
-  } else if (origin.includes('localhost:3001') || origin.includes(':3001')) {
+  } else if (origin.includes('localhost:3001') || 
+             origin.includes(':3001') ||
+             urlHost.includes(':3001') ||
+             requestUrl.includes('/vendor/')) {
     // Vendor portal - use Vendor Clerk app
     return vendorClerkMiddleware(req, res, next);
-  } else if (origin.includes('localhost:3002') || origin.includes(':3002')) {
+  } else if (origin.includes('localhost:3002') || 
+             origin.includes(':3002') ||
+             urlHost.includes(':3002') ||
+             requestUrl.includes('/admin/')) {
     // Admin portal - use Admin Clerk app
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔐 Clerk Middleware: Routing to adminClerkMiddleware for origin:', origin);
+    }
     return adminClerkMiddleware(req, res, next);
   } else {
     // Default fallback: Try user portal for requests without origin header
@@ -819,4 +903,5 @@ app.listen(PORT, () => {
   console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
   console.log(`📝 Logs are being written to: ./logs/`);
 });
+
 

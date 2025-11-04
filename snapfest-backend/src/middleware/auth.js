@@ -530,15 +530,39 @@ export const optionalAuth = async (req, res, next) => {
       const sanitizedName = (name || 'User').trim();
 
       // CRITICAL: Check if request came from vendor port (3001) FIRST - this determines if user is a vendor
-      const origin = req.headers.origin || req.headers.referer || '';
-      const isVendorPort = origin.includes('localhost:3001') || origin.includes(':3001');
-      const isVendorRoute = req.path.includes('/vendors/');
+      // Get origin from multiple sources for better reliability
+      const origin = req.headers.origin || 
+                     req.headers.referer || 
+                     req.headers['x-forwarded-host'] ||
+                     (req.protocol + '://' + req.get('host')) ||
+                     '';
+      
+      // Also check request URL and host for port number as fallback
+      const urlHost = req.get('host') || '';
+      const requestUrl = req.url || req.originalUrl || '';
+      
+      const isUserPort = origin.includes('localhost:3000') || 
+                         origin.includes(':3000') ||
+                         urlHost.includes(':3000') ||
+                         requestUrl.includes('/user/');
+      const isVendorPort = origin.includes('localhost:3001') || 
+                           origin.includes(':3001') ||
+                           urlHost.includes(':3001') ||
+                           requestUrl.includes('/vendor/');
+      const isAdminPort = origin.includes('localhost:3002') || 
+                          origin.includes(':3002') ||
+                          urlHost.includes(':3002') ||
+                          requestUrl.includes('/admin/');
+      
+      const isVendorRoute = req.path.includes('/vendors/') || requestUrl.includes('/vendor/');
       
       if (process.env.NODE_ENV === 'development') {
         console.log('🔍 optionalAuth: Route check', { 
           path: req.path, 
           origin, 
+          isUserPort,
           isVendorPort, 
+          isAdminPort,
           isVendorRoute 
         });
       }
@@ -556,32 +580,47 @@ export const optionalAuth = async (req, res, next) => {
         }
       }
       
-      // PRIORITY 1: If request came from vendor port (3001), this is DEFINITELY a vendor
-      // Set vendor role in Clerk if not already set
-      if (isVendorPort && publicMetadata?.role !== 'vendor') {
+      // PRIORITY 1: Auto-set role based on port
+      // Determine target role based on port
+      let targetRole = null;
+      if (isVendorPort) {
+        targetRole = 'vendor';
+      } else if (isAdminPort) {
+        targetRole = 'admin';
+      } else if (isUserPort) {
+        targetRole = 'user';
+      }
+      
+      // Auto-set role in Clerk if port-based role doesn't match
+      if (targetRole && publicMetadata?.role !== targetRole) {
         try {
           const clerkClient = getClerkClientForOrigin(origin);
           await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
             publicMetadata: { 
               ...publicMetadata,
-              role: 'vendor' 
+              role: targetRole 
             }
           });
           
           // Refresh metadata after update
           const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
-          publicMetadata = updatedUser.publicMetadata || { role: 'vendor' };
+          publicMetadata = updatedUser.publicMetadata || { role: targetRole };
           
           if (process.env.NODE_ENV === 'development') {
-            console.log('✅ optionalAuth: Auto-set vendor role for port 3001 user:', clerkAuth.userId);
+            console.log(`✅ optionalAuth: Auto-set ${targetRole} role for port ${isVendorPort ? '3001' : isAdminPort ? '3002' : '3000'} user:`, clerkAuth.userId);
           }
         } catch (updateError) {
           if (process.env.NODE_ENV === 'development') {
             console.error('❌ optionalAuth: Failed to update Clerk metadata:', updateError.message);
           }
           // Set role locally even if Clerk update fails
-          publicMetadata = { ...publicMetadata, role: 'vendor' };
+          publicMetadata = { ...publicMetadata, role: targetRole };
         }
+      }
+      
+      // Force role locally if port-based but Clerk update failed
+      if (targetRole && !publicMetadata?.role) {
+        publicMetadata = { ...publicMetadata, role: targetRole };
       }
       
       // If this is a vendor (either from port 3001, vendor route, or has vendor role), handle vendor
@@ -636,16 +675,21 @@ export const optionalAuth = async (req, res, next) => {
           const adminEmails = adminEmailsEnv ? adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()) : [];
           const normalizedEmail = email.toLowerCase().trim();
           
-          const isAdmin = publicMetadata?.role === 'admin' || 
+          // Priority: Port-based role > Metadata role > Email-based admin
+          const isAdmin = isAdminPort || 
+                          publicMetadata?.role === 'admin' ||
                           normalizedEmail === adminEmail.toLowerCase() ||
                           adminEmails.includes(normalizedEmail);
+          
+          // Set role based on port: admin for port 3002, user for port 3000
+          const userRole = isAdmin ? 'admin' : (targetRole === 'admin' ? 'admin' : 'user');
           
           user = await User.create({
             clerkId: clerkAuth.userId,
             name: sanitizedName,
             email: email.toLowerCase().trim(),
             isActive: true,
-            role: isAdmin ? 'admin' : 'user',
+            role: userRole,
           });
           
           if (process.env.NODE_ENV === 'development') {

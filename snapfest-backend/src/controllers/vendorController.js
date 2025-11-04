@@ -1793,9 +1793,21 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
   }
   
   // Check if request came from vendor port (3001)
-  const origin = req.headers.origin || req.headers.referer || '';
+  // Get origin from multiple sources for better reliability
+  const origin = req.headers.origin || 
+                 req.headers.referer || 
+                 req.headers['x-forwarded-host'] ||
+                 (req.protocol + '://' + req.get('host')) ||
+                 '';
+  
+  // Also check request URL and host for port number as fallback
+  const urlHost = req.get('host') || '';
+  const requestUrl = req.url || req.originalUrl || '';
+  
   const isVendorPort = origin.includes('localhost:3001') || 
-                       origin.includes(':3001');
+                       origin.includes(':3001') ||
+                       urlHost.includes(':3001') ||
+                       requestUrl.includes('/vendor/');
   
   if (process.env.NODE_ENV === 'development') {
     console.log('🔍 syncClerkVendor: Origin check', { origin, isVendorPort });
@@ -1813,8 +1825,8 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
     }
   }
   
-  // If request came from vendor port (3001) and user doesn't have vendor role,
-  // automatically set vendor role in Clerk
+  // CRITICAL: Auto-set vendor role based on port BEFORE checking
+  // If request came from vendor port (3001), automatically set vendor role in Clerk
   if (isVendorPort && publicMetadata?.role !== 'vendor') {
     try {
       // Update Clerk user metadata to set vendor role
@@ -1831,20 +1843,32 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
       publicMetadata = updatedUser.publicMetadata || { role: 'vendor' };
       
       if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Automatically set vendor role for user:', clerkAuth.userId);
+        console.log('✅ syncClerkVendor: Auto-set vendor role for port 3001 user:', clerkAuth.userId);
       }
     } catch (updateError) {
-      console.error('❌ Failed to update Clerk metadata:', updateError.message);
-      // Continue anyway - we'll check again below
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ syncClerkVendor: Failed to update Clerk metadata:', updateError.message);
+      }
+      // Set role locally even if Clerk update fails - allow vendor creation from port 3001
+      publicMetadata = { ...publicMetadata, role: 'vendor' };
     }
   }
   
   // Verify this is a vendor user (after auto-setting role)
-  if (publicMetadata?.role !== 'vendor') {
+  // CRITICAL: Allow vendor creation if request came from vendor port (3001), even if role not yet set in Clerk
+  if (publicMetadata?.role !== 'vendor' && !isVendorPort) {
     return res.status(403).json({ 
       success: false, 
       message: 'Access denied. Vendor role required. Please sign up from the vendor portal (port 3001) or ensure your Clerk account has role: vendor in public metadata.' 
     });
+  }
+  
+  // If isVendorPort is true but role still not set, force it locally
+  if (isVendorPort && publicMetadata?.role !== 'vendor') {
+    publicMetadata = { ...publicMetadata, role: 'vendor' };
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ syncClerkVendor: Forcing vendor role for port 3001 (local override)');
+    }
   }
   
   // Extract email and name from Clerk session
@@ -1900,6 +1924,18 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
   // Find or create vendor in Vendor collection (not User)
   let vendor = await Vendor.findOne({ clerkId: clerkAuth.userId });
   
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 syncClerkVendor: Looking for vendor:', {
+      clerkId: clerkAuth.userId,
+      vendorFound: !!vendor,
+      isVendorPort,
+      origin,
+      urlHost,
+      requestUrl,
+      publicMetadataRole: publicMetadata?.role
+    });
+  }
+  
   // Check if a User document exists with the same clerkId (edge case: user signed in as user first)
   const existingUser = await User.findOne({ clerkId: clerkAuth.userId });
   if (existingUser && process.env.NODE_ENV === 'development') {
@@ -1913,6 +1949,13 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
   }
   
   if (!vendor) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 syncClerkVendor: Creating new vendor document...');
+      console.log('   Email:', finalEmail);
+      console.log('   Name:', finalName);
+      console.log('   ClerkId:', clerkAuth.userId);
+    }
+    
     // Create new vendor document in Vendor collection
     vendor = await Vendor.create({
       clerkId: clerkAuth.userId,

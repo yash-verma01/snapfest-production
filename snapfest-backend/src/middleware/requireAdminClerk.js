@@ -77,10 +77,25 @@ export const requireAdminClerk = async (req, res, next) => {
     
     // Debug logging in development
     if (process.env.NODE_ENV === 'development') {
+      // Always log for admin routes to debug
+      console.log('🔍 requireAdminClerk: Admin route accessed');
+      console.log('   Path:', req.path);
+      console.log('   Original URL:', req.originalUrl);
+      console.log('   Origin:', req.headers.origin || req.headers.referer || 'missing');
+      console.log('   Host:', req.get('host'));
+      console.log('   Portal type:', req._portalType || 'unknown');
+      console.log('   Cookie prefix:', req._cookiePrefix || 'unknown');
+      console.log('   Cookies present:', Object.keys(req.cookies || {}));
+      console.log('   __session_admin cookie:', req.cookies?.__session_admin ? 'present (' + req.cookies.__session_admin.substring(0, 20) + '...)' : 'missing');
+      console.log('   __session cookie:', req.cookies?.__session ? 'present (' + req.cookies.__session.substring(0, 20) + '...)' : 'missing');
+      console.log('   Cookie header:', req.headers.cookie ? 'present' : 'missing');
+      
       if (!clerkAuth?.userId) {
-        console.log('🔍 requireAdminClerk: No Clerk session found');
+        console.log('❌ requireAdminClerk: No Clerk session found');
         console.log('   getAuth(req).isAuthenticated:', getAuth(req).isAuthenticated);
         console.log('   getAuth(req).userId:', getAuth(req).userId);
+        console.log('   req.auth type:', typeof req.auth);
+        console.log('   req.auth value:', req.auth);
         if (typeof req.auth === 'function') {
           try {
             console.log('   req.auth() result:', req.auth());
@@ -88,6 +103,10 @@ export const requireAdminClerk = async (req, res, next) => {
             console.log('   req.auth() error:', e.message);
           }
         }
+      } else {
+        console.log('✅ requireAdminClerk: Clerk session found');
+        console.log('   userId:', clerkAuth.userId);
+        console.log('   isAuthenticated:', clerkAuth.isAuthenticated);
       }
     }
     
