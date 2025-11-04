@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { useAuth as useClerkAuth } from '@clerk/clerk-react';
+import { userAPI } from './services/api';
 import ErrorBoundary from './components/ErrorBoundary';
 import PortGuard from './components/PortGuard';
 
@@ -52,6 +54,33 @@ function UserRootRedirect() {
 }
 
 function UserApp() {
+  // Sync Clerk user to backend on sign-in
+  // This ensures the backend knows about the user and creates them in MongoDB
+  const { isSignedIn } = useClerkAuth();
+  
+  useEffect(() => {
+    const sync = async () => {
+      if (!isSignedIn) return;
+      
+      try {
+        // Sync user with backend - cookies are sent automatically by axios
+        // This will create the user document in MongoDB if it doesn't exist
+        await userAPI.sync();
+        console.log('✅ User synced with backend via cookie session');
+      } catch (e) {
+        // Non-blocking - log error but don't prevent app from loading
+        console.warn('⚠️ User sync failed (non-blocking):', e.message);
+      }
+    };
+    
+    // Small delay to ensure Clerk session cookie is fully established
+    const timeoutId = setTimeout(() => {
+      sync();
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [isSignedIn]);
+
   return (
     <ErrorBoundary>
       <AuthProvider>
