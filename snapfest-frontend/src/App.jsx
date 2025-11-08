@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { SignIn, SignUp, RedirectToSignIn, SignedIn, SignedOut, useAuth } from '@clerk/clerk-react';
+import RoleBasedAuth from './components/auth/RoleBasedAuth';
 import { userAPI } from './services/api';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -92,13 +93,19 @@ function App() {
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            {/* Clerk auth routes with wildcards to support SSO callbacks */}
-            <Route path="/sign-in/*" element={<SignIn />} />
-            <Route path="/sign-up/*" element={<SignUp />} />
+            {/* Card-based auth routes with role selection */}
+            <Route path="/sign-in" element={<RoleBasedAuth mode="signin" />} />
+            <Route path="/sign-up" element={<RoleBasedAuth mode="signup" />} />
+            <Route path="/sign-in/complete" element={<RoleBasedAuth mode="signin" />} />
+            <Route path="/sign-up/complete" element={<RoleBasedAuth mode="signup" />} />
+            
+            {/* Clerk auth routes with wildcards to support SSO callbacks (fallback) */}
+            <Route path="/sign-in/*" element={<RoleBasedAuth mode="signin" />} />
+            <Route path="/sign-up/*" element={<RoleBasedAuth mode="signup" />} />
 
             {/* Backward compatibility redirects */}
-            <Route path="/login" element={<SignIn />} />
-            <Route path="/register" element={<SignUp />} />
+            <Route path="/login" element={<RoleBasedAuth mode="signin" />} />
+            <Route path="/register" element={<RoleBasedAuth mode="signup" />} />
             <Route path="/events" element={<Events />} />
             <Route path="/events/:id" element={<EventDetail />} />
             <Route path="/gallery" element={<Gallery />} />

@@ -2515,3 +2515,514 @@
   message: 'Application error occurred',
   timestamp: '2025-11-04 16:22:56'
 }
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '9q4kdxef4',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: {},
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-05 17:37:04'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '9q4kdxef4',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-05 17:37:04'
+}
+{
+  service: 'snapfest-backend',
+  error: "Cannot read properties of undefined (reading 'role')",
+  stack: "TypeError: Cannot read properties of undefined (reading 'role')\n" +
+    '    at file:///mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/src/controllers/userController.js:1482:34\n' +
+    '    at file:///mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:69:19\n' +
+    '    at Layer.handleRequest (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at next (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/router/lib/route.js:157:13)\n' +
+    '    at optionalAuth (file:///mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/src/middleware/auth.js:618:3)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)',
+  reqId: 'hzp5kierp',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-07 14:56:22'
+}
+{
+  service: 'snapfest-backend',
+  error: "Cannot read properties of undefined (reading 'role')",
+  stack: "TypeError: Cannot read properties of undefined (reading 'role')\n" +
+    '    at file:///mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/src/controllers/userController.js:1482:34\n' +
+    '    at file:///mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:69:19\n' +
+    '    at Layer.handleRequest (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at next (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/router/lib/route.js:157:13)\n' +
+    '    at optionalAuth (file:///mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/src/middleware/auth.js:618:3)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)',
+  reqId: 'hzp5kierp',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-07 14:56:22'
+}
+{
+  service: 'snapfest-backend',
+  error: "Cannot read properties of undefined (reading 'role')",
+  stack: "TypeError: Cannot read properties of undefined (reading 'role')\n" +
+    '    at file:///mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/src/controllers/userController.js:1482:34\n' +
+    '    at file:///mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:69:19\n' +
+    '    at Layer.handleRequest (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at next (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/router/lib/route.js:157:13)\n' +
+    '    at optionalAuth (file:///mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/src/middleware/auth.js:618:3)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)',
+  reqId: 'tecl8er9l',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-07 15:16:40'
+}
+{
+  service: 'snapfest-backend',
+  error: "Cannot read properties of undefined (reading 'role')",
+  stack: "TypeError: Cannot read properties of undefined (reading 'role')\n" +
+    '    at file:///mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/src/controllers/userController.js:1482:34\n' +
+    '    at file:///mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:69:19\n' +
+    '    at Layer.handleRequest (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at next (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/router/lib/route.js:157:13)\n' +
+    '    at optionalAuth (file:///mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/src/middleware/auth.js:618:3)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)',
+  reqId: 'tecl8er9l',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-07 15:16:40'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'ct3t85wdi',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: {},
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-07 15:16:41'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'ct3t85wdi',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-07 15:16:41'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'o0mskv0gc',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-07 15:33:01'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'o0mskv0gc',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-07 15:33:01'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'khcivrzy9',
+  method: 'POST',
+  url: '/api/users/sync?role=user',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: {},
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-07 15:33:01'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'khcivrzy9',
+  method: 'POST',
+  url: '/api/users/sync?role=user',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-07 15:33:01'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '7pmr56uu5',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-08 05:29:57'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '7pmr56uu5',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-08 05:29:57'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '0kjh8jz5y',
+  method: 'POST',
+  url: '/api/users/sync?role=user',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: {},
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-08 05:29:57'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '0kjh8jz5y',
+  method: 'POST',
+  url: '/api/users/sync?role=user',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-08 05:29:57'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '0zbs6n442',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: {},
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-08 05:29:58'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '0zbs6n442',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-08 05:29:58'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'g26kjhfb6',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-08 05:30:29'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'g26kjhfb6',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-08 05:30:29'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'ex12cbc81',
+  method: 'POST',
+  url: '/api/users/sync?role=user',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: {},
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-08 06:11:55'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'ex12cbc81',
+  method: 'POST',
+  url: '/api/users/sync?role=user',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-08 06:11:55'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'l61sj6stc',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-08 06:11:55'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "omkiepachauli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'l61sj6stc',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-08 06:11:55'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "mamtapachouli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "mamtapachouli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'w7sinq7xp',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: {},
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-08 06:43:30'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "mamtapachouli@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "mamtapachouli@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async executeOperation (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/mnt/c/Users/Lenovo/OneDrive/Desktop/Yash/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'w7sinq7xp',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-08 06:43:30'
+}

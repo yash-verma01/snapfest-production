@@ -1,5 +1,5 @@
 import { asyncHandler } from '../middleware/errorHandler.js';
-import { User, Vendor, Booking, Payment, OTP, Review } from '../models/index.js';
+import { User, Booking, Payment, OTP, Review } from '../models/index.js';
 import AuthService from '../services/authService.js';
 import PasswordService from '../services/passwordService.js';
 
@@ -36,23 +36,19 @@ export const registerVendor = asyncHandler(async (req, res) => {
   // Hash password
   const hashedPassword = await PasswordService.hashPassword(password);
 
-  // Create user with vendor role
+  // Create user with vendor role and vendor-specific fields
   const user = await User.create({
     name,
     email,
     phone,
     password: hashedPassword,
     role: 'vendor',
-    isActive: false // Admin needs to approve
-  });
-
-  // Create minimal vendor profile (will be updated later in profile section)
-  const vendor = await Vendor.create({
-    userId: user._id,
+    isActive: false, // Admin needs to approve
     businessName: `${name}'s Business`, // Default business name
     servicesOffered: [], // Empty initially
     experience: 0, // Default to 0
     availability: 'AVAILABLE', // Use correct field name
+    profileComplete: false,
     earningsSummary: {
       totalEarnings: 0,
       thisMonthEarnings: 0,
@@ -70,14 +66,11 @@ export const registerVendor = asyncHandler(async (req, res) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
-        isActive: user.isActive
-      },
-      vendor: {
-        id: vendor._id,
-        businessName: vendor.businessName,
-        servicesOffered: vendor.servicesOffered,
-        experience: vendor.experience,
-        profileComplete: false // Indicates profile needs completion
+        isActive: user.isActive,
+        businessName: user.businessName,
+        servicesOffered: user.servicesOffered,
+        experience: user.experience,
+        profileComplete: user.profileComplete
       }
     }
   });
@@ -114,54 +107,19 @@ export const loginVendor = asyncHandler(async (req, res) => {
     });
   }
 
-  // Get vendor profile
-  const vendor = await Vendor.findOne({ userId: user._id });
-
-  // If vendor profile doesn't exist, create a minimal one
-  if (!vendor) {
-    const newVendor = await Vendor.create({
-      userId: user._id,
-      businessName: `${user.name}'s Business`,
-      servicesOffered: [],
-      experience: 0,
-      isAvailable: true,
-      rating: 0,
-      totalBookings: 0,
-      totalEarnings: 0
-    });
-    
-    // Generate token
-    const token = AuthService.generateToken(user._id, user.role);
-
-    // Update last login
-    user.lastLogin = new Date();
+  // Initialize vendor-specific fields if not already set
+  if (!user.businessName) {
+    user.businessName = `${user.name}'s Business`;
+    user.servicesOffered = [];
+    user.experience = 0;
+    user.availability = 'AVAILABLE';
+    user.profileComplete = false;
+    user.earningsSummary = {
+      totalEarnings: 0,
+      thisMonthEarnings: 0,
+      totalBookings: 0
+    };
     await user.save();
-
-    return res.status(200).json({
-      success: true,
-      message: 'Vendor logged in successfully',
-      data: {
-        token,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-          profileImage: user.profileImage
-        },
-        vendor: {
-          id: newVendor._id,
-          businessName: newVendor.businessName,
-          servicesOffered: newVendor.servicesOffered,
-          experience: newVendor.experience,
-          isAvailable: newVendor.isAvailable,
-          rating: newVendor.rating,
-          totalBookings: newVendor.totalBookings,
-          totalEarnings: newVendor.totalEarnings
-        }
-      }
-    });
   }
 
   // Generate token
@@ -182,60 +140,46 @@ export const loginVendor = asyncHandler(async (req, res) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
-        profileImage: user.profileImage
-      },
-      vendor: {
-        id: vendor._id,
-        businessName: vendor.businessName,
-        servicesOffered: vendor.servicesOffered,
-        experience: vendor.experience,
-        isAvailable: vendor.isAvailable,
-        rating: vendor.rating
+        profileImage: user.profileImage,
+        businessName: user.businessName,
+        servicesOffered: user.servicesOffered,
+        experience: user.experience,
+        availability: user.availability,
+        profileComplete: user.profileComplete,
+        earningsSummary: user.earningsSummary
       }
     }
   });
 });
 
 export const getVendorProfile = asyncHandler(async (req, res) => {
-  // Use req.vendor if available (from Clerk auth), otherwise fall back to req.userId lookup
-  let vendor;
+  // Use req.user (which is set by auth middleware) - should have role='vendor'
+  let vendor = req.user;
   
-  if (req.vendor) {
-    // Vendor authenticated via Clerk - use req.vendor directly
-    vendor = req.vendor;
-  } else {
-    // Legacy path - find vendor by userId (for backward compatibility)
-    const user = await User.findById(req.userId).select('-password');
-    if (!user) {
+  // If req.user is not set, fall back to finding by userId
+  if (!vendor) {
+    vendor = await User.findOne({ _id: req.userId, role: 'vendor' }).select('-password');
+    if (!vendor) {
       return res.status(404).json({
         success: false,
         message: 'Vendor not found'
       });
     }
-    
-    vendor = await Vendor.findOne({ userId: req.userId });
-    
-    // If vendor profile doesn't exist, create a minimal one (legacy behavior)
-    if (!vendor) {
-      vendor = await Vendor.create({
-        userId: req.userId,
-        clerkId: user.clerkId || null,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        profileImage: user.profileImage,
-        businessName: `${user.name}'s Business`,
-        servicesOffered: [],
-        experience: 0,
-        availability: 'AVAILABLE',
-        profileComplete: false,
-        earningsSummary: {
-          totalEarnings: 0,
-          thisMonthEarnings: 0,
-          totalBookings: 0
-        }
-      });
-    }
+  }
+  
+  // Ensure vendor has required fields initialized
+  if (!vendor.businessName) {
+    vendor.businessName = `${vendor.name}'s Business`;
+    vendor.servicesOffered = [];
+    vendor.experience = 0;
+    vendor.availability = 'AVAILABLE';
+    vendor.profileComplete = false;
+    vendor.earningsSummary = {
+      totalEarnings: 0,
+      thisMonthEarnings: 0,
+      totalBookings: 0
+    };
+    await vendor.save();
   }
 
   res.status(200).json({
@@ -297,22 +241,21 @@ export const updateVendorProfile = asyncHandler(async (req, res) => {
   }
   await user.save();
 
-  // Update vendor profile
-  const vendor = await Vendor.findOne({ userId: req.userId });
-  if (businessName) vendor.businessName = businessName;
-  if (servicesOffered) vendor.servicesOffered = servicesOffered;
-  if (experience !== undefined) vendor.experience = experience;
-  if (businessType) vendor.businessType = businessType;
-  if (location) vendor.location = location;
-  if (bio) vendor.bio = bio;
-  if (availability) vendor.availability = availability;
-  if (portfolio) vendor.portfolio = portfolio;
-  if (pricing) vendor.pricing = pricing;
+  // Update vendor-specific fields (user already loaded above)
+  if (businessName) user.businessName = businessName;
+  if (servicesOffered) user.servicesOffered = servicesOffered;
+  if (experience !== undefined) user.experience = experience;
+  if (businessType) user.businessType = businessType;
+  if (location) user.location = location;
+  if (bio) user.bio = bio;
+  if (availability) user.availability = availability;
+  if (portfolio) user.portfolio = portfolio;
+  if (pricing) user.pricing = pricing;
   
   // Mark profile as complete if essential fields are filled
-  vendor.profileComplete = !!(businessName && servicesOffered && servicesOffered.length > 0);
+  user.profileComplete = !!(businessName && servicesOffered && servicesOffered.length > 0);
   
-  await vendor.save();
+  await user.save();
 
   res.status(200).json({
     success: true,
@@ -326,10 +269,10 @@ export const updateVendorProfile = asyncHandler(async (req, res) => {
         profileImage: user.profileImage
       },
       vendor: {
-        id: vendor._id,
-        businessName: vendor.businessName,
-        servicesOffered: vendor.servicesOffered,
-        experience: vendor.experience
+        id: user._id,
+        businessName: user.businessName,
+        servicesOffered: user.servicesOffered,
+        experience: user.experience
       }
     }
   });
@@ -370,7 +313,7 @@ export const logoutVendor = asyncHandler(async (req, res) => {
 
 // ==================== VENDOR DASHBOARD & ANALYTICS ====================
 export const getVendorDashboard = asyncHandler(async (req, res) => {
-  const vendor = await Vendor.findOne({ userId: req.userId });
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
@@ -440,7 +383,7 @@ export const getVendorDashboard = asyncHandler(async (req, res) => {
 });
 
 export const getVendorStats = asyncHandler(async (req, res) => {
-  const vendor = await Vendor.findOne({ userId: req.userId });
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
@@ -520,7 +463,7 @@ export const getVendorStats = asyncHandler(async (req, res) => {
 });
 
 export const getVendorEarnings = asyncHandler(async (req, res) => {
-  const vendor = await Vendor.findOne({ userId: req.userId });
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
@@ -607,7 +550,7 @@ export const getVendorEarnings = asyncHandler(async (req, res) => {
 });
 
 export const getVendorPerformance = asyncHandler(async (req, res) => {
-  const vendor = await Vendor.findOne({ userId: req.userId });
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
@@ -700,7 +643,7 @@ export const getVendorPerformance = asyncHandler(async (req, res) => {
 
 // ==================== BOOKING MANAGEMENT ====================
 export const getVendorBookings = asyncHandler(async (req, res) => {
-  const vendor = await Vendor.findOne({ userId: req.userId });
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
@@ -777,7 +720,7 @@ export const getVendorBookings = asyncHandler(async (req, res) => {
 });
 
 export const getVendorBookingById = asyncHandler(async (req, res) => {
-  const vendor = await Vendor.findOne({ userId: req.userId });
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
@@ -809,7 +752,7 @@ export const getVendorBookingById = asyncHandler(async (req, res) => {
 
 export const updateBookingStatus = asyncHandler(async (req, res) => {
   const { status, notes } = req.body || {};
-  const vendor = await Vendor.findOne({ userId: req.userId });
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
@@ -868,7 +811,7 @@ export const updateBookingStatus = asyncHandler(async (req, res) => {
 });
 
 export const startBooking = asyncHandler(async (req, res) => {
-  const vendor = await Vendor.findOne({ userId: req.userId });
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
@@ -911,7 +854,7 @@ export const startBooking = asyncHandler(async (req, res) => {
 
 export const completeBooking = asyncHandler(async (req, res) => {
   const { completionNotes } = req.body || {};
-  const vendor = await Vendor.findOne({ userId: req.userId });
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
@@ -952,7 +895,7 @@ export const completeBooking = asyncHandler(async (req, res) => {
 
 export const cancelBooking = asyncHandler(async (req, res) => {
   const { cancellationReason } = req.body || {};
-  const vendor = await Vendor.findOne({ userId: req.userId });
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
@@ -989,7 +932,7 @@ export const cancelBooking = asyncHandler(async (req, res) => {
 
 // ==================== OTP VERIFICATION SYSTEM ====================
 export const getPendingOTPs = asyncHandler(async (req, res) => {
-  const vendor = await Vendor.findOne({ userId: req.userId });
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
@@ -1016,7 +959,7 @@ export const getPendingOTPs = asyncHandler(async (req, res) => {
 
 export const verifyOTP = asyncHandler(async (req, res) => {
   const { bookingId, otpCode } = req.body;
-  const vendor = await Vendor.findOne({ userId: req.userId });
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
@@ -1073,7 +1016,7 @@ export const verifyOTP = asyncHandler(async (req, res) => {
 });
 
 export const getOTPHistory = asyncHandler(async (req, res) => {
-  const vendor = await Vendor.findOne({ userId: req.userId });
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
@@ -1109,7 +1052,7 @@ export const getOTPHistory = asyncHandler(async (req, res) => {
 
 export const requestNewOTP = asyncHandler(async (req, res) => {
   const { bookingId } = req.body;
-  const vendor = await Vendor.findOne({ userId: req.userId });
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
@@ -1182,7 +1125,7 @@ export const verifyPaymentCompletion = asyncHandler(async (req, res) => {
 
 // ==================== AVAILABILITY & SETTINGS ====================
 export const getVendorAvailability = asyncHandler(async (req, res) => {
-  const vendor = await Vendor.findOne({ userId: req.userId });
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
@@ -1204,7 +1147,7 @@ export const getVendorAvailability = asyncHandler(async (req, res) => {
 
 export const updateVendorAvailability = asyncHandler(async (req, res) => {
   const { isAvailable, availabilitySchedule, workingHours, holidays } = req.body;
-  const vendor = await Vendor.findOne({ userId: req.userId });
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
@@ -1233,7 +1176,7 @@ export const updateVendorAvailability = asyncHandler(async (req, res) => {
 });
 
 export const toggleVendorActive = asyncHandler(async (req, res) => {
-  const vendor = await Vendor.findOne({ userId: req.userId });
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
@@ -1255,7 +1198,7 @@ export const toggleVendorActive = asyncHandler(async (req, res) => {
 });
 
 export const getVendorSettings = asyncHandler(async (req, res) => {
-  const vendor = await Vendor.findOne({ userId: req.userId });
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
@@ -1277,7 +1220,7 @@ export const getVendorSettings = asyncHandler(async (req, res) => {
 
 export const updateVendorSettings = asyncHandler(async (req, res) => {
   const { notificationSettings, privacySettings, businessSettings, paymentSettings } = req.body;
-  const vendor = await Vendor.findOne({ userId: req.userId });
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
@@ -1719,31 +1662,29 @@ export const getBookingById = asyncHandler(async (req, res) => {
 // @route   POST /api/vendors/sync
 // @access  Private (Clerk cookie session) - uses optionalAuth to handle session edge cases
 export const syncClerkVendor = asyncHandler(async (req, res) => {
-  // If req.vendor already exists (from optionalAuth middleware), return it
-  if (req.vendor && req.vendorId) {
-    const vendor = await Vendor.findById(req.vendorId);
-    if (vendor) {
-      return res.status(200).json({
-        success: true,
-        message: 'Vendor synced',
-        data: {
-          vendor: {
-            id: vendor._id,
-            clerkId: vendor.clerkId,
-            name: vendor.name,
-            email: vendor.email,
-            phone: vendor.phone,
-            businessName: vendor.businessName,
-            businessType: vendor.businessType,
-            servicesOffered: vendor.servicesOffered,
-            availability: vendor.availability,
-            profileComplete: vendor.profileComplete,
-            createdAt: vendor.createdAt,
-            updatedAt: vendor.updatedAt,
-          }
+  // If req.user already exists (from auth middleware), return it
+  if (req.user && req.user.role === 'vendor') {
+    const vendor = req.user;
+    return res.status(200).json({
+      success: true,
+      message: 'Vendor synced',
+      data: {
+        vendor: {
+          id: vendor._id,
+          clerkId: vendor.clerkId,
+          name: vendor.name,
+          email: vendor.email,
+          phone: vendor.phone,
+          businessName: vendor.businessName,
+          businessType: vendor.businessType,
+          servicesOffered: vendor.servicesOffered,
+          availability: vendor.availability,
+          profileComplete: vendor.profileComplete,
+          createdAt: vendor.createdAt,
+          updatedAt: vendor.updatedAt,
         }
-      });
-    }
+      }
+    });
   }
   
   // If req.vendor doesn't exist, get Clerk session and create/find vendor
@@ -1751,18 +1692,10 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
   const { createClerkClient } = await import('@clerk/clerk-sdk-node');
   
   // Helper function to get the correct clerkClient based on origin
-  const getClerkClientForOrigin = (origin) => {
-    if (!origin) {
-      return createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY_USER });
-    }
-    if (origin.includes('localhost:3001') || origin.includes(':3001')) {
-      return createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY_VENDOR });
-    } else if (origin.includes('localhost:3002') || origin.includes(':3002')) {
-      return createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY_ADMIN });
-    } else {
-      return createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY_USER });
-    }
-  };
+  // Single Clerk client instance (no port-based routing)
+  const getClerkClient = () => createClerkClient({ 
+    secretKey: process.env.CLERK_SECRET_KEY || process.env.CLERK_SECRET_KEY_USER
+  });
   
   // Try getAuth(req) first, then fallback to req.auth
   let clerkAuth = getAuth(req);
@@ -1804,20 +1737,11 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
   const urlHost = req.get('host') || '';
   const requestUrl = req.url || req.originalUrl || '';
   
-  const isVendorPort = origin.includes('localhost:3001') || 
-                       origin.includes(':3001') ||
-                       urlHost.includes(':3001') ||
-                       requestUrl.includes('/vendor/');
-  
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🔍 syncClerkVendor: Origin check', { origin, isVendorPort });
-  }
-  
   // Get Clerk user metadata
   let publicMetadata = clerkAuth?.claims?.publicMetadata || null;
   if (!publicMetadata) {
     try {
-      const clerkClient = getClerkClientForOrigin(origin);
+      const clerkClient = getClerkClient();
       const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
       publicMetadata = clerkUser.publicMetadata || null;
     } catch (e) {
@@ -1825,50 +1749,12 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
     }
   }
   
-  // CRITICAL: Auto-set vendor role based on port BEFORE checking
-  // If request came from vendor port (3001), automatically set vendor role in Clerk
-  if (isVendorPort && publicMetadata?.role !== 'vendor') {
-    try {
-      // Update Clerk user metadata to set vendor role
-      const clerkClient = getClerkClientForOrigin(origin);
-      await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
-        publicMetadata: { 
-          ...publicMetadata,
-          role: 'vendor' 
-        }
-      });
-      
-      // Refresh metadata after update
-      const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
-      publicMetadata = updatedUser.publicMetadata || { role: 'vendor' };
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ syncClerkVendor: Auto-set vendor role for port 3001 user:', clerkAuth.userId);
-      }
-    } catch (updateError) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ syncClerkVendor: Failed to update Clerk metadata:', updateError.message);
-      }
-      // Set role locally even if Clerk update fails - allow vendor creation from port 3001
-      publicMetadata = { ...publicMetadata, role: 'vendor' };
-    }
-  }
-  
-  // Verify this is a vendor user (after auto-setting role)
-  // CRITICAL: Allow vendor creation if request came from vendor port (3001), even if role not yet set in Clerk
-  if (publicMetadata?.role !== 'vendor' && !isVendorPort) {
+  // Verify this is a vendor user (role must be set in Clerk public metadata)
+  if (publicMetadata?.role !== 'vendor') {
     return res.status(403).json({ 
       success: false, 
-      message: 'Access denied. Vendor role required. Please sign up from the vendor portal (port 3001) or ensure your Clerk account has role: vendor in public metadata.' 
+      message: 'Access denied. Vendor role required. Please ensure your Clerk account has role: vendor in public metadata.' 
     });
-  }
-  
-  // If isVendorPort is true but role still not set, force it locally
-  if (isVendorPort && publicMetadata?.role !== 'vendor') {
-    publicMetadata = { ...publicMetadata, role: 'vendor' };
-    if (process.env.NODE_ENV === 'development') {
-      console.log('✅ syncClerkVendor: Forcing vendor role for port 3001 (local override)');
-    }
   }
   
   // Extract email and name from Clerk session
@@ -1895,7 +1781,7 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
   
   if (!finalEmail) {
     try {
-      const clerkClient = getClerkClientForOrigin(origin);
+      const clerkClient = getClerkClient();
       const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
       finalEmail = clerkUser.emailAddresses?.find(email => email.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
                    clerkUser.emailAddresses?.[0]?.emailAddress ||
@@ -1921,60 +1807,71 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
     });
   }
   
-  // Find or create vendor in Vendor collection (not User)
-  let vendor = await Vendor.findOne({ clerkId: clerkAuth.userId });
+  // Find or create vendor in User collection with role='vendor'
+  let vendor = await User.findOne({ clerkId: clerkAuth.userId, role: 'vendor' });
   
   if (process.env.NODE_ENV === 'development') {
     console.log('🔍 syncClerkVendor: Looking for vendor:', {
       clerkId: clerkAuth.userId,
       vendorFound: !!vendor,
-      isVendorPort,
       origin,
-      urlHost,
-      requestUrl,
       publicMetadataRole: publicMetadata?.role
     });
   }
   
-  // Check if a User document exists with the same clerkId (edge case: user signed in as user first)
-  const existingUser = await User.findOne({ clerkId: clerkAuth.userId });
-  if (existingUser && process.env.NODE_ENV === 'development') {
-    console.warn('⚠️ syncClerkVendor: User document exists with same clerkId:', {
-      userId: existingUser._id,
-      email: existingUser.email,
-      role: existingUser.role
-    });
-    console.warn('   This vendor should be in Vendor collection, not User collection.');
-    console.warn('   The User document will not be used - vendor will be created/used from Vendor collection.');
-  }
-  
   if (!vendor) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 syncClerkVendor: Creating new vendor document...');
-      console.log('   Email:', finalEmail);
-      console.log('   Name:', finalName);
-      console.log('   ClerkId:', clerkAuth.userId);
-    }
-    
-    // Create new vendor document in Vendor collection
-    vendor = await Vendor.create({
-      clerkId: clerkAuth.userId,
-      name: finalName || finalEmail.split('@')[0],
-      email: finalEmail.toLowerCase().trim(),
-      businessName: `${finalName || finalEmail.split('@')[0]}'s Business`,
-      servicesOffered: [],
-      experience: 0,
-      availability: 'AVAILABLE',
-      profileComplete: false,
-      earningsSummary: {
-        totalEarnings: 0,
-        thisMonthEarnings: 0,
-        totalBookings: 0
+    // Check if user exists with different role - update role to vendor
+    const existingUser = await User.findOne({ clerkId: clerkAuth.userId });
+    if (existingUser) {
+      // Update existing user to vendor role
+      existingUser.role = 'vendor';
+      if (!existingUser.businessName) {
+        existingUser.businessName = `${finalName || finalEmail.split('@')[0]}'s Business`;
+        existingUser.servicesOffered = [];
+        existingUser.experience = 0;
+        existingUser.availability = 'AVAILABLE';
+        existingUser.profileComplete = false;
+        existingUser.earningsSummary = {
+          totalEarnings: 0,
+          thisMonthEarnings: 0,
+          totalBookings: 0
+        };
       }
-    });
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('✅ Created new vendor via sync:', { vendorId: vendor._id, email: vendor.email, clerkId: vendor.clerkId });
+      vendor = await existingUser.save();
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Updated user role to vendor via sync:', { vendorId: vendor._id, email: vendor.email, clerkId: vendor.clerkId });
+      }
+    } else {
+      // Create new vendor user
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 syncClerkVendor: Creating new vendor user...');
+        console.log('   Email:', finalEmail);
+        console.log('   Name:', finalName);
+        console.log('   ClerkId:', clerkAuth.userId);
+      }
+      
+      vendor = await User.create({
+        clerkId: clerkAuth.userId,
+        name: finalName || finalEmail.split('@')[0],
+        email: finalEmail.toLowerCase().trim(),
+        role: 'vendor',
+        isActive: true,
+        businessName: `${finalName || finalEmail.split('@')[0]}'s Business`,
+        servicesOffered: [],
+        experience: 0,
+        availability: 'AVAILABLE',
+        profileComplete: false,
+        earningsSummary: {
+          totalEarnings: 0,
+          thisMonthEarnings: 0,
+          totalBookings: 0
+        }
+      });
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Created new vendor via sync:', { vendorId: vendor._id, email: vendor.email, clerkId: vendor.clerkId });
+      }
     }
   } else {
     // Update vendor if email/name changed

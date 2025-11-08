@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser, useClerk, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 import { Menu, X, User, LogOut, Settings, Package, Calendar, Home, Camera, Heart, ShoppingCart } from 'lucide-react';
@@ -6,9 +6,41 @@ import { Menu, X, User, LogOut, Settings, Package, Calendar, Home, Camera, Heart
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const { user } = useUser();
+  const [userRole, setUserRole] = useState(null);
+  const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
   const navigate = useNavigate();
+
+  // Fetch user role from backend if not in Clerk metadata
+  useEffect(() => {
+    if (isLoaded && user && !user.publicMetadata?.role) {
+      const fetchUserRole = async () => {
+        try {
+          const response = await fetch('http://localhost:5001/api/users/sync', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const role = data.data?.user?.role || data.data?.vendor?.role || 'user';
+            setUserRole(role);
+          }
+        } catch (error) {
+          console.error('Error fetching user role:', error);
+          setUserRole('user'); // Default to user
+        }
+      };
+      
+      fetchUserRole();
+    } else if (user?.publicMetadata?.role) {
+      // Use Clerk metadata if available
+      setUserRole(user.publicMetadata.role);
+    }
+  }, [user, isLoaded]);
 
   const handleLogout = async () => {
     await signOut();
@@ -16,8 +48,11 @@ const Navbar = () => {
     setIsProfileOpen(false);
   };
 
+  // Get role from Clerk metadata or backend (fallback)
+  const currentRole = user?.publicMetadata?.role || userRole || 'user';
+
   const getDashboardLink = () => {
-    switch (user?.publicMetadata?.role) {
+    switch (currentRole) {
       case 'admin':
         return '/admin/dashboard';
       case 'vendor':
@@ -30,7 +65,7 @@ const Navbar = () => {
   };
 
   const getProfileLink = () => {
-    switch (user?.publicMetadata?.role) {
+    switch (currentRole) {
       case 'admin':
         return '/admin/profile';
       case 'vendor':
@@ -43,7 +78,7 @@ const Navbar = () => {
   };
 
   const getRoleDisplayName = () => {
-    switch (user?.publicMetadata?.role) {
+    switch (currentRole) {
       case 'admin':
         return 'Admin';
       case 'vendor':
@@ -51,12 +86,12 @@ const Navbar = () => {
       case 'user':
         return 'User';
       default:
-        return 'Guest';
+        return 'User';
     }
   };
 
   // Check if current user is admin - hide browsing features in admin UI
-  const isAdmin = user?.publicMetadata?.role === 'admin';
+  const isAdmin = currentRole === 'admin';
 
   return (
     <nav className="bg-white/95 backdrop-blur-xl shadow-lg sticky top-0 z-50 border-b border-pink-100">
@@ -146,7 +181,7 @@ const Navbar = () => {
                 {/* Profile Dropdown */}
                 {isProfileOpen && (
                   <div className="absolute right-0 mt-3 w-56 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-primary-100 py-2 z-50">
-                    {(user?.publicMetadata?.role === 'admin' || user?.publicMetadata?.role === 'vendor') && (
+                    {(currentRole === 'admin' || currentRole === 'vendor') && (
                       <Link
                         to={getDashboardLink()}
                         className="flex items-center px-4 py-3 text-sm text-neutral-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300"
@@ -164,7 +199,7 @@ const Navbar = () => {
                       <Settings className="w-4 h-4 mr-3 text-primary-500" />
                       Profile
                     </Link>
-                    {user?.publicMetadata?.role === 'user' && (
+                    {currentRole === 'user' && (
                       <>
                         <Link
                           to="/user/bookings"
@@ -294,7 +329,7 @@ const Navbar = () => {
               {user && (
                 <>
                   <div className="border-t border-primary-100 my-2"></div>
-                  {(user?.publicMetadata?.role === 'admin' || user?.publicMetadata?.role === 'vendor') && (
+                  {(currentRole === 'admin' || currentRole === 'vendor') && (
                     <Link
                       to={getDashboardLink()}
                       className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
@@ -312,7 +347,7 @@ const Navbar = () => {
                     <Settings className="w-5 h-5 mr-3 text-primary-500" />
                     Profile
                   </Link>
-                  {user?.publicMetadata?.role === 'user' && (
+                  {currentRole === 'user' && (
                     <>
                       <Link
                         to="/user/bookings"

@@ -25,7 +25,7 @@ if (!CLERK_PK) {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ClerkProvider publishableKey={CLERK_PK || ''} afterSignInUrl="/admin/dashboard" afterSignUpUrl="/admin/dashboard">
+    <ClerkProvider publishableKey={CLERK_PK || ''} afterSignInUrl="/sign-in/complete" afterSignUpUrl="/sign-up/complete">
       <AdminApp />
     </ClerkProvider>
   </StrictMode>,

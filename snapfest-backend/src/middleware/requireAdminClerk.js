@@ -233,20 +233,18 @@ export const requireAdminClerk = async (req, res, next) => {
 async function updateAdminAuditLog(userId, email) {
   try {
     // Dynamic import to avoid circular dependencies and keep it optional
-    const { Admin } = await import('../models/index.js');
+    const { User } = await import('../models/index.js');
     
-    await Admin.findOneAndUpdate(
-      { clerkId: userId },
+    // Update admin user's lastLogin (admin users are stored in User collection with role='admin')
+    await User.findOneAndUpdate(
+      { clerkId: userId, role: 'admin' },
       { 
         $set: { 
           email: email || 'unknown',
           lastLogin: new Date() 
-        },
-        $setOnInsert: {
-          role: 'admin'
         }
       },
-      { upsert: true, setDefaultsOnInsert: true }
+      { upsert: false }
     );
   } catch (auditError) {
     // Non-blocking - don't fail request if audit write fails

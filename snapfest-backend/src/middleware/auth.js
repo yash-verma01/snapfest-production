@@ -5,31 +5,10 @@ import { createClerkClient } from '@clerk/clerk-sdk-node';
 // Note: dotenv.config() is already called in server.js
 // No need to reload environment variables here
 
-// Create clerkClient instances for each portal with correct secret keys
-const getUserClerkClient = () => createClerkClient({ 
-  secretKey: process.env.CLERK_SECRET_KEY_USER 
+// Single Clerk client instance (no port-based routing)
+const getClerkClient = () => createClerkClient({ 
+  secretKey: process.env.CLERK_SECRET_KEY || process.env.CLERK_SECRET_KEY_USER
 });
-
-const getVendorClerkClient = () => createClerkClient({ 
-  secretKey: process.env.CLERK_SECRET_KEY_VENDOR 
-});
-
-const getAdminClerkClient = () => createClerkClient({ 
-  secretKey: process.env.CLERK_SECRET_KEY_ADMIN 
-});
-
-// Helper function to get the correct clerkClient based on origin
-const getClerkClientForOrigin = (origin) => {
-  if (!origin) return getUserClerkClient(); // Default to user
-  
-  if (origin.includes('localhost:3001') || origin.includes(':3001')) {
-    return getVendorClerkClient();
-  } else if (origin.includes('localhost:3002') || origin.includes(':3002')) {
-    return getAdminClerkClient();
-  } else {
-    return getUserClerkClient(); // Default to user for port 3000 or unknown
-  }
-};
 
 /**
  * Authentication middleware using Clerk cookie-based sessions.
@@ -143,8 +122,7 @@ export const authenticate = async (req, res, next) => {
     if (!finalEmail) {
       console.warn('⚠️ Email not found in claims, fetching from Clerk API for userId:', clerkAuth.userId);
       try {
-        const origin = req.headers.origin || req.headers.referer || '';
-        const clerkClient = getClerkClientForOrigin(origin);
+        const clerkClient = getClerkClient();
         const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
         
         // Get primary email address
@@ -183,22 +161,8 @@ export const authenticate = async (req, res, next) => {
     // Update sanitizedName with final name
     const finalSanitizedName = (finalName || finalEmail.split('@')[0] || 'User').trim();
 
-    // Check if request came from specific ports for role auto-detection
-    const origin = req.headers.origin || req.headers.referer || '';
-    const isUserPort = origin.includes('localhost:3000') || 
-                       origin.includes(':3000');
-    const isVendorPort = origin.includes('localhost:3001') || 
-                         origin.includes(':3001');
-    const isAdminPort = origin.includes('localhost:3002') || 
-                        origin.includes(':3002');
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 authenticate: Origin check', { origin, isUserPort, isVendorPort, isAdminPort });
-    }
-
     // Check Clerk publicMetadata for role (admin, vendor, or default user)
-    // Get the correct clerkClient based on origin
-    const clerkClient = getClerkClientForOrigin(origin);
+    const clerkClient = getClerkClient();
     
     let publicMetadata = sessionClaims?.publicMetadata || clerkAuth?.claims?.publicMetadata || null;
     if (!publicMetadata) {
@@ -210,119 +174,10 @@ export const authenticate = async (req, res, next) => {
       }
     }
     
-    // Auto-set role based on port if not already set
-    let role = publicMetadata?.role;
-    if (!role) {
-      if (isVendorPort) {
-        // Vendor port - auto-set vendor role
-        try {
-          const clerkClient = getClerkClientForOrigin(origin);
-          await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
-            publicMetadata: { 
-              ...publicMetadata,
-              role: 'vendor' 
-            }
-          });
-          role = 'vendor';
-          publicMetadata = { ...publicMetadata, role: 'vendor' };
-          
-          if (process.env.NODE_ENV === 'development') {
-            console.log('✅ authenticate: Auto-set vendor role for user:', clerkAuth.userId);
-          }
-        } catch (e) {
-          console.error('❌ authenticate: Failed to set vendor role:', e.message);
-          role = 'user'; // Fallback to user
-        }
-      } else if (isAdminPort) {
-        // Admin port - don't auto-set (security - must be set manually)
-        role = 'user'; // Default to user
-      } else if (isUserPort) {
-        // User port - auto-set user role
-        try {
-          const clerkClient = getClerkClientForOrigin(origin);
-          await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
-            publicMetadata: { 
-              ...publicMetadata,
-              role: 'user' 
-            }
-          });
-          role = 'user';
-          publicMetadata = { ...publicMetadata, role: 'user' };
-          
-          if (process.env.NODE_ENV === 'development') {
-            console.log('✅ authenticate: Auto-set user role for user:', clerkAuth.userId);
-          }
-        } catch (e) {
-          console.error('❌ authenticate: Failed to set user role:', e.message);
-          role = 'user'; // Fallback
-        }
-      } else {
-        // Unknown origin - default to user
-        role = 'user';
-      }
-    }
+    // Get role from publicMetadata (set during sign-up or by admin)
+    let role = publicMetadata?.role || 'user';
     
-    // If role is 'vendor', create/update in Vendor collection instead of User
-    if (role === 'vendor') {
-      const { default: Vendor } = await import('../models/Vendor.js');
-      
-      let vendor = await Vendor.findOne({ clerkId: clerkAuth.userId });
-      
-      if (!vendor) {
-        // Create new vendor document in Vendor collection
-        vendor = await Vendor.create({
-          clerkId: clerkAuth.userId,
-          name: finalSanitizedName,
-          email: finalEmail.toLowerCase().trim(),
-          businessName: `${finalSanitizedName}'s Business`,
-          servicesOffered: [],
-          experience: 0,
-          availability: 'AVAILABLE',
-          profileComplete: false,
-          earningsSummary: {
-            totalEarnings: 0,
-            thisMonthEarnings: 0,
-            totalBookings: 0
-          }
-        });
-        
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✅ Created new vendor:', { vendorId: vendor._id, email: vendor.email, clerkId: vendor.clerkId });
-        }
-      } else {
-        // Update vendor if email/name changed
-        const needsUpdate = vendor.email !== finalEmail.toLowerCase().trim() || 
-                           vendor.name !== finalSanitizedName;
-        
-        if (needsUpdate) {
-          vendor.email = finalEmail.toLowerCase().trim();
-          vendor.name = finalSanitizedName;
-          await vendor.save();
-          
-          if (process.env.NODE_ENV === 'development') {
-            console.log('✅ Updated vendor:', { vendorId: vendor._id, email: vendor.email });
-          }
-        }
-      }
-      
-      // Attach vendor to request object
-      req.vendor = vendor;
-      req.vendorId = vendor._id;
-      req.userRole = 'vendor';
-      
-      // For backward compatibility, also set req.user and req.userId (pointing to vendor)
-      req.user = vendor;
-      req.userId = vendor._id;
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Vendor authenticated:', { vendorId: vendor._id, email: vendor.email });
-      }
-      
-      next();
-      return;
-    }
-    
-    // For admin and user roles, use User collection
+    // Use only User collection for all roles (user, vendor, admin)
     // Find or create user in local database
     let user = await User.findOne({ clerkId: clerkAuth.userId });
     
@@ -337,33 +192,62 @@ export const authenticate = async (req, res, next) => {
                       normalizedEmail === adminEmail.toLowerCase() ||
                       adminEmails.includes(normalizedEmail);
       
-      // Create new user document if it doesn't exist (idempotent operation)
-      // Clerk handles authentication, removed old auth fields (isEmailVerified, password, etc.)
-      // Email and name are required fields, so we've validated them above
-      user = await User.create({
-        clerkId: clerkAuth.userId, // req.auth.userId from Clerk middleware
+      // Determine final role
+      const finalRole = isAdmin ? 'admin' : (role || 'user');
+      
+      // Create user document with role-specific initialization
+      const userData = {
+        clerkId: clerkAuth.userId,
         name: finalSanitizedName,
         email: finalEmail.toLowerCase().trim(), // Ensure lowercase and trimmed
         isActive: true,
-        role: isAdmin ? 'admin' : 'user',
-      });
+        role: finalRole,
+      };
+      
+      // Initialize vendor-specific fields if role is vendor
+      if (finalRole === 'vendor') {
+        userData.businessName = `${finalSanitizedName}'s Business`;
+        userData.servicesOffered = [];
+        userData.experience = 0;
+        userData.availability = 'AVAILABLE';
+        userData.profileComplete = false;
+        userData.earningsSummary = {
+          totalEarnings: 0,
+          thisMonthEarnings: 0,
+          totalBookings: 0
+        };
+      }
+      
+      user = await User.create(userData);
       
       if (process.env.NODE_ENV === 'development') {
         console.log('✅ Created new user:', { userId: user._id, email: user.email, role: user.role, clerkId: user.clerkId });
       }
     } else {
-      // Update user if email/name changed in Clerk (sync metadata)
-      // Also update role if it changed in Clerk publicMetadata
+      // Update user if email/name/role changed in Clerk (sync metadata)
       const needsUpdate = user.email !== finalEmail.toLowerCase().trim() || 
                          user.name !== finalSanitizedName ||
-                         (role !== 'vendor' && user.role !== role);
+                         (role && user.role !== role);
       
       if (needsUpdate) {
         user.email = finalEmail.toLowerCase().trim();
         user.name = finalSanitizedName;
-        if (role !== 'vendor' && role !== user.role) {
-          // Only update role if it's not vendor (vendor uses Vendor collection)
+        if (role && user.role !== role) {
           user.role = role;
+          
+          // Initialize vendor-specific fields if role changed to vendor
+          if (role === 'vendor' && !user.businessName) {
+            user.businessName = `${finalSanitizedName}'s Business`;
+            user.servicesOffered = [];
+            user.experience = 0;
+            user.availability = 'AVAILABLE';
+            user.profileComplete = false;
+            user.earningsSummary = {
+              totalEarnings: 0,
+              thisMonthEarnings: 0,
+              totalBookings: 0
+            };
+          }
         }
         await user.save();
         
@@ -371,6 +255,12 @@ export const authenticate = async (req, res, next) => {
           console.log('✅ Updated user:', { userId: user._id, email: user.email, role: user.role });
         }
       }
+    }
+    
+    // For backward compatibility, set req.vendor if role is vendor
+    if (user.role === 'vendor') {
+      req.vendor = user;
+      req.vendorId = user._id;
     }
 
     // Check if user account is active
@@ -529,50 +419,12 @@ export const optionalAuth = async (req, res, next) => {
       }
       const sanitizedName = (name || 'User').trim();
 
-      // CRITICAL: Check if request came from vendor port (3001) FIRST - this determines if user is a vendor
-      // Get origin from multiple sources for better reliability
-      const origin = req.headers.origin || 
-                     req.headers.referer || 
-                     req.headers['x-forwarded-host'] ||
-                     (req.protocol + '://' + req.get('host')) ||
-                     '';
-      
-      // Also check request URL and host for port number as fallback
-      const urlHost = req.get('host') || '';
-      const requestUrl = req.url || req.originalUrl || '';
-      
-      const isUserPort = origin.includes('localhost:3000') || 
-                         origin.includes(':3000') ||
-                         urlHost.includes(':3000') ||
-                         requestUrl.includes('/user/');
-      const isVendorPort = origin.includes('localhost:3001') || 
-                           origin.includes(':3001') ||
-                           urlHost.includes(':3001') ||
-                           requestUrl.includes('/vendor/');
-      const isAdminPort = origin.includes('localhost:3002') || 
-                          origin.includes(':3002') ||
-                          urlHost.includes(':3002') ||
-                          requestUrl.includes('/admin/');
-      
-      const isVendorRoute = req.path.includes('/vendors/') || requestUrl.includes('/vendor/');
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔍 optionalAuth: Route check', { 
-          path: req.path, 
-          origin, 
-          isUserPort,
-          isVendorPort, 
-          isAdminPort,
-          isVendorRoute 
-        });
-      }
-      
       let publicMetadata = clerkAuth?.claims?.publicMetadata || null;
       
       // Fetch publicMetadata from Clerk if needed
       if (!publicMetadata) {
         try {
-          const clerkClient = getClerkClientForOrigin(origin);
+          const clerkClient = getClerkClient();
           const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
           publicMetadata = clerkUser.publicMetadata || null;
         } catch (e) {
@@ -580,131 +432,67 @@ export const optionalAuth = async (req, res, next) => {
         }
       }
       
-      // PRIORITY 1: Auto-set role based on port
-      // Determine target role based on port
-      let targetRole = null;
-      if (isVendorPort) {
-        targetRole = 'vendor';
-      } else if (isAdminPort) {
-        targetRole = 'admin';
-      } else if (isUserPort) {
-        targetRole = 'user';
-      }
+      // Use only User collection for all roles
+      let user = await User.findOne({ clerkId: clerkAuth.userId });
       
-      // Auto-set role in Clerk if port-based role doesn't match
-      if (targetRole && publicMetadata?.role !== targetRole) {
-        try {
-          const clerkClient = getClerkClientForOrigin(origin);
-          await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
-            publicMetadata: { 
-              ...publicMetadata,
-              role: targetRole 
-            }
-          });
-          
-          // Refresh metadata after update
-          const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
-          publicMetadata = updatedUser.publicMetadata || { role: targetRole };
-          
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`✅ optionalAuth: Auto-set ${targetRole} role for port ${isVendorPort ? '3001' : isAdminPort ? '3002' : '3000'} user:`, clerkAuth.userId);
-          }
-        } catch (updateError) {
-          if (process.env.NODE_ENV === 'development') {
-            console.error('❌ optionalAuth: Failed to update Clerk metadata:', updateError.message);
-          }
-          // Set role locally even if Clerk update fails
-          publicMetadata = { ...publicMetadata, role: targetRole };
-        }
-      }
-      
-      // Force role locally if port-based but Clerk update failed
-      if (targetRole && !publicMetadata?.role) {
-        publicMetadata = { ...publicMetadata, role: targetRole };
-      }
-      
-      // If this is a vendor (either from port 3001, vendor route, or has vendor role), handle vendor
-      if (isVendorPort || isVendorRoute || publicMetadata?.role === 'vendor') {
-        const { default: Vendor } = await import('../models/Vendor.js');
-        let vendor = await Vendor.findOne({ clerkId: clerkAuth.userId });
+      if (!user && email) {
+        // Check if this should be an admin user
+        const adminEmail = process.env.ADMIN_EMAIL || 'admin100@gmail.com';
+        const adminEmailsEnv = process.env.ADMIN_EMAILS;
+        const adminEmails = adminEmailsEnv ? adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()) : [];
+        const normalizedEmail = email.toLowerCase().trim();
         
-        if (!vendor && email) {
-          // Create vendor document - NOT a User document
-          vendor = await Vendor.create({
-            clerkId: clerkAuth.userId,
-            name: sanitizedName,
-            email: email.toLowerCase().trim(),
-            businessName: `${sanitizedName}'s Business`,
-            servicesOffered: [],
-            experience: 0,
-            availability: 'AVAILABLE',
-            profileComplete: false,
-            earningsSummary: {
-              totalEarnings: 0,
-              thisMonthEarnings: 0,
-              totalBookings: 0
-            }
-          });
-          
-          if (process.env.NODE_ENV === 'development') {
-            console.log('✅ optionalAuth: Created new VENDOR (not user):', { vendorId: vendor._id, email: vendor.email });
-          }
+        // Check if user should be admin based on email or metadata
+        const isAdmin = publicMetadata?.role === 'admin' ||
+                        normalizedEmail === adminEmail.toLowerCase() ||
+                        adminEmails.includes(normalizedEmail);
+        
+        // Determine final role
+        const finalRole = isAdmin ? 'admin' : (publicMetadata?.role || 'user');
+        
+        // Create user document with role-specific initialization
+        const userData = {
+          clerkId: clerkAuth.userId,
+          name: sanitizedName,
+          email: email.toLowerCase().trim(),
+          isActive: true,
+          role: finalRole,
+        };
+        
+        // Initialize vendor-specific fields if role is vendor
+        if (finalRole === 'vendor') {
+          userData.businessName = `${sanitizedName}'s Business`;
+          userData.servicesOffered = [];
+          userData.experience = 0;
+          userData.availability = 'AVAILABLE';
+          userData.profileComplete = false;
+          userData.earningsSummary = {
+            totalEarnings: 0,
+            thisMonthEarnings: 0,
+            totalBookings: 0
+          };
         }
         
-        if (vendor) {
-          req.vendor = vendor;
-          req.vendorId = vendor._id;
-          req.userRole = 'vendor';
-          // For backward compatibility, also set req.user (pointing to vendor)
-          req.user = vendor;
-          req.userId = vendor._id;
-          
-          if (process.env.NODE_ENV === 'development') {
-            console.log('✅ optionalAuth: VENDOR attached to request (not user):', { vendorId: vendor._id, email: vendor.email });
-          }
-        }
-      } else {
-        // Only create User document if NOT a vendor (NOT from port 3001, NOT vendor route, NOT vendor role)
-        let user = await User.findOne({ clerkId: clerkAuth.userId });
+        user = await User.create(userData);
         
-        if (!user && email) {
-          // Clerk handles authentication, removed old auth fields (isEmailVerified, password, etc.)
-          // Check if this should be an admin user
-          const adminEmail = process.env.ADMIN_EMAIL || 'admin100@gmail.com';
-          const adminEmailsEnv = process.env.ADMIN_EMAILS;
-          const adminEmails = adminEmailsEnv ? adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()) : [];
-          const normalizedEmail = email.toLowerCase().trim();
-          
-          // Priority: Port-based role > Metadata role > Email-based admin
-          const isAdmin = isAdminPort || 
-                          publicMetadata?.role === 'admin' ||
-                          normalizedEmail === adminEmail.toLowerCase() ||
-                          adminEmails.includes(normalizedEmail);
-          
-          // Set role based on port: admin for port 3002, user for port 3000
-          const userRole = isAdmin ? 'admin' : (targetRole === 'admin' ? 'admin' : 'user');
-          
-          user = await User.create({
-            clerkId: clerkAuth.userId,
-            name: sanitizedName,
-            email: email.toLowerCase().trim(),
-            isActive: true,
-            role: userRole,
-          });
-          
-          if (process.env.NODE_ENV === 'development') {
-            console.log('✅ optionalAuth: Created new USER (not vendor):', { userId: user._id, email: user.email, role: user.role });
-          }
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ optionalAuth: Created new user:', { userId: user._id, email: user.email, role: user.role });
         }
+      }
 
-        if (user && user.isActive) {
-          req.user = user;
-          req.userId = user._id;
-          req.userRole = user.role;
-          
-          if (process.env.NODE_ENV === 'development') {
-            console.log('✅ optionalAuth: USER attached to request:', { userId: user._id, email: user.email, role: user.role });
-          }
+      if (user && user.isActive) {
+        req.user = user;
+        req.userId = user._id;
+        req.userRole = user.role;
+        
+        // For backward compatibility, set req.vendor if role is vendor
+        if (user.role === 'vendor') {
+          req.vendor = user;
+          req.vendorId = user._id;
+        }
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ optionalAuth: User attached to request:', { userId: user._id, email: user.email, role: user.role });
         }
       }
     }
@@ -848,4 +636,137 @@ export const userOnly = (req, res, next) => {
     });
   }
   next();
+};
+
+/**
+ * Require User Role - Checks Clerk publicMetadata ONLY
+ * Rejects if user doesn't have 'user' role in Clerk
+ * This is checked BEFORE authenticate middleware runs
+ */
+export const requireUserRole = async (req, res, next) => {
+  try {
+    const clerkAuth = getAuth(req);
+    
+    if (!clerkAuth?.userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. Please sign in.'
+      });
+    }
+
+    // Get role from Clerk publicMetadata ONLY (source of truth)
+    const clerkClient = getClerkClient();
+    const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+    const publicMetadata = clerkUser.publicMetadata || {};
+    const userRole = publicMetadata?.role || 'user';
+    
+    // REJECT if role is not 'user'
+    if (userRole !== 'user') {
+      return res.status(403).json({
+        success: false,
+        message: `Access denied. User role required. Your Clerk role is: ${userRole}. Please use the appropriate endpoint.`
+      });
+    }
+    
+    // Role matches - continue to authenticate middleware
+    return authenticate(req, res, next);
+  } catch (error) {
+    console.error('requireUserRole error:', error);
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication failed.'
+    });
+  }
+};
+
+/**
+ * Require Vendor Role - Checks Clerk publicMetadata ONLY
+ * Rejects if user doesn't have 'vendor' role in Clerk
+ * This is checked BEFORE authenticate middleware runs
+ */
+export const requireVendorRole = async (req, res, next) => {
+  try {
+    const clerkAuth = getAuth(req);
+    
+    if (!clerkAuth?.userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. Please sign in.'
+      });
+    }
+
+    // Get role from Clerk publicMetadata ONLY (source of truth)
+    const clerkClient = getClerkClient();
+    const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+    const publicMetadata = clerkUser.publicMetadata || {};
+    const userRole = publicMetadata?.role || null;
+    
+    // REJECT if role is not 'vendor'
+    if (userRole !== 'vendor') {
+      return res.status(403).json({
+        success: false,
+        message: `Access denied. Vendor role required. Your Clerk role is: ${userRole || 'none'}. Please ensure your Clerk account has role: vendor in public metadata.`
+      });
+    }
+    
+    // Role matches - continue to authenticate middleware
+    return authenticate(req, res, next);
+  } catch (error) {
+    console.error('requireVendorRole error:', error);
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication failed.'
+    });
+  }
+};
+
+/**
+ * Require Admin Role - Checks Clerk publicMetadata ONLY
+ * Rejects if user doesn't have 'admin' role in Clerk
+ * This is checked BEFORE authenticate middleware runs
+ */
+export const requireAdminRole = async (req, res, next) => {
+  try {
+    const clerkAuth = getAuth(req);
+    
+    if (!clerkAuth?.userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. Please sign in.'
+      });
+    }
+
+    // Get role from Clerk publicMetadata ONLY (source of truth)
+    const clerkClient = getClerkClient();
+    const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+    const publicMetadata = clerkUser.publicMetadata || {};
+    const userRole = publicMetadata?.role || null;
+    
+    // Check admin email fallback (for admin emails that might not have role set)
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin100@gmail.com';
+    const adminEmailsEnv = process.env.ADMIN_EMAILS;
+    const adminEmails = adminEmailsEnv ? adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()) : [];
+    const email = clerkUser.emailAddresses?.[0]?.emailAddress || 
+                 clerkUser.primaryEmailAddressId ? 
+                 clerkUser.emailAddresses?.find(e => e.id === clerkUser.primaryEmailAddressId)?.emailAddress : null;
+    const normalizedEmail = email?.toLowerCase().trim() || '';
+    const isAdminEmail = normalizedEmail === adminEmail.toLowerCase() || adminEmails.includes(normalizedEmail);
+    
+    // REJECT if role is not 'admin' (unless it's an admin email)
+    if (userRole !== 'admin' && !isAdminEmail) {
+      return res.status(403).json({
+        success: false,
+        message: `Access denied. Admin role required. Your Clerk role is: ${userRole || 'none'}.`
+      });
+    }
+    
+    // Role matches - continue to authenticate middleware
+    return authenticate(req, res, next);
+  } catch (error) {
+    console.error('requireAdminRole error:', error);
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication failed.'
+    });
+  }
 };

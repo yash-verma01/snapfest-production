@@ -1,13 +1,13 @@
 import { asyncHandler } from '../middleware/errorHandler.js';
-import { User, Vendor, Package, Booking, Payment, OTP, Review, Event, Venue, BeatBloom, AuditLog } from '../models/index.js';
+import { User, Package, Booking, Payment, OTP, Review, Event, Venue, BeatBloom, AuditLog } from '../models/index.js';
 import OTPService from '../services/otpService.js';
 
 // ==================== DASHBOARD & ANALYTICS ====================
 export const getDashboard = asyncHandler(async (req, res) => {
   // Get total counts
   const totalUsers = await User.countDocuments({ role: 'user' });
-  // CRITICAL: Vendors are stored in Vendor collection, not User collection
-  const totalVendors = await Vendor.countDocuments();
+  // Vendors are now stored in User collection with role='vendor'
+  const totalVendors = await User.countDocuments({ role: 'vendor' });
   const totalBookings = await Booking.countDocuments();
   const totalPackages = await Package.countDocuments();
 
@@ -24,15 +24,16 @@ export const getDashboard = asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 })
     .limit(5);
 
-  // CRITICAL: Vendors are stored in Vendor collection, not User collection
-  const recentVendors = await Vendor.find()
+  // Vendors are now stored in User collection with role='vendor'
+  const recentVendors = await User.find({ role: 'vendor' })
     .select('name email createdAt')
     .sort({ createdAt: -1 })
     .limit(5);
 
   // Get pending approvals
-  // CRITICAL: Vendors are stored in Vendor collection, not User collection
-  const pendingVendors = await Vendor.countDocuments({ 
+  // Vendors are now stored in User collection with role='vendor'
+  const pendingVendors = await User.countDocuments({ 
+    role: 'vendor',
     availability: { $ne: 'AVAILABLE' } 
   });
 
@@ -212,7 +213,7 @@ export const getSystemStats = asyncHandler(async (req, res) => {
   // System-wide statistics
   const totalUsers = await User.countDocuments({ role: 'user' });
   // CRITICAL: Vendors are stored in Vendor collection, not User collection
-  const totalVendors = await Vendor.countDocuments();
+  const totalVendors = await User.countDocuments({ role: 'vendor' });
   const totalAdmins = await User.countDocuments({ role: 'admin' });
   const totalBookings = await Booking.countDocuments();
   const totalPackages = await Package.countDocuments();
@@ -251,7 +252,8 @@ export const getSystemStats = asyncHandler(async (req, res) => {
   ]);
 
   // Vendor performance
-  const vendorPerformance = await Vendor.aggregate([
+  const vendorPerformance = await User.aggregate([
+    { $match: { role: 'vendor' } },
     {
       $group: {
         _id: null,
@@ -523,7 +525,7 @@ export const getAllVendors = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
-  const vendors = await Vendor.find()
+  const vendors = await User.find({ role: 'vendor' })
     .populate('userId', 'name email phone isActive profileImage lastLogin')
     .sort({ createdAt: -1 })
     .skip(skip)
@@ -606,7 +608,7 @@ export const createVendor = asyncHandler(async (req, res) => {
 export const updateVendor = asyncHandler(async (req, res) => {
   const { name, phone, businessName, businessType, experience, services, location, isActive } = req.body;
 
-  const vendor = await Vendor.findById(req.params.id);
+  const vendor = await User.findOne({ _id: req.params.id, role: 'vendor' });
 
   if (!vendor) {
     return res.status(404).json({
@@ -646,7 +648,7 @@ export const updateVendor = asyncHandler(async (req, res) => {
 });
 
 export const deleteVendor = asyncHandler(async (req, res) => {
-  const vendor = await Vendor.findById(req.params.id);
+  const vendor = await User.findOne({ _id: req.params.id, role: 'vendor' });
 
   if (!vendor) {
     return res.status(404).json({
@@ -655,7 +657,7 @@ export const deleteVendor = asyncHandler(async (req, res) => {
     });
   }
 
-  await Vendor.findByIdAndDelete(req.params.id);
+  await User.findByIdAndDelete(req.params.id);
 
   res.status(200).json({
     success: true,
@@ -888,7 +890,7 @@ export const toggleUserStatus = asyncHandler(async (req, res) => {
 
 // Toggle vendor status (Admin only)
 export const toggleVendorStatus = asyncHandler(async (req, res) => {
-  const vendor = await Vendor.findById(req.params.id).populate('userId');
+  const vendor = await User.findOne({ _id: req.params.id, role: 'vendor' });
   
   if (!vendor) {
     return res.status(404).json({
