@@ -3026,3 +3026,923 @@
   message: 'Application error occurred',
   timestamp: '2025-11-08 06:43:30'
 }
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashvrm3107@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashvrm3107@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'j8sc4zyj1',
+  method: 'POST',
+  url: '/api/users/sync?role=admin',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: {},
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 11:22:11'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashvrm3107@gmail.com" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashvrm3107@gmail.com" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'j8sc4zyj1',
+  method: 'POST',
+  url: '/api/users/sync?role=admin',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 11:22:11'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'gov4ozcj3',
+  method: 'POST',
+  url: '/api/users/sync?role=admin',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: {},
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 16:33:44'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'gov4ozcj3',
+  method: 'POST',
+  url: '/api/users/sync?role=admin',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 16:33:44'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '2acw7os5k',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: {},
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 16:37:09'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '2acw7os5k',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 16:37:09'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '4u1qkquyn',
+  method: 'POST',
+  url: '/api/users/sync?role=vendor',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: {},
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 16:37:09'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '4u1qkquyn',
+  method: 'POST',
+  url: '/api/users/sync?role=vendor',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 16:37:09'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: 'x1t44itrm',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 20:54:57'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: 'x1t44itrm',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 20:54:57'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: 'y8k3k1w8q',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 20:54:58'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: 'y8k3k1w8q',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 20:54:58'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: 'cs78s683l',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 20:55:22'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: 'cs78s683l',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 20:55:22'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: '2rah03a86',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 20:55:23'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: '2rah03a86',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 20:55:23'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: 'hojjunq6w',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 20:56:08'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: 'hojjunq6w',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 20:56:08'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: 'bv5sexjkh',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 20:56:09'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: 'bv5sexjkh',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 20:56:09'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: 'xn8t284cd',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 20:57:21'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: 'xn8t284cd',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 20:57:21'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: '45zinb1zp',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 20:57:22'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: '45zinb1zp',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 20:57:22'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: 'y6071l6l7',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 21:07:34'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: 'y6071l6l7',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 21:07:34'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: 'f047ohxe3',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 21:07:35'
+}
+{
+  service: 'snapfest-backend',
+  error: `Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)',
+  stack: `MissingSchemaError: Schema hasn't been registered for model "Vendor".\n` +
+    'Use mongoose.model(name, schema)\n' +
+    '    at NativeConnection.model (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/connection.js:1497:13)\n' +
+    '    at _getModelFromConn (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:579:15)\n' +
+    '    at addModelNamesToMap (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:507:17)\n' +
+    '    at getModelsMapForPopulate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/helpers/populate/getModelsMapForPopulate.js:208:7)\n' +
+    '    at _populatePath (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4471:21)\n' +
+    '    at Function.populate (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/model.js:4438:21)\n' +
+    '    at model.Query._find (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:2456:20)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async model.Query.exec (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongoose/lib/query.js:4627:63)\n' +
+    '    at async file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/controllers/adminController.js:15:26',
+  reqId: 'f047ohxe3',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 21:07:35'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'rd2xjiwzk',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 21:54:25'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'rd2xjiwzk',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 21:54:25'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '701beoib9',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 21:54:34'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '701beoib9',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 21:54:34'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'fkh6yh022',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 21:54:46'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'fkh6yh022',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 21:54:46'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'wu4s3eju0',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 21:54:48'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'wu4s3eju0',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 21:54:48'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'b6uknvypx',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 21:55:12'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'b6uknvypx',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 21:55:12'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'a1on8s6x2',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-09 21:55:44'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'a1on8s6x2',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-09 21:55:44'
+}

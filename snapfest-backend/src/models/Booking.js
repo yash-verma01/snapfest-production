@@ -14,7 +14,7 @@ const bookingSchema = new mongoose.Schema({
   },
   vendorId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Vendor',
+    ref: 'User',
     default: null
   },
   eventDate: {
@@ -52,7 +52,7 @@ const bookingSchema = new mongoose.Schema({
   },
   assignedVendorId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Vendor',
+    ref: 'User',
     default: null
   },
   otpVerified: {

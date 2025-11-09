@@ -1,5 +1,6 @@
 import { getAuth } from '@clerk/express';
 import { createClerkClient } from '@clerk/clerk-sdk-node';
+import { User } from '../models/index.js';
 
 // Note: dotenv.config() is already called in server.js
 // No need to reload environment variables here
@@ -154,9 +155,19 @@ export const requireAdminClerk = async (req, res, next) => {
     const isAdminFromMetadata = publicMetadata?.role === 'admin';
     
     if (isAdminFromMetadata) {
+      // Find user in database (already created via Clerk with role='admin')
+      const user = await User.findOne({ clerkId: userId });
+      
+      if (user) {
+        // Set req.userId and req.user for use in route handlers
+        req.userId = user._id;  // MongoDB _id
+        req.user = user;
+        req.userRole = user.role;
+      }
+      
       // Grant access - set req.admin for audit/logging purposes
       req.admin = {
-        email: email || 'unknown',
+        email: email || user?.email || 'unknown',
         userId: userId,
         method: 'clerk'
       };
@@ -166,7 +177,7 @@ export const requireAdminClerk = async (req, res, next) => {
       }
       
       // Optional: Update admin audit log (non-blocking)
-      await updateAdminAuditLog(userId, email);
+      await updateAdminAuditLog(userId, email || user?.email);
       
       return next();
     }
@@ -182,6 +193,16 @@ export const requireAdminClerk = async (req, res, next) => {
       const normalizedEmail = email.toLowerCase().trim();
       
       if (adminEmails.includes(normalizedEmail)) {
+        // Find user in database (already created via Clerk with role='admin')
+        const user = await User.findOne({ clerkId: userId });
+        
+        if (user) {
+          // Set req.userId and req.user for use in route handlers
+          req.userId = user._id;  // MongoDB _id
+          req.user = user;
+          req.userRole = user.role;
+        }
+        
         // Grant access via email fallback
         req.admin = {
           email: email,

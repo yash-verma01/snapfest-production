@@ -526,12 +526,12 @@ export const getAllVendors = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
 
   const vendors = await User.find({ role: 'vendor' })
-    .populate('userId', 'name email phone isActive profileImage lastLogin')
+    .select('name email phone isActive profileImage lastLogin businessName businessType servicesOffered experience availability location')
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
 
-  const total = await Vendor.countDocuments();
+  const total = await User.countDocuments({ role: 'vendor' });
 
   res.status(200).json({
     success: true,
@@ -547,8 +547,8 @@ export const getAllVendors = asyncHandler(async (req, res) => {
 });
 
 export const getVendorById = asyncHandler(async (req, res) => {
-  const vendor = await Vendor.findById(req.params.id)
-    .populate('userId', 'name email phone isActive profileImage lastLogin');
+  const vendor = await User.findOne({ _id: req.params.id, role: 'vendor' })
+    .select('name email phone isActive profileImage lastLogin businessName businessType servicesOffered experience availability location bio portfolio pricing');
 
   if (!vendor) {
     return res.status(404).json({
@@ -567,7 +567,8 @@ export const createVendor = asyncHandler(async (req, res) => {
   const { name, email, phone, password, businessName, businessType, experience, services, location } = req.body;
 
   // Check if vendor already exists
-  const existingVendor = await Vendor.findOne({
+  const existingVendor = await User.findOne({
+    role: 'vendor',
     $or: [{ email }, { phone }]
   });
 
@@ -578,25 +579,34 @@ export const createVendor = asyncHandler(async (req, res) => {
     });
   }
 
-  // Hash password
-  const hashedPassword = await bcrypt.hash(password, 10);
+  // Hash password (if provided - for legacy auth)
+  let hashedPassword = null;
+  if (password) {
+    const bcrypt = await import('bcryptjs');
+    hashedPassword = await bcrypt.hash(password, 10);
+  }
 
-  // Create vendor
-  const vendor = new Vendor({
+  // Create vendor as User with role='vendor'
+  const vendor = await User.create({
     name,
     email,
     phone,
-    password: hashedPassword,
+    role: 'vendor',
+    ...(hashedPassword && { password: hashedPassword }),
     businessName,
     businessType,
     experience,
-    services,
+    servicesOffered: services || [],
     location,
-    isActive: true, // Admin creates active vendors
-    isVerified: true
+    isActive: true,
+    availability: 'AVAILABLE',
+    profileComplete: false,
+    earningsSummary: {
+      totalEarnings: 0,
+      thisMonthEarnings: 0,
+      totalBookings: 0
+    }
   });
-
-  await vendor.save();
 
   res.status(201).json({
     success: true,
@@ -619,7 +629,11 @@ export const updateVendor = asyncHandler(async (req, res) => {
 
   // Check if phone number is already taken by another vendor
   if (phone && phone !== vendor.phone) {
-    const existingVendor = await Vendor.findOne({ phone, _id: { $ne: req.params.id } });
+    const existingVendor = await User.findOne({ 
+      role: 'vendor',
+      phone, 
+      _id: { $ne: req.params.id } 
+    });
     if (existingVendor) {
       return res.status(400).json({
         success: false,
@@ -634,7 +648,7 @@ export const updateVendor = asyncHandler(async (req, res) => {
   if (businessName) vendor.businessName = businessName;
   if (businessType) vendor.businessType = businessType;
   if (experience) vendor.experience = experience;
-  if (services) vendor.services = services;
+  if (services) vendor.servicesOffered = services;
   if (location) vendor.location = location;
   if (isActive !== undefined) vendor.isActive = isActive;
 
@@ -678,7 +692,8 @@ export const searchVendors = asyncHandler(async (req, res) => {
     });
   }
 
-  const vendors = await Vendor.find({
+  const vendors = await User.find({
+    role: 'vendor',
     $or: [
       { name: { $regex: q, $options: 'i' } },
       { email: { $regex: q, $options: 'i' } },
@@ -692,7 +707,8 @@ export const searchVendors = asyncHandler(async (req, res) => {
     .skip(skip)
     .limit(limit);
 
-  const total = await Vendor.countDocuments({
+  const total = await User.countDocuments({
+    role: 'vendor',
     $or: [
       { name: { $regex: q, $options: 'i' } },
       { email: { $regex: q, $options: 'i' } },
@@ -728,8 +744,8 @@ export const assignVendorToBooking = asyncHandler(async (req, res) => {
     });
   }
 
-  // Find vendor
-  const vendor = await Vendor.findById(vendorId);
+  // Find vendor - verify it's a vendor
+  const vendor = await User.findOne({ _id: vendorId, role: 'vendor' });
   if (!vendor) {
     return res.status(404).json({
       success: false,
@@ -899,29 +915,22 @@ export const toggleVendorStatus = asyncHandler(async (req, res) => {
     });
   }
 
-  if (!vendor.userId) {
-    return res.status(404).json({
-      success: false,
-      message: 'Associated user not found'
-    });
-  }
+  // Toggle the vendor's isActive status directly (vendor IS a user, not a separate entity)
+  const previousStatus = vendor.isActive;
+  vendor.isActive = !vendor.isActive;
+  await vendor.save();
 
-  // Toggle the user's isActive status
-  const previousStatus = vendor.userId.isActive;
-  vendor.userId.isActive = !vendor.userId.isActive;
-  await vendor.userId.save();
-
-  console.log(`Vendor toggle: ${vendor.userId.email} - Previous: ${previousStatus}, New: ${vendor.userId.isActive}`);
+  console.log(`Vendor toggle: ${vendor.email} - Previous: ${previousStatus}, New: ${vendor.isActive}`);
 
   res.status(200).json({
     success: true,
-    message: `Vendor ${vendor.userId.isActive ? 'activated' : 'deactivated'} successfully`,
+    message: `Vendor ${vendor.isActive ? 'activated' : 'deactivated'} successfully`,
     data: {
       vendor: {
         id: vendor._id,
         businessName: vendor.businessName,
-        email: vendor.userId.email,
-        isActive: vendor.userId.isActive
+        email: vendor.email,
+        isActive: vendor.isActive
       }
     }
   });
