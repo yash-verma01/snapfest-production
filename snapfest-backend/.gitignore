@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+logs/
+*.log
+
+# Uploaded files (keep folder structure)
+PUBLIC/uploads/**
+!PUBLIC/uploads/.gitkeep
+
+# Legacy uploads folder
+uploads/**
+!uploads/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+

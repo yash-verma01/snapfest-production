@@ -1,5 +1,6 @@
 import { BeatBloom, AuditLog } from '../models/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { processUploadedFiles } from '../middleware/upload.js';
 
 // ==================== PUBLIC ROUTES ====================
 
@@ -141,9 +142,14 @@ export const createBeatBloom = asyncHandler(async (req, res) => {
     description,
     price,
     features,
-    images,
     isActive = true
   } = req.body;
+
+  // Process uploaded images
+  let images = [];
+  if (req.files && req.files.length > 0) {
+    images = processUploadedFiles(req.files);
+  }
 
   // Generate slug from title
   const slug = title

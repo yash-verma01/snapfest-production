@@ -802,7 +802,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(enhancedRequestLogger);
 app.use(requestLogger);
 
-// Static files
+// Static files - PUBLIC folder for uploaded images
+app.use('/PUBLIC', express.static('PUBLIC'));
+
+// Legacy uploads folder (for backward compatibility if needed)
 app.use('/uploads', express.static('uploads'));
 
 // API Routes - Organized by Role

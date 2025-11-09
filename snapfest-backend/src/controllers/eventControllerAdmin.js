@@ -1,5 +1,6 @@
 import { Event } from '../models/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { processUploadedFiles } from '../middleware/upload.js';
 
 // ==================== ADMIN ROUTES ====================
 
@@ -55,7 +56,16 @@ export const getEventByIdAdmin = asyncHandler(async (req, res) => {
 });
 
 export const createEvent = asyncHandler(async (req, res) => {
-  const event = await Event.create(req.body);
+  const eventData = { ...req.body };
+  
+  // Process uploaded images
+  if (req.files && req.files.length > 0) {
+    eventData.images = processUploadedFiles(req.files);
+  } else {
+    eventData.images = [];
+  }
+  
+  const event = await Event.create(eventData);
   
   res.status(201).json({
     success: true,

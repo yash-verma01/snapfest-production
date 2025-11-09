@@ -1,52 +1,86 @@
 import multer from 'multer';
-import { v2 as cloudinary } from 'cloudinary';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-// ==================== CLOUDINARY STORAGE ====================
+// ==================== DIRECTORY SETUP ====================
 
-// Cloudinary storage configuration
-const cloudinaryStorage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'snapfest',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-    transformation: [
-      { width: 1200, height: 800, crop: 'limit' },
-      { quality: 'auto' }
-    ]
-  }
-});
+const PUBLIC_DIR = path.join(__dirname, '../../PUBLIC');
+const UPLOADS_DIR = path.join(PUBLIC_DIR, 'uploads');
 
-// ==================== LOCAL STORAGE ====================
+// Subdirectories for different entity types
+const SUBDIRECTORIES = {
+  packages: 'packages',
+  events: 'events',
+  venues: 'venues',
+  beatbloom: 'beatbloom',
+  profiles: 'profiles'
+};
 
-// Local storage configuration
+// Ensure all directories exist
+const ensureDirectories = () => {
+  const dirs = [
+    PUBLIC_DIR,
+    UPLOADS_DIR,
+    ...Object.values(SUBDIRECTORIES).map(sub => path.join(UPLOADS_DIR, sub))
+  ];
+  
+  dirs.forEach(dir => {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      console.log(`✅ Created directory: ${dir}`);
+    }
+  });
+};
+
+// Initialize directories on module load
+ensureDirectories();
+
+// ==================== GET UPLOAD SUBDIRECTORY ====================
+
+const getUploadSubdirectory = (req) => {
+  const url = req.url || req.originalUrl || '';
+  const path = req.path || '';
+  
+  if (url.includes('/packages') || path.includes('/packages')) return SUBDIRECTORIES.packages;
+  if (url.includes('/events') || path.includes('/events')) return SUBDIRECTORIES.events;
+  if (url.includes('/venues') || path.includes('/venues')) return SUBDIRECTORIES.venues;
+  if (url.includes('/beatbloom') || url.includes('/addon')) return SUBDIRECTORIES.beatbloom;
+  if (url.includes('/profile')) return SUBDIRECTORIES.profiles;
+  
+  return SUBDIRECTORIES.packages; // default
+};
+
+// ==================== LOCAL STORAGE CONFIGURATION ====================
+
 const localStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadPath = 'uploads/';
+    const subDir = getUploadSubdirectory(req);
+    const uploadPath = path.join(UPLOADS_DIR, subDir);
+    
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
     }
+    
     cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    const ext = path.extname(file.originalname);
+    const baseName = path.basename(file.originalname, ext);
+    const sanitizedName = baseName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50);
+    const filename = `${sanitizedName}-${uniqueSuffix}${ext}`;
+    cb(null, filename);
   }
 });
 
 // ==================== FILE FILTER ====================
 
 const fileFilter = (req, file, cb) => {
-  // Check file type
   if (file.mimetype.startsWith('image/')) {
     cb(null, true);
   } else {
@@ -56,11 +90,8 @@ const fileFilter = (req, file, cb) => {
 
 // ==================== MULTER CONFIGURATION ====================
 
-// Choose storage based on environment
-const storage = process.env.NODE_ENV === 'production' ? cloudinaryStorage : localStorage;
-
 const upload = multer({
-  storage: storage,
+  storage: localStorage,
   fileFilter: fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
@@ -85,33 +116,73 @@ export const uploadMixed = (fields) => {
   return upload.fields(fields);
 };
 
-// ==================== IMAGE PROCESSING ====================
+// ==================== HELPER FUNCTIONS ====================
 
-export const processImage = async (imagePath, transformations = {}) => {
-  try {
-    const result = await cloudinary.uploader.upload(imagePath, {
-      folder: 'snapfest/processed',
-      ...transformations
-    });
-    return result.secure_url;
-  } catch (error) {
-    throw new Error('Image processing failed: ' + error.message);
+// Generate public URL for uploaded file
+export const getPublicUrl = (file) => {
+  if (!file) return null;
+  
+  const filePath = file.path || file.destination;
+  let subDir = '';
+  
+  if (filePath) {
+    const pathParts = filePath.split(path.sep);
+    const uploadsIndex = pathParts.indexOf('uploads');
+    if (uploadsIndex !== -1 && pathParts.length > uploadsIndex + 1) {
+      subDir = pathParts[uploadsIndex + 1];
+    }
   }
+  
+  const filename = file.filename || path.basename(file.path);
+  return `/PUBLIC/uploads/${subDir}/${filename}`;
 };
 
-// ==================== IMAGE DELETION ====================
+// Process uploaded files and return public URLs
+export const processUploadedFiles = (files) => {
+  if (!files) return [];
+  
+  const fileArray = Array.isArray(files) ? files : [files];
+  return fileArray
+    .map(file => getPublicUrl(file))
+    .filter(Boolean);
+};
 
-export const deleteImage = async (imageUrl) => {
+// Delete local file
+export const deleteLocalFile = async (filePath) => {
   try {
-    // Extract public ID from URL
-    const publicId = imageUrl.split('/').pop().split('.')[0];
-    await cloudinary.uploader.destroy(`snapfest/${publicId}`);
-    return true;
+    let fullPath;
+    
+    if (filePath.startsWith('/PUBLIC/')) {
+      fullPath = path.join(__dirname, '../../', filePath);
+    } else if (filePath.startsWith('PUBLIC/')) {
+      fullPath = path.join(__dirname, '../../', filePath);
+    } else if (path.isAbsolute(filePath)) {
+      fullPath = filePath;
+    } else {
+      fullPath = path.join(UPLOADS_DIR, filePath);
+    }
+    
+    fullPath = path.normalize(fullPath);
+    const publicDirNormalized = path.normalize(PUBLIC_DIR);
+    
+    if (!fullPath.startsWith(publicDirNormalized)) {
+      console.error('❌ Security: Attempted to delete file outside PUBLIC directory');
+      return false;
+    }
+    
+    if (fs.existsSync(fullPath)) {
+      fs.unlinkSync(fullPath);
+      return true;
+    }
+    return false;
   } catch (error) {
-    console.error('Error deleting image:', error);
+    console.error('❌ Error deleting file:', error);
     return false;
   }
 };
+
+// Legacy function name for backward compatibility
+export const deleteImage = deleteLocalFile;
 
 // ==================== IMAGE VALIDATION ====================
 
@@ -128,9 +199,6 @@ export const validateImage = (file) => {
   if (!allowedTypes.includes(file.mimetype)) {
     errors.push('Only JPEG, PNG, GIF, and WebP images are allowed');
   }
-  
-  // Check dimensions (optional)
-  // You can add dimension validation here if needed
   
   return {
     isValid: errors.length === 0,

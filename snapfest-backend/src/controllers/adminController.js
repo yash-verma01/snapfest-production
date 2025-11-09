@@ -1,6 +1,7 @@
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { User, Vendor, Package, Booking, Payment, OTP, Review, Event, Venue, BeatBloom, AuditLog } from '../models/index.js';
 import OTPService from '../services/otpService.js';
+import { processUploadedFiles } from '../middleware/upload.js';
 
 // ==================== DASHBOARD & ANALYTICS ====================
 export const getDashboard = asyncHandler(async (req, res) => {
@@ -1072,7 +1073,6 @@ export const createPackage = asyncHandler(async (req, res) => {
     basePrice, 
     perGuestPrice, 
     features, 
-    images, 
     isActive = true 
   } = req.body;
 
@@ -1084,6 +1084,12 @@ export const createPackage = asyncHandler(async (req, res) => {
     });
   }
 
+  // Process uploaded images
+  let images = [];
+  if (req.files && req.files.length > 0) {
+    images = processUploadedFiles(req.files);
+  }
+
   const packageData = await Package.create({
     title,
     description,
@@ -1091,7 +1097,7 @@ export const createPackage = asyncHandler(async (req, res) => {
     basePrice,
     perGuestPrice,
     features: features || [],
-    images: images || [],
+    images: images,
     isActive
   });
 

@@ -1,4 +1,5 @@
 import express from 'express';
+import { uploadMultiple } from '../middleware/upload.js';
 import {
   // User Management
   getAllUsers,
@@ -157,7 +158,7 @@ router.delete('/vendors/:id', deleteVendor);
 router.get('/packages', validatePagination, getAllPackages);
 router.get('/packages/stats', getPackageStats);
 router.get('/packages/:id', getPackageById);
-router.post('/packages', createPackage);
+router.post('/packages', uploadMultiple('images', 10), createPackage);
 router.put('/packages/:id', updatePackage);
 router.put('/packages/:id/toggle-status', togglePackageStatus);
 router.delete('/packages/:id', deletePackage);
@@ -206,7 +207,7 @@ router.get('/events', validatePagination, getAllEventsAdmin);
 router.get('/events/stats', getEventStats);
 router.get('/events/search', validateSearch, searchEventsAdmin);
 router.get('/events/:id', getEventByIdAdmin);
-router.post('/events', createEvent);
+router.post('/events', uploadMultiple('images', 10), createEvent);
 router.put('/events/:id', updateEvent);
 router.put('/events/:id/toggle-status', toggleEventStatus);
 router.delete('/events/:id', deleteEvent);
@@ -216,7 +217,7 @@ router.get('/beatbloom', validatePagination, getAllBeatBloomsAdmin);
 router.get('/beatbloom/stats', getBeatBloomStats);
 router.get('/beatbloom/search', validateSearch, searchBeatBlooms);
 router.get('/beatbloom/:id', getBeatBloomByIdAdmin);
-router.post('/beatbloom', validateBeatBloom, createBeatBloom);
+router.post('/beatbloom', validateBeatBloom, uploadMultiple('images', 10), createBeatBloom);
 router.put('/beatbloom/:id', validateBeatBloomUpdate, updateBeatBloom);
 router.put('/beatbloom/:id/toggle-status', toggleBeatBloomStatus);
 router.delete('/beatbloom/:id', deleteBeatBloom);
@@ -226,7 +227,7 @@ router.get('/venues', validatePagination, getAllVenuesAdmin);
 router.get('/venues/stats', getVenueStats);
 router.get('/venues/search', validateSearch, searchVenues);
 router.get('/venues/:id', getVenueByIdAdmin);
-router.post('/venues', validateVenue, createVenue);
+router.post('/venues', validateVenue, uploadMultiple('images', 10), createVenue);
 router.put('/venues/:id', validateVenueUpdate, updateVenue);
 router.put('/venues/:id/toggle-status', toggleVenueStatus);
 router.delete('/venues/:id', deleteVenue);

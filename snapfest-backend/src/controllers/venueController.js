@@ -1,5 +1,6 @@
 import { Venue, AuditLog } from '../models/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { processUploadedFiles } from '../middleware/upload.js';
 
 export const getAllVenues = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -110,10 +111,15 @@ export const createVenue = asyncHandler(async (req, res) => {
     capacity,
     pricePerDay,
     amenities,
-    images,
     rating,
     isActive = true
   } = req.body;
+
+  // Process uploaded images
+  let images = [];
+  if (req.files && req.files.length > 0) {
+    images = processUploadedFiles(req.files);
+  }
 
   const venue = await Venue.create({
     name,
