@@ -124,26 +124,39 @@ export const requireAdminClerk = async (req, res, next) => {
     // 2. Extract email from session (for fallback check)
     // Note: claims might be in sessionClaims, not directly in clerkAuth
     const sessionClaims = clerkAuth?.sessionClaims || clerkAuth?.claims || {};
-    const email = sessionClaims?.email || 
-                  sessionClaims?.primary_email_address ||
-                  sessionClaims?.emailAddress ||
-                  null;
+    let email = sessionClaims?.email || 
+                sessionClaims?.primary_email_address ||
+                sessionClaims?.emailAddress ||
+                null;
 
     // 3. Try to get publicMetadata from session claims first (preferred - no API call)
     // Session claims may include publicMetadata if Clerk middleware includes it
     let publicMetadata = sessionClaims?.publicMetadata || clerkAuth?.claims?.publicMetadata || null;
     
     // If not in claims, fetch from Clerk API (fallback)
-    if (!publicMetadata) {
+    // Also fetch email if not in session claims
+    if (!publicMetadata || !email) {
       try {
         // Get the correct clerkClient based on origin
         const origin = req.headers.origin || req.headers.referer || '';
         const clerkClient = getClerkClientForOrigin(origin);
         const clerkUser = await clerkClient.users.getUser(userId);
-        publicMetadata = clerkUser.publicMetadata || null;
+        
+        // Fetch publicMetadata if not in claims
+        if (!publicMetadata) {
+          publicMetadata = clerkUser.publicMetadata || null;
+        }
+        
+        // Fetch email if not in claims
+        if (!email) {
+          email = clerkUser.emailAddresses?.find(email => email.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
+                  clerkUser.emailAddresses?.[0]?.emailAddress ||
+                  clerkUser.emailAddress ||
+                  null;
+        }
         
         if (process.env.NODE_ENV === 'development') {
-          console.log('📋 Fetched publicMetadata from Clerk API for userId:', userId, 'origin:', origin);
+          console.log('📋 Fetched publicMetadata and email from Clerk API for userId:', userId, 'origin:', origin);
         }
       } catch (apiError) {
         console.warn('⚠️ Failed to fetch user from Clerk API:', apiError.message);
@@ -159,6 +172,16 @@ export const requireAdminClerk = async (req, res, next) => {
       const user = await User.findOne({ clerkId: userId });
       
       if (user) {
+        // Update email if it's missing or "unknown" and we have a valid email from Clerk
+        if (email && (user.email === 'unknown' || !user.email || user.email === '')) {
+          user.email = email.toLowerCase().trim();
+          await user.save();
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ Updated admin email from "unknown" to:', email);
+          }
+        }
+        
         // Set req.userId and req.user for use in route handlers
         req.userId = user._id;  // MongoDB _id
         req.user = user;
@@ -197,6 +220,16 @@ export const requireAdminClerk = async (req, res, next) => {
         const user = await User.findOne({ clerkId: userId });
         
         if (user) {
+          // Update email if it's missing or "unknown" and we have a valid email from Clerk
+          if (email && (user.email === 'unknown' || !user.email || user.email === '')) {
+            user.email = email.toLowerCase().trim();
+            await user.save();
+            
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✅ Updated admin email from "unknown" to:', email);
+            }
+          }
+          
           // Set req.userId and req.user for use in route handlers
           req.userId = user._id;  // MongoDB _id
           req.user = user;

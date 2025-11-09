@@ -115210,3 +115210,4611 @@
   service: 'snapfest-backend',
   timestamp: '2025-11-09 23:49:32'
 }
+{
+  service: 'snapfest-backend',
+  port: '5001',
+  environment: 'development',
+  nodeVersion: 'v22.16.0',
+  level: 'info',
+  message: 'SnapFest Backend Server starting...',
+  timestamp: '2025-11-10 00:00:20'
+}
+{
+  service: 'snapfest-backend',
+  port: '5001',
+  healthCheck: 'http://localhost:5001/api/health',
+  environment: 'development',
+  level: 'info',
+  message: 'SnapFest Backend Server started successfully',
+  timestamp: '2025-11-10 00:00:20'
+}
+{
+  service: 'snapfest-backend',
+  port: '5001',
+  environment: 'development',
+  nodeVersion: 'v22.16.0',
+  level: 'info',
+  message: 'SnapFest Backend Server starting...',
+  timestamp: '2025-11-10 00:00:24'
+}
+{
+  service: 'snapfest-backend',
+  port: '5001',
+  healthCheck: 'http://localhost:5001/api/health',
+  environment: 'development',
+  level: 'info',
+  message: 'SnapFest Backend Server started successfully',
+  timestamp: '2025-11-10 00:00:24'
+}
+{
+  service: 'snapfest-backend',
+  port: '5001',
+  environment: 'development',
+  nodeVersion: 'v22.16.0',
+  level: 'info',
+  message: 'SnapFest Backend Server starting...',
+  timestamp: '2025-11-10 00:00:28'
+}
+{
+  service: 'snapfest-backend',
+  port: '5001',
+  healthCheck: 'http://localhost:5001/api/health',
+  environment: 'development',
+  level: 'info',
+  message: 'SnapFest Backend Server started successfully',
+  timestamp: '2025-11-10 00:00:28'
+}
+{
+  service: 'snapfest-backend',
+  port: '5001',
+  environment: 'development',
+  nodeVersion: 'v22.16.0',
+  level: 'info',
+  message: 'SnapFest Backend Server starting...',
+  timestamp: '2025-11-10 00:00:32'
+}
+{
+  service: 'snapfest-backend',
+  port: '5001',
+  healthCheck: 'http://localhost:5001/api/health',
+  environment: 'development',
+  level: 'info',
+  message: 'SnapFest Backend Server started successfully',
+  timestamp: '2025-11-10 00:00:32'
+}
+{
+  service: 'snapfest-backend',
+  port: '5001',
+  environment: 'development',
+  nodeVersion: 'v22.16.0',
+  level: 'info',
+  message: 'SnapFest Backend Server starting...',
+  timestamp: '2025-11-10 00:00:45'
+}
+{
+  service: 'snapfest-backend',
+  port: '5001',
+  healthCheck: 'http://localhost:5001/api/health',
+  environment: 'development',
+  level: 'info',
+  message: 'SnapFest Backend Server started successfully',
+  timestamp: '2025-11-10 00:00:45'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'wjbfhs3mj',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:01:00'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'wjbfhs3mj',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '164ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:01:00'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:31:00 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 166ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:01:00'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'aoe8y7ssz',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:01:00'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'fo1xn9pdr',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:01:00'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'fo1xn9pdr',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '43ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:01:01'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:31:01 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 44ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:01:01'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'dya597apa',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:01:01'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'aoe8y7ssz',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '96ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:01:01'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:31:01 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 97ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:01:01'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'scrq8rmny',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:01:01'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'dya597apa',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '88ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:01:01'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:31:01 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 89ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:01:01'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'scrq8rmny',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '43ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:01:01'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:31:01 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 44ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:01:01'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'w2nb1iqk6',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:01:01'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'w2nb1iqk6',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '83ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:01:01'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:31:01 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 84ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:01:01'
+}
+{
+  service: 'snapfest-backend',
+  port: '5001',
+  environment: 'development',
+  nodeVersion: 'v22.16.0',
+  level: 'info',
+  message: 'SnapFest Backend Server starting...',
+  timestamp: '2025-11-10 00:01:10'
+}
+{
+  service: 'snapfest-backend',
+  port: '5001',
+  healthCheck: 'http://localhost:5001/api/health',
+  environment: 'development',
+  level: 'info',
+  message: 'SnapFest Backend Server started successfully',
+  timestamp: '2025-11-10 00:01:10'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'bddlyup5j',
+  method: 'GET',
+  url: '/api/admin/profile',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:01:27'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'zbpe2u02k',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:01:28'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'bddlyup5j',
+  method: 'GET',
+  url: '/profile',
+  statusCode: 200,
+  responseTime: '938ms',
+  contentLength: '759',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:01:28'
+}
+{
+  message: '::1 - 69102c0b4a8df563af45a554 (admin) [09/Nov/2025:18:31:28 +0000] "GET /api/admin/profile HTTP/1.1" 200 759 986ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:01:28'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '8gger0f2e',
+  method: 'GET',
+  url: '/api/admin/profile',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:01:28'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'zbpe2u02k',
+  method: 'POST',
+  url: '/sync',
+  statusCode: 200,
+  responseTime: '752ms',
+  contentLength: '522',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:01:28'
+}
+{
+  message: '::1 - 69102c0b4a8df563af45a554 (admin) [09/Nov/2025:18:31:28 +0000] "POST /api/users/sync HTTP/1.1" 200 522 752ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:01:28'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '8gger0f2e',
+  method: 'GET',
+  url: '/profile',
+  statusCode: 200,
+  responseTime: '802ms',
+  contentLength: '759',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:01:29'
+}
+{
+  message: '::1 - 69102c0b4a8df563af45a554 (admin) [09/Nov/2025:18:31:29 +0000] "GET /api/admin/profile HTTP/1.1" 200 759 805ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:01:29'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ke5h7506p',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:15:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ke5h7506p',
+  method: 'GET',
+  url: '/dashboard',
+  statusCode: 200,
+  responseTime: '1554ms',
+  contentLength: '3981',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:15:39'
+}
+{
+  message: '::1 - 69102c0b4a8df563af45a554 (admin) [09/Nov/2025:18:45:39 +0000] "GET /api/admin/dashboard HTTP/1.1" 200 3981 1570ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:15:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'kspwo99br',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:15:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'rtdlapoka',
+  method: 'GET',
+  url: '/api/admin/analytics',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:15:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'kspwo99br',
+  method: 'GET',
+  url: '/dashboard',
+  statusCode: 304,
+  responseTime: '1275ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:15:40'
+}
+{
+  message: '::1 - 69102c0b4a8df563af45a554 (admin) [09/Nov/2025:18:45:40 +0000] "GET /api/admin/dashboard HTTP/1.1" 304 - 1276ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:15:40'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'rtdlapoka',
+  method: 'GET',
+  url: '/analytics',
+  statusCode: 200,
+  responseTime: '1601ms',
+  contentLength: '691',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:15:41'
+}
+{
+  message: '::1 - 69102c0b4a8df563af45a554 (admin) [09/Nov/2025:18:45:41 +0000] "GET /api/admin/analytics HTTP/1.1" 200 691 1603ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:15:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'q58wmvg2a',
+  method: 'GET',
+  url: '/api/admin/analytics',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:15:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'c8w6i15yt',
+  method: 'GET',
+  url: '/api/admin/stats',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:15:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'q58wmvg2a',
+  method: 'GET',
+  url: '/analytics',
+  statusCode: 200,
+  responseTime: '892ms',
+  contentLength: '691',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:15:41'
+}
+{
+  message: '::1 - 69102c0b4a8df563af45a554 (admin) [09/Nov/2025:18:45:41 +0000] "GET /api/admin/analytics HTTP/1.1" 200 691 894ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:15:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'c8w6i15yt',
+  method: 'GET',
+  url: '/stats',
+  statusCode: 200,
+  responseTime: '1251ms',
+  contentLength: '265',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:15:42'
+}
+{
+  message: '::1 - 69102c0b4a8df563af45a554 (admin) [09/Nov/2025:18:45:42 +0000] "GET /api/admin/stats HTTP/1.1" 200 265 1253ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:15:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'hve2z6exb',
+  method: 'GET',
+  url: '/api/admin/stats',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:15:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'hve2z6exb',
+  method: 'GET',
+  url: '/stats',
+  statusCode: 304,
+  responseTime: '1252ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:15:43'
+}
+{
+  message: '::1 - 69102c0b4a8df563af45a554 (admin) [09/Nov/2025:18:45:43 +0000] "GET /api/admin/stats HTTP/1.1" 304 - 1254ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:15:43'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '50z357v5t',
+  method: 'GET',
+  url: '/api/admin/profile',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:16:17'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'jhtfmtlr9',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:16:18'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '50z357v5t',
+  method: 'GET',
+  url: '/profile',
+  statusCode: 200,
+  responseTime: '1527ms',
+  contentLength: '759',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:16:19'
+}
+{
+  message: '::1 - 69102c0b4a8df563af45a554 (admin) [09/Nov/2025:18:46:19 +0000] "GET /api/admin/profile HTTP/1.1" 200 759 1528ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:16:19'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'jhtfmtlr9',
+  method: 'POST',
+  url: '/sync',
+  statusCode: 200,
+  responseTime: '1385ms',
+  contentLength: '522',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:16:19'
+}
+{
+  message: '::1 - 69102c0b4a8df563af45a554 (admin) [09/Nov/2025:18:46:19 +0000] "POST /api/users/sync HTTP/1.1" 200 522 1388ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:16:19'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '7qazxjulh',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:16:25'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '7qazxjulh',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '167ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:16:25'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:46:25 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 168ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:16:25'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'x52l0k7os',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:16:25'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'x52l0k7os',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '49ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:16:25'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:46:25 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 49ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:16:25'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '31z03u5vl',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:16:25'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '31z03u5vl',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '93ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:16:25'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:46:25 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 93ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:16:25'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'yqdxj6y93',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:16:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'dv9jow9f9',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:16:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'dv9jow9f9',
+  method: 'POST',
+  url: '/sync',
+  statusCode: 200,
+  responseTime: '1670ms',
+  contentLength: '522',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:16:40'
+}
+{
+  message: '::1 - 69102c0b4a8df563af45a554 (admin) [09/Nov/2025:18:46:40 +0000] "POST /api/users/sync HTTP/1.1" 200 522 1671ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:16:40'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'yqdxj6y93',
+  method: 'GET',
+  url: '/dashboard',
+  statusCode: 304,
+  responseTime: '2781ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:16:41'
+}
+{
+  message: '::1 - 69102c0b4a8df563af45a554 (admin) [09/Nov/2025:18:46:41 +0000] "GET /api/admin/dashboard HTTP/1.1" 304 - 2782ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:16:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '93c58szig',
+  method: 'GET',
+  url: '/api/admin/dashboard',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:16:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '6qcv2kkk3',
+  method: 'GET',
+  url: '/api/admin/analytics',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:16:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '6qcv2kkk3',
+  method: 'GET',
+  url: '/analytics',
+  statusCode: 200,
+  responseTime: '880ms',
+  contentLength: '691',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:16:42'
+}
+{
+  message: '::1 - 69102c0b4a8df563af45a554 (admin) [09/Nov/2025:18:46:42 +0000] "GET /api/admin/analytics HTTP/1.1" 200 691 882ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:16:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'qa3viozsu',
+  method: 'GET',
+  url: '/api/admin/stats',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:16:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '93c58szig',
+  method: 'GET',
+  url: '/dashboard',
+  statusCode: 304,
+  responseTime: '1247ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:16:42'
+}
+{
+  message: '::1 - 69102c0b4a8df563af45a554 (admin) [09/Nov/2025:18:46:42 +0000] "GET /api/admin/dashboard HTTP/1.1" 304 - 1248ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:16:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ufwtdvhxv',
+  method: 'GET',
+  url: '/api/admin/analytics',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:16:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ufwtdvhxv',
+  method: 'GET',
+  url: '/analytics',
+  statusCode: 200,
+  responseTime: '873ms',
+  contentLength: '691',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:16:43'
+}
+{
+  message: '::1 - 69102c0b4a8df563af45a554 (admin) [09/Nov/2025:18:46:43 +0000] "GET /api/admin/analytics HTTP/1.1" 200 691 874ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:16:43'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'qa3viozsu',
+  method: 'GET',
+  url: '/stats',
+  statusCode: 304,
+  responseTime: '1251ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:16:43'
+}
+{
+  message: '::1 - 69102c0b4a8df563af45a554 (admin) [09/Nov/2025:18:46:43 +0000] "GET /api/admin/stats HTTP/1.1" 304 - 1252ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:16:43'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '7puytlhxp',
+  method: 'GET',
+  url: '/api/admin/stats',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:16:43'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '7puytlhxp',
+  method: 'GET',
+  url: '/stats',
+  statusCode: 304,
+  responseTime: '1361ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:16:44'
+}
+{
+  message: '::1 - 69102c0b4a8df563af45a554 (admin) [09/Nov/2025:18:46:44 +0000] "GET /api/admin/stats HTTP/1.1" 304 - 1362ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:16:44'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'awk6y0i4c',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:16:47'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'awk6y0i4c',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '146ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:16:47'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:46:47 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 147ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:16:47'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'pn4dww6i9',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:16:47'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'sgr65gxrw',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:16:47'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'sgr65gxrw',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '45ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:16:48'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:46:48 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 45ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:16:48'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'o59psz52x',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:16:48'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'pn4dww6i9',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '99ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:16:48'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:46:48 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 99ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:16:48'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '54uvgroyk',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:16:48'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'o59psz52x',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '86ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:16:48'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:46:48 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 86ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:16:48'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '54uvgroyk',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '45ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:16:48'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:46:48 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 47ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:16:48'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '3oz7p0cb6',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:16:48'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '3oz7p0cb6',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '89ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:16:48'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:46:48 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 90ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:16:48'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '4ws511at4',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:08'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '8octl0omx',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:08'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '27y0vct5k',
+  method: 'POST',
+  url: '/api/users/sync?role=vendor',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:08'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '27y0vct5k',
+  method: 'POST',
+  url: '/api/users/sync?role=vendor',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: {},
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-10 00:17:12'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '27y0vct5k',
+  method: 'POST',
+  url: '/api/users/sync?role=vendor',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-10 00:17:12'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '27y0vct5k',
+  method: 'POST',
+  url: '/api/users/sync?role=vendor',
+  statusCode: 400,
+  responseTime: '4071ms',
+  contentLength: '884',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:12'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:47:12 +0000] "POST /api/users/sync?role=vendor HTTP/1.1" 400 884 4072ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" {}',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:17:12'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '8octl0omx',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-10 00:17:12'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '8octl0omx',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-10 00:17:12'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '8octl0omx',
+  method: 'POST',
+  url: '/api/users/sync',
+  statusCode: 400,
+  responseTime: '4106ms',
+  contentLength: '884',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:12'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:47:12 +0000] "POST /api/users/sync HTTP/1.1" 400 884 4108ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:17:12'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '4ws511at4',
+  method: 'POST',
+  url: '/sync',
+  statusCode: 200,
+  responseTime: '4802ms',
+  contentLength: '466',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:12'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:47:12 +0000] "POST /api/users/sync HTTP/1.1" 200 466 4804ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" {}',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:17:12'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'rmkb6apbz',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:15'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'rmkb6apbz',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '143ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:15'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:47:15 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 144ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:17:15'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'cehz6c6wl',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:15'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'bo6c57l9x',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:15'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'bo6c57l9x',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '41ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:15'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:47:15 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 41ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:17:15'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'djodqgjha',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:15'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'cehz6c6wl',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '97ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:15'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:47:15 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 97ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:17:15'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'p49swf93e',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:15'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'djodqgjha',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '82ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:15'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:47:15 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 83ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:17:15'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'p49swf93e',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '46ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:15'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:47:15 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 46ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:17:15'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'eglg3yzkf',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:15'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'eglg3yzkf',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '92ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:15'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:47:15 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 93ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:17:15'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'xiid19vjo',
+  method: 'GET',
+  url: '/api/cart',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:15'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'qjwtq2qzw',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:16'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'qjwtq2qzw',
+  method: 'POST',
+  url: '/sync',
+  statusCode: 200,
+  responseTime: '746ms',
+  contentLength: '411',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:17'
+}
+{
+  message: '::1 - 6910e1b0ccc8c64483d8989e (user) [09/Nov/2025:18:47:17 +0000] "POST /api/users/sync HTTP/1.1" 200 411 747ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:17:17'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'xiid19vjo',
+  method: 'GET',
+  url: '/',
+  statusCode: 200,
+  responseTime: '1374ms',
+  contentLength: '70',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:17'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '953r2qssy',
+  method: 'GET',
+  url: '/api/cart',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:17'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '953r2qssy',
+  method: 'GET',
+  url: '/',
+  statusCode: 304,
+  responseTime: '1403ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:18'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'pgan8dhbk',
+  method: 'GET',
+  url: '/api/cart',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:18'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'pgan8dhbk',
+  method: 'GET',
+  url: '/',
+  statusCode: 304,
+  responseTime: '1404ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:20'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 't6lry0btc',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:23'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 't6lry0btc',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '151ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:24'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:47:24 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 151ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:17:24'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'rsr2krdoq',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:24'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'hqh8runwo',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:24'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'hqh8runwo',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '40ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:24'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:47:24 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 41ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:17:24'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '6m7u4izlr',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:24'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'rsr2krdoq',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '93ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:24'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:47:24 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 94ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:17:24'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 't7gbv33y2',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:24'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '6m7u4izlr',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '82ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:24'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:47:24 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 82ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:17:24'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 't7gbv33y2',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '44ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:24'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:47:24 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 45ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:17:24'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'jzkp3xxyr',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:24'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'jzkp3xxyr',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '88ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:24'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:47:24 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 89ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:17:24'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'p3rrnoyi9',
+  method: 'GET',
+  url: '/api/cart',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:24'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '7w0mk5rsp',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:25'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '7w0mk5rsp',
+  method: 'POST',
+  url: '/sync',
+  statusCode: 200,
+  responseTime: '795ms',
+  contentLength: '411',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:25'
+}
+{
+  message: '::1 - 6910e1b0ccc8c64483d8989e (user) [09/Nov/2025:18:47:25 +0000] "POST /api/users/sync HTTP/1.1" 200 411 796ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:17:25'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'p3rrnoyi9',
+  method: 'GET',
+  url: '/',
+  statusCode: 304,
+  responseTime: '1430ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:26'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'hftcacwgg',
+  method: 'GET',
+  url: '/api/cart',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:26'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'hftcacwgg',
+  method: 'GET',
+  url: '/',
+  statusCode: 304,
+  responseTime: '1380ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:27'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'uonz1mhsa',
+  method: 'GET',
+  url: '/api/cart',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:27'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '5ug7j77kj',
+  method: 'GET',
+  url: '/api/users/payments',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:27'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'uonz1mhsa',
+  method: 'GET',
+  url: '/',
+  statusCode: 304,
+  responseTime: '1387ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:28'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '5ug7j77kj',
+  method: 'GET',
+  url: '/payments',
+  statusCode: 200,
+  responseTime: '1399ms',
+  contentLength: '92',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:29'
+}
+{
+  message: '::1 - 6910e1b0ccc8c64483d8989e (user) [09/Nov/2025:18:47:29 +0000] "GET /api/users/payments HTTP/1.1" 200 92 1400ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:17:29'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '5oiyxn5ws',
+  method: 'GET',
+  url: '/api/users/payments',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:17:29'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '5oiyxn5ws',
+  method: 'GET',
+  url: '/payments',
+  statusCode: 304,
+  responseTime: '1414ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:17:30'
+}
+{
+  message: '::1 - 6910e1b0ccc8c64483d8989e (user) [09/Nov/2025:18:47:30 +0000] "GET /api/users/payments HTTP/1.1" 304 - 1415ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:17:30'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'm06ww4xwf',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:05'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'm06ww4xwf',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '137ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:05'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:05 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 138ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:05'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '1326u4ckk',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:05'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'yfiipxglc',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:05'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'yfiipxglc',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '45ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:05'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:05 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 45ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:05'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'gatdv6v2d',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:05'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '1326u4ckk',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '80ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:05'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:05 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 80ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:05'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '7j3m7qgpd',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:05'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '7j3m7qgpd',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '39ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:05'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:05 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 40ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:05'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'gatdv6v2d',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '88ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:05'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:05 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 89ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:05'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '321s4lu68',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:05'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '321s4lu68',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '92ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:05'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:05 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 93ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:05'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'tff1db0bj',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:35'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'tff1db0bj',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '161ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:35'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:35 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 161ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:35'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'hh3vxgduz',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:35'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'o3du32h96',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:35'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'o3du32h96',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '42ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:36'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:36 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 43ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:36'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'l4asehsxy',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:36'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'hh3vxgduz',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '98ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:36'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:36 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 99ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:36'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '9l4b25j72',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:36'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'l4asehsxy',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '87ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:36'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:36 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 88ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:36'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '9l4b25j72',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '45ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:36'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:36 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 46ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:36'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ww37t40ap',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:36'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ww37t40ap',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '92ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:36'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:36 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 93ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:36'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'owv2e4umo',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:36'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:36 +0000] "GET /api/packages/featured HTTP/1.1" - - 45ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:36'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '5vw1ewh8w',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:36'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:36 +0000] "GET /api/packages/featured HTTP/1.1" - - 1ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:36'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'owv2e4umo',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '149ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '5vw1ewh8w',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 200,
+  responseTime: '117ms',
+  contentLength: '16825',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'c158wgzdt',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'c158wgzdt',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 200,
+  responseTime: '96ms',
+  contentLength: '16825',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:37 +0000] "GET /api/packages/featured HTTP/1.1" 200 16825 97ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'b1f8d488t',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:37 +0000] "GET /api/packages/featured HTTP/1.1" - - 50ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'b1f8d488t',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 200,
+  responseTime: '88ms',
+  contentLength: '16825',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'wl1bnpjq2',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'wl1bnpjq2',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 200,
+  responseTime: '85ms',
+  contentLength: '16825',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:37 +0000] "GET /api/packages/featured HTTP/1.1" 200 16825 85ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'qy62qo7h6',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'mkhz1pbxc',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:37 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" - - 21ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:37 +0000] "GET /api/packages/featured HTTP/1.1" - - 25ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'mkhz1pbxc',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '47ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'qy62qo7h6',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '82ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'wr6ju4m3m',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:37 +0000] "GET /api/packages/featured HTTP/1.1" - - 65ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '4za4y16ks',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:37 +0000] "GET /api/packages/featured HTTP/1.1" - - 3ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'wr6ju4m3m',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 200,
+  responseTime: '90ms',
+  contentLength: '16825',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '59osnrlqs',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '4za4y16ks',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 200,
+  responseTime: '137ms',
+  contentLength: '16825',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '59osnrlqs',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 200,
+  responseTime: '79ms',
+  contentLength: '16825',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:37 +0000] "GET /api/packages/featured HTTP/1.1" 200 16825 80ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '4varguq2w',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'i8p2f004u',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'i8p2f004u',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 200,
+  responseTime: '44ms',
+  contentLength: '2690',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:37 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 200 2690 45ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'kdxrux1bm',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:37'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '4varguq2w',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '79ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:38 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 80ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'h59bqvwyc',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'h59bqvwyc',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '40ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:38 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 40ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'kdxrux1bm',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '88ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:38 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 88ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'lsoka6qy2',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'lsoka6qy2',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '91ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:38 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 92ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '6w75k9zqr',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '6w75k9zqr',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '150ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:38 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 151ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'tqip3p5f4',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'by1qk111k',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'by1qk111k',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '40ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:38 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 41ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'heinsom40',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'tqip3p5f4',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '93ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:38 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 94ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'rsh1lqj3q',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'heinsom40',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '82ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:38 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 83ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'rsh1lqj3q',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '44ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:39 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 45ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'l14fjj62f',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:39 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" - - 63ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'l14fjj62f',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '91ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'qojyut0nh',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'qojyut0nh',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '98ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:39 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 98ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'idnxb21ap',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '299i80mts',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '299i80mts',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '43ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:39 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 44ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'sw3kf0pft',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'idnxb21ap',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '97ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:39 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 97ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'm355c0550',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'sw3kf0pft',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 200,
+  responseTime: '83ms',
+  contentLength: '722',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:39 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 200 722 84ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'm355c0550',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '44ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:39 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 45ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '497lewczz',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '497lewczz',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '88ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:39 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 89ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'scwjcc3rs',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'scwjcc3rs',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '99ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:39 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 100ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'cpnanzmgk',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'naezkux1r',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'naezkux1r',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '41ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:39 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 41ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'zfuu5pzzh',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'cpnanzmgk',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '92ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:39 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 92ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '4c6e57r0t',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'zfuu5pzzh',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '83ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:40 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 83ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '4c6e57r0t',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '46ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:40 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 46ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'g14w4nbmv',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'g14w4nbmv',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '93ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:40 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 93ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'veti3a98d',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'veti3a98d',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '106ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:40 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 107ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'lvste5fjc',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'x0swn5dov',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'x0swn5dov',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '39ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:40 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 40ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '4lrjyujuq',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'lvste5fjc',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '96ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:40 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 96ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ixguzccgn',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '4lrjyujuq',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '82ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:40 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 83ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ixguzccgn',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '45ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:40 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 46ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '2bzv4enx5',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '2bzv4enx5',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '89ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:40 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 89ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:40'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ewtovzzcs',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ewtovzzcs',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '99ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:41'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:41 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 99ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ldeyv1mx8',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '6o3biicdp',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '6o3biicdp',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '42ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:41'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:41 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 43ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ntxgh1wx1',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ldeyv1mx8',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '94ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:41'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:41 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 94ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'bpgwfv00r',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ntxgh1wx1',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '82ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:41'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:41 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 83ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'bpgwfv00r',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '45ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:41'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:41 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 46ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'sv2van5cg',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:18:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'sv2van5cg',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '97ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:18:41'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:48:41 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 97ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:18:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'qch41j3wz',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:05'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ohidhx272',
+  method: 'POST',
+  url: '/api/users/sync?role=vendor',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:05'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '6sjlopzpg',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:05'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:08 +0000] "POST /api/users/sync?role=vendor HTTP/1.1" - - 2480ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" {}',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:08'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:08 +0000] "POST /api/users/sync HTTP/1.1" - - 2975ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" {}',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:08'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:08 +0000] "POST /api/users/sync HTTP/1.1" - - 2476ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:08'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'pbhp6pi99',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:09'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'ohidhx272',
+  method: 'POST',
+  url: '/api/users/sync?role=vendor',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: {},
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-10 00:19:09'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: 'ohidhx272',
+  method: 'POST',
+  url: '/api/users/sync?role=vendor',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-10 00:19:09'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ohidhx272',
+  method: 'POST',
+  url: '/api/users/sync?role=vendor',
+  statusCode: 400,
+  responseTime: '4281ms',
+  contentLength: '884',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:09'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '6sjlopzpg',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-10 00:19:10'
+}
+{
+  service: 'snapfest-backend',
+  error: 'E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }',
+  stack: 'MongoServerError: E11000 duplicate key error collection: SnapFest.users index: email_1 dup key: { email: "yashverma7781@bbdu.ac.in" }\n' +
+    '    at InsertOneOperation.handleOk (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/insert.js:51:19)\n' +
+    '    at tryOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:214:34)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async executeOperation (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/operations/execute_operation.js:78:16)\n' +
+    '    at async Collection.insertOne (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/mongodb/lib/collection.js:154:16)',
+  reqId: '6sjlopzpg',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-10 00:19:10'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '6sjlopzpg',
+  method: 'POST',
+  url: '/api/users/sync',
+  statusCode: 400,
+  responseTime: '4795ms',
+  contentLength: '884',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:10'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'pbhp6pi99',
+  method: 'POST',
+  url: '/sync',
+  statusCode: 200,
+  responseTime: '979ms',
+  contentLength: '411',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:10'
+}
+{
+  message: '::1 - 6910e225ccc8c64483d89efa (user) [09/Nov/2025:18:49:10 +0000] "POST /api/users/sync HTTP/1.1" 200 411 980ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:10'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'qch41j3wz',
+  method: 'POST',
+  url: '/sync',
+  statusCode: 200,
+  responseTime: '5416ms',
+  contentLength: '466',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:10'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ibyi31scj',
+  method: 'POST',
+  url: '/api/users/sync',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:24'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ibyi31scj',
+  method: 'POST',
+  url: '/sync',
+  statusCode: 200,
+  responseTime: '1364ms',
+  contentLength: '411',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:25'
+}
+{
+  message: '::1 - 6910e225ccc8c64483d89efa (user) [09/Nov/2025:18:49:25 +0000] "POST /api/users/sync HTTP/1.1" 200 411 1365ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:25'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'qypl0txv9',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'qypl0txv9',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '132ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:38'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:38 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 133ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '0rb5ri3si',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'o341p2rjm',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'o341p2rjm',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '47ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:38'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:38 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 47ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'zwo7eduj0',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '0rb5ri3si',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '82ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:38'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:38 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 83ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'fn61n7lw4',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'fn61n7lw4',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '45ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:38'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:38 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 45ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'zwo7eduj0',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '90ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:38'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:38 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 91ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'm20x256es',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:38'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'm20x256es',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '91ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:39'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:39 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 93ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:39'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '3hm3eaenk',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '3hm3eaenk',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '153ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:41'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:41 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 154ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ufp2a61uc',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'rrp1vzdad',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'rrp1vzdad',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '47ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:41'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:41 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 47ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'hrw4mk5rz',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ufp2a61uc',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '97ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:41'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:41 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 98ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '1kwtiz0e3',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'hrw4mk5rz',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '91ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:41'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:41 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 92ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '1kwtiz0e3',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '46ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:41'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:41 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 47ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:41'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 't02aomly2',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:41'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:42 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" - - 51ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 't02aomly2',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '94ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'mqm6cbjyq',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'mqm6cbjyq',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '98ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:42 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 99ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'sx0737az0',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '4eztp4ifk',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '4eztp4ifk',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '46ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:42 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 47ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:42 +0000] "GET /api/packages/featured HTTP/1.1" - - 52ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'sx0737az0',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '98ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'f1o9ivdb6',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'f1o9ivdb6',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 200,
+  responseTime: '99ms',
+  contentLength: '16825',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:42 +0000] "GET /api/packages/featured HTTP/1.1" 200 16825 100ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'lnmyelrnu',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'cwaf75v8t',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:42 +0000] "GET /api/packages/featured HTTP/1.1" - - 23ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:42 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" - - 24ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'cwaf75v8t',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '48ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'lnmyelrnu',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '98ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ojupn1gm0',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:42 +0000] "GET /api/packages/featured HTTP/1.1" - - 70ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '4aj3nyz66',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:42 +0000] "GET /api/packages/featured HTTP/1.1" - - 2ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ojupn1gm0',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 200,
+  responseTime: '100ms',
+  contentLength: '16825',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ap4ny9gq2',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '4aj3nyz66',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 200,
+  responseTime: '137ms',
+  contentLength: '16825',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'ap4ny9gq2',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 200,
+  responseTime: '98ms',
+  contentLength: '16825',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:42 +0000] "GET /api/packages/featured HTTP/1.1" 200 16825 99ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '5mh6ux3aj',
+  method: 'GET',
+  url: '/api/packages/featured',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'urbucp609',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: 'urbucp609',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 200,
+  responseTime: '45ms',
+  contentLength: '2690',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:42 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 200 2690 45ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '5q8g0xunw',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:42'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '5mh6ux3aj',
+  method: 'GET',
+  url: '/packages/featured',
+  statusCode: 304,
+  responseTime: '97ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:43'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:43 +0000] "GET /api/packages/featured HTTP/1.1" 304 - 97ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:43'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '0mlaextbo',
+  method: 'GET',
+  url: '/api/beatbloom?limit=6',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:43'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '5q8g0xunw',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 200,
+  responseTime: '88ms',
+  contentLength: '722',
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:43'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:43 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 200 722 88ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:43'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '0mlaextbo',
+  method: 'GET',
+  url: '/beatbloom?limit=6',
+  statusCode: 304,
+  responseTime: '45ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:43'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:43 +0000] "GET /api/beatbloom?limit=6 HTTP/1.1" 304 - 46ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:43'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '9qtran6py',
+  method: 'GET',
+  url: '/api/testimonials?limit=8',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'info',
+  message: 'Request started',
+  timestamp: '2025-11-10 00:19:43'
+}
+{
+  service: 'snapfest-backend',
+  reqId: '9qtran6py',
+  method: 'GET',
+  url: '/testimonials?limit=8',
+  statusCode: 304,
+  responseTime: '90ms',
+  contentLength: 0,
+  level: 'info',
+  message: 'Request completed',
+  timestamp: '2025-11-10 00:19:43'
+}
+{
+  message: '::1 - anonymous [09/Nov/2025:18:49:43 +0000] "GET /api/testimonials?limit=8 HTTP/1.1" 304 - 91ms "http://localhost:5173/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" -',
+  level: 'info',
+  service: 'snapfest-backend',
+  timestamp: '2025-11-10 00:19:43'
+}
