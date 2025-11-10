@@ -27,7 +27,6 @@ const PackageCard = ({
     title = 'Untitled Package',
     description = 'No description available',
     basePrice = 0,
-    perGuestPrice = 0,
     category = 'GENERAL',
     rating = 0,
     images = [],
@@ -161,15 +160,9 @@ const PackageCard = ({
         <div className="mb-4">
           <div className="flex items-baseline">
             <span className="text-2xl font-bold text-primary-600">
-              {formatPrice(perGuestPrice)}
+              {formatPrice(basePrice)}
             </span>
-            <span className="text-gray-500 ml-1">per guest</span>
           </div>
-          {basePrice && (
-            <div className="text-sm text-gray-600">
-              Base price: {formatPrice(basePrice)}
-            </div>
-          )}
         </div>
 
 

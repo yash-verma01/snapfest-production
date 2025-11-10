@@ -116,7 +116,7 @@ export const createBooking = asyncHandler(async (req, res) => {
   }
 
   // Calculate total amount
-  const baseAmount = packageData.basePrice + (packageData.perGuestPrice * guests);
+  const baseAmount = packageData.basePrice;
   const totalAmount = baseAmount; // Add taxes, add-ons later
   const partialAmount = Math.round(totalAmount * 0.2); // 20% advance payment
 

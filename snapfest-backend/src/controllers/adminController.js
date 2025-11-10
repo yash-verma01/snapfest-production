@@ -1081,17 +1081,16 @@ export const createPackage = asyncHandler(async (req, res) => {
     description, 
     category, 
     basePrice, 
-    perGuestPrice, 
     features, 
     images, 
     isActive = true 
   } = req.body;
 
   // Validate required fields
-  if (!title || !description || !category || !basePrice || !perGuestPrice) {
+  if (!title || !description || !category || !basePrice) {
     return res.status(400).json({
       success: false,
-      message: 'Title, description, category, basePrice, and perGuestPrice are required'
+      message: 'Title, description, category, and basePrice are required'
     });
   }
 
@@ -1100,7 +1099,6 @@ export const createPackage = asyncHandler(async (req, res) => {
     description,
     category,
     basePrice,
-    perGuestPrice,
     features: features || [],
     images: images || [],
     isActive
@@ -1114,7 +1112,7 @@ export const createPackage = asyncHandler(async (req, res) => {
 });
 
 export const updatePackage = asyncHandler(async (req, res) => {
-  const { title, description, category, basePrice, perGuestPrice, features, images, isActive } = req.body;
+  const { title, description, category, basePrice, features, images, isActive } = req.body;
 
   const packageData = await Package.findById(req.params.id);
 
@@ -1130,7 +1128,6 @@ export const updatePackage = asyncHandler(async (req, res) => {
   if (description) packageData.description = description;
   if (category) packageData.category = category;
   if (basePrice !== undefined) packageData.basePrice = basePrice;
-  if (perGuestPrice !== undefined) packageData.perGuestPrice = perGuestPrice;
   if (features) packageData.features = features;
   if (images) packageData.images = images;
   if (isActive !== undefined) packageData.isActive = isActive;
@@ -1267,7 +1264,7 @@ export const getBookingById = asyncHandler(async (req, res) => {
   const booking = await Booking.findById(req.params.id)
     .populate('userId', 'name email phone address')
     .populate('vendorId', 'businessName email phone address')
-    .populate('packageId', 'title category basePrice perGuestPrice features images');
+    .populate('packageId', 'title category basePrice features images');
 
   if (!booking) {
     return res.status(404).json({

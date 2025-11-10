@@ -27,7 +27,7 @@ export const getCart = asyncHandler(async (req, res) => {
 
   try {
     const cartItems = await Cart.find({ userId })
-      .populate('packageId', 'title category basePrice perGuestPrice description images')
+      .populate('packageId', 'title category basePrice description images')
       .sort({ createdAt: -1 });
     
     console.log('🛒 Cart Controller: Found cart items:', cartItems.length);
@@ -46,10 +46,6 @@ export const getCart = asyncHandler(async (req, res) => {
         console.log('Cart item has null basePrice:', item._id, 'Package:', item.packageId.title);
         return false;
       }
-      if (item.packageId.perGuestPrice === null || item.packageId.perGuestPrice === undefined) {
-        console.log('Cart item has null perGuestPrice:', item._id, 'Package:', item.packageId.title);
-        return false;
-      }
       return true;
     });
 
@@ -58,9 +54,7 @@ export const getCart = asyncHandler(async (req, res) => {
     validCartItems.forEach(item => {
       try {
         const basePrice = item.packageId.basePrice || 0;
-        const perGuestPrice = item.packageId.perGuestPrice || 0;
-        const guests = item.guests || 1;
-        const itemTotal = basePrice + (perGuestPrice * guests);
+        const itemTotal = basePrice;
         totalAmount += itemTotal;
       } catch (error) {
         console.error('Error calculating item total:', error, 'Item:', item._id);
@@ -142,7 +136,7 @@ export const addToCart = asyncHandler(async (req, res) => {
   });
 
   // Populate the cart item
-  await cartItem.populate('packageId', 'title category basePrice perGuestPrice description images');
+  await cartItem.populate('packageId', 'title category basePrice description images');
 
   // Create audit log
   // DISABLED: await AuditLog.create({
@@ -185,7 +179,7 @@ export const updateCartItem = asyncHandler(async (req, res) => {
   await cartItem.save();
 
   // Populate the cart item
-  await cartItem.populate('packageId', 'title category basePrice perGuestPrice description images');
+  await cartItem.populate('packageId', 'title category basePrice description images');
 
   // Create audit log
   // DISABLED: await AuditLog.create({
@@ -266,24 +260,20 @@ export const getCartStats = asyncHandler(async (req, res) => {
   const totalItems = await Cart.countDocuments({ userId });
   
   const cartItems = await Cart.find({ userId })
-    .populate('packageId', 'basePrice perGuestPrice');
+    .populate('packageId', 'basePrice');
 
   // Filter out items with invalid package data
   const validCartItems = cartItems.filter(item => 
     item.packageId && 
     item.packageId.basePrice !== null && 
-    item.packageId.basePrice !== undefined &&
-    item.packageId.perGuestPrice !== null &&
-    item.packageId.perGuestPrice !== undefined
+    item.packageId.basePrice !== undefined
   );
 
   let totalAmount = 0;
   validCartItems.forEach(item => {
     try {
       const basePrice = item.packageId.basePrice || 0;
-      const perGuestPrice = item.packageId.perGuestPrice || 0;
-      const guests = item.guests || 1;
-      const itemTotal = basePrice + (perGuestPrice * guests);
+      const itemTotal = basePrice;
       totalAmount += itemTotal;
     } catch (error) {
       console.error('Error calculating item total in getCartStats:', error, 'Item:', item._id);

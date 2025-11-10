@@ -3,8 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Star, 
-  Users, 
-  Clock, 
   MapPin, 
   Camera, 
   Heart, 
@@ -183,7 +181,7 @@ const PackageDetail = () => {
 
   const calculateTotal = () => {
     if (!packageData) return 0;
-    const baseTotal = packageData.basePrice + (packageData.perGuestPrice * guests);
+    const baseTotal = packageData.basePrice;
     const customizationTotal = Object.values(selectedCustomizations).reduce((sum, item) => {
       return sum + (item.price * item.quantity);
     }, 0);
@@ -376,15 +374,6 @@ const PackageDetail = () => {
             <div className="flex items-center">
               <Star className="w-4 h-4 text-yellow-500 mr-1" />
               <span className="font-semibold">{packageData.rating.toFixed(1)}</span>
-              <span className="ml-1">({packageData.reviewCount})</span>
-            </div>
-            <div className="flex items-center">
-              <Users className="w-4 h-4 text-blue-500 mr-1" />
-              <span>{packageData.bookingCount} bookings</span>
-            </div>
-            <div className="flex items-center">
-              <Clock className="w-4 h-4 text-green-500 mr-1" />
-              <span>{packageData.duration || 'Flexible'}</span>
             </div>
           </div>
         </div>
@@ -463,17 +452,12 @@ const PackageDetail = () => {
                   <div className="text-2xl font-bold text-pink-600">
                     {formatPrice(calculateTotal())}
                   </div>
-                  <p className="text-gray-500 text-sm">for {guests} guest{guests > 1 ? 's' : ''}</p>
                 </div>
                 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Base:</span>
                     <span className="font-medium">{formatPrice(packageData.basePrice)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Guests ({guests}):</span>
-                    <span className="font-medium">{formatPrice(packageData.perGuestPrice * guests)}</span>
                   </div>
                   {calculateCustomizationTotal() > 0 && (
                     <div className="flex justify-between">
@@ -527,38 +511,6 @@ const PackageDetail = () => {
                       required
                     />
                     <p className="text-xs text-gray-500 mt-1">Minimum 5 characters required</p>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Guests
-                    </label>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        onClick={() => setGuests(Math.max(1, guests - 1))}
-                        variant="outline"
-                        size="sm"
-                        disabled={guests <= 1}
-                        className="w-8 h-8 rounded-full p-0"
-                      >
-                        -
-                      </Button>
-                      <span className="w-12 text-center font-semibold">{guests}</span>
-                      <Button
-                        onClick={() => setGuests(guests + 1)}
-                        variant="outline"
-                        size="sm"
-                        disabled={guests >= packageData.maxGuests}
-                        className="w-8 h-8 rounded-full p-0"
-                      >
-                        +
-                      </Button>
-                      {packageData.maxGuests > 0 && (
-                        <span className="text-xs text-gray-500 ml-2">
-                          Max: {packageData.maxGuests}
-                        </span>
-                      )}
-                    </div>
                   </div>
                 </div>
               </div>

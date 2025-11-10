@@ -15,10 +15,6 @@ const packageSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  perGuestPrice: {
-    type: Number,
-    required: true
-  },
   description: {
     type: String,
     required: true
@@ -59,54 +55,19 @@ const packageSchema = new mongoose.Schema({
       default: true
     }
   }],
-  // Legacy field for backward compatibility
-  includedBeatBlooms: [{
-    type: String
-  }],
   // Package highlights
   highlights: [{
     type: String
   }],
-  // Duration information
-  duration: {
-    type: String,
-    default: ''
-  },
-  // Guest capacity
-  maxGuests: {
-    type: Number,
-    default: 0
-  },
   // Package tags
   tags: [{
     type: String
   }],
-  // Vendor information
-  vendor: {
-    name: {
-      type: String,
-      default: ''
-    },
-    contact: {
-      type: String,
-      default: ''
-    }
-  },
   rating: {
     type: Number,
     default: 0,
     min: 0,
     max: 5
-  },
-  // Review count
-  reviewCount: {
-    type: Number,
-    default: 0
-  },
-  // Booking count
-  bookingCount: {
-    type: Number,
-    default: 0
   },
   isPremium: {
     type: Boolean,

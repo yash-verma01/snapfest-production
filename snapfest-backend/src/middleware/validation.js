@@ -208,14 +208,6 @@ export const validatePackage = [
     .isFloat({ min: 0 })
     .withMessage('Base price must be a positive number'),
   
-  body('perGuestPrice')
-    .notEmpty()
-    .withMessage('Per guest price is required')
-    .isNumeric()
-    .withMessage('Per guest price must be a number')
-    .isFloat({ min: 0 })
-    .withMessage('Per guest price must be a positive number'),
-  
   body('description')
     .trim()
     .notEmpty()

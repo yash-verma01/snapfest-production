@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, MapPin, Users, ShoppingCart } from 'lucide-react';
+import { X, Calendar, MapPin, ShoppingCart } from 'lucide-react';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import ModalPortal from './ModalPortal';
@@ -43,10 +43,6 @@ const BookingModal = ({
     
     if (!location || location.trim().length < 3) {
       newErrors.location = 'Please enter a valid location (minimum 3 characters)';
-    }
-    
-    if (!guests || guests < 1) {
-      newErrors.guests = 'Number of guests must be at least 1';
     }
     
     if (Object.keys(newErrors).length > 0) {
@@ -191,27 +187,6 @@ const BookingModal = ({
               )}
             </div>
 
-            {/* Number of Guests */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Users className="w-4 h-4 inline mr-1" />
-                Number of Guests
-              </label>
-              <input
-                type="number"
-                value={guests}
-                onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
-                min="1"
-                max="100"
-                className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
-                  errors.guests ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-              {errors.guests && (
-                <p className="text-red-500 text-sm mt-1">{errors.guests}</p>
-              )}
-            </div>
-
             {/* Price Preview */}
             {packageData && (
               <div className="p-3 bg-pink-50 rounded-lg">
@@ -219,13 +194,9 @@ const BookingModal = ({
                   <span>Base Price:</span>
                   <span>₹{packageData.basePrice?.toLocaleString() || 0}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span>Per Guest ({guests} guests):</span>
-                  <span>₹{((packageData.perGuestPrice || 0) * guests).toLocaleString()}</span>
-                </div>
                 <div className="flex justify-between font-semibold border-t border-pink-200 pt-2 mt-2">
                   <span>Total:</span>
-                  <span>₹{((packageData.basePrice || 0) + ((packageData.perGuestPrice || 0) * guests)).toLocaleString()}</span>
+                  <span>₹{packageData.basePrice?.toLocaleString() || 0}</span>
                 </div>
               </div>
             )}
