@@ -75,7 +75,7 @@ const PackageManagement = () => {
   const handleViewPackage = (packageId) => {
     const pkg = packages.find(p => p._id === packageId);
     if (pkg) {
-      alert(`Package Details:\nTitle: ${pkg.title}\nCategory: ${pkg.category}\nBase Price: ₹${pkg.basePrice}\nPer Guest Price: ₹${pkg.perGuestPrice}\nDescription: ${pkg.description}\nStatus: ${pkg.isActive ? 'Active' : 'Inactive'}`);
+      alert(`Package Details:\nTitle: ${pkg.title}\nCategory: ${pkg.category}\nBase Price: ₹${pkg.basePrice}\nRating: ${pkg.rating || 0}\nDescription: ${pkg.description}\nStatus: ${pkg.isActive ? 'Active' : 'Inactive'}`);
     }
   };
 
@@ -136,12 +136,17 @@ const PackageManagement = () => {
       title: pkg?.title || '',
       category: pkg?.category || 'WEDDING',
       basePrice: pkg?.basePrice || 0,
-      perGuestPrice: pkg?.perGuestPrice || 0,
       description: pkg?.description || '',
       images: pkg?.images || [],
+      primaryImage: pkg?.primaryImage || '',
       highlights: pkg?.highlights || [],
-      features: pkg?.features || [],
-      isActive: pkg?.isActive !== undefined ? pkg.isActive : true
+      tags: pkg?.tags || [],
+      includedFeatures: pkg?.includedFeatures || [],
+      customizationOptions: pkg?.customizationOptions || [],
+      rating: pkg?.rating || 0,
+      isPremium: pkg?.isPremium || false,
+      isActive: pkg?.isActive !== undefined ? pkg.isActive : true,
+      metaDescription: pkg?.metaDescription || ''
     });
 
     const handleSubmit = (e) => {
@@ -161,6 +166,70 @@ const PackageManagement = () => {
       setFormData(prev => ({
         ...prev,
         [field]: value.split(',').map(item => item.trim()).filter(item => item)
+      }));
+    };
+
+    // Add included feature
+    const addIncludedFeature = () => {
+      setFormData(prev => ({
+        ...prev,
+        includedFeatures: [...prev.includedFeatures, {
+          name: '',
+          description: '',
+          icon: '',
+          price: 0,
+          isRemovable: false,
+          isRequired: true
+        }]
+      }));
+    };
+
+    // Update included feature
+    const updateIncludedFeature = (index, field, value) => {
+      setFormData(prev => {
+        const updated = [...prev.includedFeatures];
+        updated[index] = { ...updated[index], [field]: value };
+        return { ...prev, includedFeatures: updated };
+      });
+    };
+
+    // Remove included feature
+    const removeIncludedFeature = (index) => {
+      setFormData(prev => ({
+        ...prev,
+        includedFeatures: prev.includedFeatures.filter((_, i) => i !== index)
+      }));
+    };
+
+    // Add customization option
+    const addCustomizationOption = () => {
+      setFormData(prev => ({
+        ...prev,
+        customizationOptions: [...prev.customizationOptions, {
+          name: '',
+          description: '',
+          price: 0,
+          category: 'OTHER',
+          isRequired: false,
+          maxQuantity: 1
+        }]
+      }));
+    };
+
+    // Update customization option
+    const updateCustomizationOption = (index, field, value) => {
+      setFormData(prev => {
+        const updated = [...prev.customizationOptions];
+        updated[index] = { ...updated[index], [field]: value };
+        return { ...prev, customizationOptions: updated };
+      });
+    };
+
+    // Remove customization option
+    const removeCustomizationOption = (index) => {
+      setFormData(prev => ({
+        ...prev,
+        customizationOptions: prev.customizationOptions.filter((_, i) => i !== index)
       }));
     };
 
@@ -203,31 +272,17 @@ const PackageManagement = () => {
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Base Price (₹)</label>
-                <input
-                  type="number"
-                  name="basePrice"
-                  value={formData.basePrice}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Per Guest Price (₹)</label>
-                <input
-                  type="number"
-                  name="perGuestPrice"
-                  value={formData.perGuestPrice}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Base Price (₹)</label>
+              <input
+                type="number"
+                name="basePrice"
+                value={formData.basePrice}
+                onChange={handleChange}
+                required
+                min="0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
             </div>
 
             <div>
@@ -238,6 +293,18 @@ const PackageManagement = () => {
                 onChange={handleChange}
                 required
                 rows="3"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Primary Image URL</label>
+              <input
+                type="text"
+                name="primaryImage"
+                value={formData.primaryImage}
+                onChange={handleChange}
+                placeholder="https://example.com/primary-image.jpg"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
@@ -265,14 +332,250 @@ const PackageManagement = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Features (comma-separated)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma-separated)</label>
               <input
                 type="text"
-                value={formData.features.join(', ')}
-                onChange={(e) => handleArrayChange('features', e.target.value)}
-                placeholder="Air conditioning, Parking, Security"
+                value={formData.tags.join(', ')}
+                onChange={(e) => handleArrayChange('tags', e.target.value)}
+                placeholder="popular, trending, featured"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Rating (0-5)</label>
+                <input
+                  type="number"
+                  name="rating"
+                  value={formData.rating}
+                  onChange={handleChange}
+                  min="0"
+                  max="5"
+                  step="0.1"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <div className="flex items-center pt-6">
+                <input
+                  type="checkbox"
+                  name="isPremium"
+                  checked={formData.isPremium}
+                  onChange={handleChange}
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <label className="ml-2 block text-sm text-gray-900">Premium Package</label>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Meta Description (SEO - max 160 chars)</label>
+              <textarea
+                name="metaDescription"
+                value={formData.metaDescription}
+                onChange={handleChange}
+                maxLength={160}
+                rows="2"
+                placeholder="SEO description for search engines"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">{formData.metaDescription.length}/160 characters</p>
+            </div>
+
+            {/* Included Features Section */}
+            <div className="border-t pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-medium text-gray-700">Included Features</label>
+                <button
+                  type="button"
+                  onClick={addIncludedFeature}
+                  className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  + Add Feature
+                </button>
+              </div>
+              
+              {formData.includedFeatures.map((feature, index) => (
+                <div key={index} className="mb-4 p-3 border border-gray-200 rounded-lg">
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Feature Name *</label>
+                      <input
+                        type="text"
+                        value={feature.name}
+                        onChange={(e) => updateIncludedFeature(index, 'name', e.target.value)}
+                        required
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                        placeholder="e.g., Photography"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Price (₹)</label>
+                      <input
+                        type="number"
+                        value={feature.price}
+                        onChange={(e) => updateIncludedFeature(index, 'price', parseFloat(e.target.value) || 0)}
+                        min="0"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="mb-3">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+                    <textarea
+                      value={feature.description}
+                      onChange={(e) => updateIncludedFeature(index, 'description', e.target.value)}
+                      rows="2"
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                      placeholder="Feature description"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Icon URL</label>
+                      <input
+                        type="text"
+                        value={feature.icon}
+                        onChange={(e) => updateIncludedFeature(index, 'icon', e.target.value)}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                        placeholder="Icon URL (optional)"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-4 mt-5">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={feature.isRemovable}
+                          onChange={(e) => updateIncludedFeature(index, 'isRemovable', e.target.checked)}
+                          className="h-3 w-3 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-1 text-xs text-gray-600">Removable</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={feature.isRequired}
+                          onChange={(e) => updateIncludedFeature(index, 'isRequired', e.target.checked)}
+                          className="h-3 w-3 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-1 text-xs text-gray-600">Required</span>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <button
+                    type="button"
+                    onClick={() => removeIncludedFeature(index)}
+                    className="text-xs text-red-600 hover:text-red-700"
+                  >
+                    Remove Feature
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Customization Options Section */}
+            <div className="border-t pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-medium text-gray-700">Customization Options (Add-ons)</label>
+                <button
+                  type="button"
+                  onClick={addCustomizationOption}
+                  className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  + Add Option
+                </button>
+              </div>
+              
+              {formData.customizationOptions.map((option, index) => (
+                <div key={index} className="mb-4 p-3 border border-gray-200 rounded-lg">
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Option Name *</label>
+                      <input
+                        type="text"
+                        value={option.name}
+                        onChange={(e) => updateCustomizationOption(index, 'name', e.target.value)}
+                        required
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                        placeholder="e.g., Extra Photography"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Price (₹) *</label>
+                      <input
+                        type="number"
+                        value={option.price}
+                        onChange={(e) => updateCustomizationOption(index, 'price', parseFloat(e.target.value) || 0)}
+                        required
+                        min="0"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="mb-3">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+                    <textarea
+                      value={option.description}
+                      onChange={(e) => updateCustomizationOption(index, 'description', e.target.value)}
+                      rows="2"
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                      placeholder="Option description"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-3 mb-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
+                      <select
+                        value={option.category}
+                        onChange={(e) => updateCustomizationOption(index, 'category', e.target.value)}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                      >
+                        <option value="PHOTOGRAPHY">Photography</option>
+                        <option value="VIDEOGRAPHY">Videography</option>
+                        <option value="DECORATION">Decoration</option>
+                        <option value="CATERING">Catering</option>
+                        <option value="ENTERTAINMENT">Entertainment</option>
+                        <option value="TRANSPORTATION">Transportation</option>
+                        <option value="OTHER">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Max Quantity</label>
+                      <input
+                        type="number"
+                        value={option.maxQuantity}
+                        onChange={(e) => updateCustomizationOption(index, 'maxQuantity', parseInt(e.target.value) || 1)}
+                        min="1"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2 mt-5">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={option.isRequired}
+                          onChange={(e) => updateCustomizationOption(index, 'isRequired', e.target.checked)}
+                          className="h-3 w-3 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-1 text-xs text-gray-600">Required</span>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <button
+                    type="button"
+                    onClick={() => removeCustomizationOption(index)}
+                    className="text-xs text-red-600 hover:text-red-700"
+                  >
+                    Remove Option
+                  </button>
+                </div>
+              ))}
             </div>
 
             <div className="flex items-center">
@@ -414,7 +717,9 @@ const PackageManagement = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">₹{pkg.basePrice}</div>
-                    <div className="text-sm text-gray-500">₹{pkg.perGuestPrice}/guest</div>
+                    {pkg.rating > 0 && (
+                      <div className="text-sm text-gray-500">Rating: {pkg.rating}/5</div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge className={getStatusBadgeColor(pkg.isActive)}>

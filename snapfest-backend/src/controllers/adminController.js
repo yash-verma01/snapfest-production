@@ -1081,9 +1081,16 @@ export const createPackage = asyncHandler(async (req, res) => {
     description, 
     category, 
     basePrice, 
-    features, 
-    images, 
-    isActive = true 
+    images,
+    primaryImage,
+    includedFeatures, 
+    highlights,
+    tags,
+    customizationOptions,
+    rating,
+    isPremium,
+    isActive = true,
+    metaDescription
   } = req.body;
 
   // Validate required fields
@@ -1094,14 +1101,53 @@ export const createPackage = asyncHandler(async (req, res) => {
     });
   }
 
+  // Validate includedFeatures structure if provided
+  if (includedFeatures && Array.isArray(includedFeatures)) {
+    for (const feature of includedFeatures) {
+      if (!feature.name) {
+        return res.status(400).json({
+          success: false,
+          message: 'Each included feature must have a name'
+        });
+      }
+    }
+  }
+
+  // Validate customizationOptions structure if provided
+  if (customizationOptions && Array.isArray(customizationOptions)) {
+    for (const option of customizationOptions) {
+      if (!option.name || option.price === undefined) {
+        return res.status(400).json({
+          success: false,
+          message: 'Each customization option must have a name and price'
+        });
+      }
+    }
+  }
+
+  // Validate rating if provided
+  if (rating !== undefined && (rating < 0 || rating > 5)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Rating must be between 0 and 5'
+    });
+  }
+
   const packageData = await Package.create({
     title,
     description,
     category,
     basePrice,
-    features: features || [],
     images: images || [],
-    isActive
+    primaryImage: primaryImage || '',
+    includedFeatures: includedFeatures || [],
+    highlights: highlights || [],
+    tags: tags || [],
+    customizationOptions: customizationOptions || [],
+    rating: rating !== undefined ? rating : 0,
+    isPremium: isPremium || false,
+    isActive,
+    metaDescription: metaDescription || ''
   });
 
   res.status(201).json({
@@ -1112,7 +1158,22 @@ export const createPackage = asyncHandler(async (req, res) => {
 });
 
 export const updatePackage = asyncHandler(async (req, res) => {
-  const { title, description, category, basePrice, features, images, isActive } = req.body;
+  const { 
+    title, 
+    description, 
+    category, 
+    basePrice, 
+    images,
+    primaryImage,
+    includedFeatures, 
+    highlights,
+    tags,
+    customizationOptions,
+    rating,
+    isPremium,
+    isActive,
+    metaDescription
+  } = req.body;
 
   const packageData = await Package.findById(req.params.id);
 
@@ -1123,14 +1184,53 @@ export const updatePackage = asyncHandler(async (req, res) => {
     });
   }
 
-  // Update package
+  // Validate includedFeatures structure if provided
+  if (includedFeatures && Array.isArray(includedFeatures)) {
+    for (const feature of includedFeatures) {
+      if (!feature.name) {
+        return res.status(400).json({
+          success: false,
+          message: 'Each included feature must have a name'
+        });
+      }
+    }
+  }
+
+  // Validate customizationOptions structure if provided
+  if (customizationOptions && Array.isArray(customizationOptions)) {
+    for (const option of customizationOptions) {
+      if (!option.name || option.price === undefined) {
+        return res.status(400).json({
+          success: false,
+          message: 'Each customization option must have a name and price'
+        });
+      }
+    }
+  }
+
+  // Validate rating if provided
+  if (rating !== undefined && (rating < 0 || rating > 5)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Rating must be between 0 and 5'
+    });
+  }
+
+  // Update package fields
   if (title) packageData.title = title;
   if (description) packageData.description = description;
   if (category) packageData.category = category;
   if (basePrice !== undefined) packageData.basePrice = basePrice;
-  if (features) packageData.features = features;
-  if (images) packageData.images = images;
+  if (images !== undefined) packageData.images = images;
+  if (primaryImage !== undefined) packageData.primaryImage = primaryImage;
+  if (includedFeatures !== undefined) packageData.includedFeatures = includedFeatures;
+  if (highlights !== undefined) packageData.highlights = highlights;
+  if (tags !== undefined) packageData.tags = tags;
+  if (customizationOptions !== undefined) packageData.customizationOptions = customizationOptions;
+  if (rating !== undefined) packageData.rating = rating;
+  if (isPremium !== undefined) packageData.isPremium = isPremium;
   if (isActive !== undefined) packageData.isActive = isActive;
+  if (metaDescription !== undefined) packageData.metaDescription = metaDescription;
 
   await packageData.save();
 
