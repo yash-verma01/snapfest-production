@@ -11,10 +11,13 @@ import {
   Filter,
   Users,
   DollarSign,
-  Star
+  Star,
+  Upload,
+  X
 } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { Card, Button, Badge } from '../ui';
+import ImageUpload from './ImageUpload';
 
 const VenueManagement = () => {
   const [venues, setVenues] = useState([]);
@@ -25,6 +28,10 @@ const VenueManagement = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingVenue, setEditingVenue] = useState(null);
+  
+  // File upload state for new venues
+  const [selectedGalleryFiles, setSelectedGalleryFiles] = useState([]);
+  const [galleryPreviews, setGalleryPreviews] = useState([]);
 
   useEffect(() => {
     loadVenues();
@@ -84,16 +91,66 @@ const VenueManagement = () => {
     if (venue) {
       setEditingVenue(venue);
       setShowCreateForm(true);
+      // Clear file uploads when editing
+      setSelectedGalleryFiles([]);
+      setGalleryPreviews([]);
     }
+  };
+
+  // File handlers
+  const handleGalleryFilesSelect = (e) => {
+    const files = Array.from(e.target.files);
+    const imageFiles = files.filter(file => {
+      if (!file.type.startsWith('image/')) return false;
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`${file.name} is too large. Max size is 10MB.`);
+        return false;
+      }
+      return true;
+    });
+    
+    const newFiles = [...selectedGalleryFiles, ...imageFiles].slice(0, 10);
+    setSelectedGalleryFiles(newFiles);
+    
+    // Create previews for new files
+    const newPreviews = imageFiles.map(file => URL.createObjectURL(file));
+    setGalleryPreviews(prev => [...prev, ...newPreviews].slice(0, 10));
+  };
+
+  const removeGalleryFile = (index) => {
+    setSelectedGalleryFiles(prev => prev.filter((_, i) => i !== index));
+    setGalleryPreviews(prev => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const handleCreateVenue = async (venueData) => {
     try {
-      await adminAPI.createVenue(venueData);
+      // Extract files from venueData
+      const { _files, ...venuePayload } = venueData;
+      
+      // Step 1: Create the venue
+      const response = await adminAPI.createVenue(venuePayload);
+      const newVenueId = response.data.data.venue._id;
+      
+      // Step 2: Upload images if any files were selected
+      if (_files && _files.gallery && _files.gallery.length > 0) {
+        const galleryFormData = new FormData();
+        _files.gallery.forEach(file => {
+          galleryFormData.append('images', file);
+        });
+        await adminAPI.uploadVenueImages(newVenueId, galleryFormData);
+      }
+      
+      // Clear file uploads
+      setSelectedGalleryFiles([]);
+      setGalleryPreviews([]);
+      
       setShowCreateForm(false);
       setEditingVenue(null);
       loadVenues();
-      alert('Venue created successfully');
+      alert('Venue created successfully with images!');
     } catch (error) {
       console.error('Error creating venue:', error);
       alert('Error creating venue: ' + (error.response?.data?.message || error.message));
@@ -377,7 +434,7 @@ const VenueManagement = () => {
                 amenities: formData.get('amenities').split(',').map(item => item.trim()).filter(item => item),
                 features: formData.get('features').split(',').map(item => item.trim()).filter(item => item),
                 services: formData.get('services').split(',').map(item => item.trim()).filter(item => item),
-                images: formData.get('images').split(',').map(item => item.trim()).filter(item => item),
+                images: editingVenue ? (formData.get('images')?.split(',').map(item => item.trim()).filter(item => item) || []) : [],
                 description: formData.get('description'),
                 contactInfo: {
                   phone: formData.get('phone'),
@@ -390,7 +447,13 @@ const VenueManagement = () => {
               if (editingVenue) {
                 handleUpdateVenue(editingVenue._id, data);
               } else {
-                handleCreateVenue(data);
+                // For new venues, pass files along with data
+                handleCreateVenue({
+                  ...data,
+                  _files: {
+                    gallery: selectedGalleryFiles
+                  }
+                });
               }
             }} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -435,9 +498,64 @@ const VenueManagement = () => {
                 <input type="text" name="services" defaultValue={editingVenue?.services?.join(', ') || ''} placeholder="Catering, Photography, Decoration" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
               </div>
               
+              {/* Gallery Images Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Images (comma-separated URLs)</label>
-                <input type="text" name="images" defaultValue={editingVenue?.images?.join(', ') || ''} placeholder="https://example.com/image1.jpg" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gallery Images</label>
+                {editingVenue?._id ? (
+                  // For existing venues, use ImageUpload component
+                  <ImageUpload
+                    entityType="venue"
+                    entityId={editingVenue._id}
+                    maxImages={10}
+                    existingImages={editingVenue.images || []}
+                    onImagesUploaded={(images) => {
+                      // Update venue with new images
+                      loadVenues();
+                    }}
+                    onImageRemove={(imageUrl) => {
+                      // Images are removed via ImageUpload component
+                      loadVenues();
+                    }}
+                  />
+                ) : (
+                  // For new venues, use file input
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleGalleryFilesSelect}
+                      className="hidden"
+                      id="gallery-images-upload-venue"
+                    />
+                    <label
+                      htmlFor="gallery-images-upload-venue"
+                      className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors block mb-2"
+                    >
+                      <Upload className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                      <p className="text-sm text-gray-600">Click to select gallery images</p>
+                      <p className="text-xs text-gray-500 mt-1">Max 10 images, 10MB each</p>
+                    </label>
+                    
+                    {/* Preview selected gallery images */}
+                    {galleryPreviews.length > 0 && (
+                      <div className="grid grid-cols-4 gap-2 mt-2">
+                        {galleryPreviews.map((preview, index) => (
+                          <div key={index} className="relative">
+                            <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-20 object-cover rounded border border-gray-200" />
+                            <button
+                              type="button"
+                              onClick={() => removeGalleryFile(index)}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               
               <div className="grid grid-cols-3 gap-4">
@@ -461,7 +579,13 @@ const VenueManagement = () => {
               </div>
               
               <div className="flex justify-end space-x-3 pt-4">
-                <Button type="button" variant="outline" onClick={() => { setShowCreateForm(false); setEditingVenue(null); }}>Cancel</Button>
+                <Button type="button" variant="outline" onClick={() => { 
+                  setShowCreateForm(false); 
+                  setEditingVenue(null);
+                  // Clear file uploads on cancel
+                  setSelectedGalleryFiles([]);
+                  setGalleryPreviews([]);
+                }}>Cancel</Button>
                 <Button type="submit" className="bg-primary-600 hover:bg-primary-700">{editingVenue ? 'Update Venue' : 'Create Venue'}</Button>
               </div>
             </form>

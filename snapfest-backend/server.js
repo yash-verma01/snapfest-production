@@ -97,50 +97,60 @@ app.use(rateLimit({
 }));
 
 // CORS configuration - Explicitly allow credentials for cross-origin requests
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    // Allow all localhost ports for development (critical for cookie transmission)
-    if (origin.startsWith('http://localhost:')) {
-      return callback(null, true);
-    }
-    
-    // Allow file:// protocol for local testing
-    if (origin.startsWith('file://')) {
-      return callback(null, true);
-    }
-    
-    // Allow specific production domains
-    const allowedOrigins = [
-      'https://snapfest-frontend.vercel.app',
-      'https://snapfest.vercel.app'
-    ];
-    
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    
-    // Log the origin for debugging
-    if (process.env.NODE_ENV === 'development') {
-      console.log('⚠️ CORS: Blocked origin:', origin);
-    }
-    callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true, // CRITICAL: Must be true for cookies to be sent cross-origin
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'X-Requested-With',
-    'Clerk-Authorization',
-    'Cookie',
-    'Set-Cookie'
-  ],
-  exposedHeaders: ['Set-Cookie'], // Allow frontend to see Set-Cookie headers
-  maxAge: 86400 // Cache preflight requests for 24 hours
-}));
+// EXCLUDE /PUBLIC routes - they are handled separately below for static files
+app.use((req, res, next) => {
+  // Skip CORS for /PUBLIC routes - handled separately for static files
+  // This prevents conflicts between credentials:true and Access-Control-Allow-Origin:*
+  if (req.path.startsWith('/PUBLIC')) {
+    return next();
+  }
+  
+  // Apply CORS for all other routes (API routes that need credentials)
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      // Allow all localhost ports for development (critical for cookie transmission)
+      if (origin.startsWith('http://localhost:')) {
+        return callback(null, true);
+      }
+      
+      // Allow file:// protocol for local testing
+      if (origin.startsWith('file://')) {
+        return callback(null, true);
+      }
+      
+      // Allow specific production domains
+      const allowedOrigins = [
+        'https://snapfest-frontend.vercel.app',
+        'https://snapfest.vercel.app'
+      ];
+      
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      // Log the origin for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.log('⚠️ CORS: Blocked origin:', origin);
+      }
+      callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true, // CRITICAL: Must be true for cookies to be sent cross-origin
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Clerk-Authorization',
+      'Cookie',
+      'Set-Cookie'
+    ],
+    exposedHeaders: ['Set-Cookie'], // Allow frontend to see Set-Cookie headers
+    maxAge: 86400 // Cache preflight requests for 24 hours
+  })(req, res, next);
+});
 
 // Cookie parser - needed to parse Clerk session cookies
 app.use(cookieParser());
@@ -162,8 +172,84 @@ app.use(express.urlencoded({ extended: true }));
 app.use(enhancedRequestLogger);
 app.use(requestLogger);
 
-// Static files
-app.use('/uploads', express.static('uploads'));
+// CORS middleware for static files - Custom middleware to ensure headers are set correctly
+// This MUST run before express.static() to set CORS headers
+app.use('/PUBLIC', (req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Determine the allowed origin
+  let allowedOrigin = '*';
+  
+  if (origin) {
+    // Allow all localhost origins for development
+    if (origin.startsWith('http://localhost:')) {
+      allowedOrigin = origin;
+    }
+    // Allow specific production domains
+    else if (origin === 'https://snapfest-frontend.vercel.app' || 
+             origin === 'https://snapfest.vercel.app') {
+      allowedOrigin = origin;
+    }
+    // For other origins, allow all (permissive for static assets)
+    else {
+      allowedOrigin = '*';
+    }
+  }
+  
+  // Set CORS headers explicitly
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  
+  // Handle preflight OPTIONS requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
+
+// Static files - Serve PUBLIC folder for uploaded images
+app.use('/PUBLIC', express.static('PUBLIC', {
+  setHeaders: (res, path, stat) => {
+    // Get origin from request (res.req is available in setHeaders)
+    const origin = res.req?.headers?.origin;
+    let allowedOrigin = '*';
+    
+    // Determine allowed origin based on request origin
+    if (origin) {
+      // Allow all localhost origins for development
+      if (origin.startsWith('http://localhost:')) {
+        allowedOrigin = origin; // Specific origin for localhost
+      }
+      // Allow specific production domains
+      else if (origin === 'https://snapfest-frontend.vercel.app' || 
+               origin === 'https://snapfest.vercel.app') {
+        allowedOrigin = origin; // Specific origin for production
+      }
+      // For other origins, allow all (permissive for static assets)
+      else {
+        allowedOrigin = '*';
+      }
+    }
+    // If no origin header (common with <img> tags), use wildcard
+    else {
+      allowedOrigin = '*';
+    }
+    
+    // Set CORS headers - CRITICAL: This runs when file is actually served
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Max-Age', '86400');
+    
+    // Set cache headers for images
+    if (path.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+    }
+  }
+}));
 
 // API Routes - Organized by Role
 app.use('/api/auth', authRoutes);            // Authentication routes (register, login, logout)

@@ -22,7 +22,7 @@ const router = express.Router();
 // @access  Private
 router.post('/profile', 
   authenticate, 
-  uploadSingle('profileImage'), 
+  uploadSingle('profileImage', 'profiles'), 
   uploadProfileImage
 );
 
@@ -34,7 +34,7 @@ router.post('/profile',
 router.post('/package/:packageId', 
   authenticate, 
   adminOnly, 
-  uploadMultiple('images', 10), 
+  uploadMultiple('images', 10, 'packages'), 
   uploadPackageImages
 );
 
@@ -46,7 +46,7 @@ router.post('/package/:packageId',
 router.post('/addon/:addonId', 
   authenticate, 
   vendorOrAdmin, 
-  uploadMultiple('images', 5), 
+  uploadMultiple('images', 5, 'beatbloom'), 
   uploadAddonImages
 );
 
@@ -58,7 +58,7 @@ router.post('/addon/:addonId',
 router.post('/event/:eventId', 
   authenticate, 
   adminOnly, 
-  uploadMultiple('images', 10), 
+  uploadMultiple('images', 10, 'events'), 
   uploadEventImages
 );
 
@@ -70,7 +70,7 @@ router.post('/event/:eventId',
 router.post('/venue/:venueId', 
   authenticate, 
   adminOnly, 
-  uploadMultiple('images', 10), 
+  uploadMultiple('images', 10, 'venues'), 
   uploadVenueImages
 );
 
@@ -82,18 +82,25 @@ router.post('/venue/:venueId',
 router.post('/beatbloom/:beatBloomId', 
   authenticate, 
   adminOnly, 
-  uploadMultiple('images', 10), 
+  uploadMultiple('images', 10, 'beatbloom'), 
   uploadBeatBloomImages
 );
 
 // ==================== BULK UPLOAD ROUTES ====================
 
-// @route   POST /api/upload/bulk
+// @route   POST /api/upload/bulk?entityType=packages|events|venues|beatbloom
 // @desc    Upload multiple images for any entity
 // @access  Private
+// Note: Entity type should be passed as query parameter (e.g., ?entityType=packages)
 router.post('/bulk', 
   authenticate, 
-  uploadMultiple('images', 20), 
+  (req, res, next) => {
+    // Extract entity type from query parameter or default to 'packages'
+    const entityType = req.query.entityType || 'packages';
+    // Create middleware with correct entity type
+    const upload = uploadMultiple('images', 20, entityType);
+    upload(req, res, next);
+  },
   uploadBulkImages
 );
 

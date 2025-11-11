@@ -1,6 +1,6 @@
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { User, Package, BeatBloom } from '../models/index.js';
-import { deleteImage, processImage } from '../middleware/upload.js';
+import { deleteImage, processImage, generatePublicUrl } from '../middleware/upload.js';
 
 // ==================== PROFILE IMAGE UPLOAD ====================
 
@@ -32,8 +32,11 @@ export const uploadProfileImage = asyncHandler(async (req, res) => {
       await deleteImage(user.profileImage);
     }
 
+    // Generate public URL for the uploaded image
+    const publicUrl = generatePublicUrl(req.file.path, 'profiles', req);
+    
     // Update user profile image
-    user.profileImage = req.file.path || req.file.secure_url;
+    user.profileImage = publicUrl;
     await user.save();
 
     res.status(200).json({
@@ -83,8 +86,8 @@ export const uploadPackageImages = asyncHandler(async (req, res) => {
       });
     }
 
-    // Process uploaded images
-    const imageUrls = req.files.map(file => file.path || file.secure_url);
+    // Generate public URLs for uploaded images
+    const imageUrls = req.files.map(file => generatePublicUrl(file.path, 'packages', req));
     
     // Add new images to existing ones
     packageDoc.images = [...packageDoc.images, ...imageUrls];
@@ -142,8 +145,8 @@ export const uploadAddonImages = asyncHandler(async (req, res) => {
       });
     }
 
-    // Process uploaded images
-    const imageUrls = req.files.map(file => file.path || file.secure_url);
+    // Generate public URLs for uploaded images
+    const imageUrls = req.files.map(file => generatePublicUrl(file.path, 'beatbloom', req));
     
     // Add new images to existing ones
     beatBloom.images = [...beatBloom.images, ...imageUrls];
@@ -195,8 +198,8 @@ export const uploadEventImages = asyncHandler(async (req, res) => {
       });
     }
 
-    // Process uploaded images
-    const imageUrls = req.files.map(file => file.path || file.secure_url);
+    // Generate public URLs for uploaded images
+    const imageUrls = req.files.map(file => generatePublicUrl(file.path, 'events', req));
     
     // Add new images to existing ones
     event.images = [...event.images, ...imageUrls];
@@ -249,8 +252,8 @@ export const uploadVenueImages = asyncHandler(async (req, res) => {
       });
     }
 
-    // Process uploaded images
-    const imageUrls = req.files.map(file => file.path || file.secure_url);
+    // Generate public URLs for uploaded images
+    const imageUrls = req.files.map(file => generatePublicUrl(file.path, 'venues', req));
     
     // Add new images to existing ones
     venue.images = [...venue.images, ...imageUrls];
@@ -428,12 +431,8 @@ export const uploadBeatBloomImages = asyncHandler(async (req, res) => {
       });
     }
 
-    // Process and upload images
-    const imageUrls = [];
-    for (const file of req.files) {
-      const processedImage = await processImage(file);
-      imageUrls.push(processedImage);
-    }
+    // Generate public URLs for uploaded images
+    const imageUrls = req.files.map(file => generatePublicUrl(file.path, 'beatbloom', req));
 
     // Update Beat & Bloom with new images
     beatBloom.images = [...beatBloom.images, ...imageUrls];
@@ -467,7 +466,9 @@ export const uploadBeatBloomImages = asyncHandler(async (req, res) => {
 // @route   POST /api/upload/bulk
 // @access  Private
 export const uploadBulkImages = asyncHandler(async (req, res) => {
-  const { entityType, entityId } = req.body;
+  // Get entity type from query parameter (used by middleware) or body
+  const entityType = req.query.entityType || req.body.entityType;
+  const { entityId } = req.body;
   const userId = req.userId;
 
   if (!req.files || req.files.length === 0) {
@@ -477,8 +478,26 @@ export const uploadBulkImages = asyncHandler(async (req, res) => {
     });
   }
 
+  if (!entityType) {
+    return res.status(400).json({
+      success: false,
+      message: 'Entity type is required (query parameter or body)'
+    });
+  }
+
   try {
-    const imageUrls = req.files.map(file => file.path || file.secure_url);
+    // Generate public URLs based on entity type
+    const entityTypeMap = {
+      'package': 'packages',
+      'packages': 'packages',
+      'beatbloom': 'beatbloom',
+      'event': 'events',
+      'events': 'events',
+      'venue': 'venues',
+      'venues': 'venues'
+    };
+    const folderType = entityTypeMap[entityType] || 'packages';
+    const imageUrls = req.files.map(file => generatePublicUrl(file.path, folderType, req));
     let updatedDocument;
 
     // Update the appropriate entity

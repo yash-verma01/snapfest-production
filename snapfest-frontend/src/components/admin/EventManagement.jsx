@@ -11,10 +11,13 @@ import {
   Filter,
   MapPin,
   Users,
-  DollarSign
+  DollarSign,
+  Upload,
+  X
 } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { Card, Button, Badge } from '../ui';
+import ImageUpload from './ImageUpload';
 
 const EventManagement = () => {
   const [events, setEvents] = useState([]);
@@ -89,11 +92,55 @@ const EventManagement = () => {
 
   const handleCreateEvent = async (eventData) => {
     try {
-      await adminAPI.createEvent(eventData);
+      // Extract files from eventData
+      const { _files, ...eventPayload } = eventData;
+      
+      // Step 1: Create the event
+      const response = await adminAPI.createEvent(eventPayload);
+      const newEventId = response.data.data.event._id;
+      
+      // Step 2: Upload images if any files were selected
+      if (_files) {
+        const uploadPromises = [];
+        
+        // Upload primary image if selected
+        if (_files.primary) {
+          const primaryFormData = new FormData();
+          primaryFormData.append('images', _files.primary);
+          uploadPromises.push(
+            adminAPI.uploadEventImages(newEventId, primaryFormData)
+              .then(res => {
+                // Set first uploaded image as primary
+                if (res.data.data.images && res.data.data.images.length > 0) {
+                  return adminAPI.updateEvent(newEventId, {
+                    image: res.data.data.images[0]
+                  });
+                }
+              })
+          );
+        }
+        
+        // Upload gallery images if selected
+        if (_files.gallery && _files.gallery.length > 0) {
+          const galleryFormData = new FormData();
+          _files.gallery.forEach(file => {
+            galleryFormData.append('images', file);
+          });
+          uploadPromises.push(
+            adminAPI.uploadEventImages(newEventId, galleryFormData)
+          );
+        }
+        
+        // Wait for all uploads to complete
+        if (uploadPromises.length > 0) {
+          await Promise.all(uploadPromises);
+        }
+      }
+      
       setShowCreateForm(false);
       setEditingEvent(null);
       loadEvents();
-      alert('Event created successfully');
+      alert('Event created successfully with images!');
     } catch (error) {
       console.error('Error creating event:', error);
       alert('Error creating event: ' + (error.response?.data?.message || error.message));
@@ -134,33 +181,160 @@ const EventManagement = () => {
   // Event Form Component
   const EventForm = ({ event: evt, onSave, onCancel }) => {
     const [formData, setFormData] = useState({
-      title: evt?.title || '',
-      type: evt?.type || 'WEDDING',
-      description: evt?.description || '',
-      shortDescription: evt?.shortDescription || '',
-      date: evt?.date ? new Date(evt.date).toISOString().split('T')[0] : '',
+      title: '',
+      type: 'WEDDING',
+      description: '',
+      shortDescription: '',
+      date: '',
       location: {
-        name: evt?.location?.name || '',
-        city: evt?.location?.city || '',
-        state: evt?.location?.state || '',
-        fullAddress: evt?.location?.fullAddress || ''
+        name: '',
+        city: '',
+        state: '',
+        fullAddress: ''
       },
-      image: evt?.image || '',
-      images: evt?.images || [],
-      guestCount: evt?.guestCount || 0,
-      duration: evt?.duration || '',
+      image: '',
+      images: [],
+      guestCount: 0,
+      duration: '',
       budget: {
-        min: evt?.budget?.min || 0,
-        max: evt?.budget?.max || 0
+        min: 0,
+        max: 0
       },
-      isActive: evt?.isActive !== undefined ? evt.isActive : true
+      isActive: true
     });
+
+    // File upload state for new events
+    const [selectedPrimaryFile, setSelectedPrimaryFile] = useState(null);
+    const [selectedGalleryFiles, setSelectedGalleryFiles] = useState([]);
+    const [primaryPreview, setPrimaryPreview] = useState(null);
+    const [galleryPreviews, setGalleryPreviews] = useState([]);
+
+    // Sync form data only when evt prop changes (by ID)
+    useEffect(() => {
+      if (evt) {
+        setFormData({
+          title: evt.title || '',
+          type: evt.type || 'WEDDING',
+          description: evt.description || '',
+          shortDescription: evt.shortDescription || '',
+          date: evt.date ? new Date(evt.date).toISOString().split('T')[0] : '',
+          location: {
+            name: evt.location?.name || '',
+            city: evt.location?.city || '',
+            state: evt.location?.state || '',
+            fullAddress: evt.location?.fullAddress || ''
+          },
+          image: evt.image || '',
+          images: evt.images || [],
+          guestCount: evt.guestCount || 0,
+          duration: evt.duration || '',
+          budget: {
+            min: evt.budget?.min || 0,
+            max: evt.budget?.max || 0
+          },
+          isActive: evt.isActive !== undefined ? evt.isActive : true
+        });
+        // Clear file uploads when editing existing event
+        setSelectedPrimaryFile(null);
+        setSelectedGalleryFiles([]);
+        setPrimaryPreview(null);
+        setGalleryPreviews([]);
+      } else {
+        // Reset to defaults when creating new event
+        setFormData({
+          title: '',
+          type: 'WEDDING',
+          description: '',
+          shortDescription: '',
+          date: '',
+          location: {
+            name: '',
+            city: '',
+            state: '',
+            fullAddress: ''
+          },
+          image: '',
+          images: [],
+          guestCount: 0,
+          duration: '',
+          budget: {
+            min: 0,
+            max: 0
+          },
+          isActive: true
+        });
+        // Clear file uploads
+        setSelectedPrimaryFile(null);
+        setSelectedGalleryFiles([]);
+        setPrimaryPreview(null);
+        setGalleryPreviews([]);
+      }
+    }, [evt?._id]); // Only re-sync when event ID changes
+
+    // File handlers
+    const handlePrimaryFileSelect = (e) => {
+      const file = e.target.files[0];
+      if (file && file.type.startsWith('image/')) {
+        if (file.size > 10 * 1024 * 1024) {
+          alert('File size must be less than 10MB');
+          return;
+        }
+        setSelectedPrimaryFile(file);
+        if (primaryPreview) {
+          URL.revokeObjectURL(primaryPreview);
+        }
+        setPrimaryPreview(URL.createObjectURL(file));
+      }
+    };
+
+    const handleGalleryFilesSelect = (e) => {
+      const files = Array.from(e.target.files);
+      const imageFiles = files.filter(file => {
+        if (!file.type.startsWith('image/')) return false;
+        if (file.size > 10 * 1024 * 1024) {
+          alert(`${file.name} is too large. Max size is 10MB.`);
+          return false;
+        }
+        return true;
+      });
+      
+      const newFiles = [...selectedGalleryFiles, ...imageFiles].slice(0, 10);
+      setSelectedGalleryFiles(newFiles);
+      
+      // Create previews for new files
+      const newPreviews = imageFiles.map(file => URL.createObjectURL(file));
+      setGalleryPreviews(prev => [...prev, ...newPreviews].slice(0, 10));
+    };
+
+    const removeGalleryFile = (index) => {
+      setSelectedGalleryFiles(prev => prev.filter((_, i) => i !== index));
+      setGalleryPreviews(prev => {
+        URL.revokeObjectURL(prev[index]);
+        return prev.filter((_, i) => i !== index);
+      });
+    };
 
     const handleSubmit = (e) => {
       e.preventDefault();
+      
+      // For existing events, save normally
+      if (evt?._id) {
+        const submitData = {
+          ...formData,
+          date: formData.date ? new Date(formData.date) : null
+        };
+        onSave(submitData);
+        return;
+      }
+      
+      // For new events, pass files along with form data
       const submitData = {
         ...formData,
-        date: formData.date ? new Date(formData.date) : null
+        date: formData.date ? new Date(formData.date) : null,
+        _files: {
+          primary: selectedPrimaryFile,
+          gallery: selectedGalleryFiles
+        }
       };
       onSave(submitData);
     };
@@ -369,26 +543,129 @@ const EventManagement = () => {
               />
             </div>
 
+            {/* Primary Image Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Primary Image URL</label>
-              <input
-                type="url"
-                name="image"
-                value={formData.image}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Primary Image</label>
+              {evt?._id ? (
+                // For existing events, use ImageUpload component
+                <ImageUpload
+                  entityType="event"
+                  entityId={evt._id}
+                  maxImages={1}
+                  existingImages={formData.image ? [formData.image] : []}
+                  onImagesUploaded={(images) => {
+                    if (images && images.length > 0) {
+                      setFormData(prev => ({ ...prev, image: images[0] }));
+                    }
+                  }}
+                  onImageRemove={() => {
+                    setFormData(prev => ({ ...prev, image: '' }));
+                  }}
+                />
+              ) : (
+                // For new events, use file input
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePrimaryFileSelect}
+                    className="hidden"
+                    id="primary-image-upload-event"
+                  />
+                  <label
+                    htmlFor="primary-image-upload-event"
+                    className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors block"
+                  >
+                    {primaryPreview ? (
+                      <div className="relative">
+                        <img src={primaryPreview} alt="Preview" className="w-full h-32 object-cover rounded" />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setSelectedPrimaryFile(null);
+                            if (primaryPreview) {
+                              URL.revokeObjectURL(primaryPreview);
+                            }
+                            setPrimaryPreview(null);
+                          }}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600">Click to select primary image</p>
+                        <p className="text-xs text-gray-500 mt-1">Max 10MB</p>
+                      </div>
+                    )}
+                  </label>
+                </div>
+              )}
             </div>
 
+            {/* Gallery Images Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Gallery Images (comma-separated URLs)</label>
-              <input
-                type="text"
-                value={formData.images.join(', ')}
-                onChange={(e) => handleArrayChange('images', e.target.value)}
-                placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Gallery Images</label>
+              {evt?._id ? (
+                // For existing events, use ImageUpload component
+                <ImageUpload
+                  entityType="event"
+                  entityId={evt._id}
+                  maxImages={10}
+                  existingImages={formData.images || []}
+                  onImagesUploaded={(images) => {
+                    setFormData(prev => ({ ...prev, images }));
+                  }}
+                  onImageRemove={(imageUrl) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      images: prev.images.filter(img => img !== imageUrl)
+                    }));
+                  }}
+                />
+              ) : (
+                // For new events, use file input
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleGalleryFilesSelect}
+                    className="hidden"
+                    id="gallery-images-upload-event"
+                  />
+                  <label
+                    htmlFor="gallery-images-upload-event"
+                    className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors block mb-2"
+                  >
+                    <Upload className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                    <p className="text-sm text-gray-600">Click to select gallery images</p>
+                    <p className="text-xs text-gray-500 mt-1">Max 10 images, 10MB each</p>
+                  </label>
+                  
+                  {/* Preview selected gallery images */}
+                  {galleryPreviews.length > 0 && (
+                    <div className="grid grid-cols-4 gap-2 mt-2">
+                      {galleryPreviews.map((preview, index) => (
+                        <div key={index} className="relative">
+                          <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-20 object-cover rounded border border-gray-200" />
+                          <button
+                            type="button"
+                            onClick={() => removeGalleryFile(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center">

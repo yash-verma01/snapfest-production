@@ -331,14 +331,13 @@ export const adminOnly = (req, res, next) => {
     });
   }
 
-  // Check if user is admin with specific credentials
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin100@gmail.com';
-  const adminPassword = process.env.ADMIN_PASSWORD || '1212121212';
-  
-  if (req.user.email !== adminEmail || req.user.role !== 'admin') {
+  // Check if user is admin - only check role, not email
+  // Email check removed because Clerk-based admin auth uses publicMetadata.role
+  // The authenticate middleware already sets req.user.role from Clerk's publicMetadata
+  if (req.user.role !== 'admin') {
     return res.status(403).json({
       success: false,
-      message: 'Access denied. Admin credentials required.'
+      message: 'Access denied. Admin role required.'
     });
   }
 

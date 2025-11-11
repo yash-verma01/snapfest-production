@@ -11,10 +11,13 @@ import {
   Filter,
   Calendar,
   DollarSign,
-  Users
+  Users,
+  Upload,
+  X
 } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { Card, Button, Badge } from '../ui';
+import ImageUpload from './ImageUpload';
 
 const PackageManagement = () => {
   const [packages, setPackages] = useState([]);
@@ -89,11 +92,55 @@ const PackageManagement = () => {
 
   const handleCreatePackage = async (packageData) => {
     try {
-      await adminAPI.createPackage(packageData);
+      // Extract files from packageData
+      const { _files, ...packagePayload } = packageData;
+      
+      // Step 1: Create the package
+      const response = await adminAPI.createPackage(packagePayload);
+      const newPackageId = response.data.data.package._id;
+      
+      // Step 2: Upload images if any files were selected
+      if (_files) {
+        const uploadPromises = [];
+        
+        // Upload primary image if selected
+        if (_files.primary) {
+          const primaryFormData = new FormData();
+          primaryFormData.append('images', _files.primary);
+          uploadPromises.push(
+            adminAPI.uploadPackageImages(newPackageId, primaryFormData)
+              .then(res => {
+                // Set first uploaded image as primary
+                if (res.data.data.images && res.data.data.images.length > 0) {
+                  return adminAPI.updatePackage(newPackageId, {
+                    primaryImage: res.data.data.images[0]
+                  });
+                }
+              })
+          );
+        }
+        
+        // Upload gallery images if selected
+        if (_files.gallery && _files.gallery.length > 0) {
+          const galleryFormData = new FormData();
+          _files.gallery.forEach(file => {
+            galleryFormData.append('images', file);
+          });
+          uploadPromises.push(
+            adminAPI.uploadPackageImages(newPackageId, galleryFormData)
+          );
+        }
+        
+        // Wait for all uploads to complete
+        if (uploadPromises.length > 0) {
+          await Promise.all(uploadPromises);
+        }
+      }
+      
       setShowCreateForm(false);
       setEditingPackage(null);
       loadPackages();
-      alert('Package created successfully');
+      alert('Package created successfully with images!');
     } catch (error) {
       console.error('Error creating package:', error);
       alert('Error creating package: ' + (error.response?.data?.message || error.message));
@@ -133,25 +180,138 @@ const PackageManagement = () => {
   // Package Form Component
   const PackageForm = ({ package: pkg, onSave, onCancel }) => {
     const [formData, setFormData] = useState({
-      title: pkg?.title || '',
-      category: pkg?.category || 'WEDDING',
-      basePrice: pkg?.basePrice || 0,
-      description: pkg?.description || '',
-      images: pkg?.images || [],
-      primaryImage: pkg?.primaryImage || '',
-      highlights: pkg?.highlights || [],
-      tags: pkg?.tags || [],
-      includedFeatures: pkg?.includedFeatures || [],
-      customizationOptions: pkg?.customizationOptions || [],
-      rating: pkg?.rating || 0,
-      isPremium: pkg?.isPremium || false,
-      isActive: pkg?.isActive !== undefined ? pkg.isActive : true,
-      metaDescription: pkg?.metaDescription || ''
+      title: '',
+      category: 'WEDDING',
+      basePrice: 0,
+      description: '',
+      images: [],
+      primaryImage: '',
+      highlights: [],
+      tags: [],
+      includedFeatures: [],
+      customizationOptions: [],
+      rating: 0,
+      isPremium: false,
+      isActive: true,
+      metaDescription: ''
     });
+
+    // File upload state for new packages
+    const [selectedPrimaryFile, setSelectedPrimaryFile] = useState(null);
+    const [selectedGalleryFiles, setSelectedGalleryFiles] = useState([]);
+    const [primaryPreview, setPrimaryPreview] = useState(null);
+    const [galleryPreviews, setGalleryPreviews] = useState([]);
+
+    // Sync form data only when pkg prop changes (by ID)
+    useEffect(() => {
+      if (pkg) {
+        setFormData({
+          title: pkg.title || '',
+          category: pkg.category || 'WEDDING',
+          basePrice: pkg.basePrice || 0,
+          description: pkg.description || '',
+          images: pkg.images || [],
+          primaryImage: pkg.primaryImage || '',
+          highlights: pkg.highlights || [],
+          tags: pkg.tags || [],
+          includedFeatures: pkg.includedFeatures || [],
+          customizationOptions: pkg.customizationOptions || [],
+          rating: pkg.rating || 0,
+          isPremium: pkg.isPremium || false,
+          isActive: pkg.isActive !== undefined ? pkg.isActive : true,
+          metaDescription: pkg.metaDescription || ''
+        });
+        // Clear file uploads when editing existing package
+        setSelectedPrimaryFile(null);
+        setSelectedGalleryFiles([]);
+        setPrimaryPreview(null);
+        setGalleryPreviews([]);
+      } else {
+        // Reset to defaults when creating new package
+        setFormData({
+          title: '',
+          category: 'WEDDING',
+          basePrice: 0,
+          description: '',
+          images: [],
+          primaryImage: '',
+          highlights: [],
+          tags: [],
+          includedFeatures: [],
+          customizationOptions: [],
+          rating: 0,
+          isPremium: false,
+          isActive: true,
+          metaDescription: ''
+        });
+        // Clear file uploads
+        setSelectedPrimaryFile(null);
+        setSelectedGalleryFiles([]);
+        setPrimaryPreview(null);
+        setGalleryPreviews([]);
+      }
+    }, [pkg?._id]); // Only re-sync when package ID changes
+
+    // File handlers
+    const handlePrimaryFileSelect = (e) => {
+      const file = e.target.files[0];
+      if (file && file.type.startsWith('image/')) {
+        if (file.size > 10 * 1024 * 1024) {
+          alert('File size must be less than 10MB');
+          return;
+        }
+        setSelectedPrimaryFile(file);
+        if (primaryPreview) {
+          URL.revokeObjectURL(primaryPreview);
+        }
+        setPrimaryPreview(URL.createObjectURL(file));
+      }
+    };
+
+    const handleGalleryFilesSelect = (e) => {
+      const files = Array.from(e.target.files);
+      const imageFiles = files.filter(file => {
+        if (!file.type.startsWith('image/')) return false;
+        if (file.size > 10 * 1024 * 1024) {
+          alert(`${file.name} is too large. Max size is 10MB.`);
+          return false;
+        }
+        return true;
+      });
+      
+      const newFiles = [...selectedGalleryFiles, ...imageFiles].slice(0, 10);
+      setSelectedGalleryFiles(newFiles);
+      
+      // Create previews for new files
+      const newPreviews = imageFiles.map(file => URL.createObjectURL(file));
+      setGalleryPreviews(prev => [...prev, ...newPreviews].slice(0, 10));
+    };
+
+    const removeGalleryFile = (index) => {
+      setSelectedGalleryFiles(prev => prev.filter((_, i) => i !== index));
+      setGalleryPreviews(prev => {
+        URL.revokeObjectURL(prev[index]);
+        return prev.filter((_, i) => i !== index);
+      });
+    };
 
     const handleSubmit = (e) => {
       e.preventDefault();
-      onSave(formData);
+      
+      // For existing packages, save normally
+      if (pkg?._id) {
+        onSave(formData);
+        return;
+      }
+      
+      // For new packages, pass files along with form data
+      onSave({
+        ...formData,
+        _files: {
+          primary: selectedPrimaryFile,
+          gallery: selectedGalleryFiles
+        }
+      });
     };
 
     const handleChange = (e) => {
@@ -297,27 +457,129 @@ const PackageManagement = () => {
               />
             </div>
 
+            {/* Primary Image Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Primary Image URL</label>
-              <input
-                type="text"
-                name="primaryImage"
-                value={formData.primaryImage}
-                onChange={handleChange}
-                placeholder="https://example.com/primary-image.jpg"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Primary Image</label>
+              {pkg?._id ? (
+                // For existing packages, use ImageUpload component
+                <ImageUpload
+                  entityType="package"
+                  entityId={pkg._id}
+                  maxImages={1}
+                  existingImages={formData.primaryImage ? [formData.primaryImage] : []}
+                  onImagesUploaded={(images) => {
+                    if (images && images.length > 0) {
+                      setFormData(prev => ({ ...prev, primaryImage: images[0] }));
+                    }
+                  }}
+                  onImageRemove={() => {
+                    setFormData(prev => ({ ...prev, primaryImage: '' }));
+                  }}
+                />
+              ) : (
+                // For new packages, use file input
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePrimaryFileSelect}
+                    className="hidden"
+                    id="primary-image-upload"
+                  />
+                  <label
+                    htmlFor="primary-image-upload"
+                    className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors block"
+                  >
+                    {primaryPreview ? (
+                      <div className="relative">
+                        <img src={primaryPreview} alt="Preview" className="w-full h-32 object-cover rounded" />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setSelectedPrimaryFile(null);
+                            if (primaryPreview) {
+                              URL.revokeObjectURL(primaryPreview);
+                            }
+                            setPrimaryPreview(null);
+                          }}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600">Click to select primary image</p>
+                        <p className="text-xs text-gray-500 mt-1">Max 10MB</p>
+                      </div>
+                    )}
+                  </label>
+                </div>
+              )}
             </div>
 
+            {/* Gallery Images Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Images (comma-separated URLs)</label>
-              <input
-                type="text"
-                value={formData.images.join(', ')}
-                onChange={(e) => handleArrayChange('images', e.target.value)}
-                placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Gallery Images</label>
+              {pkg?._id ? (
+                // For existing packages, use ImageUpload component
+                <ImageUpload
+                  entityType="package"
+                  entityId={pkg._id}
+                  maxImages={10}
+                  existingImages={formData.images || []}
+                  onImagesUploaded={(images) => {
+                    setFormData(prev => ({ ...prev, images }));
+                  }}
+                  onImageRemove={(imageUrl) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      images: prev.images.filter(img => img !== imageUrl)
+                    }));
+                  }}
+                />
+              ) : (
+                // For new packages, use file input
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleGalleryFilesSelect}
+                    className="hidden"
+                    id="gallery-images-upload"
+                  />
+                  <label
+                    htmlFor="gallery-images-upload"
+                    className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors block mb-2"
+                  >
+                    <Upload className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                    <p className="text-sm text-gray-600">Click to select gallery images</p>
+                    <p className="text-xs text-gray-500 mt-1">Max 10 images, 10MB each</p>
+                  </label>
+                  
+                  {/* Preview selected gallery images */}
+                  {galleryPreviews.length > 0 && (
+                    <div className="grid grid-cols-4 gap-2 mt-2">
+                      {galleryPreviews.map((preview, index) => (
+                        <div key={index} className="relative">
+                          <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-20 object-cover rounded border border-gray-200" />
+                          <button
+                            type="button"
+                            onClick={() => removeGalleryFile(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>
