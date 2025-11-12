@@ -529,10 +529,10 @@ const EventManagement = () => {
           uploadPromises.push(
             adminAPI.uploadEventImages(newEventId, primaryFormData)
               .then(res => {
-                // Set first uploaded image as primary
-                if (res.data.data.images && res.data.data.images.length > 0) {
+                // Set the newly uploaded image as primary (use newImages, not images)
+                if (res.data.data.newImages && res.data.data.newImages.length > 0) {
                   return adminAPI.updateEvent(newEventId, {
-                    image: res.data.data.images[0]
+                    image: res.data.data.newImages[0]
                   });
                 }
               })
