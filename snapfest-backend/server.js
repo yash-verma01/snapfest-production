@@ -202,6 +202,10 @@ app.use('/PUBLIC', (req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Max-Age', '86400');
   
+  // CRITICAL FIX: Override Helmet's Cross-Origin-Resource-Policy to allow cross-origin access
+  // Helmet sets this to 'same-origin' by default, which blocks cross-origin image requests
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  
   // Handle preflight OPTIONS requests
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -243,6 +247,10 @@ app.use('/PUBLIC', express.static('PUBLIC', {
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     res.setHeader('Access-Control-Max-Age', '86400');
+    
+    // CRITICAL FIX: Override Helmet's Cross-Origin-Resource-Policy to allow cross-origin access
+    // This ensures the header is set even if the middleware above didn't run
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     
     // Set cache headers for images
     if (path.match(/\.(jpg|jpeg|png|gif|webp)$/)) {

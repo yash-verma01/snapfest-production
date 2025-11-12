@@ -19,6 +19,638 @@ import { adminAPI } from '../../services/api';
 import { Card, Button, Badge } from '../ui';
 import ImageUpload from './ImageUpload';
 
+// Package Form Component - Defined outside to prevent recreation on parent re-renders
+const PackageForm = ({ package: pkg, onSave, onCancel }) => {
+  // File upload state for new packages
+  const [selectedPrimaryFile, setSelectedPrimaryFile] = useState(null);
+  const [selectedGalleryFiles, setSelectedGalleryFiles] = useState([]);
+  const [primaryPreview, setPrimaryPreview] = useState(null);
+  const [galleryPreviews, setGalleryPreviews] = useState([]);
+
+  // State for dynamic arrays (only these need state management)
+  const [includedFeatures, setIncludedFeatures] = useState([]);
+  const [customizationOptions, setCustomizationOptions] = useState([]);
+
+  // Initialize dynamic arrays only when package ID changes
+  useEffect(() => {
+    if (pkg?._id) {
+      setIncludedFeatures(pkg.includedFeatures || []);
+      setCustomizationOptions(pkg.customizationOptions || []);
+      // Clear file uploads when editing existing package
+      setSelectedPrimaryFile(null);
+      setSelectedGalleryFiles([]);
+      setPrimaryPreview(null);
+      setGalleryPreviews([]);
+    } else {
+      // Reset arrays when creating new package
+      setIncludedFeatures([]);
+      setCustomizationOptions([]);
+      // Clear file uploads
+      setSelectedPrimaryFile(null);
+      setSelectedGalleryFiles([]);
+      setPrimaryPreview(null);
+      setGalleryPreviews([]);
+    }
+  }, [pkg?._id]); // Only re-sync when package ID changes
+
+  // File handlers
+  const handlePrimaryFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        return;
+      }
+      setSelectedPrimaryFile(file);
+      if (primaryPreview) {
+        URL.revokeObjectURL(primaryPreview);
+      }
+      setPrimaryPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleGalleryFilesSelect = (e) => {
+    const files = Array.from(e.target.files);
+    const imageFiles = files.filter(file => {
+      if (!file.type.startsWith('image/')) return false;
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`${file.name} is too large. Max size is 10MB.`);
+        return false;
+      }
+      return true;
+    });
+    
+    const newFiles = [...selectedGalleryFiles, ...imageFiles].slice(0, 10);
+    setSelectedGalleryFiles(newFiles);
+    
+    // Create previews for new files
+    const newPreviews = imageFiles.map(file => URL.createObjectURL(file));
+    setGalleryPreviews(prev => [...prev, ...newPreviews].slice(0, 10));
+  };
+
+  const removeGalleryFile = (index) => {
+    setSelectedGalleryFiles(prev => prev.filter((_, i) => i !== index));
+    setGalleryPreviews(prev => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    
+    // Read form data from FormData
+    const data = {
+      title: formData.get('title'),
+      category: formData.get('category'),
+      basePrice: Number(formData.get('basePrice')),
+      description: formData.get('description'),
+      highlights: formData.get('highlights')?.split(',').map(item => item.trim()).filter(item => item) || [],
+      tags: formData.get('tags')?.split(',').map(item => item.trim()).filter(item => item) || [],
+      includedFeatures: includedFeatures,
+      customizationOptions: customizationOptions,
+      rating: Number(formData.get('rating')) || 0,
+      isPremium: formData.get('isPremium') === 'on',
+      isActive: formData.get('isActive') === 'on',
+      metaDescription: formData.get('metaDescription') || '',
+      images: pkg?.images || [],
+      primaryImage: pkg?.primaryImage || ''
+    };
+    
+    // For existing packages, save normally
+    if (pkg?._id) {
+      onSave(data);
+      return;
+    }
+    
+    // For new packages, pass files along with form data
+    onSave({
+      ...data,
+      _files: {
+        primary: selectedPrimaryFile,
+        gallery: selectedGalleryFiles
+      }
+    });
+  };
+
+  // Add included feature
+  const addIncludedFeature = () => {
+    setIncludedFeatures(prev => [...prev, {
+      name: '',
+      description: '',
+      icon: '',
+      price: 0,
+      isRemovable: false,
+      isRequired: true
+    }]);
+  };
+
+  // Update included feature
+  const updateIncludedFeature = (index, field, value) => {
+    setIncludedFeatures(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  // Remove included feature
+  const removeIncludedFeature = (index) => {
+    setIncludedFeatures(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Add customization option
+  const addCustomizationOption = () => {
+    setCustomizationOptions(prev => [...prev, {
+      name: '',
+      description: '',
+      price: 0,
+      category: 'OTHER',
+      isRequired: false,
+      maxQuantity: 1
+    }]);
+  };
+
+  // Update customization option
+  const updateCustomizationOption = (index, field, value) => {
+    setCustomizationOptions(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  // Remove customization option
+  const removeCustomizationOption = (index) => {
+    setCustomizationOptions(prev => prev.filter((_, i) => i !== index));
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <h3 className="text-lg font-semibold mb-4">
+          {pkg ? 'Edit Package' : 'Create New Package'}
+        </h3>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <input
+              type="text"
+              name="title"
+              defaultValue={pkg?.title || ''}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <select
+              name="category"
+              defaultValue={pkg?.category || 'WEDDING'}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="WEDDING">Wedding</option>
+              <option value="BIRTHDAY">Birthday</option>
+              <option value="BABY_SHOWER">Baby Shower</option>
+              <option value="DEMISE">Demise</option>
+              <option value="HALDI_MEHNDI">Haldi Mehndi</option>
+              <option value="CAR_DIGGI_CELEBRATION">Car Diggi Celebration</option>
+              <option value="CORPORATE">Corporate</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Base Price (₹)</label>
+            <input
+              type="number"
+              name="basePrice"
+              defaultValue={pkg?.basePrice || 0}
+              required
+              min="0"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea
+              name="description"
+              defaultValue={pkg?.description || ''}
+              required
+              rows="3"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+
+          {/* Primary Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Primary Image</label>
+            {pkg?._id ? (
+              // For existing packages, use ImageUpload component
+              <ImageUpload
+                entityType="package"
+                entityId={pkg._id}
+                maxImages={1}
+                existingImages={pkg.primaryImage ? [pkg.primaryImage] : []}
+                onImagesUploaded={(images) => {
+                  // Images are handled by ImageUpload component
+                }}
+                onImageRemove={() => {
+                  // Images are handled by ImageUpload component
+                }}
+              />
+            ) : (
+              // For new packages, use file input
+              <div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePrimaryFileSelect}
+                  className="hidden"
+                  id="primary-image-upload"
+                />
+                <label
+                  htmlFor="primary-image-upload"
+                  className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors block"
+                >
+                  {primaryPreview ? (
+                    <div className="relative">
+                      <img src={primaryPreview} alt="Preview" className="w-full h-32 object-cover rounded" />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedPrimaryFile(null);
+                          if (primaryPreview) {
+                            URL.revokeObjectURL(primaryPreview);
+                          }
+                          setPrimaryPreview(null);
+                        }}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600">Click to select primary image</p>
+                      <p className="text-xs text-gray-500 mt-1">Max 10MB</p>
+                    </div>
+                  )}
+                </label>
+              </div>
+            )}
+          </div>
+
+          {/* Gallery Images Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Gallery Images</label>
+            {pkg?._id ? (
+              // For existing packages, use ImageUpload component
+              <ImageUpload
+                entityType="package"
+                entityId={pkg._id}
+                maxImages={10}
+                existingImages={pkg.images || []}
+                onImagesUploaded={(images) => {
+                  // Images are handled by ImageUpload component
+                }}
+                onImageRemove={(imageUrl) => {
+                  // Images are handled by ImageUpload component
+                }}
+              />
+            ) : (
+              // For new packages, use file input
+              <div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleGalleryFilesSelect}
+                  className="hidden"
+                  id="gallery-images-upload"
+                />
+                <label
+                  htmlFor="gallery-images-upload"
+                  className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors block mb-2"
+                >
+                  <Upload className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                  <p className="text-sm text-gray-600">Click to select gallery images</p>
+                  <p className="text-xs text-gray-500 mt-1">Max 10 images, 10MB each</p>
+                </label>
+                
+                {/* Preview selected gallery images */}
+                {galleryPreviews.length > 0 && (
+                  <div className="grid grid-cols-4 gap-2 mt-2">
+                    {galleryPreviews.map((preview, index) => (
+                      <div key={index} className="relative">
+                        <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-20 object-cover rounded border border-gray-200" />
+                        <button
+                          type="button"
+                          onClick={() => removeGalleryFile(index)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Highlights (comma-separated)</label>
+            <input
+              type="text"
+              name="highlights"
+              defaultValue={pkg?.highlights?.join(', ') || ''}
+              placeholder="Premium catering, Live music, Photography"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma-separated)</label>
+            <input
+              type="text"
+              name="tags"
+              defaultValue={pkg?.tags?.join(', ') || ''}
+              placeholder="popular, trending, featured"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Rating (0-5)</label>
+              <input
+                type="number"
+                name="rating"
+                defaultValue={pkg?.rating || 0}
+                min="0"
+                max="5"
+                step="0.1"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+            <div className="flex items-center pt-6">
+              <input
+                type="checkbox"
+                name="isPremium"
+                defaultChecked={pkg?.isPremium || false}
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <label className="ml-2 block text-sm text-gray-900">Premium Package</label>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Meta Description (SEO - max 160 chars)</label>
+            <textarea
+              name="metaDescription"
+              defaultValue={pkg?.metaDescription || ''}
+              maxLength={160}
+              rows="2"
+              placeholder="SEO description for search engines"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+
+          {/* Included Features Section */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-medium text-gray-700">Included Features</label>
+              <button
+                type="button"
+                onClick={addIncludedFeature}
+                className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+              >
+                + Add Feature
+              </button>
+            </div>
+            
+            {includedFeatures.map((feature, index) => (
+              <div key={index} className="mb-4 p-3 border border-gray-200 rounded-lg">
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Feature Name *</label>
+                    <input
+                      type="text"
+                      value={feature.name}
+                      onChange={(e) => updateIncludedFeature(index, 'name', e.target.value)}
+                      required
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                      placeholder="e.g., Photography"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Price (₹)</label>
+                    <input
+                      type="number"
+                      value={feature.price}
+                      onChange={(e) => updateIncludedFeature(index, 'price', parseFloat(e.target.value) || 0)}
+                      min="0"
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                </div>
+                
+                <div className="mb-3">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+                  <textarea
+                    value={feature.description}
+                    onChange={(e) => updateIncludedFeature(index, 'description', e.target.value)}
+                    rows="2"
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                    placeholder="Feature description"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Icon URL</label>
+                    <input
+                      type="text"
+                      value={feature.icon}
+                      onChange={(e) => updateIncludedFeature(index, 'icon', e.target.value)}
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                      placeholder="Icon URL (optional)"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-4 mt-5">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={feature.isRemovable}
+                        onChange={(e) => updateIncludedFeature(index, 'isRemovable', e.target.checked)}
+                        className="h-3 w-3 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-1 text-xs text-gray-600">Removable</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={feature.isRequired}
+                        onChange={(e) => updateIncludedFeature(index, 'isRequired', e.target.checked)}
+                        className="h-3 w-3 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-1 text-xs text-gray-600">Required</span>
+                    </label>
+                  </div>
+                </div>
+                
+                <button
+                  type="button"
+                  onClick={() => removeIncludedFeature(index)}
+                  className="text-xs text-red-600 hover:text-red-700"
+                >
+                  Remove Feature
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Customization Options Section */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-medium text-gray-700">Customization Options (Add-ons)</label>
+              <button
+                type="button"
+                onClick={addCustomizationOption}
+                className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+              >
+                + Add Option
+              </button>
+            </div>
+            
+            {customizationOptions.map((option, index) => (
+              <div key={index} className="mb-4 p-3 border border-gray-200 rounded-lg">
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Option Name *</label>
+                    <input
+                      type="text"
+                      value={option.name}
+                      onChange={(e) => updateCustomizationOption(index, 'name', e.target.value)}
+                      required
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                      placeholder="e.g., Extra Photography"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Price (₹) *</label>
+                    <input
+                      type="number"
+                      value={option.price}
+                      onChange={(e) => updateCustomizationOption(index, 'price', parseFloat(e.target.value) || 0)}
+                      required
+                      min="0"
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                </div>
+                
+                <div className="mb-3">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+                  <textarea
+                    value={option.description}
+                    onChange={(e) => updateCustomizationOption(index, 'description', e.target.value)}
+                    rows="2"
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                    placeholder="Option description"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
+                    <select
+                      value={option.category}
+                      onChange={(e) => updateCustomizationOption(index, 'category', e.target.value)}
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="PHOTOGRAPHY">Photography</option>
+                      <option value="VIDEOGRAPHY">Videography</option>
+                      <option value="DECORATION">Decoration</option>
+                      <option value="CATERING">Catering</option>
+                      <option value="ENTERTAINMENT">Entertainment</option>
+                      <option value="TRANSPORTATION">Transportation</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Max Quantity</label>
+                    <input
+                      type="number"
+                      value={option.maxQuantity}
+                      onChange={(e) => updateCustomizationOption(index, 'maxQuantity', parseInt(e.target.value) || 1)}
+                      min="1"
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2 mt-5">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={option.isRequired}
+                        onChange={(e) => updateCustomizationOption(index, 'isRequired', e.target.checked)}
+                        className="h-3 w-3 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-1 text-xs text-gray-600">Required</span>
+                    </label>
+                  </div>
+                </div>
+                
+                <button
+                  type="button"
+                  onClick={() => removeCustomizationOption(index)}
+                  className="text-xs text-red-600 hover:text-red-700"
+                >
+                  Remove Option
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              name="isActive"
+              defaultChecked={pkg?.isActive !== false}
+              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+            />
+            <label className="ml-2 block text-sm text-gray-900">Active</label>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="bg-primary-600 hover:bg-primary-700"
+            >
+              {pkg ? 'Update Package' : 'Create Package'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const PackageManagement = () => {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -175,701 +807,6 @@ const PackageManagement = () => {
 
   const getStatusBadgeColor = (isActive) => {
     return isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-  };
-
-  // Package Form Component
-  const PackageForm = ({ package: pkg, onSave, onCancel }) => {
-    const [formData, setFormData] = useState({
-      title: '',
-      category: 'WEDDING',
-      basePrice: 0,
-      description: '',
-      images: [],
-      primaryImage: '',
-      highlights: [],
-      tags: [],
-      includedFeatures: [],
-      customizationOptions: [],
-      rating: 0,
-      isPremium: false,
-      isActive: true,
-      metaDescription: ''
-    });
-
-    // File upload state for new packages
-    const [selectedPrimaryFile, setSelectedPrimaryFile] = useState(null);
-    const [selectedGalleryFiles, setSelectedGalleryFiles] = useState([]);
-    const [primaryPreview, setPrimaryPreview] = useState(null);
-    const [galleryPreviews, setGalleryPreviews] = useState([]);
-
-    // Sync form data only when pkg prop changes (by ID)
-    useEffect(() => {
-      if (pkg) {
-        setFormData({
-          title: pkg.title || '',
-          category: pkg.category || 'WEDDING',
-          basePrice: pkg.basePrice || 0,
-          description: pkg.description || '',
-          images: pkg.images || [],
-          primaryImage: pkg.primaryImage || '',
-          highlights: pkg.highlights || [],
-          tags: pkg.tags || [],
-          includedFeatures: pkg.includedFeatures || [],
-          customizationOptions: pkg.customizationOptions || [],
-          rating: pkg.rating || 0,
-          isPremium: pkg.isPremium || false,
-          isActive: pkg.isActive !== undefined ? pkg.isActive : true,
-          metaDescription: pkg.metaDescription || ''
-        });
-        // Clear file uploads when editing existing package
-        setSelectedPrimaryFile(null);
-        setSelectedGalleryFiles([]);
-        setPrimaryPreview(null);
-        setGalleryPreviews([]);
-      } else {
-        // Reset to defaults when creating new package
-        setFormData({
-          title: '',
-          category: 'WEDDING',
-          basePrice: 0,
-          description: '',
-          images: [],
-          primaryImage: '',
-          highlights: [],
-          tags: [],
-          includedFeatures: [],
-          customizationOptions: [],
-          rating: 0,
-          isPremium: false,
-          isActive: true,
-          metaDescription: ''
-        });
-        // Clear file uploads
-        setSelectedPrimaryFile(null);
-        setSelectedGalleryFiles([]);
-        setPrimaryPreview(null);
-        setGalleryPreviews([]);
-      }
-    }, [pkg?._id]); // Only re-sync when package ID changes
-
-    // File handlers
-    const handlePrimaryFileSelect = (e) => {
-      const file = e.target.files[0];
-      if (file && file.type.startsWith('image/')) {
-        if (file.size > 10 * 1024 * 1024) {
-          alert('File size must be less than 10MB');
-          return;
-        }
-        setSelectedPrimaryFile(file);
-        if (primaryPreview) {
-          URL.revokeObjectURL(primaryPreview);
-        }
-        setPrimaryPreview(URL.createObjectURL(file));
-      }
-    };
-
-    const handleGalleryFilesSelect = (e) => {
-      const files = Array.from(e.target.files);
-      const imageFiles = files.filter(file => {
-        if (!file.type.startsWith('image/')) return false;
-        if (file.size > 10 * 1024 * 1024) {
-          alert(`${file.name} is too large. Max size is 10MB.`);
-          return false;
-        }
-        return true;
-      });
-      
-      const newFiles = [...selectedGalleryFiles, ...imageFiles].slice(0, 10);
-      setSelectedGalleryFiles(newFiles);
-      
-      // Create previews for new files
-      const newPreviews = imageFiles.map(file => URL.createObjectURL(file));
-      setGalleryPreviews(prev => [...prev, ...newPreviews].slice(0, 10));
-    };
-
-    const removeGalleryFile = (index) => {
-      setSelectedGalleryFiles(prev => prev.filter((_, i) => i !== index));
-      setGalleryPreviews(prev => {
-        URL.revokeObjectURL(prev[index]);
-        return prev.filter((_, i) => i !== index);
-      });
-    };
-
-    const handleSubmit = (e) => {
-      e.preventDefault();
-      
-      // For existing packages, save normally
-      if (pkg?._id) {
-        onSave(formData);
-        return;
-      }
-      
-      // For new packages, pass files along with form data
-      onSave({
-        ...formData,
-        _files: {
-          primary: selectedPrimaryFile,
-          gallery: selectedGalleryFiles
-        }
-      });
-    };
-
-    const handleChange = (e) => {
-      const { name, value, type, checked } = e.target;
-      setFormData(prev => ({
-        ...prev,
-        [name]: type === 'checkbox' ? checked : value
-      }));
-    };
-
-    const handleArrayChange = (field, value) => {
-      setFormData(prev => ({
-        ...prev,
-        [field]: value.split(',').map(item => item.trim()).filter(item => item)
-      }));
-    };
-
-    // Add included feature
-    const addIncludedFeature = () => {
-      setFormData(prev => ({
-        ...prev,
-        includedFeatures: [...prev.includedFeatures, {
-          name: '',
-          description: '',
-          icon: '',
-          price: 0,
-          isRemovable: false,
-          isRequired: true
-        }]
-      }));
-    };
-
-    // Update included feature
-    const updateIncludedFeature = (index, field, value) => {
-      setFormData(prev => {
-        const updated = [...prev.includedFeatures];
-        updated[index] = { ...updated[index], [field]: value };
-        return { ...prev, includedFeatures: updated };
-      });
-    };
-
-    // Remove included feature
-    const removeIncludedFeature = (index) => {
-      setFormData(prev => ({
-        ...prev,
-        includedFeatures: prev.includedFeatures.filter((_, i) => i !== index)
-      }));
-    };
-
-    // Add customization option
-    const addCustomizationOption = () => {
-      setFormData(prev => ({
-        ...prev,
-        customizationOptions: [...prev.customizationOptions, {
-          name: '',
-          description: '',
-          price: 0,
-          category: 'OTHER',
-          isRequired: false,
-          maxQuantity: 1
-        }]
-      }));
-    };
-
-    // Update customization option
-    const updateCustomizationOption = (index, field, value) => {
-      setFormData(prev => {
-        const updated = [...prev.customizationOptions];
-        updated[index] = { ...updated[index], [field]: value };
-        return { ...prev, customizationOptions: updated };
-      });
-    };
-
-    // Remove customization option
-    const removeCustomizationOption = (index) => {
-      setFormData(prev => ({
-        ...prev,
-        customizationOptions: prev.customizationOptions.filter((_, i) => i !== index)
-      }));
-    };
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-          <h3 className="text-lg font-semibold mb-4">
-            {pkg ? 'Edit Package' : 'Create New Package'}
-          </h3>
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              >
-                <option value="WEDDING">Wedding</option>
-                <option value="BIRTHDAY">Birthday</option>
-                <option value="BABY_SHOWER">Baby Shower</option>
-                <option value="DEMISE">Demise</option>
-                <option value="HALDI_MEHNDI">Haldi Mehndi</option>
-                <option value="CAR_DIGGI_CELEBRATION">Car Diggi Celebration</option>
-                <option value="CORPORATE">Corporate</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Base Price (₹)</label>
-              <input
-                type="number"
-                name="basePrice"
-                value={formData.basePrice}
-                onChange={handleChange}
-                required
-                min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                required
-                rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-
-            {/* Primary Image Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Primary Image</label>
-              {pkg?._id ? (
-                // For existing packages, use ImageUpload component
-                <ImageUpload
-                  entityType="package"
-                  entityId={pkg._id}
-                  maxImages={1}
-                  existingImages={formData.primaryImage ? [formData.primaryImage] : []}
-                  onImagesUploaded={(images) => {
-                    if (images && images.length > 0) {
-                      setFormData(prev => ({ ...prev, primaryImage: images[0] }));
-                    }
-                  }}
-                  onImageRemove={() => {
-                    setFormData(prev => ({ ...prev, primaryImage: '' }));
-                  }}
-                />
-              ) : (
-                // For new packages, use file input
-                <div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePrimaryFileSelect}
-                    className="hidden"
-                    id="primary-image-upload"
-                  />
-                  <label
-                    htmlFor="primary-image-upload"
-                    className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors block"
-                  >
-                    {primaryPreview ? (
-                      <div className="relative">
-                        <img src={primaryPreview} alt="Preview" className="w-full h-32 object-cover rounded" />
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setSelectedPrimaryFile(null);
-                            if (primaryPreview) {
-                              URL.revokeObjectURL(primaryPreview);
-                            }
-                            setPrimaryPreview(null);
-                          }}
-                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div>
-                        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Click to select primary image</p>
-                        <p className="text-xs text-gray-500 mt-1">Max 10MB</p>
-                      </div>
-                    )}
-                  </label>
-                </div>
-              )}
-            </div>
-
-            {/* Gallery Images Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Gallery Images</label>
-              {pkg?._id ? (
-                // For existing packages, use ImageUpload component
-                <ImageUpload
-                  entityType="package"
-                  entityId={pkg._id}
-                  maxImages={10}
-                  existingImages={formData.images || []}
-                  onImagesUploaded={(images) => {
-                    setFormData(prev => ({ ...prev, images }));
-                  }}
-                  onImageRemove={(imageUrl) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      images: prev.images.filter(img => img !== imageUrl)
-                    }));
-                  }}
-                />
-              ) : (
-                // For new packages, use file input
-                <div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleGalleryFilesSelect}
-                    className="hidden"
-                    id="gallery-images-upload"
-                  />
-                  <label
-                    htmlFor="gallery-images-upload"
-                    className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors block mb-2"
-                  >
-                    <Upload className="w-6 h-6 text-gray-400 mx-auto mb-1" />
-                    <p className="text-sm text-gray-600">Click to select gallery images</p>
-                    <p className="text-xs text-gray-500 mt-1">Max 10 images, 10MB each</p>
-                  </label>
-                  
-                  {/* Preview selected gallery images */}
-                  {galleryPreviews.length > 0 && (
-                    <div className="grid grid-cols-4 gap-2 mt-2">
-                      {galleryPreviews.map((preview, index) => (
-                        <div key={index} className="relative">
-                          <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-20 object-cover rounded border border-gray-200" />
-                          <button
-                            type="button"
-                            onClick={() => removeGalleryFile(index)}
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Highlights (comma-separated)</label>
-              <input
-                type="text"
-                value={formData.highlights.join(', ')}
-                onChange={(e) => handleArrayChange('highlights', e.target.value)}
-                placeholder="Premium catering, Live music, Photography"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma-separated)</label>
-              <input
-                type="text"
-                value={formData.tags.join(', ')}
-                onChange={(e) => handleArrayChange('tags', e.target.value)}
-                placeholder="popular, trending, featured"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rating (0-5)</label>
-                <input
-                  type="number"
-                  name="rating"
-                  value={formData.rating}
-                  onChange={handleChange}
-                  min="0"
-                  max="5"
-                  step="0.1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div className="flex items-center pt-6">
-                <input
-                  type="checkbox"
-                  name="isPremium"
-                  checked={formData.isPremium}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                />
-                <label className="ml-2 block text-sm text-gray-900">Premium Package</label>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Meta Description (SEO - max 160 chars)</label>
-              <textarea
-                name="metaDescription"
-                value={formData.metaDescription}
-                onChange={handleChange}
-                maxLength={160}
-                rows="2"
-                placeholder="SEO description for search engines"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-              <p className="text-xs text-gray-500 mt-1">{formData.metaDescription.length}/160 characters</p>
-            </div>
-
-            {/* Included Features Section */}
-            <div className="border-t pt-4">
-              <div className="flex items-center justify-between mb-3">
-                <label className="block text-sm font-medium text-gray-700">Included Features</label>
-                <button
-                  type="button"
-                  onClick={addIncludedFeature}
-                  className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-                >
-                  + Add Feature
-                </button>
-              </div>
-              
-              {formData.includedFeatures.map((feature, index) => (
-                <div key={index} className="mb-4 p-3 border border-gray-200 rounded-lg">
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Feature Name *</label>
-                      <input
-                        type="text"
-                        value={feature.name}
-                        onChange={(e) => updateIncludedFeature(index, 'name', e.target.value)}
-                        required
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
-                        placeholder="e.g., Photography"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Price (₹)</label>
-                      <input
-                        type="number"
-                        value={feature.price}
-                        onChange={(e) => updateIncludedFeature(index, 'price', parseFloat(e.target.value) || 0)}
-                        min="0"
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="mb-3">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
-                    <textarea
-                      value={feature.description}
-                      onChange={(e) => updateIncludedFeature(index, 'description', e.target.value)}
-                      rows="2"
-                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
-                      placeholder="Feature description"
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Icon URL</label>
-                      <input
-                        type="text"
-                        value={feature.icon}
-                        onChange={(e) => updateIncludedFeature(index, 'icon', e.target.value)}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
-                        placeholder="Icon URL (optional)"
-                      />
-                    </div>
-                    <div className="flex items-center space-x-4 mt-5">
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={feature.isRemovable}
-                          onChange={(e) => updateIncludedFeature(index, 'isRemovable', e.target.checked)}
-                          className="h-3 w-3 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                        />
-                        <span className="ml-1 text-xs text-gray-600">Removable</span>
-                      </label>
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={feature.isRequired}
-                          onChange={(e) => updateIncludedFeature(index, 'isRequired', e.target.checked)}
-                          className="h-3 w-3 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                        />
-                        <span className="ml-1 text-xs text-gray-600">Required</span>
-                      </label>
-                    </div>
-                  </div>
-                  
-                  <button
-                    type="button"
-                    onClick={() => removeIncludedFeature(index)}
-                    className="text-xs text-red-600 hover:text-red-700"
-                  >
-                    Remove Feature
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            {/* Customization Options Section */}
-            <div className="border-t pt-4">
-              <div className="flex items-center justify-between mb-3">
-                <label className="block text-sm font-medium text-gray-700">Customization Options (Add-ons)</label>
-                <button
-                  type="button"
-                  onClick={addCustomizationOption}
-                  className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-                >
-                  + Add Option
-                </button>
-              </div>
-              
-              {formData.customizationOptions.map((option, index) => (
-                <div key={index} className="mb-4 p-3 border border-gray-200 rounded-lg">
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Option Name *</label>
-                      <input
-                        type="text"
-                        value={option.name}
-                        onChange={(e) => updateCustomizationOption(index, 'name', e.target.value)}
-                        required
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
-                        placeholder="e.g., Extra Photography"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Price (₹) *</label>
-                      <input
-                        type="number"
-                        value={option.price}
-                        onChange={(e) => updateCustomizationOption(index, 'price', parseFloat(e.target.value) || 0)}
-                        required
-                        min="0"
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="mb-3">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
-                    <textarea
-                      value={option.description}
-                      onChange={(e) => updateCustomizationOption(index, 'description', e.target.value)}
-                      rows="2"
-                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
-                      placeholder="Option description"
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-3 mb-3">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
-                      <select
-                        value={option.category}
-                        onChange={(e) => updateCustomizationOption(index, 'category', e.target.value)}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
-                      >
-                        <option value="PHOTOGRAPHY">Photography</option>
-                        <option value="VIDEOGRAPHY">Videography</option>
-                        <option value="DECORATION">Decoration</option>
-                        <option value="CATERING">Catering</option>
-                        <option value="ENTERTAINMENT">Entertainment</option>
-                        <option value="TRANSPORTATION">Transportation</option>
-                        <option value="OTHER">Other</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Max Quantity</label>
-                      <input
-                        type="number"
-                        value={option.maxQuantity}
-                        onChange={(e) => updateCustomizationOption(index, 'maxQuantity', parseInt(e.target.value) || 1)}
-                        min="1"
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
-                      />
-                    </div>
-                    <div className="flex items-center space-x-2 mt-5">
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={option.isRequired}
-                          onChange={(e) => updateCustomizationOption(index, 'isRequired', e.target.checked)}
-                          className="h-3 w-3 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                        />
-                        <span className="ml-1 text-xs text-gray-600">Required</span>
-                      </label>
-                    </div>
-                  </div>
-                  
-                  <button
-                    type="button"
-                    onClick={() => removeCustomizationOption(index)}
-                    className="text-xs text-red-600 hover:text-red-700"
-                  >
-                    Remove Option
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                name="isActive"
-                checked={formData.isActive}
-                onChange={handleChange}
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-              />
-              <label className="ml-2 block text-sm text-gray-900">Active</label>
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onCancel}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="bg-primary-600 hover:bg-primary-700"
-              >
-                {pkg ? 'Update Package' : 'Create Package'}
-              </Button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
   };
 
   if (loading) {

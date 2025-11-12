@@ -19,6 +19,425 @@ import { adminAPI } from '../../services/api';
 import { Card, Button, Badge } from '../ui';
 import ImageUpload from './ImageUpload';
 
+// Event Form Component - Defined outside to prevent recreation on parent re-renders
+const EventForm = ({ event: evt, onSave, onCancel }) => {
+  // File upload state for new events
+  const [selectedPrimaryFile, setSelectedPrimaryFile] = useState(null);
+  const [selectedGalleryFiles, setSelectedGalleryFiles] = useState([]);
+  const [primaryPreview, setPrimaryPreview] = useState(null);
+  const [galleryPreviews, setGalleryPreviews] = useState([]);
+
+  // Clear file uploads when editing or creating
+  useEffect(() => {
+    if (evt?._id) {
+      // Clear file uploads when editing existing event
+      setSelectedPrimaryFile(null);
+      setSelectedGalleryFiles([]);
+      setPrimaryPreview(null);
+      setGalleryPreviews([]);
+    } else {
+      // Clear file uploads when creating new event
+      setSelectedPrimaryFile(null);
+      setSelectedGalleryFiles([]);
+      setPrimaryPreview(null);
+      setGalleryPreviews([]);
+    }
+  }, [evt?._id]); // Only clear when event ID changes
+
+  // File handlers
+  const handlePrimaryFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        return;
+      }
+      setSelectedPrimaryFile(file);
+      if (primaryPreview) {
+        URL.revokeObjectURL(primaryPreview);
+      }
+      setPrimaryPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleGalleryFilesSelect = (e) => {
+    const files = Array.from(e.target.files);
+    const imageFiles = files.filter(file => {
+      if (!file.type.startsWith('image/')) return false;
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`${file.name} is too large. Max size is 10MB.`);
+        return false;
+      }
+      return true;
+    });
+    
+    const newFiles = [...selectedGalleryFiles, ...imageFiles].slice(0, 10);
+    setSelectedGalleryFiles(newFiles);
+    
+    // Create previews for new files
+    const newPreviews = imageFiles.map(file => URL.createObjectURL(file));
+    setGalleryPreviews(prev => [...prev, ...newPreviews].slice(0, 10));
+  };
+
+  const removeGalleryFile = (index) => {
+    setSelectedGalleryFiles(prev => prev.filter((_, i) => i !== index));
+    setGalleryPreviews(prev => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    
+    // Read form data from FormData
+    const data = {
+      title: formData.get('title'),
+      type: formData.get('type'),
+      description: formData.get('description'),
+      shortDescription: formData.get('shortDescription'),
+      date: formData.get('date') ? new Date(formData.get('date')) : null,
+      location: {
+        name: formData.get('location.name') || '',
+        city: formData.get('location.city') || '',
+        state: formData.get('location.state') || '',
+        fullAddress: formData.get('location.fullAddress') || ''
+      },
+      guestCount: Number(formData.get('guestCount')) || 0,
+      duration: formData.get('duration') || '',
+      budget: {
+        min: Number(formData.get('budget.min')) || 0,
+        max: Number(formData.get('budget.max')) || 0
+      },
+      isActive: formData.get('isActive') === 'on',
+      image: evt?.image || '',
+      images: evt?.images || []
+    };
+    
+    // For existing events, save normally
+    if (evt?._id) {
+      onSave(data);
+      return;
+    }
+    
+    // For new events, pass files along with form data
+    onSave({
+      ...data,
+      _files: {
+        primary: selectedPrimaryFile,
+        gallery: selectedGalleryFiles
+      }
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <h3 className="text-lg font-semibold mb-4">
+          {evt ? 'Edit Event' : 'Create New Event'}
+        </h3>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <input
+              type="text"
+              name="title"
+              defaultValue={evt?.title || ''}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+            <select
+              name="type"
+              defaultValue={evt?.type || 'WEDDING'}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="WEDDING">Wedding</option>
+              <option value="BIRTHDAY">Birthday</option>
+              <option value="HALDI">Haldi</option>
+              <option value="CORPORATE">Corporate</option>
+              <option value="BABY_SHOWER">Baby Shower</option>
+              <option value="ANNIVERSARY">Anniversary</option>
+              <option value="FESTIVAL">Festival</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Short Description</label>
+            <input
+              type="text"
+              name="shortDescription"
+              defaultValue={evt?.shortDescription || ''}
+              maxLength="150"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea
+              name="description"
+              defaultValue={evt?.description || ''}
+              rows="3"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+              <input
+                type="date"
+                name="date"
+                defaultValue={evt?.date ? new Date(evt.date).toISOString().split('T')[0] : ''}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Guest Count</label>
+              <input
+                type="number"
+                name="guestCount"
+                defaultValue={evt?.guestCount || 0}
+                min="0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+            <input
+              type="text"
+              name="duration"
+              defaultValue={evt?.duration || ''}
+              placeholder="e.g., 6 hours, Full day"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Min Budget (₹)</label>
+              <input
+                type="number"
+                name="budget.min"
+                defaultValue={evt?.budget?.min || 0}
+                min="0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Max Budget (₹)</label>
+              <input
+                type="number"
+                name="budget.max"
+                defaultValue={evt?.budget?.max || 0}
+                min="0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Location Name</label>
+            <input
+              type="text"
+              name="location.name"
+              defaultValue={evt?.location?.name || ''}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+              <input
+                type="text"
+                name="location.city"
+                defaultValue={evt?.location?.city || ''}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+              <input
+                type="text"
+                name="location.state"
+                defaultValue={evt?.location?.state || ''}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
+            <textarea
+              name="location.fullAddress"
+              defaultValue={evt?.location?.fullAddress || ''}
+              rows="2"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+
+          {/* Primary Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Primary Image</label>
+            {evt?._id ? (
+              // For existing events, use ImageUpload component
+              <ImageUpload
+                entityType="event"
+                entityId={evt._id}
+                maxImages={1}
+                existingImages={evt.image ? [evt.image] : []}
+                onImagesUploaded={(images) => {
+                  // Images are handled by ImageUpload component
+                }}
+                onImageRemove={() => {
+                  // Images are handled by ImageUpload component
+                }}
+              />
+            ) : (
+              // For new events, use file input
+              <div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePrimaryFileSelect}
+                  className="hidden"
+                  id="primary-image-upload-event"
+                />
+                <label
+                  htmlFor="primary-image-upload-event"
+                  className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors block"
+                >
+                  {primaryPreview ? (
+                    <div className="relative">
+                      <img src={primaryPreview} alt="Preview" className="w-full h-32 object-cover rounded" />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedPrimaryFile(null);
+                          if (primaryPreview) {
+                            URL.revokeObjectURL(primaryPreview);
+                          }
+                          setPrimaryPreview(null);
+                        }}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600">Click to select primary image</p>
+                      <p className="text-xs text-gray-500 mt-1">Max 10MB</p>
+                    </div>
+                  )}
+                </label>
+              </div>
+            )}
+          </div>
+
+          {/* Gallery Images Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Gallery Images</label>
+            {evt?._id ? (
+              // For existing events, use ImageUpload component
+              <ImageUpload
+                entityType="event"
+                entityId={evt._id}
+                maxImages={10}
+                existingImages={evt.images || []}
+                onImagesUploaded={(images) => {
+                  // Images are handled by ImageUpload component
+                }}
+                onImageRemove={(imageUrl) => {
+                  // Images are handled by ImageUpload component
+                }}
+              />
+            ) : (
+              // For new events, use file input
+              <div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleGalleryFilesSelect}
+                  className="hidden"
+                  id="gallery-images-upload-event"
+                />
+                <label
+                  htmlFor="gallery-images-upload-event"
+                  className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors block mb-2"
+                >
+                  <Upload className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                  <p className="text-sm text-gray-600">Click to select gallery images</p>
+                  <p className="text-xs text-gray-500 mt-1">Max 10 images, 10MB each</p>
+                </label>
+                
+                {/* Preview selected gallery images */}
+                {galleryPreviews.length > 0 && (
+                  <div className="grid grid-cols-4 gap-2 mt-2">
+                    {galleryPreviews.map((preview, index) => (
+                      <div key={index} className="relative">
+                        <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-20 object-cover rounded border border-gray-200" />
+                        <button
+                          type="button"
+                          onClick={() => removeGalleryFile(index)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              name="isActive"
+              defaultChecked={evt?.isActive !== false}
+              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+            />
+            <label className="ml-2 block text-sm text-gray-900">Active</label>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="bg-primary-600 hover:bg-primary-700"
+            >
+              {evt ? 'Update Event' : 'Create Event'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const EventManagement = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -176,528 +595,6 @@ const EventManagement = () => {
 
   const getStatusBadgeColor = (isActive) => {
     return isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-  };
-
-  // Event Form Component
-  const EventForm = ({ event: evt, onSave, onCancel }) => {
-    const [formData, setFormData] = useState({
-      title: '',
-      type: 'WEDDING',
-      description: '',
-      shortDescription: '',
-      date: '',
-      location: {
-        name: '',
-        city: '',
-        state: '',
-        fullAddress: ''
-      },
-      image: '',
-      images: [],
-      guestCount: 0,
-      duration: '',
-      budget: {
-        min: 0,
-        max: 0
-      },
-      isActive: true
-    });
-
-    // File upload state for new events
-    const [selectedPrimaryFile, setSelectedPrimaryFile] = useState(null);
-    const [selectedGalleryFiles, setSelectedGalleryFiles] = useState([]);
-    const [primaryPreview, setPrimaryPreview] = useState(null);
-    const [galleryPreviews, setGalleryPreviews] = useState([]);
-
-    // Sync form data only when evt prop changes (by ID)
-    useEffect(() => {
-      if (evt) {
-        setFormData({
-          title: evt.title || '',
-          type: evt.type || 'WEDDING',
-          description: evt.description || '',
-          shortDescription: evt.shortDescription || '',
-          date: evt.date ? new Date(evt.date).toISOString().split('T')[0] : '',
-          location: {
-            name: evt.location?.name || '',
-            city: evt.location?.city || '',
-            state: evt.location?.state || '',
-            fullAddress: evt.location?.fullAddress || ''
-          },
-          image: evt.image || '',
-          images: evt.images || [],
-          guestCount: evt.guestCount || 0,
-          duration: evt.duration || '',
-          budget: {
-            min: evt.budget?.min || 0,
-            max: evt.budget?.max || 0
-          },
-          isActive: evt.isActive !== undefined ? evt.isActive : true
-        });
-        // Clear file uploads when editing existing event
-        setSelectedPrimaryFile(null);
-        setSelectedGalleryFiles([]);
-        setPrimaryPreview(null);
-        setGalleryPreviews([]);
-      } else {
-        // Reset to defaults when creating new event
-        setFormData({
-          title: '',
-          type: 'WEDDING',
-          description: '',
-          shortDescription: '',
-          date: '',
-          location: {
-            name: '',
-            city: '',
-            state: '',
-            fullAddress: ''
-          },
-          image: '',
-          images: [],
-          guestCount: 0,
-          duration: '',
-          budget: {
-            min: 0,
-            max: 0
-          },
-          isActive: true
-        });
-        // Clear file uploads
-        setSelectedPrimaryFile(null);
-        setSelectedGalleryFiles([]);
-        setPrimaryPreview(null);
-        setGalleryPreviews([]);
-      }
-    }, [evt?._id]); // Only re-sync when event ID changes
-
-    // File handlers
-    const handlePrimaryFileSelect = (e) => {
-      const file = e.target.files[0];
-      if (file && file.type.startsWith('image/')) {
-        if (file.size > 10 * 1024 * 1024) {
-          alert('File size must be less than 10MB');
-          return;
-        }
-        setSelectedPrimaryFile(file);
-        if (primaryPreview) {
-          URL.revokeObjectURL(primaryPreview);
-        }
-        setPrimaryPreview(URL.createObjectURL(file));
-      }
-    };
-
-    const handleGalleryFilesSelect = (e) => {
-      const files = Array.from(e.target.files);
-      const imageFiles = files.filter(file => {
-        if (!file.type.startsWith('image/')) return false;
-        if (file.size > 10 * 1024 * 1024) {
-          alert(`${file.name} is too large. Max size is 10MB.`);
-          return false;
-        }
-        return true;
-      });
-      
-      const newFiles = [...selectedGalleryFiles, ...imageFiles].slice(0, 10);
-      setSelectedGalleryFiles(newFiles);
-      
-      // Create previews for new files
-      const newPreviews = imageFiles.map(file => URL.createObjectURL(file));
-      setGalleryPreviews(prev => [...prev, ...newPreviews].slice(0, 10));
-    };
-
-    const removeGalleryFile = (index) => {
-      setSelectedGalleryFiles(prev => prev.filter((_, i) => i !== index));
-      setGalleryPreviews(prev => {
-        URL.revokeObjectURL(prev[index]);
-        return prev.filter((_, i) => i !== index);
-      });
-    };
-
-    const handleSubmit = (e) => {
-      e.preventDefault();
-      
-      // For existing events, save normally
-      if (evt?._id) {
-        const submitData = {
-          ...formData,
-          date: formData.date ? new Date(formData.date) : null
-        };
-        onSave(submitData);
-        return;
-      }
-      
-      // For new events, pass files along with form data
-      const submitData = {
-        ...formData,
-        date: formData.date ? new Date(formData.date) : null,
-        _files: {
-          primary: selectedPrimaryFile,
-          gallery: selectedGalleryFiles
-        }
-      };
-      onSave(submitData);
-    };
-
-    const handleChange = (e) => {
-      const { name, value, type, checked } = e.target;
-      if (name.startsWith('location.')) {
-        const field = name.split('.')[1];
-        setFormData(prev => ({
-          ...prev,
-          location: {
-            ...prev.location,
-            [field]: value
-          }
-        }));
-      } else if (name.startsWith('budget.')) {
-        const field = name.split('.')[1];
-        setFormData(prev => ({
-          ...prev,
-          budget: {
-            ...prev.budget,
-            [field]: Number(value)
-          }
-        }));
-      } else {
-        setFormData(prev => ({
-          ...prev,
-          [name]: type === 'checkbox' ? checked : value
-        }));
-      }
-    };
-
-    const handleArrayChange = (field, value) => {
-      setFormData(prev => ({
-        ...prev,
-        [field]: value.split(',').map(item => item.trim()).filter(item => item)
-      }));
-    };
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-          <h3 className="text-lg font-semibold mb-4">
-            {evt ? 'Edit Event' : 'Create New Event'}
-          </h3>
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-              <select
-                name="type"
-                value={formData.type}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              >
-                <option value="WEDDING">Wedding</option>
-                <option value="BIRTHDAY">Birthday</option>
-                <option value="HALDI">Haldi</option>
-                <option value="CORPORATE">Corporate</option>
-                <option value="BABY_SHOWER">Baby Shower</option>
-                <option value="ANNIVERSARY">Anniversary</option>
-                <option value="FESTIVAL">Festival</option>
-                <option value="OTHER">Other</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Short Description</label>
-              <input
-                type="text"
-                name="shortDescription"
-                value={formData.shortDescription}
-                onChange={handleChange}
-                maxLength="150"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                <input
-                  type="date"
-                  name="date"
-                  value={formData.date}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Guest Count</label>
-                <input
-                  type="number"
-                  name="guestCount"
-                  value={formData.guestCount}
-                  onChange={handleChange}
-                  min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-              <input
-                type="text"
-                name="duration"
-                value={formData.duration}
-                onChange={handleChange}
-                placeholder="e.g., 6 hours, Full day"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Min Budget (₹)</label>
-                <input
-                  type="number"
-                  name="budget.min"
-                  value={formData.budget.min}
-                  onChange={handleChange}
-                  min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Max Budget (₹)</label>
-                <input
-                  type="number"
-                  name="budget.max"
-                  value={formData.budget.max}
-                  onChange={handleChange}
-                  min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Location Name</label>
-              <input
-                type="text"
-                name="location.name"
-                value={formData.location.name}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                <input
-                  type="text"
-                  name="location.city"
-                  value={formData.location.city}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                <input
-                  type="text"
-                  name="location.state"
-                  value={formData.location.state}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
-              <textarea
-                name="location.fullAddress"
-                value={formData.location.fullAddress}
-                onChange={handleChange}
-                rows="2"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-
-            {/* Primary Image Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Primary Image</label>
-              {evt?._id ? (
-                // For existing events, use ImageUpload component
-                <ImageUpload
-                  entityType="event"
-                  entityId={evt._id}
-                  maxImages={1}
-                  existingImages={formData.image ? [formData.image] : []}
-                  onImagesUploaded={(images) => {
-                    if (images && images.length > 0) {
-                      setFormData(prev => ({ ...prev, image: images[0] }));
-                    }
-                  }}
-                  onImageRemove={() => {
-                    setFormData(prev => ({ ...prev, image: '' }));
-                  }}
-                />
-              ) : (
-                // For new events, use file input
-                <div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePrimaryFileSelect}
-                    className="hidden"
-                    id="primary-image-upload-event"
-                  />
-                  <label
-                    htmlFor="primary-image-upload-event"
-                    className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors block"
-                  >
-                    {primaryPreview ? (
-                      <div className="relative">
-                        <img src={primaryPreview} alt="Preview" className="w-full h-32 object-cover rounded" />
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setSelectedPrimaryFile(null);
-                            if (primaryPreview) {
-                              URL.revokeObjectURL(primaryPreview);
-                            }
-                            setPrimaryPreview(null);
-                          }}
-                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div>
-                        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Click to select primary image</p>
-                        <p className="text-xs text-gray-500 mt-1">Max 10MB</p>
-                      </div>
-                    )}
-                  </label>
-                </div>
-              )}
-            </div>
-
-            {/* Gallery Images Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Gallery Images</label>
-              {evt?._id ? (
-                // For existing events, use ImageUpload component
-                <ImageUpload
-                  entityType="event"
-                  entityId={evt._id}
-                  maxImages={10}
-                  existingImages={formData.images || []}
-                  onImagesUploaded={(images) => {
-                    setFormData(prev => ({ ...prev, images }));
-                  }}
-                  onImageRemove={(imageUrl) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      images: prev.images.filter(img => img !== imageUrl)
-                    }));
-                  }}
-                />
-              ) : (
-                // For new events, use file input
-                <div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleGalleryFilesSelect}
-                    className="hidden"
-                    id="gallery-images-upload-event"
-                  />
-                  <label
-                    htmlFor="gallery-images-upload-event"
-                    className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors block mb-2"
-                  >
-                    <Upload className="w-6 h-6 text-gray-400 mx-auto mb-1" />
-                    <p className="text-sm text-gray-600">Click to select gallery images</p>
-                    <p className="text-xs text-gray-500 mt-1">Max 10 images, 10MB each</p>
-                  </label>
-                  
-                  {/* Preview selected gallery images */}
-                  {galleryPreviews.length > 0 && (
-                    <div className="grid grid-cols-4 gap-2 mt-2">
-                      {galleryPreviews.map((preview, index) => (
-                        <div key={index} className="relative">
-                          <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-20 object-cover rounded border border-gray-200" />
-                          <button
-                            type="button"
-                            onClick={() => removeGalleryFile(index)}
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                name="isActive"
-                checked={formData.isActive}
-                onChange={handleChange}
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-              />
-              <label className="ml-2 block text-sm text-gray-900">Active</label>
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onCancel}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="bg-primary-600 hover:bg-primary-700"
-              >
-                {evt ? 'Update Event' : 'Create Event'}
-              </Button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
   };
 
   if (loading) {
