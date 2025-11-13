@@ -15,18 +15,6 @@ const venueSchema = new mongoose.Schema({
   isAvailable: { type: Boolean, default: true },
   isPremium: { type: Boolean, default: false },
   description: { type: String, default: '' },
-  features: [{ type: String }], // Key features of the venue
-  contactInfo: {
-    phone: { type: String, default: '' },
-    email: { type: String, default: '' },
-    website: { type: String, default: '' }
-  },
-  // Venue specifications
-  dimensions: {
-    length: { type: Number, default: 0 },
-    width: { type: Number, default: 0 },
-    height: { type: Number, default: 0 }
-  },
   // Additional services
   services: [{ type: String }], // Catering, Photography, etc.
   // Venue type

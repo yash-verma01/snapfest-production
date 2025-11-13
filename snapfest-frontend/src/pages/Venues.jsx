@@ -232,7 +232,7 @@ const Venues = () => {
                   {/* Image */}
                   <div className="relative h-48 overflow-hidden">
                     <img
-                      src={venue.images?.[0] || '/api/placeholder/400/300'}
+                      src={venue.primaryImage || venue.images?.[0] || '/api/placeholder/400/300'}
                       alt={venue.name}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                     />

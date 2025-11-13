@@ -28,12 +28,17 @@ const VenueManagement = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingVenue, setEditingVenue] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
   
   // File upload state for new venues
   const [selectedPrimaryFile, setSelectedPrimaryFile] = useState(null);
   const [primaryPreview, setPrimaryPreview] = useState(null);
   const [selectedGalleryFiles, setSelectedGalleryFiles] = useState([]);
   const [galleryPreviews, setGalleryPreviews] = useState([]);
+  
+  // Local state to track current images (synced with editingVenue prop and image operations)
+  const [currentPrimaryImage, setCurrentPrimaryImage] = useState('');
+  const [currentImages, setCurrentImages] = useState([]);
 
   useEffect(() => {
     loadVenues();
@@ -50,10 +55,13 @@ const VenueManagement = () => {
       };
       
       const response = await adminAPI.getVenues(params);
-      setVenues(response.data.data.venues);
+      const loadedVenues = response.data.data.venues;
+      setVenues(loadedVenues);
       setTotalPages(response.data.data.pagination.pages);
+      return loadedVenues; // Return loaded venues for state updates
     } catch (error) {
       console.error('Error loading venues:', error);
+      return []; // Return empty array on error
     } finally {
       setLoading(false);
     }
@@ -98,8 +106,22 @@ const VenueManagement = () => {
       setPrimaryPreview(null);
       setSelectedGalleryFiles([]);
       setGalleryPreviews([]);
+      // Sync images with venue
+      setCurrentPrimaryImage(venue.primaryImage || '');
+      setCurrentImages(venue.images || []);
     }
   };
+
+  // Sync images with editingVenue prop whenever it changes
+  useEffect(() => {
+    if (editingVenue) {
+      setCurrentPrimaryImage(editingVenue.primaryImage || '');
+      setCurrentImages(editingVenue.images || []);
+    } else {
+      setCurrentPrimaryImage('');
+      setCurrentImages([]);
+    }
+  }, [editingVenue?.primaryImage, editingVenue?.images, editingVenue?._id]);
 
   // File handlers
   const handlePrimaryFileSelect = (e) => {
@@ -151,6 +173,9 @@ const VenueManagement = () => {
 
   const handleCreateVenue = async (venueData) => {
     try {
+      // Clear previous errors
+      setValidationErrors({});
+      
       // Extract files from venueData
       const { _files, ...venuePayload } = venueData;
       
@@ -162,11 +187,9 @@ const VenueManagement = () => {
       if (_files && _files.primary) {
         const primaryFormData = new FormData();
         primaryFormData.append('images', _files.primary);
-        const primaryRes = await adminAPI.uploadVenueImages(newVenueId, primaryFormData);
-        // Set the newly uploaded image as primary (use newImages, not images)
-        await adminAPI.updateVenue(newVenueId, {
-          primaryImage: primaryRes.data.data.newImages[0]
-        });
+        primaryFormData.append('isPrimary', 'true');
+        await adminAPI.uploadVenueImages(newVenueId, primaryFormData);
+        // Primary image is now set directly by the backend
       }
       
       // Step 3: Upload gallery images if any files were selected
@@ -189,24 +212,87 @@ const VenueManagement = () => {
       
       setShowCreateForm(false);
       setEditingVenue(null);
+      setValidationErrors({});
       loadVenues();
       alert('Venue created successfully with images!');
     } catch (error) {
       console.error('Error creating venue:', error);
-      alert('Error creating venue: ' + (error.response?.data?.message || error.message));
+      
+      // Handle validation errors
+      if (error.response?.status === 400 && error.response?.data?.errors) {
+        // Map errors by field name
+        const errorsByField = {};
+        error.response.data.errors.forEach(err => {
+          errorsByField[err.field] = err.message;
+        });
+        setValidationErrors(errorsByField);
+        
+        // Scroll to first error
+        const firstErrorField = Object.keys(errorsByField)[0];
+        if (firstErrorField) {
+          setTimeout(() => {
+            const errorElement = document.querySelector(`[name="${firstErrorField}"]`);
+            if (errorElement) {
+              errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              errorElement.focus();
+            }
+          }, 100);
+        }
+        
+        // Show alert with all errors
+        const errorMessages = error.response.data.errors.map(err => 
+          `• ${err.field}: ${err.message}`
+        ).join('\n');
+        alert(`Please fix the following errors:\n\n${errorMessages}`);
+      } else {
+        alert('Error creating venue: ' + (error.response?.data?.message || error.message));
+      }
     }
   };
 
   const handleUpdateVenue = async (venueId, venueData) => {
     try {
+      // Clear previous errors
+      setValidationErrors({});
+      
       await adminAPI.updateVenue(venueId, venueData);
       setShowCreateForm(false);
       setEditingVenue(null);
+      setValidationErrors({});
       loadVenues();
       alert('Venue updated successfully');
     } catch (error) {
       console.error('Error updating venue:', error);
-      alert('Error updating venue: ' + (error.response?.data?.message || error.message));
+      
+      // Handle validation errors
+      if (error.response?.status === 400 && error.response?.data?.errors) {
+        // Map errors by field name
+        const errorsByField = {};
+        error.response.data.errors.forEach(err => {
+          errorsByField[err.field] = err.message;
+        });
+        setValidationErrors(errorsByField);
+        
+        // Scroll to first error
+        const firstErrorField = Object.keys(errorsByField)[0];
+        if (firstErrorField) {
+          setTimeout(() => {
+            const errorElement = document.querySelector(`[name="${firstErrorField}"]`);
+            if (errorElement) {
+              errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              errorElement.focus();
+            }
+          }, 100);
+        }
+        
+        // Show alert with all errors
+        const errorMessages = error.response.data.errors.map(err => 
+          `• ${err.field}: ${err.message}`
+        ).join('\n');
+        alert(`Please fix the following errors:\n\n${errorMessages}`);
+      } else {
+        alert('Error updating venue: ' + (error.response?.data?.message || error.message));
+      }
     }
   };
 
@@ -471,15 +557,21 @@ const VenueManagement = () => {
                 location: formData.get('location'),
                 capacity: Number(formData.get('capacity')),
                 pricePerDay: Number(formData.get('pricePerDay')),
-                amenities: formData.get('amenities').split(',').map(item => item.trim()).filter(item => item),
-                features: formData.get('features').split(',').map(item => item.trim()).filter(item => item),
-                services: formData.get('services').split(',').map(item => item.trim()).filter(item => item),
-                images: editingVenue ? (formData.get('images')?.split(',').map(item => item.trim()).filter(item => item) || []) : [],
-                description: formData.get('description'),
-                contactInfo: {
-                  phone: formData.get('phone'),
-                  email: formData.get('email'),
-                  website: formData.get('website')
+                amenities: formData.get('amenities') ? formData.get('amenities').split(',').map(item => item.trim()).filter(item => item) : [],
+                services: formData.get('services') ? formData.get('services').split(',').map(item => item.trim()).filter(item => item) : [],
+                primaryImage: currentPrimaryImage,
+                images: currentImages,
+                description: formData.get('description') || '',
+                rating: Number(formData.get('rating')) || 0,
+                isAvailable: formData.get('isAvailable') === 'on',
+                isPremium: formData.get('isPremium') === 'on',
+                type: formData.get('type') || 'OTHER',
+                address: {
+                  street: formData.get('addressStreet') || '',
+                  city: formData.get('addressCity') || '',
+                  state: formData.get('addressState') || '',
+                  pincode: formData.get('addressPincode') || '',
+                  fullAddress: formData.get('addressFull') || ''
                 },
                 isActive: formData.get('isActive') === 'on'
               };
@@ -500,11 +592,33 @@ const VenueManagement = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                  <input type="text" name="name" defaultValue={editingVenue?.name || ''} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
+                  <input 
+                    type="text" 
+                    name="name" 
+                    defaultValue={editingVenue?.name || ''} 
+                    required 
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
+                      validationErrors.name ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-primary-500'
+                    }`} 
+                  />
+                  {validationErrors.name && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                  <input type="text" name="location" defaultValue={editingVenue?.location || ''} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
+                  <input 
+                    type="text" 
+                    name="location" 
+                    defaultValue={editingVenue?.location || ''} 
+                    required 
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
+                      validationErrors.location ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-primary-500'
+                    }`} 
+                  />
+                  {validationErrors.location && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.location}</p>
+                  )}
                 </div>
               </div>
               
@@ -530,13 +644,52 @@ const VenueManagement = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Features (comma-separated)</label>
-                <input type="text" name="features" defaultValue={editingVenue?.features?.join(', ') || ''} placeholder="Stage, Dance floor, Garden" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Services (comma-separated)</label>
+                <input type="text" name="services" defaultValue={editingVenue?.services?.join(', ') || ''} placeholder="Catering, Photography, Decoration" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Rating (0-5)</label>
+                  <input type="number" name="rating" defaultValue={editingVenue?.rating || 0} min="0" max="5" step="0.1" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                  <select name="type" defaultValue={editingVenue?.type || 'OTHER'} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                    <option value="HOTEL">Hotel</option>
+                    <option value="BANQUET_HALL">Banquet Hall</option>
+                    <option value="RESORT">Resort</option>
+                    <option value="GARDEN">Garden</option>
+                    <option value="BEACH">Beach</option>
+                    <option value="ROOFTOP">Rooftop</option>
+                    <option value="CONVENTION_CENTER">Convention Center</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center">
+                  <input type="checkbox" name="isAvailable" defaultChecked={editingVenue?.isAvailable !== false} className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded" />
+                  <label className="ml-2 block text-sm text-gray-900">Available</label>
+                </div>
+                <div className="flex items-center">
+                  <input type="checkbox" name="isPremium" defaultChecked={editingVenue?.isPremium === true} className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded" />
+                  <label className="ml-2 block text-sm text-gray-900">Premium</label>
+                </div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Services (comma-separated)</label>
-                <input type="text" name="services" defaultValue={editingVenue?.services?.join(', ') || ''} placeholder="Catering, Photography, Decoration" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                <div className="space-y-2">
+                  <input type="text" name="addressStreet" defaultValue={editingVenue?.address?.street || ''} placeholder="Street Address" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
+                  <div className="grid grid-cols-3 gap-2">
+                    <input type="text" name="addressCity" defaultValue={editingVenue?.address?.city || ''} placeholder="City" className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
+                    <input type="text" name="addressState" defaultValue={editingVenue?.address?.state || ''} placeholder="State" className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
+                    <input type="text" name="addressPincode" defaultValue={editingVenue?.address?.pincode || ''} placeholder="Pincode" className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
+                  </div>
+                  <input type="text" name="addressFull" defaultValue={editingVenue?.address?.fullAddress || ''} placeholder="Full Address" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
+                </div>
               </div>
               
               {/* Primary Image Upload */}
@@ -549,24 +702,41 @@ const VenueManagement = () => {
                     entityId={editingVenue._id}
                     maxImages={1}
                     isPrimary={true}
-                    existingImages={editingVenue.primaryImage ? [editingVenue.primaryImage] : []}
+                    existingImages={
+                      // Only show primaryImage if it exists and is NOT in the gallery images array
+                      currentPrimaryImage && 
+                      currentPrimaryImage.trim() !== '' && 
+                      !currentImages.includes(currentPrimaryImage)
+                        ? [currentPrimaryImage] 
+                        : []
+                    }
                     onImagesUploaded={async (newImageUrl) => {
-                      // Update primary image after upload
-                      try {
-                        await adminAPI.updateVenue(editingVenue._id, {
-                          primaryImage: newImageUrl
-                        });
-                        // Reload venues to reflect changes
-                        loadVenues();
-                      } catch (error) {
-                        console.error('Error updating primary image:', error);
-                        alert('Failed to update primary image');
+                      // Update local state immediately
+                      setCurrentPrimaryImage(newImageUrl);
+                      // Reload to get fresh data from backend
+                      const loadedVenues = await loadVenues();
+                      // Update editingVenue with fresh data if we're editing
+                      if (editingVenue?._id) {
+                        const updatedVenue = loadedVenues.find(v => v._id === editingVenue._id);
+                        if (updatedVenue) {
+                          setEditingVenue(updatedVenue);
+                        }
                       }
                     }}
                     onImageRemove={async (imageUrl) => {
-                      // Primary image removal is handled by backend
-                      // Just reload to reflect changes
-                      loadVenues();
+                      // Update local state immediately
+                      if (imageUrl === currentPrimaryImage) {
+                        setCurrentPrimaryImage('');
+                      }
+                      // Reload to get fresh data from backend
+                      const loadedVenues = await loadVenues();
+                      // Update editingVenue with fresh data if we're editing
+                      if (editingVenue?._id) {
+                        const updatedVenue = loadedVenues.find(v => v._id === editingVenue._id);
+                        if (updatedVenue) {
+                          setEditingVenue(updatedVenue);
+                        }
+                      }
                     }}
                   />
                 ) : (
@@ -624,14 +794,32 @@ const VenueManagement = () => {
                     entityId={editingVenue._id}
                     maxImages={10}
                     isPrimary={false}
-                    existingImages={editingVenue.images || []}
-                    onImagesUploaded={(images) => {
-                      // Update venue with new images
-                      loadVenues();
+                    existingImages={currentImages}
+                    onImagesUploaded={async (images) => {
+                      // Update local state with all images
+                      setCurrentImages(images);
+                      // Reload to reflect changes
+                      const loadedVenues = await loadVenues();
+                      // Update editingVenue with fresh data if we're editing
+                      if (editingVenue?._id) {
+                        const updatedVenue = loadedVenues.find(v => v._id === editingVenue._id);
+                        if (updatedVenue) {
+                          setEditingVenue(updatedVenue);
+                        }
+                      }
                     }}
-                    onImageRemove={(imageUrl) => {
-                      // Images are removed via ImageUpload component
-                      loadVenues();
+                    onImageRemove={async (imageUrl) => {
+                      // Update local state immediately
+                      setCurrentImages(prev => prev.filter(img => img !== imageUrl));
+                      // Reload to reflect changes
+                      const loadedVenues = await loadVenues();
+                      // Update editingVenue with fresh data if we're editing
+                      if (editingVenue?._id) {
+                        const updatedVenue = loadedVenues.find(v => v._id === editingVenue._id);
+                        if (updatedVenue) {
+                          setEditingVenue(updatedVenue);
+                        }
+                      }
                     }}
                   />
                 ) : (
@@ -675,21 +863,6 @@ const VenueManagement = () => {
                 )}
               </div>
               
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <input type="tel" name="phone" defaultValue={editingVenue?.contactInfo?.phone || ''} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input type="email" name="email" defaultValue={editingVenue?.contactInfo?.email || ''} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
-                  <input type="url" name="website" defaultValue={editingVenue?.contactInfo?.website || ''} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
-                </div>
-              </div>
-              
               <div className="flex items-center">
                 <input type="checkbox" name="isActive" defaultChecked={editingVenue?.isActive !== false} className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded" />
                 <label className="ml-2 block text-sm text-gray-900">Active</label>
@@ -699,6 +872,7 @@ const VenueManagement = () => {
                 <Button type="button" variant="outline" onClick={() => { 
                   setShowCreateForm(false); 
                   setEditingVenue(null);
+                  setValidationErrors({});
                   // Clear file uploads on cancel
                   setSelectedPrimaryFile(null);
                   if (primaryPreview) {

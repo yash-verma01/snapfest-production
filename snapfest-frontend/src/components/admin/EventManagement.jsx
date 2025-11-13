@@ -20,12 +20,16 @@ import { Card, Button, Badge } from '../ui';
 import ImageUpload from './ImageUpload';
 
 // Event Form Component - Defined outside to prevent recreation on parent re-renders
-const EventForm = ({ event: evt, onSave, onCancel, onReload }) => {
+const EventForm = ({ event: evt, onSave, onCancel, onReload, validationErrors = {} }) => {
   // File upload state for new events
   const [selectedPrimaryFile, setSelectedPrimaryFile] = useState(null);
   const [selectedGalleryFiles, setSelectedGalleryFiles] = useState([]);
   const [primaryPreview, setPrimaryPreview] = useState(null);
   const [galleryPreviews, setGalleryPreviews] = useState([]);
+  
+  // Local state to track current images (synced with evt prop and image operations)
+  const [currentPrimaryImage, setCurrentPrimaryImage] = useState('');
+  const [currentImages, setCurrentImages] = useState([]);
 
   // Clear file uploads when editing or creating
   useEffect(() => {
@@ -43,6 +47,17 @@ const EventForm = ({ event: evt, onSave, onCancel, onReload }) => {
       setGalleryPreviews([]);
     }
   }, [evt?._id]); // Only clear when event ID changes
+
+  // Sync images with evt prop whenever it changes
+  useEffect(() => {
+    if (evt) {
+      setCurrentPrimaryImage(evt.image || '');
+      setCurrentImages(evt.images || []);
+    } else {
+      setCurrentPrimaryImage('');
+      setCurrentImages([]);
+    }
+  }, [evt?.image, evt?.images, evt?._id]); // Sync when images or ID changes
 
   // File handlers
   const handlePrimaryFileSelect = (e) => {
@@ -111,8 +126,8 @@ const EventForm = ({ event: evt, onSave, onCancel, onReload }) => {
         max: Number(formData.get('budget.max')) || 0
       },
       isActive: formData.get('isActive') === 'on',
-      image: evt?.image || '',
-      images: evt?.images || []
+      image: currentPrimaryImage,
+      images: currentImages
     };
     
     // For existing events, save normally
@@ -146,8 +161,13 @@ const EventForm = ({ event: evt, onSave, onCancel, onReload }) => {
               name="title"
               defaultValue={evt?.title || ''}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
+                validationErrors.title ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-primary-500'
+              }`}
             />
+            {validationErrors.title && (
+              <p className="mt-1 text-sm text-red-600">{validationErrors.title}</p>
+            )}
           </div>
 
           <div>
@@ -186,8 +206,13 @@ const EventForm = ({ event: evt, onSave, onCancel, onReload }) => {
               name="description"
               defaultValue={evt?.description || ''}
               rows="3"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
+                validationErrors.description ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-primary-500'
+              }`}
             />
+            {validationErrors.description && (
+              <p className="mt-1 text-sm text-red-600">{validationErrors.description}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -297,23 +322,26 @@ const EventForm = ({ event: evt, onSave, onCancel, onReload }) => {
                 entityId={evt._id}
                 maxImages={1}
                 isPrimary={true}
-                existingImages={evt.image ? [evt.image] : []}
+                existingImages={
+                  // Only show image if it exists and is NOT in the gallery images array
+                  currentPrimaryImage && 
+                  currentPrimaryImage.trim() !== '' && 
+                  !currentImages.includes(currentPrimaryImage)
+                    ? [currentPrimaryImage] 
+                    : []
+                }
                 onImagesUploaded={async (newImageUrl) => {
-                  // Update primary image after upload
-                  try {
-                    await adminAPI.updateEvent(evt._id, {
-                      image: newImageUrl
-                    });
-                    // Reload events to reflect changes
-                    onReload?.();
-                  } catch (error) {
-                    console.error('Error updating primary image:', error);
-                    alert('Failed to update primary image');
-                  }
+                  // Update local state immediately
+                  setCurrentPrimaryImage(newImageUrl);
+                  // Reload to get fresh data from backend
+                  onReload?.();
                 }}
                 onImageRemove={async (imageUrl) => {
-                  // Primary image removal is handled by backend
-                  // Just reload to reflect changes
+                  // Update local state immediately
+                  if (imageUrl === currentPrimaryImage) {
+                    setCurrentPrimaryImage('');
+                  }
+                  // Reload to get fresh data from backend
                   onReload?.();
                 }}
               />
@@ -372,14 +400,17 @@ const EventForm = ({ event: evt, onSave, onCancel, onReload }) => {
                 entityId={evt._id}
                 maxImages={10}
                 isPrimary={false}
-                existingImages={evt.images || []}
+                existingImages={currentImages}
                 onImagesUploaded={(images) => {
-                  // Reload events to reflect changes
+                  // Update local state with all images
+                  setCurrentImages(images);
+                  // Reload to reflect changes
                   onReload?.();
                 }}
                 onImageRemove={(imageUrl) => {
-                  // Gallery image removal is handled by backend
-                  // Just reload to reflect changes
+                  // Update local state immediately
+                  setCurrentImages(prev => prev.filter(img => img !== imageUrl));
+                  // Reload to reflect changes
                   onReload?.();
                 }}
               />
@@ -464,6 +495,7 @@ const EventManagement = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
 
   useEffect(() => {
     loadEvents();
@@ -480,10 +512,13 @@ const EventManagement = () => {
       };
       
       const response = await adminAPI.getEvents(params);
-      setEvents(response.data.data.events);
+      const loadedEvents = response.data.data.events;
+      setEvents(loadedEvents);
       setTotalPages(response.data.data.pagination.pages);
+      return loadedEvents; // Return loaded events for onReload callback
     } catch (error) {
       console.error('Error loading events:', error);
+      return []; // Return empty array on error
     } finally {
       setLoading(false);
     }
@@ -528,6 +563,9 @@ const EventManagement = () => {
 
   const handleCreateEvent = async (eventData) => {
     try {
+      // Clear previous errors
+      setValidationErrors({});
+      
       // Extract files from eventData
       const { _files, ...eventPayload } = eventData;
       
@@ -535,64 +573,107 @@ const EventManagement = () => {
       const response = await adminAPI.createEvent(eventPayload);
       const newEventId = response.data.data.event._id;
       
-      // Step 2: Upload images if any files were selected
-      if (_files) {
-        const uploadPromises = [];
-        
-        // Upload primary image if selected
-        if (_files.primary) {
-          const primaryFormData = new FormData();
-          primaryFormData.append('images', _files.primary);
-          uploadPromises.push(
-            adminAPI.uploadEventImages(newEventId, primaryFormData)
-              .then(res => {
-                // Set the newly uploaded image as primary (use newImages, not images)
-                if (res.data.data.newImages && res.data.data.newImages.length > 0) {
-                  return adminAPI.updateEvent(newEventId, {
-                    image: res.data.data.newImages[0]
-                  });
-                }
-              })
-          );
-        }
-        
-        // Upload gallery images if selected
-        if (_files.gallery && _files.gallery.length > 0) {
-          const galleryFormData = new FormData();
-          _files.gallery.forEach(file => {
-            galleryFormData.append('images', file);
-          });
-          uploadPromises.push(
-            adminAPI.uploadEventImages(newEventId, galleryFormData)
-          );
-        }
-        
-        // Wait for all uploads to complete
-        if (uploadPromises.length > 0) {
-          await Promise.all(uploadPromises);
-        }
+      // Step 2: Upload primary image if selected
+      if (_files && _files.primary) {
+        const primaryFormData = new FormData();
+        primaryFormData.append('images', _files.primary);
+        primaryFormData.append('isPrimary', 'true');
+        await adminAPI.uploadEventImages(newEventId, primaryFormData);
+        // Primary image is now set directly by the backend
+      }
+      
+      // Step 3: Upload gallery images if any files were selected
+      if (_files && _files.gallery && _files.gallery.length > 0) {
+        const galleryFormData = new FormData();
+        _files.gallery.forEach(file => {
+          galleryFormData.append('images', file);
+        });
+        await adminAPI.uploadEventImages(newEventId, galleryFormData);
       }
       
       setShowCreateForm(false);
       setEditingEvent(null);
+      setValidationErrors({});
       loadEvents();
       alert('Event created successfully with images!');
     } catch (error) {
       console.error('Error creating event:', error);
-      alert('Error creating event: ' + (error.response?.data?.message || error.message));
+      
+      // Handle validation errors
+      if (error.response?.status === 400 && error.response?.data?.errors) {
+        // Map errors by field name
+        const errorsByField = {};
+        error.response.data.errors.forEach(err => {
+          errorsByField[err.field] = err.message;
+        });
+        setValidationErrors(errorsByField);
+        
+        // Scroll to first error
+        const firstErrorField = Object.keys(errorsByField)[0];
+        if (firstErrorField) {
+          setTimeout(() => {
+            const errorElement = document.querySelector(`[name="${firstErrorField}"]`);
+            if (errorElement) {
+              errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              errorElement.focus();
+            }
+          }, 100);
+        }
+        
+        // Show alert with all errors
+        const errorMessages = error.response.data.errors.map(err => 
+          `• ${err.field}: ${err.message}`
+        ).join('\n');
+        alert(`Please fix the following errors:\n\n${errorMessages}`);
+      } else {
+        alert('Error creating event: ' + (error.response?.data?.message || error.message));
+      }
     }
   };
 
   const handleUpdateEvent = async (eventId, eventData) => {
     try {
+      // Clear previous errors
+      setValidationErrors({});
+      
       await adminAPI.updateEvent(eventId, eventData);
       setShowCreateForm(false);
       setEditingEvent(null);
+      setValidationErrors({});
       loadEvents();
       alert('Event updated successfully');
     } catch (error) {
       console.error('Error updating event:', error);
-      alert('Error updating event: ' + (error.response?.data?.message || error.message));
+      
+      // Handle validation errors
+      if (error.response?.status === 400 && error.response?.data?.errors) {
+        // Map errors by field name
+        const errorsByField = {};
+        error.response.data.errors.forEach(err => {
+          errorsByField[err.field] = err.message;
+        });
+        setValidationErrors(errorsByField);
+        
+        // Scroll to first error
+        const firstErrorField = Object.keys(errorsByField)[0];
+        if (firstErrorField) {
+          setTimeout(() => {
+            const errorElement = document.querySelector(`[name="${firstErrorField}"]`);
+            if (errorElement) {
+              errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              errorElement.focus();
+            }
+          }, 100);
+        }
+        
+        // Show alert with all errors
+        const errorMessages = error.response.data.errors.map(err => 
+          `• ${err.field}: ${err.message}`
+        ).join('\n');
+        alert(`Please fix the following errors:\n\n${errorMessages}`);
+      } else {
+        alert('Error updating event: ' + (error.response?.data?.message || error.message));
+      }
     }
   };
 
@@ -839,6 +920,7 @@ const EventManagement = () => {
       {showCreateForm && (
         <EventForm
           event={editingEvent}
+          validationErrors={validationErrors}
           onSave={(data) => {
             if (editingEvent) {
               handleUpdateEvent(editingEvent._id, data);
@@ -849,8 +931,18 @@ const EventManagement = () => {
           onCancel={() => {
             setShowCreateForm(false);
             setEditingEvent(null);
+            setValidationErrors({});
           }}
-          onReload={loadEvents}
+          onReload={async () => {
+            const loadedEvents = await loadEvents();
+            // Update editingEvent with fresh data if we're editing
+            if (editingEvent?._id) {
+              const updatedEvent = loadedEvents.find(e => e._id === editingEvent._id);
+              if (updatedEvent) {
+                setEditingEvent(updatedEvent);
+              }
+            }
+          }}
         />
       )}
     </div>

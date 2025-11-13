@@ -68,6 +68,10 @@ export const uploadProfileImage = asyncHandler(async (req, res) => {
 export const uploadPackageImages = asyncHandler(async (req, res) => {
   const { packageId } = req.params;
   const userId = req.userId;
+  
+  // Check if this is a primary image upload (from query param or body)
+  // FormData sends strings, so check for both string 'true' and boolean true
+  const isPrimary = req.query.isPrimary === 'true' || req.body.isPrimary === 'true' || req.body.isPrimary === true;
 
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({
@@ -77,7 +81,7 @@ export const uploadPackageImages = asyncHandler(async (req, res) => {
   }
 
   try {
-    // Get package
+    // Get package to verify it exists
     const packageDoc = await Package.findById(packageId);
     if (!packageDoc) {
       return res.status(404).json({
@@ -89,19 +93,48 @@ export const uploadPackageImages = asyncHandler(async (req, res) => {
     // Generate public URLs for uploaded images
     const imageUrls = req.files.map(file => generatePublicUrl(file.path, 'packages', req));
     
-    // Add new images to existing ones
-    packageDoc.images = [...packageDoc.images, ...imageUrls];
-    await packageDoc.save();
-
-    res.status(200).json({
-      success: true,
-      message: 'Package images uploaded successfully',
-      data: {
-        packageId: packageDoc._id,
-        images: packageDoc.images,
-        newImages: imageUrls
-      }
-    });
+    if (isPrimary) {
+      // Primary image: set primaryImage field directly (only first image if multiple)
+      const primaryImageUrl = imageUrls[0];
+      await Package.findByIdAndUpdate(
+        packageId,
+        { $set: { primaryImage: primaryImageUrl } },
+        { new: false }
+      );
+      
+      // Get updated package
+      const updatedPackage = await Package.findById(packageId);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Primary image uploaded successfully',
+        data: {
+          packageId: updatedPackage._id,
+          primaryImage: updatedPackage.primaryImage,
+          newImages: [primaryImageUrl]
+        }
+      });
+    } else {
+      // Gallery images: add to images array using atomic $push (prevents race conditions)
+      await Package.findByIdAndUpdate(
+        packageId,
+        { $push: { images: { $each: imageUrls } } },
+        { new: false }
+      );
+      
+      // Get updated package
+      const updatedPackage = await Package.findById(packageId);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Package images uploaded successfully',
+        data: {
+          packageId: updatedPackage._id,
+          images: updatedPackage.images,
+          newImages: imageUrls
+        }
+      });
+    }
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -177,6 +210,11 @@ export const uploadAddonImages = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 export const uploadEventImages = asyncHandler(async (req, res) => {
   const { eventId } = req.params;
+  const userId = req.userId;
+  
+  // Check if this is a primary image upload (from query param or body)
+  // FormData sends strings, so check for both string 'true' and boolean true
+  const isPrimary = req.query.isPrimary === 'true' || req.body.isPrimary === 'true' || req.body.isPrimary === true;
 
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({
@@ -189,9 +227,9 @@ export const uploadEventImages = asyncHandler(async (req, res) => {
     // Import Event model
     const { Event } = await import('../models/index.js');
     
-    // Get event
-    const event = await Event.findById(eventId);
-    if (!event) {
+    // Get event to verify it exists
+    const eventDoc = await Event.findById(eventId);
+    if (!eventDoc) {
       return res.status(404).json({
         success: false,
         message: 'Event not found'
@@ -201,20 +239,48 @@ export const uploadEventImages = asyncHandler(async (req, res) => {
     // Generate public URLs for uploaded images
     const imageUrls = req.files.map(file => generatePublicUrl(file.path, 'events', req));
     
-    // Add new images to existing ones
-    event.images = [...event.images, ...imageUrls];
-    await event.save();
-
-    res.status(200).json({
-      success: true,
-      message: 'Event images uploaded successfully',
-      data: {
-        eventId: event._id,
-        images: event.images,
-        newImages: imageUrls,
-        totalImages: event.images.length
-      }
-    });
+    if (isPrimary) {
+      // Primary image: set image field directly (only first image if multiple)
+      const primaryImageUrl = imageUrls[0];
+      await Event.findByIdAndUpdate(
+        eventId,
+        { $set: { image: primaryImageUrl } },
+        { new: false }
+      );
+      
+      // Get updated event
+      const updatedEvent = await Event.findById(eventId);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Primary image uploaded successfully',
+        data: {
+          eventId: updatedEvent._id,
+          image: updatedEvent.image,
+          newImages: [primaryImageUrl]
+        }
+      });
+    } else {
+      // Gallery images: add to images array using atomic $push (prevents race conditions)
+      await Event.findByIdAndUpdate(
+        eventId,
+        { $push: { images: { $each: imageUrls } } },
+        { new: false }
+      );
+      
+      // Get updated event
+      const updatedEvent = await Event.findById(eventId);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Event images uploaded successfully',
+        data: {
+          eventId: updatedEvent._id,
+          images: updatedEvent.images,
+          newImages: imageUrls
+        }
+      });
+    }
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -231,6 +297,11 @@ export const uploadEventImages = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 export const uploadVenueImages = asyncHandler(async (req, res) => {
   const { venueId } = req.params;
+  const userId = req.userId;
+  
+  // Check if this is a primary image upload (from query param or body)
+  // FormData sends strings, so check for both string 'true' and boolean true
+  const isPrimary = req.query.isPrimary === 'true' || req.body.isPrimary === 'true' || req.body.isPrimary === true;
 
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({
@@ -243,9 +314,9 @@ export const uploadVenueImages = asyncHandler(async (req, res) => {
     // Import Venue model
     const { Venue } = await import('../models/index.js');
     
-    // Get venue
-    const venue = await Venue.findById(venueId);
-    if (!venue) {
+    // Get venue to verify it exists
+    const venueDoc = await Venue.findById(venueId);
+    if (!venueDoc) {
       return res.status(404).json({
         success: false,
         message: 'Venue not found'
@@ -255,20 +326,48 @@ export const uploadVenueImages = asyncHandler(async (req, res) => {
     // Generate public URLs for uploaded images
     const imageUrls = req.files.map(file => generatePublicUrl(file.path, 'venues', req));
     
-    // Add new images to existing ones
-    venue.images = [...venue.images, ...imageUrls];
-    await venue.save();
-
-    res.status(200).json({
-      success: true,
-      message: 'Venue images uploaded successfully',
-      data: {
-        venueId: venue._id,
-        images: venue.images,
-        newImages: imageUrls,
-        totalImages: venue.images.length
-      }
-    });
+    if (isPrimary) {
+      // Primary image: set primaryImage field directly (only first image if multiple)
+      const primaryImageUrl = imageUrls[0];
+      await Venue.findByIdAndUpdate(
+        venueId,
+        { $set: { primaryImage: primaryImageUrl } },
+        { new: false }
+      );
+      
+      // Get updated venue
+      const updatedVenue = await Venue.findById(venueId);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Primary image uploaded successfully',
+        data: {
+          venueId: updatedVenue._id,
+          primaryImage: updatedVenue.primaryImage,
+          newImages: [primaryImageUrl]
+        }
+      });
+    } else {
+      // Gallery images: add to images array using atomic $push (prevents race conditions)
+      await Venue.findByIdAndUpdate(
+        venueId,
+        { $push: { images: { $each: imageUrls } } },
+        { new: false }
+      );
+      
+      // Get updated venue
+      const updatedVenue = await Venue.findById(venueId);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Venue images uploaded successfully',
+        data: {
+          venueId: updatedVenue._id,
+          images: updatedVenue.images,
+          newImages: imageUrls
+        }
+      });
+    }
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -433,6 +532,11 @@ export const getImageInfo = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 export const uploadBeatBloomImages = asyncHandler(async (req, res) => {
   const { beatBloomId } = req.params;
+  const userId = req.userId;
+  
+  // Check if this is a primary image upload (from query param or body)
+  // FormData sends strings, so check for both string 'true' and boolean true
+  const isPrimary = req.query.isPrimary === 'true' || req.body.isPrimary === 'true' || req.body.isPrimary === true;
   
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({
@@ -442,9 +546,9 @@ export const uploadBeatBloomImages = asyncHandler(async (req, res) => {
   }
 
   try {
-    // Get Beat & Bloom
-    const beatBloom = await BeatBloom.findById(beatBloomId);
-    if (!beatBloom) {
+    // Get Beat & Bloom to verify it exists
+    const beatBloomDoc = await BeatBloom.findById(beatBloomId);
+    if (!beatBloomDoc) {
       return res.status(404).json({
         success: false,
         message: 'Beat & Bloom service not found'
@@ -453,23 +557,49 @@ export const uploadBeatBloomImages = asyncHandler(async (req, res) => {
 
     // Generate public URLs for uploaded images
     const imageUrls = req.files.map(file => generatePublicUrl(file.path, 'beatbloom', req));
-
-    // Update Beat & Bloom with new images
-    beatBloom.images = [...beatBloom.images, ...imageUrls];
-    await beatBloom.save();
-
-    res.status(200).json({
-      success: true,
-      message: 'Beat & Bloom images uploaded successfully',
-      data: {
-        images: beatBloom.images,
-        beatBloom: {
-          id: beatBloom._id,
-          title: beatBloom.title,
-          category: beatBloom.category
+    
+    if (isPrimary) {
+      // Primary image: set primaryImage field directly (only first image if multiple)
+      const primaryImageUrl = imageUrls[0];
+      await BeatBloom.findByIdAndUpdate(
+        beatBloomId,
+        { $set: { primaryImage: primaryImageUrl } },
+        { new: false }
+      );
+      
+      // Get updated beat bloom
+      const updatedBeatBloom = await BeatBloom.findById(beatBloomId);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Primary image uploaded successfully',
+        data: {
+          beatBloomId: updatedBeatBloom._id,
+          primaryImage: updatedBeatBloom.primaryImage,
+          newImages: [primaryImageUrl]
         }
-      }
-    });
+      });
+    } else {
+      // Gallery images: add to images array using atomic $push (prevents race conditions)
+      await BeatBloom.findByIdAndUpdate(
+        beatBloomId,
+        { $push: { images: { $each: imageUrls } } },
+        { new: false }
+      );
+      
+      // Get updated beat bloom
+      const updatedBeatBloom = await BeatBloom.findById(beatBloomId);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Beat & Bloom images uploaded successfully',
+        data: {
+          beatBloomId: updatedBeatBloom._id,
+          images: updatedBeatBloom.images,
+          newImages: imageUrls
+        }
+      });
+    }
   } catch (error) {
     console.error('Beat & Bloom image upload error:', error);
     res.status(500).json({

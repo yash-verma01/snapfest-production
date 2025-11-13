@@ -143,6 +143,7 @@ export const createBeatBloom = asyncHandler(async (req, res) => {
     features,
     images,
     primaryImage,
+    rating,
     isActive = true
   } = req.body;
 
@@ -164,6 +165,7 @@ export const createBeatBloom = asyncHandler(async (req, res) => {
     features,
     images,
     primaryImage: primaryImage || '',
+    rating: rating !== undefined ? rating : 0,
     isActive,
     createdBy: req.userId
   });
@@ -205,6 +207,7 @@ export const updateBeatBloom = asyncHandler(async (req, res) => {
     features,
     images,
     primaryImage,
+    rating,
     isActive
   } = req.body;
 
@@ -216,6 +219,7 @@ export const updateBeatBloom = asyncHandler(async (req, res) => {
   if (features !== undefined) beatBloom.features = features;
   if (images !== undefined) beatBloom.images = images;
   if (primaryImage !== undefined) beatBloom.primaryImage = primaryImage;
+  if (rating !== undefined) beatBloom.rating = rating;
   if (isActive !== undefined) beatBloom.isActive = isActive;
 
   beatBloom.updatedAt = new Date();

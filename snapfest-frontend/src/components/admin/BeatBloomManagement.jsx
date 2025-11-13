@@ -28,12 +28,17 @@ const BeatBloomManagement = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingBeatBloom, setEditingBeatBloom] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
   
   // File upload state for new beat blooms
   const [selectedPrimaryFile, setSelectedPrimaryFile] = useState(null);
   const [primaryPreview, setPrimaryPreview] = useState(null);
   const [selectedGalleryFiles, setSelectedGalleryFiles] = useState([]);
   const [galleryPreviews, setGalleryPreviews] = useState([]);
+  
+  // Local state to track current images (synced with editingBeatBloom prop and image operations)
+  const [currentPrimaryImage, setCurrentPrimaryImage] = useState('');
+  const [currentImages, setCurrentImages] = useState([]);
 
   useEffect(() => {
     loadBeatBlooms();
@@ -50,10 +55,13 @@ const BeatBloomManagement = () => {
       };
       
       const response = await adminAPI.getBeatBlooms(params);
-      setBeatBlooms(response.data.data.beatBlooms);
+      const loadedBeatBlooms = response.data.data.beatBlooms;
+      setBeatBlooms(loadedBeatBlooms);
       setTotalPages(response.data.data.pagination.pages);
+      return loadedBeatBlooms; // Return loaded beat blooms for state updates
     } catch (error) {
       console.error('Error loading beat blooms:', error);
+      return []; // Return empty array on error
     } finally {
       setLoading(false);
     }
@@ -98,8 +106,22 @@ const BeatBloomManagement = () => {
       setPrimaryPreview(null);
       setSelectedGalleryFiles([]);
       setGalleryPreviews([]);
+      // Sync images with beat bloom
+      setCurrentPrimaryImage(beatBloom.primaryImage || '');
+      setCurrentImages(beatBloom.images || []);
     }
   };
+
+  // Sync images with editingBeatBloom prop whenever it changes
+  useEffect(() => {
+    if (editingBeatBloom) {
+      setCurrentPrimaryImage(editingBeatBloom.primaryImage || '');
+      setCurrentImages(editingBeatBloom.images || []);
+    } else {
+      setCurrentPrimaryImage('');
+      setCurrentImages([]);
+    }
+  }, [editingBeatBloom?.primaryImage, editingBeatBloom?.images, editingBeatBloom?._id]);
 
   // File handlers
   const handlePrimaryFileSelect = (e) => {
@@ -151,6 +173,9 @@ const BeatBloomManagement = () => {
 
   const handleCreateBeatBloom = async (beatBloomData) => {
     try {
+      // Clear previous errors
+      setValidationErrors({});
+      
       // Extract files from beatBloomData
       const { _files, ...beatBloomPayload } = beatBloomData;
       
@@ -162,11 +187,9 @@ const BeatBloomManagement = () => {
       if (_files && _files.primary) {
         const primaryFormData = new FormData();
         primaryFormData.append('images', _files.primary);
-        const primaryRes = await adminAPI.uploadBeatBloomImages(newBeatBloomId, primaryFormData);
-        // Set the newly uploaded image as primary (use newImages, not images)
-        await adminAPI.updateBeatBloom(newBeatBloomId, {
-          primaryImage: primaryRes.data.data.newImages[0]
-        });
+        primaryFormData.append('isPrimary', 'true');
+        await adminAPI.uploadBeatBloomImages(newBeatBloomId, primaryFormData);
+        // Primary image is now set directly by the backend
       }
       
       // Step 3: Upload gallery images if any files were selected
@@ -189,24 +212,87 @@ const BeatBloomManagement = () => {
       
       setShowCreateForm(false);
       setEditingBeatBloom(null);
+      setValidationErrors({});
       loadBeatBlooms();
       alert('Beat & Bloom service created successfully with images!');
     } catch (error) {
       console.error('Error creating beat bloom:', error);
-      alert('Error creating beat bloom: ' + (error.response?.data?.message || error.message));
+      
+      // Handle validation errors
+      if (error.response?.status === 400 && error.response?.data?.errors) {
+        // Map errors by field name
+        const errorsByField = {};
+        error.response.data.errors.forEach(err => {
+          errorsByField[err.field] = err.message;
+        });
+        setValidationErrors(errorsByField);
+        
+        // Scroll to first error
+        const firstErrorField = Object.keys(errorsByField)[0];
+        if (firstErrorField) {
+          setTimeout(() => {
+            const errorElement = document.querySelector(`[name="${firstErrorField}"]`);
+            if (errorElement) {
+              errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              errorElement.focus();
+            }
+          }, 100);
+        }
+        
+        // Show alert with all errors
+        const errorMessages = error.response.data.errors.map(err => 
+          `• ${err.field}: ${err.message}`
+        ).join('\n');
+        alert(`Please fix the following errors:\n\n${errorMessages}`);
+      } else {
+        alert('Error creating beat bloom: ' + (error.response?.data?.message || error.message));
+      }
     }
   };
 
   const handleUpdateBeatBloom = async (beatBloomId, beatBloomData) => {
     try {
+      // Clear previous errors
+      setValidationErrors({});
+      
       await adminAPI.updateBeatBloom(beatBloomId, beatBloomData);
       setShowCreateForm(false);
       setEditingBeatBloom(null);
+      setValidationErrors({});
       loadBeatBlooms();
       alert('Beat & Bloom service updated successfully');
     } catch (error) {
       console.error('Error updating beat bloom:', error);
-      alert('Error updating beat bloom: ' + (error.response?.data?.message || error.message));
+      
+      // Handle validation errors
+      if (error.response?.status === 400 && error.response?.data?.errors) {
+        // Map errors by field name
+        const errorsByField = {};
+        error.response.data.errors.forEach(err => {
+          errorsByField[err.field] = err.message;
+        });
+        setValidationErrors(errorsByField);
+        
+        // Scroll to first error
+        const firstErrorField = Object.keys(errorsByField)[0];
+        if (firstErrorField) {
+          setTimeout(() => {
+            const errorElement = document.querySelector(`[name="${firstErrorField}"]`);
+            if (errorElement) {
+              errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              errorElement.focus();
+            }
+          }, 100);
+        }
+        
+        // Show alert with all errors
+        const errorMessages = error.response.data.errors.map(err => 
+          `• ${err.field}: ${err.message}`
+        ).join('\n');
+        alert(`Please fix the following errors:\n\n${errorMessages}`);
+      } else {
+        alert('Error updating beat bloom: ' + (error.response?.data?.message || error.message));
+      }
     }
   };
 
@@ -463,7 +549,8 @@ const BeatBloomManagement = () => {
                 description: formData.get('description'),
                 price: Number(formData.get('price')),
                 features: formData.get('features').split(',').map(item => item.trim()).filter(item => item),
-                images: editingBeatBloom ? (formData.get('images')?.split(',').map(item => item.trim()).filter(item => item) || []) : [],
+                primaryImage: currentPrimaryImage,
+                images: currentImages,
                 rating: Number(formData.get('rating')),
                 isActive: formData.get('isActive') === 'on'
               };
@@ -483,7 +570,21 @@ const BeatBloomManagement = () => {
             }} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                <input type="text" name="title" defaultValue={editingBeatBloom?.title || ''} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
+                <input 
+                  type="text" 
+                  name="title" 
+                  defaultValue={editingBeatBloom?.title || ''} 
+                  required 
+                  minLength={3}
+                  maxLength={100}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
+                    validationErrors.title ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-primary-500'
+                  }`} 
+                />
+                {validationErrors.title && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.title}</p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">Must be between 3 and 100 characters</p>
               </div>
               
               <div>
@@ -500,7 +601,21 @@ const BeatBloomManagement = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea name="description" defaultValue={editingBeatBloom?.description || ''} rows="3" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"></textarea>
+                <textarea 
+                  name="description" 
+                  defaultValue={editingBeatBloom?.description || ''} 
+                  rows="3" 
+                  required
+                  minLength={10}
+                  maxLength={1000}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
+                    validationErrors.description ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-primary-500'
+                  }`}
+                ></textarea>
+                {validationErrors.description && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.description}</p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">Must be between 10 and 1000 characters</p>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
@@ -529,24 +644,41 @@ const BeatBloomManagement = () => {
                     entityId={editingBeatBloom._id}
                     maxImages={1}
                     isPrimary={true}
-                    existingImages={editingBeatBloom.primaryImage ? [editingBeatBloom.primaryImage] : []}
+                    existingImages={
+                      // Only show primaryImage if it exists and is NOT in the gallery images array
+                      currentPrimaryImage && 
+                      currentPrimaryImage.trim() !== '' && 
+                      !currentImages.includes(currentPrimaryImage)
+                        ? [currentPrimaryImage] 
+                        : []
+                    }
                     onImagesUploaded={async (newImageUrl) => {
-                      // Update primary image after upload
-                      try {
-                        await adminAPI.updateBeatBloom(editingBeatBloom._id, {
-                          primaryImage: newImageUrl
-                        });
-                        // Reload beat blooms to reflect changes
-                        loadBeatBlooms();
-                      } catch (error) {
-                        console.error('Error updating primary image:', error);
-                        alert('Failed to update primary image');
+                      // Update local state immediately
+                      setCurrentPrimaryImage(newImageUrl);
+                      // Reload to get fresh data from backend
+                      const loadedBeatBlooms = await loadBeatBlooms();
+                      // Update editingBeatBloom with fresh data if we're editing
+                      if (editingBeatBloom?._id) {
+                        const updatedBeatBloom = loadedBeatBlooms.find(b => b._id === editingBeatBloom._id);
+                        if (updatedBeatBloom) {
+                          setEditingBeatBloom(updatedBeatBloom);
+                        }
                       }
                     }}
                     onImageRemove={async (imageUrl) => {
-                      // Primary image removal is handled by backend
-                      // Just reload to reflect changes
-                      loadBeatBlooms();
+                      // Update local state immediately
+                      if (imageUrl === currentPrimaryImage) {
+                        setCurrentPrimaryImage('');
+                      }
+                      // Reload to get fresh data from backend
+                      const loadedBeatBlooms = await loadBeatBlooms();
+                      // Update editingBeatBloom with fresh data if we're editing
+                      if (editingBeatBloom?._id) {
+                        const updatedBeatBloom = loadedBeatBlooms.find(b => b._id === editingBeatBloom._id);
+                        if (updatedBeatBloom) {
+                          setEditingBeatBloom(updatedBeatBloom);
+                        }
+                      }
                     }}
                   />
                 ) : (
@@ -604,14 +736,32 @@ const BeatBloomManagement = () => {
                     entityId={editingBeatBloom._id}
                     maxImages={10}
                     isPrimary={false}
-                    existingImages={editingBeatBloom.images || []}
-                    onImagesUploaded={(images) => {
-                      // Update beat bloom with new images
-                      loadBeatBlooms();
+                    existingImages={currentImages}
+                    onImagesUploaded={async (images) => {
+                      // Update local state with all images
+                      setCurrentImages(images);
+                      // Reload to reflect changes
+                      const loadedBeatBlooms = await loadBeatBlooms();
+                      // Update editingBeatBloom with fresh data if we're editing
+                      if (editingBeatBloom?._id) {
+                        const updatedBeatBloom = loadedBeatBlooms.find(b => b._id === editingBeatBloom._id);
+                        if (updatedBeatBloom) {
+                          setEditingBeatBloom(updatedBeatBloom);
+                        }
+                      }
                     }}
-                    onImageRemove={(imageUrl) => {
-                      // Images are removed via ImageUpload component
-                      loadBeatBlooms();
+                    onImageRemove={async (imageUrl) => {
+                      // Update local state immediately
+                      setCurrentImages(prev => prev.filter(img => img !== imageUrl));
+                      // Reload to reflect changes
+                      const loadedBeatBlooms = await loadBeatBlooms();
+                      // Update editingBeatBloom with fresh data if we're editing
+                      if (editingBeatBloom?._id) {
+                        const updatedBeatBloom = loadedBeatBlooms.find(b => b._id === editingBeatBloom._id);
+                        if (updatedBeatBloom) {
+                          setEditingBeatBloom(updatedBeatBloom);
+                        }
+                      }
                     }}
                   />
                 ) : (
@@ -664,6 +814,7 @@ const BeatBloomManagement = () => {
                 <Button type="button" variant="outline" onClick={() => { 
                   setShowCreateForm(false); 
                   setEditingBeatBloom(null);
+                  setValidationErrors({});
                   // Clear file uploads on cancel
                   setSelectedPrimaryFile(null);
                   if (primaryPreview) {

@@ -70,6 +70,11 @@ const ImageUpload = ({
       selectedFiles.forEach(file => {
         formData.append('images', file);
       });
+      
+      // Add isPrimary flag for all entity types when uploading primary images
+      if (isPrimary) {
+        formData.append('isPrimary', 'true');
+      }
 
       let response;
       if (entityType === 'package') {

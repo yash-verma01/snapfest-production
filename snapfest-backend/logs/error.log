@@ -4180,3 +4180,1669 @@
   message: 'Application error occurred',
   timestamp: '2025-11-10 00:36:10'
 }
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'phd344e83',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-11 23:37:46'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'phd344e83',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-11 23:37:46'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'pknpci982',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-11 23:51:48'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'pknpci982',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-11 23:51:48'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'vx2wsjbcz',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-11 23:53:51'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'vx2wsjbcz',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-11 23:53:51'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'pjl5qhffw',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-12 10:24:56'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'pjl5qhffw',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-12 10:24:56'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'hix4bv18l',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-12 10:24:57'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'hix4bv18l',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-12 10:24:57'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'g9yct3dgy',
+  method: 'GET',
+  url: '/PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-12 10:36:29'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'g9yct3dgy',
+  method: 'GET',
+  url: '/PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-12 10:36:29'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'rdmcuwna2',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-12 19:05:04'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'rdmcuwna2',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-12 19:05:04'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'd3atle7n4',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-12 19:05:16'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'd3atle7n4',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-12 19:05:16'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'rryz7gxdg',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-12 19:06:32'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'rryz7gxdg',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-12 19:06:32'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'g15vvnql5',
+  method: 'GET',
+  url: '/PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-12 19:07:23'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'g15vvnql5',
+  method: 'GET',
+  url: '/PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-12 19:07:23'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '10jdfden4',
+  method: 'GET',
+  url: '/PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-12 19:07:37'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '10jdfden4',
+  method: 'GET',
+  url: '/PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-12 19:07:37'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'e9w6npibf',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-12 19:15:53'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'e9w6npibf',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-12 19:15:53'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '0ty0s6rmr',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-12 19:16:03'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '0ty0s6rmr',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-12 19:16:03'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'o9ng125hi',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-12 19:16:06'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'o9ng125hi',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-12 19:16:06'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'l17ldoymc',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-12 19:16:17'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'l17ldoymc',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-12 19:16:17'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'o21hxbbw4',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-12 19:16:20'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'o21hxbbw4',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-12 19:16:20'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'ql7lg3660',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-12 19:16:35'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'ql7lg3660',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-12 19:16:35'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '4jie49he3',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-12 19:20:10'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '4jie49he3',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-12 19:20:10'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '7qf1qc0i4',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-12 21:19:53'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '7qf1qc0i4',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-12 21:19:53'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'xrph6badf',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-12 23:10:35'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'xrph6badf',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-12 23:10:35'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '5ihk7buxp',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-13 00:27:17'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '5ihk7buxp',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-13 00:27:17'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'iqpevblou',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-13 00:27:20'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'iqpevblou',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-13 00:27:20'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '24gyjrcgk',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-13 00:27:31'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '24gyjrcgk',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-13 00:27:31'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'l7asm7q0d',
+  method: 'GET',
+  url: '/PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-13 00:59:04'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'l7asm7q0d',
+  method: 'GET',
+  url: '/PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-13 00:59:04'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '07j9169ct',
+  method: 'GET',
+  url: '/PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-13 00:59:23'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '07j9169ct',
+  method: 'GET',
+  url: '/PUBLIC/uploads/venues/haldi-1-1762849254778-119164041.jpg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-13 00:59:23'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'xrrri9dlq',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-13 01:05:23'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'xrrri9dlq',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-13 01:05:23'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '56dw62km0',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-13 09:06:37'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '56dw62km0',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-13 09:06:37'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '4dhkhmccp',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-13 09:22:10'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '4dhkhmccp',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-13 09:22:10'
+}
+{
+  service: 'snapfest-backend',
+  error: 'File too large',
+  stack: 'MulterError: File too large\n' +
+    '    at abortWithCode (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/multer/lib/make-middleware.js:85:22)\n' +
+    '    at FileStream.<anonymous> (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/multer/lib/make-middleware.js:155:11)\n' +
+    '    at FileStream.emit (node:events:518:28)\n' +
+    '    at SBMH.ssCb [as _cb] (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/busboy/lib/types/multipart.js:479:32)\n' +
+    '    at feed (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/streamsearch/lib/sbmh.js:248:10)\n' +
+    '    at SBMH.push (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/streamsearch/lib/sbmh.js:104:16)\n' +
+    '    at Multipart._write (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/busboy/lib/types/multipart.js:567:19)\n' +
+    '    at writeOrBuffer (node:internal/streams/writable:572:12)\n' +
+    '    at _write (node:internal/streams/writable:501:10)\n' +
+    '    at Writable.write (node:internal/streams/writable:510:10)',
+  reqId: 'k9vil805i',
+  method: 'POST',
+  url: '/api/upload/event/691567f6ac4ee20b65f70ef7',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15',
+  ip: '::1',
+  user: '69102c0b4a8df563af45a554 (admin)',
+  body: [Object: null prototype] { isPrimary: 'true' },
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-13 10:39:11'
+}
+{
+  service: 'snapfest-backend',
+  error: 'File too large',
+  stack: 'MulterError: File too large\n' +
+    '    at abortWithCode (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/multer/lib/make-middleware.js:85:22)\n' +
+    '    at FileStream.<anonymous> (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/multer/lib/make-middleware.js:155:11)\n' +
+    '    at FileStream.emit (node:events:518:28)\n' +
+    '    at SBMH.ssCb [as _cb] (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/busboy/lib/types/multipart.js:479:32)\n' +
+    '    at feed (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/streamsearch/lib/sbmh.js:248:10)\n' +
+    '    at SBMH.push (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/streamsearch/lib/sbmh.js:104:16)\n' +
+    '    at Multipart._write (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/busboy/lib/types/multipart.js:567:19)\n' +
+    '    at writeOrBuffer (node:internal/streams/writable:572:12)\n' +
+    '    at _write (node:internal/streams/writable:501:10)\n' +
+    '    at Writable.write (node:internal/streams/writable:510:10)',
+  reqId: 'k9vil805i',
+  method: 'POST',
+  url: '/api/upload/event/691567f6ac4ee20b65f70ef7',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15',
+  ip: '::1',
+  user: '69102c0b4a8df563af45a554 (admin)',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-13 10:39:11'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'gmgv2r2on',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-13 11:51:36'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'gmgv2r2on',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-13 11:51:36'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '41la31xlr',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-13 11:51:39'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: '41la31xlr',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-13 11:51:39'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'utn5zzvt2',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-13 11:51:44'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'utn5zzvt2',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-13 11:51:44'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 't23mjg8uf',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-13 11:56:46'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 't23mjg8uf',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-13 11:56:46'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'rmboslq67',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  body: undefined,
+  level: 'error',
+  message: 'Request error',
+  timestamp: '2025-11-13 12:08:14'
+}
+{
+  service: 'snapfest-backend',
+  error: 'Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  stack: 'Error: Not Found - /PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg\n' +
+    '    at notFound (file:///Users/yashverma/Desktop/snapfest-production/snapfest-backend/src/middleware/errorHandler.js:62:17)\n' +
+    '    at Layer.handleRequest (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/lib/layer.js:152:17)\n' +
+    '    at trimPrefix (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:342:13)\n' +
+    '    at /Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:297:9\n' +
+    '    at processParams (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:582:12)\n' +
+    '    at next (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/router/index.js:291:5)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/serve-static/index.js:120:7)\n' +
+    '    at SendStream.emit (node:events:518:28)\n' +
+    '    at SendStream.error (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:168:17)\n' +
+    '    at SendStream.onStatError (/Users/yashverma/Desktop/snapfest-production/snapfest-backend/node_modules/send/index.js:315:12)',
+  reqId: 'rmboslq67',
+  method: 'GET',
+  url: '/PUBLIC/uploads/beatbloom/haldi-33-1762866011555-131554016.jpeg',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+  ip: '::1',
+  user: 'anonymous',
+  level: 'error',
+  message: 'Application error occurred',
+  timestamp: '2025-11-13 12:08:14'
+}

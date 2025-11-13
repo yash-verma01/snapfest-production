@@ -181,7 +181,7 @@ const VenueDetail = () => {
             {/* Hero Image */}
             <div className="relative h-96 overflow-hidden rounded-lg mb-6">
               <img
-                src={venue.images?.[0] || '/api/placeholder/800/400'}
+                src={venue.primaryImage || venue.images?.[0] || '/api/placeholder/800/400'}
                 alt={venue.name}
                 className="w-full h-full object-cover"
               />
@@ -226,6 +226,16 @@ const VenueDetail = () => {
                       <p className="font-medium">{venue.rating}/5.0</p>
                     </div>
                   </div>
+                  
+                  {venue.type && (
+                    <div className="flex items-center">
+                      <MapPin className="w-5 h-5 text-pink-600 mr-3" />
+                      <div>
+                        <p className="text-sm text-gray-600">Type</p>
+                        <p className="font-medium">{venue.type.replace('_', ' ')}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-4">
@@ -244,9 +254,62 @@ const VenueDetail = () => {
                       {venue.isAvailable ? 'Available' : 'Unavailable'}
                     </Badge>
                   </div>
+                  
+                  {venue.isPremium && (
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Status</p>
+                      <Badge className="bg-yellow-500 text-white">
+                        Premium
+                      </Badge>
+                    </div>
+                  )}
                 </div>
               </div>
             </Card>
+
+            {/* Description */}
+            {venue.description && (
+              <Card className="p-6 mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">About This Venue</h3>
+                <p className="text-gray-700 leading-relaxed">{venue.description}</p>
+              </Card>
+            )}
+
+            {/* Services */}
+            {venue.services && venue.services.length > 0 && (
+              <Card className="p-6 mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">Services</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {venue.services.map((service, index) => (
+                    <div key={index} className="flex items-center">
+                      <Utensils className="w-4 h-4 text-pink-600 mr-2" />
+                      <span className="text-gray-700">{service}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            {/* Address */}
+            {venue.address && (venue.address.fullAddress || venue.address.street || venue.address.city) && (
+              <Card className="p-6 mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">Address</h3>
+                <div className="space-y-2 text-gray-700">
+                  {venue.address.street && <p>{venue.address.street}</p>}
+                  {(venue.address.city || venue.address.state || venue.address.pincode) && (
+                    <p>
+                      {venue.address.city}
+                      {venue.address.city && venue.address.state && ', '}
+                      {venue.address.state}
+                      {venue.address.pincode && ` ${venue.address.pincode}`}
+                    </p>
+                  )}
+                  {venue.address.fullAddress && (
+                    <p className="mt-2 font-medium">{venue.address.fullAddress}</p>
+                  )}
+                </div>
+              </Card>
+            )}
 
             {/* Amenities */}
             {venue.amenities && venue.amenities.length > 0 && (

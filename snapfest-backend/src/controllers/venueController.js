@@ -113,6 +113,12 @@ export const createVenue = asyncHandler(async (req, res) => {
     images,
     primaryImage,
     rating,
+    isAvailable,
+    isPremium,
+    description,
+    services,
+    type,
+    address,
     isActive = true
   } = req.body;
 
@@ -122,9 +128,21 @@ export const createVenue = asyncHandler(async (req, res) => {
     capacity,
     pricePerDay,
     amenities,
-    images,
+    images: images || [],
     primaryImage: primaryImage || '',
-    rating,
+    rating: rating || 0,
+    isAvailable: isAvailable !== undefined ? isAvailable : true,
+    isPremium: isPremium !== undefined ? isPremium : false,
+    description: description || '',
+    services: services || [],
+    type: type || 'OTHER',
+    address: address || {
+      street: '',
+      city: '',
+      state: '',
+      pincode: '',
+      fullAddress: ''
+    },
     isActive,
     createdBy: req.userId
   });
@@ -164,6 +182,12 @@ export const updateVenue = asyncHandler(async (req, res) => {
     images,
     primaryImage,
     rating,
+    isAvailable,
+    isPremium,
+    description,
+    services,
+    type,
+    address,
     isActive
   } = req.body;
 
@@ -176,6 +200,12 @@ export const updateVenue = asyncHandler(async (req, res) => {
   if (images !== undefined) venue.images = images;
   if (primaryImage !== undefined) venue.primaryImage = primaryImage;
   if (rating !== undefined) venue.rating = rating;
+  if (isAvailable !== undefined) venue.isAvailable = isAvailable;
+  if (isPremium !== undefined) venue.isPremium = isPremium;
+  if (description !== undefined) venue.description = description;
+  if (services !== undefined) venue.services = services;
+  if (type !== undefined) venue.type = type;
+  if (address !== undefined) venue.address = address;
   if (isActive !== undefined) venue.isActive = isActive;
 
   venue.updatedAt = new Date();

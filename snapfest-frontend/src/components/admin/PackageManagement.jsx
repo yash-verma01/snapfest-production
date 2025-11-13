@@ -20,7 +20,7 @@ import { Card, Button, Badge } from '../ui';
 import ImageUpload from './ImageUpload';
 
 // Package Form Component - Defined outside to prevent recreation on parent re-renders
-const PackageForm = ({ package: pkg, onSave, onCancel, onReload }) => {
+const PackageForm = ({ package: pkg, onSave, onCancel, onReload, validationErrors = {} }) => {
   // File upload state for new packages
   const [selectedPrimaryFile, setSelectedPrimaryFile] = useState(null);
   const [selectedGalleryFiles, setSelectedGalleryFiles] = useState([]);
@@ -30,6 +30,10 @@ const PackageForm = ({ package: pkg, onSave, onCancel, onReload }) => {
   // State for dynamic arrays (only these need state management)
   const [includedFeatures, setIncludedFeatures] = useState([]);
   const [customizationOptions, setCustomizationOptions] = useState([]);
+  
+  // Local state to track current images (synced with pkg prop and image operations)
+  const [currentPrimaryImage, setCurrentPrimaryImage] = useState('');
+  const [currentImages, setCurrentImages] = useState([]);
 
   // Initialize dynamic arrays only when package ID changes
   useEffect(() => {
@@ -52,6 +56,17 @@ const PackageForm = ({ package: pkg, onSave, onCancel, onReload }) => {
       setGalleryPreviews([]);
     }
   }, [pkg?._id]); // Only re-sync when package ID changes
+
+  // Sync images with pkg prop whenever it changes
+  useEffect(() => {
+    if (pkg) {
+      setCurrentPrimaryImage(pkg.primaryImage || '');
+      setCurrentImages(pkg.images || []);
+    } else {
+      setCurrentPrimaryImage('');
+      setCurrentImages([]);
+    }
+  }, [pkg?.primaryImage, pkg?.images, pkg?._id]); // Sync when images or ID changes
 
   // File handlers
   const handlePrimaryFileSelect = (e) => {
@@ -114,8 +129,8 @@ const PackageForm = ({ package: pkg, onSave, onCancel, onReload }) => {
       isPremium: formData.get('isPremium') === 'on',
       isActive: formData.get('isActive') === 'on',
       metaDescription: formData.get('metaDescription') || '',
-      images: pkg?.images || [],
-      primaryImage: pkg?.primaryImage || ''
+      images: currentImages,
+      primaryImage: currentPrimaryImage
     };
     
     // For existing packages, save normally
@@ -201,8 +216,13 @@ const PackageForm = ({ package: pkg, onSave, onCancel, onReload }) => {
               name="title"
               defaultValue={pkg?.title || ''}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
+                validationErrors.title ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-primary-500'
+              }`}
             />
+            {validationErrors.title && (
+              <p className="mt-1 text-sm text-red-600">{validationErrors.title}</p>
+            )}
           </div>
 
           <div>
@@ -231,8 +251,13 @@ const PackageForm = ({ package: pkg, onSave, onCancel, onReload }) => {
               defaultValue={pkg?.basePrice || 0}
               required
               min="0"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
+                validationErrors.basePrice ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-primary-500'
+              }`}
             />
+            {validationErrors.basePrice && (
+              <p className="mt-1 text-sm text-red-600">{validationErrors.basePrice}</p>
+            )}
           </div>
 
           <div>
@@ -242,8 +267,13 @@ const PackageForm = ({ package: pkg, onSave, onCancel, onReload }) => {
               defaultValue={pkg?.description || ''}
               required
               rows="3"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
+                validationErrors.description ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-primary-500'
+              }`}
             />
+            {validationErrors.description && (
+              <p className="mt-1 text-sm text-red-600">{validationErrors.description}</p>
+            )}
           </div>
 
           {/* Primary Image Upload */}
@@ -256,23 +286,26 @@ const PackageForm = ({ package: pkg, onSave, onCancel, onReload }) => {
                 entityId={pkg._id}
                 maxImages={1}
                 isPrimary={true}
-                existingImages={pkg.primaryImage ? [pkg.primaryImage] : []}
+                existingImages={
+                  // Only show primaryImage if it exists and is NOT in the gallery images array
+                  currentPrimaryImage && 
+                  currentPrimaryImage.trim() !== '' && 
+                  !currentImages.includes(currentPrimaryImage)
+                    ? [currentPrimaryImage] 
+                    : []
+                }
                 onImagesUploaded={async (newImageUrl) => {
-                  // Update primary image after upload
-                  try {
-                    await adminAPI.updatePackage(pkg._id, {
-                      primaryImage: newImageUrl
-                    });
-                    // Reload packages to reflect changes
-                    onReload?.();
-                  } catch (error) {
-                    console.error('Error updating primary image:', error);
-                    alert('Failed to update primary image');
-                  }
+                  // Update local state immediately
+                  setCurrentPrimaryImage(newImageUrl);
+                  // Reload to get fresh data from backend
+                  onReload?.();
                 }}
                 onImageRemove={async (imageUrl) => {
-                  // Primary image removal is handled by backend
-                  // Just reload to reflect changes
+                  // Update local state immediately
+                  if (imageUrl === currentPrimaryImage) {
+                    setCurrentPrimaryImage('');
+                  }
+                  // Reload to get fresh data from backend
                   onReload?.();
                 }}
               />
@@ -331,14 +364,17 @@ const PackageForm = ({ package: pkg, onSave, onCancel, onReload }) => {
                 entityId={pkg._id}
                 maxImages={10}
                 isPrimary={false}
-                existingImages={pkg.images || []}
+                existingImages={currentImages}
                 onImagesUploaded={(images) => {
-                  // Reload packages to reflect changes
+                  // Update local state with all images
+                  setCurrentImages(images);
+                  // Reload to reflect changes
                   onReload?.();
                 }}
                 onImageRemove={(imageUrl) => {
-                  // Gallery image removal is handled by backend
-                  // Just reload to reflect changes
+                  // Update local state immediately
+                  setCurrentImages(prev => prev.filter(img => img !== imageUrl));
+                  // Reload to reflect changes
                   onReload?.();
                 }}
               />
@@ -677,6 +713,7 @@ const PackageManagement = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingPackage, setEditingPackage] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
 
   useEffect(() => {
     loadPackages();
@@ -693,10 +730,15 @@ const PackageManagement = () => {
       };
       
       const response = await adminAPI.getPackages(params);
-      setPackages(response.data.data.packages);
+      const loadedPackages = response.data.data.packages;
+      setPackages(loadedPackages);
       setTotalPages(response.data.data.pagination.pages);
+      
+      // Return packages so onReload can use them
+      return loadedPackages;
     } catch (error) {
       console.error('Error loading packages:', error);
+      return []; // Return empty array on error
     } finally {
       setLoading(false);
     }
@@ -741,6 +783,9 @@ const PackageManagement = () => {
 
   const handleCreatePackage = async (packageData) => {
     try {
+      // Clear previous errors
+      setValidationErrors({});
+      
       // Extract files from packageData
       const { _files, ...packagePayload } = packageData;
       
@@ -756,16 +801,10 @@ const PackageManagement = () => {
         if (_files.primary) {
           const primaryFormData = new FormData();
           primaryFormData.append('images', _files.primary);
+          primaryFormData.append('isPrimary', 'true'); // Mark as primary image
           uploadPromises.push(
             adminAPI.uploadPackageImages(newPackageId, primaryFormData)
-              .then(res => {
-                // Set the newly uploaded image as primary (use newImages, not images)
-                if (res.data.data.newImages && res.data.data.newImages.length > 0) {
-                  return adminAPI.updatePackage(newPackageId, {
-                    primaryImage: res.data.data.newImages[0]
-                  });
-                }
-              })
+            // Primary image is now set directly by the backend, no need for updatePackage call
           );
         }
         
@@ -788,24 +827,87 @@ const PackageManagement = () => {
       
       setShowCreateForm(false);
       setEditingPackage(null);
+      setValidationErrors({});
       loadPackages();
       alert('Package created successfully with images!');
     } catch (error) {
       console.error('Error creating package:', error);
-      alert('Error creating package: ' + (error.response?.data?.message || error.message));
+      
+      // Handle validation errors
+      if (error.response?.status === 400 && error.response?.data?.errors) {
+        // Map errors by field name
+        const errorsByField = {};
+        error.response.data.errors.forEach(err => {
+          errorsByField[err.field] = err.message;
+        });
+        setValidationErrors(errorsByField);
+        
+        // Scroll to first error
+        const firstErrorField = Object.keys(errorsByField)[0];
+        if (firstErrorField) {
+          setTimeout(() => {
+            const errorElement = document.querySelector(`[name="${firstErrorField}"]`);
+            if (errorElement) {
+              errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              errorElement.focus();
+            }
+          }, 100);
+        }
+        
+        // Show alert with all errors
+        const errorMessages = error.response.data.errors.map(err => 
+          `• ${err.field}: ${err.message}`
+        ).join('\n');
+        alert(`Please fix the following errors:\n\n${errorMessages}`);
+      } else {
+        alert('Error creating package: ' + (error.response?.data?.message || error.message));
+      }
     }
   };
 
   const handleUpdatePackage = async (packageId, packageData) => {
     try {
+      // Clear previous errors
+      setValidationErrors({});
+      
       await adminAPI.updatePackage(packageId, packageData);
       setShowCreateForm(false);
       setEditingPackage(null);
+      setValidationErrors({});
       loadPackages();
       alert('Package updated successfully');
     } catch (error) {
       console.error('Error updating package:', error);
-      alert('Error updating package: ' + (error.response?.data?.message || error.message));
+      
+      // Handle validation errors
+      if (error.response?.status === 400 && error.response?.data?.errors) {
+        // Map errors by field name
+        const errorsByField = {};
+        error.response.data.errors.forEach(err => {
+          errorsByField[err.field] = err.message;
+        });
+        setValidationErrors(errorsByField);
+        
+        // Scroll to first error
+        const firstErrorField = Object.keys(errorsByField)[0];
+        if (firstErrorField) {
+          setTimeout(() => {
+            const errorElement = document.querySelector(`[name="${firstErrorField}"]`);
+            if (errorElement) {
+              errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              errorElement.focus();
+            }
+          }, 100);
+        }
+        
+        // Show alert with all errors
+        const errorMessages = error.response.data.errors.map(err => 
+          `• ${err.field}: ${err.message}`
+        ).join('\n');
+        alert(`Please fix the following errors:\n\n${errorMessages}`);
+      } else {
+        alert('Error updating package: ' + (error.response?.data?.message || error.message));
+      }
     }
   };
 
@@ -1044,6 +1146,7 @@ const PackageManagement = () => {
       {showCreateForm && (
         <PackageForm
           package={editingPackage}
+          validationErrors={validationErrors}
           onSave={(data) => {
             if (editingPackage) {
               handleUpdatePackage(editingPackage._id, data);
@@ -1054,8 +1157,18 @@ const PackageManagement = () => {
           onCancel={() => {
             setShowCreateForm(false);
             setEditingPackage(null);
+            setValidationErrors({});
           }}
-          onReload={loadPackages}
+          onReload={async () => {
+            const loadedPackages = await loadPackages();
+            // Update editingPackage with fresh data if we're in edit mode
+            if (editingPackage?._id) {
+              const updatedPkg = loadedPackages.find(p => p._id === editingPackage._id);
+              if (updatedPkg) {
+                setEditingPackage(updatedPkg);
+              }
+            }
+          }}
         />
       )}
     </div>
