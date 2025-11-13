@@ -30,6 +30,8 @@ const VenueManagement = () => {
   const [editingVenue, setEditingVenue] = useState(null);
   
   // File upload state for new venues
+  const [selectedPrimaryFile, setSelectedPrimaryFile] = useState(null);
+  const [primaryPreview, setPrimaryPreview] = useState(null);
   const [selectedGalleryFiles, setSelectedGalleryFiles] = useState([]);
   const [galleryPreviews, setGalleryPreviews] = useState([]);
 
@@ -92,12 +94,34 @@ const VenueManagement = () => {
       setEditingVenue(venue);
       setShowCreateForm(true);
       // Clear file uploads when editing
+      setSelectedPrimaryFile(null);
+      setPrimaryPreview(null);
       setSelectedGalleryFiles([]);
       setGalleryPreviews([]);
     }
   };
 
   // File handlers
+  const handlePrimaryFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image is too large. Max size is 10MB.');
+      return;
+    }
+    
+    setSelectedPrimaryFile(file);
+    if (primaryPreview) {
+      URL.revokeObjectURL(primaryPreview);
+    }
+    setPrimaryPreview(URL.createObjectURL(file));
+  };
+
   const handleGalleryFilesSelect = (e) => {
     const files = Array.from(e.target.files);
     const imageFiles = files.filter(file => {
@@ -134,7 +158,18 @@ const VenueManagement = () => {
       const response = await adminAPI.createVenue(venuePayload);
       const newVenueId = response.data.data.venue._id;
       
-      // Step 2: Upload images if any files were selected
+      // Step 2: Upload primary image if selected
+      if (_files && _files.primary) {
+        const primaryFormData = new FormData();
+        primaryFormData.append('images', _files.primary);
+        const primaryRes = await adminAPI.uploadVenueImages(newVenueId, primaryFormData);
+        // Set the newly uploaded image as primary (use newImages, not images)
+        await adminAPI.updateVenue(newVenueId, {
+          primaryImage: primaryRes.data.data.newImages[0]
+        });
+      }
+      
+      // Step 3: Upload gallery images if any files were selected
       if (_files && _files.gallery && _files.gallery.length > 0) {
         const galleryFormData = new FormData();
         _files.gallery.forEach(file => {
@@ -144,6 +179,11 @@ const VenueManagement = () => {
       }
       
       // Clear file uploads
+      setSelectedPrimaryFile(null);
+      if (primaryPreview) {
+        URL.revokeObjectURL(primaryPreview);
+      }
+      setPrimaryPreview(null);
       setSelectedGalleryFiles([]);
       setGalleryPreviews([]);
       
@@ -451,6 +491,7 @@ const VenueManagement = () => {
                 handleCreateVenue({
                   ...data,
                   _files: {
+                    primary: selectedPrimaryFile,
                     gallery: selectedGalleryFiles
                   }
                 });
@@ -498,6 +539,81 @@ const VenueManagement = () => {
                 <input type="text" name="services" defaultValue={editingVenue?.services?.join(', ') || ''} placeholder="Catering, Photography, Decoration" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500" />
               </div>
               
+              {/* Primary Image Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Primary Image</label>
+                {editingVenue?._id ? (
+                  // For existing venues, use ImageUpload component
+                  <ImageUpload
+                    entityType="venue"
+                    entityId={editingVenue._id}
+                    maxImages={1}
+                    isPrimary={true}
+                    existingImages={editingVenue.primaryImage ? [editingVenue.primaryImage] : []}
+                    onImagesUploaded={async (newImageUrl) => {
+                      // Update primary image after upload
+                      try {
+                        await adminAPI.updateVenue(editingVenue._id, {
+                          primaryImage: newImageUrl
+                        });
+                        // Reload venues to reflect changes
+                        loadVenues();
+                      } catch (error) {
+                        console.error('Error updating primary image:', error);
+                        alert('Failed to update primary image');
+                      }
+                    }}
+                    onImageRemove={async (imageUrl) => {
+                      // Primary image removal is handled by backend
+                      // Just reload to reflect changes
+                      loadVenues();
+                    }}
+                  />
+                ) : (
+                  // For new venues, use file input
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePrimaryFileSelect}
+                      className="hidden"
+                      id="primary-image-upload-venue"
+                    />
+                    <label
+                      htmlFor="primary-image-upload-venue"
+                      className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors block"
+                    >
+                      {primaryPreview ? (
+                        <div className="relative">
+                          <img src={primaryPreview} alt="Preview" className="w-full h-32 object-cover rounded" />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedPrimaryFile(null);
+                              if (primaryPreview) {
+                                URL.revokeObjectURL(primaryPreview);
+                              }
+                              setPrimaryPreview(null);
+                            }}
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                          <p className="text-sm text-gray-600">Click to select primary image</p>
+                          <p className="text-xs text-gray-500 mt-1">Max 10MB</p>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                )}
+              </div>
+              
               {/* Gallery Images Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Gallery Images</label>
@@ -507,6 +623,7 @@ const VenueManagement = () => {
                     entityType="venue"
                     entityId={editingVenue._id}
                     maxImages={10}
+                    isPrimary={false}
                     existingImages={editingVenue.images || []}
                     onImagesUploaded={(images) => {
                       // Update venue with new images
@@ -583,6 +700,11 @@ const VenueManagement = () => {
                   setShowCreateForm(false); 
                   setEditingVenue(null);
                   // Clear file uploads on cancel
+                  setSelectedPrimaryFile(null);
+                  if (primaryPreview) {
+                    URL.revokeObjectURL(primaryPreview);
+                  }
+                  setPrimaryPreview(null);
                   setSelectedGalleryFiles([]);
                   setGalleryPreviews([]);
                 }}>Cancel</Button>

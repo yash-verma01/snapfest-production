@@ -332,7 +332,7 @@ export const adminAPI = {
   uploadBeatBloomImages: (beatBloomId, formData) => api.post(`/upload/beatbloom/${beatBloomId}`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
-  deleteImage: (imageUrl) => api.delete('/upload/image', { data: { imageUrl } })
+  deleteImage: (imageUrl, type, id) => api.delete('/upload/image', { data: { imageUrl, type, id } })
 };
 
 export const publicAPI = {

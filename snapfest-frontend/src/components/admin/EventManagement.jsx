@@ -20,7 +20,7 @@ import { Card, Button, Badge } from '../ui';
 import ImageUpload from './ImageUpload';
 
 // Event Form Component - Defined outside to prevent recreation on parent re-renders
-const EventForm = ({ event: evt, onSave, onCancel }) => {
+const EventForm = ({ event: evt, onSave, onCancel, onReload }) => {
   // File upload state for new events
   const [selectedPrimaryFile, setSelectedPrimaryFile] = useState(null);
   const [selectedGalleryFiles, setSelectedGalleryFiles] = useState([]);
@@ -296,12 +296,25 @@ const EventForm = ({ event: evt, onSave, onCancel }) => {
                 entityType="event"
                 entityId={evt._id}
                 maxImages={1}
+                isPrimary={true}
                 existingImages={evt.image ? [evt.image] : []}
-                onImagesUploaded={(images) => {
-                  // Images are handled by ImageUpload component
+                onImagesUploaded={async (newImageUrl) => {
+                  // Update primary image after upload
+                  try {
+                    await adminAPI.updateEvent(evt._id, {
+                      image: newImageUrl
+                    });
+                    // Reload events to reflect changes
+                    onReload?.();
+                  } catch (error) {
+                    console.error('Error updating primary image:', error);
+                    alert('Failed to update primary image');
+                  }
                 }}
-                onImageRemove={() => {
-                  // Images are handled by ImageUpload component
+                onImageRemove={async (imageUrl) => {
+                  // Primary image removal is handled by backend
+                  // Just reload to reflect changes
+                  onReload?.();
                 }}
               />
             ) : (
@@ -358,12 +371,16 @@ const EventForm = ({ event: evt, onSave, onCancel }) => {
                 entityType="event"
                 entityId={evt._id}
                 maxImages={10}
+                isPrimary={false}
                 existingImages={evt.images || []}
                 onImagesUploaded={(images) => {
-                  // Images are handled by ImageUpload component
+                  // Reload events to reflect changes
+                  onReload?.();
                 }}
                 onImageRemove={(imageUrl) => {
-                  // Images are handled by ImageUpload component
+                  // Gallery image removal is handled by backend
+                  // Just reload to reflect changes
+                  onReload?.();
                 }}
               />
             ) : (
@@ -833,6 +850,7 @@ const EventManagement = () => {
             setShowCreateForm(false);
             setEditingEvent(null);
           }}
+          onReload={loadEvents}
         />
       )}
     </div>

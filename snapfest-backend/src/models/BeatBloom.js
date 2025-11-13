@@ -13,6 +13,8 @@ const beatBloomSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   features: [{ type: String }],
   images: [{ type: String }],
+  // Primary image for cards
+  primaryImage: { type: String, default: '' },
   rating: { type: Number, min: 0, max: 5, default: 0 },
   isActive: { type: Boolean, default: true },
 }, { timestamps: true });

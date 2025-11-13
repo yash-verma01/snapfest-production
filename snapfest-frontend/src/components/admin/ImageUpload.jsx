@@ -9,7 +9,8 @@ const ImageUpload = ({
   onImagesUploaded, 
   maxImages = 10,
   existingImages = [],
-  onImageRemove 
+  onImageRemove,
+  isPrimary = false // Flag to indicate if this is for primary image
 }) => {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -84,7 +85,12 @@ const ImageUpload = ({
       if (response.data.success) {
         setSelectedFiles([]);
         setPreviewUrls([]);
-        onImagesUploaded?.(response.data.data.images);
+        // For primary images, pass the new image URL; for gallery, pass all images
+        if (isPrimary && response.data.data.newImages && response.data.data.newImages.length > 0) {
+          onImagesUploaded?.(response.data.data.newImages[0]);
+        } else {
+          onImagesUploaded?.(response.data.data.images);
+        }
         alert('Images uploaded successfully!');
       }
     } catch (error) {
@@ -97,7 +103,7 @@ const ImageUpload = ({
 
   const removeExistingImage = async (imageUrl) => {
     try {
-      await adminAPI.deleteImage(imageUrl);
+      await adminAPI.deleteImage(imageUrl, entityType, entityId);
       onImageRemove?.(imageUrl);
       alert('Image removed successfully!');
     } catch (error) {

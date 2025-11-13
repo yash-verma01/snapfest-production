@@ -20,7 +20,7 @@ import { Card, Button, Badge } from '../ui';
 import ImageUpload from './ImageUpload';
 
 // Package Form Component - Defined outside to prevent recreation on parent re-renders
-const PackageForm = ({ package: pkg, onSave, onCancel }) => {
+const PackageForm = ({ package: pkg, onSave, onCancel, onReload }) => {
   // File upload state for new packages
   const [selectedPrimaryFile, setSelectedPrimaryFile] = useState(null);
   const [selectedGalleryFiles, setSelectedGalleryFiles] = useState([]);
@@ -255,12 +255,25 @@ const PackageForm = ({ package: pkg, onSave, onCancel }) => {
                 entityType="package"
                 entityId={pkg._id}
                 maxImages={1}
+                isPrimary={true}
                 existingImages={pkg.primaryImage ? [pkg.primaryImage] : []}
-                onImagesUploaded={(images) => {
-                  // Images are handled by ImageUpload component
+                onImagesUploaded={async (newImageUrl) => {
+                  // Update primary image after upload
+                  try {
+                    await adminAPI.updatePackage(pkg._id, {
+                      primaryImage: newImageUrl
+                    });
+                    // Reload packages to reflect changes
+                    onReload?.();
+                  } catch (error) {
+                    console.error('Error updating primary image:', error);
+                    alert('Failed to update primary image');
+                  }
                 }}
-                onImageRemove={() => {
-                  // Images are handled by ImageUpload component
+                onImageRemove={async (imageUrl) => {
+                  // Primary image removal is handled by backend
+                  // Just reload to reflect changes
+                  onReload?.();
                 }}
               />
             ) : (
@@ -317,12 +330,16 @@ const PackageForm = ({ package: pkg, onSave, onCancel }) => {
                 entityType="package"
                 entityId={pkg._id}
                 maxImages={10}
+                isPrimary={false}
                 existingImages={pkg.images || []}
                 onImagesUploaded={(images) => {
-                  // Images are handled by ImageUpload component
+                  // Reload packages to reflect changes
+                  onReload?.();
                 }}
                 onImageRemove={(imageUrl) => {
-                  // Images are handled by ImageUpload component
+                  // Gallery image removal is handled by backend
+                  // Just reload to reflect changes
+                  onReload?.();
                 }}
               />
             ) : (
@@ -1038,6 +1055,7 @@ const PackageManagement = () => {
             setShowCreateForm(false);
             setEditingPackage(null);
           }}
+          onReload={loadPackages}
         />
       )}
     </div>

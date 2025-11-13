@@ -310,6 +310,11 @@ export const deleteUserImage = asyncHandler(async (req, res) => {
       case 'package':
         document = await Package.findById(id);
         if (document) {
+          // Check if it's the primary image
+          if (document.primaryImage === imageUrl) {
+            document.primaryImage = '';
+          }
+          // Remove from gallery images
           document.images = document.images.filter(img => img !== imageUrl);
           await document.save();
         }
@@ -317,7 +322,12 @@ export const deleteUserImage = asyncHandler(async (req, res) => {
         
       case 'beatbloom':
         document = await BeatBloom.findById(id);
-        if (document && document.vendorId.toString() === userId) {
+        if (document) {
+          // Check if it's the primary image
+          if (document.primaryImage === imageUrl) {
+            document.primaryImage = '';
+          }
+          // Remove from gallery images
           document.images = document.images.filter(img => img !== imageUrl);
           await document.save();
         }
@@ -327,6 +337,11 @@ export const deleteUserImage = asyncHandler(async (req, res) => {
         const { Event } = await import('../models/index.js');
         document = await Event.findById(id);
         if (document) {
+          // Check if it's the primary image
+          if (document.image === imageUrl) {
+            document.image = '';
+          }
+          // Remove from gallery images
           document.images = document.images.filter(img => img !== imageUrl);
           await document.save();
         }
@@ -336,6 +351,11 @@ export const deleteUserImage = asyncHandler(async (req, res) => {
         const { Venue } = await import('../models/index.js');
         document = await Venue.findById(id);
         if (document) {
+          // Check if it's the primary image
+          if (document.primaryImage === imageUrl) {
+            document.primaryImage = '';
+          }
+          // Remove from gallery images
           document.images = document.images.filter(img => img !== imageUrl);
           await document.save();
         }

@@ -111,6 +111,7 @@ export const createVenue = asyncHandler(async (req, res) => {
     pricePerDay,
     amenities,
     images,
+    primaryImage,
     rating,
     isActive = true
   } = req.body;
@@ -122,6 +123,7 @@ export const createVenue = asyncHandler(async (req, res) => {
     pricePerDay,
     amenities,
     images,
+    primaryImage: primaryImage || '',
     rating,
     isActive,
     createdBy: req.userId
@@ -160,6 +162,7 @@ export const updateVenue = asyncHandler(async (req, res) => {
     pricePerDay,
     amenities,
     images,
+    primaryImage,
     rating,
     isActive
   } = req.body;
@@ -171,6 +174,7 @@ export const updateVenue = asyncHandler(async (req, res) => {
   if (pricePerDay !== undefined) venue.pricePerDay = pricePerDay;
   if (amenities !== undefined) venue.amenities = amenities;
   if (images !== undefined) venue.images = images;
+  if (primaryImage !== undefined) venue.primaryImage = primaryImage;
   if (rating !== undefined) venue.rating = rating;
   if (isActive !== undefined) venue.isActive = isActive;
 
