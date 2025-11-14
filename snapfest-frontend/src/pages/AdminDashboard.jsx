@@ -34,6 +34,7 @@ import PackageManagement from '../components/admin/PackageManagement';
 import EventManagement from '../components/admin/EventManagement';
 import VenueManagement from '../components/admin/VenueManagement';
 import BeatBloomManagement from '../components/admin/BeatBloomManagement';
+import EnquiryManagement from '../components/admin/EnquiryManagement';
 
 const AdminDashboard = () => {
   // Use Clerk hooks instead of AuthContext (AdminApp uses ClerkProvider)
@@ -395,6 +396,7 @@ const AdminDashboard = () => {
         {activeTab === 'events' && <EventManagement />}
         {activeTab === 'venues' && <VenueManagement />}
         {activeTab === 'beatbloom' && <BeatBloomManagement />}
+        {activeTab === 'enquiries' && <EnquiryManagement />}
         {activeTab === 'vendors' && <VendorManagement />}
         {activeTab === 'payments' && <PaymentManagement />}
         {activeTab === 'testimonials' && (
@@ -595,6 +597,14 @@ const AdminDashboard = () => {
                   >
                     <Star className="w-4 h-4 mr-2" />
                     Beat & Bloom
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className={`w-full justify-start ${activeTab === 'enquiries' ? 'bg-primary-50 text-primary-600' : ''}`}
+                    onClick={() => handleNavigation('enquiries')}
+                  >
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Enquiries
                   </Button>
                   <Button 
                     variant="outline" 

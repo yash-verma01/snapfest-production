@@ -21,6 +21,7 @@ import paymentRoutes from './src/routes/paymentRoutes.js';
 import bookingRoutes from './src/routes/bookingRoutes.js';
 import webhookRoutes from './src/routes/webhookRoutes.js';
 import uploadRoutes from './src/routes/uploadRoutes.js';
+import enquiryRoutes from './src/routes/enquiryRoutes.js';
 import { errorHandler, notFound } from './src/middleware/errorHandler.js';
 import requestLogger, { enhancedRequestLogger, errorLogger } from './src/middleware/requestLogger.js';
 import { logInfo, logError } from './src/config/logger.js';
@@ -107,48 +108,48 @@ app.use((req, res, next) => {
   
   // Apply CORS for all other routes (API routes that need credentials)
   cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-      
-      // Allow all localhost ports for development (critical for cookie transmission)
-      if (origin.startsWith('http://localhost:')) {
-        return callback(null, true);
-      }
-      
-      // Allow file:// protocol for local testing
-      if (origin.startsWith('file://')) {
-        return callback(null, true);
-      }
-      
-      // Allow specific production domains
-      const allowedOrigins = [
-        'https://snapfest-frontend.vercel.app',
-        'https://snapfest.vercel.app'
-      ];
-      
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      
-      // Log the origin for debugging
-      if (process.env.NODE_ENV === 'development') {
-        console.log('⚠️ CORS: Blocked origin:', origin);
-      }
-      callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true, // CRITICAL: Must be true for cookies to be sent cross-origin
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-Requested-With',
-      'Clerk-Authorization',
-      'Cookie',
-      'Set-Cookie'
-    ],
-    exposedHeaders: ['Set-Cookie'], // Allow frontend to see Set-Cookie headers
-    maxAge: 86400 // Cache preflight requests for 24 hours
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow all localhost ports for development (critical for cookie transmission)
+    if (origin.startsWith('http://localhost:')) {
+      return callback(null, true);
+    }
+    
+    // Allow file:// protocol for local testing
+    if (origin.startsWith('file://')) {
+      return callback(null, true);
+    }
+    
+    // Allow specific production domains
+    const allowedOrigins = [
+      'https://snapfest-frontend.vercel.app',
+      'https://snapfest.vercel.app'
+    ];
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // Log the origin for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('⚠️ CORS: Blocked origin:', origin);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true, // CRITICAL: Must be true for cookies to be sent cross-origin
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Clerk-Authorization',
+    'Cookie',
+    'Set-Cookie'
+  ],
+  exposedHeaders: ['Set-Cookie'], // Allow frontend to see Set-Cookie headers
+  maxAge: 86400 // Cache preflight requests for 24 hours
   })(req, res, next);
 });
 
@@ -273,6 +274,7 @@ app.use('/api/payments', paymentRoutes);     // User payment management
 app.use('/api/bookings', bookingRoutes);     // User booking management
 app.use('/api/upload', uploadRoutes);        // Image upload routes
 app.use('/api/webhooks', webhookRoutes);     // Webhook routes (Razorpay)
+app.use('/api', enquiryRoutes);              // Enquiry routes (public + admin)
 
 // Health check routes
 app.get(['/api/health', '/'], (req, res) => {

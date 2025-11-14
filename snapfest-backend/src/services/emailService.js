@@ -342,6 +342,175 @@ class EmailService {
       throw new Error('Failed to send welcome email');
     }
   }
+
+  // Generic email sending method
+  async sendEmail(toEmail, subject, htmlContent) {
+    const mailOptions = {
+      from: `"SnapFest" <${process.env.EMAIL_USER}>`,
+      to: toEmail,
+      subject: subject,
+      html: htmlContent
+    };
+    
+    try {
+      // Check if in fallback mode
+      if (this.fallbackMode) {
+        console.log('📧 [FALLBACK MODE] Email would be sent to:', toEmail);
+        console.log('📧 [FALLBACK MODE] Subject:', subject);
+        return { success: true, messageId: 'fallback-mode', fallback: true };
+      }
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Email sent:', result.messageId);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('❌ Error sending email:', error);
+      throw error;
+    }
+  }
+
+  // Enquiry confirmation email
+  async sendEnquiryConfirmationEmail(userEmail, userName, enquiryType) {
+    const mailOptions = {
+      from: `"SnapFest" <${process.env.EMAIL_USER}>`,
+      to: userEmail,
+      subject: 'Your Enquiry Has Been Received - SnapFest',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #e91e63; font-size: 28px; margin: 0;">✅ Enquiry Received!</h1>
+            <p style="color: #666; font-size: 16px; margin: 10px 0;">Thank you for contacting SnapFest</p>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 30px; border-radius: 10px; margin-bottom: 20px;">
+            <h2 style="color: #333; font-size: 24px; margin: 0 0 20px 0;">Hi ${userName}! 👋</h2>
+            <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+              We've received your ${enquiryType} enquiry and our team will get back to you within 24 hours.
+            </p>
+            <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0;">
+              We appreciate your interest in SnapFest and look forward to helping you plan your perfect event!
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; color: #888; font-size: 14px;">
+            <p><strong>SnapFest Team</strong><br>Making Your Events Unforgettable ✨</p>
+          </div>
+        </div>
+      `
+    };
+
+    try {
+      if (this.fallbackMode) {
+        console.log('📧 [FALLBACK MODE] Enquiry confirmation email would be sent to:', userEmail);
+        return { success: true, messageId: 'fallback-mode', fallback: true };
+      }
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Enquiry confirmation email sent:', result.messageId);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('❌ Error sending enquiry confirmation email:', error);
+      throw error;
+    }
+  }
+
+  // Admin notification email for new enquiry
+  async sendAdminEnquiryNotification(adminEmail, enquiryData) {
+    const mailOptions = {
+      from: `"SnapFest" <${process.env.EMAIL_USER}>`,
+      to: adminEmail,
+      subject: `New ${enquiryData.enquiryType} Enquiry Received - SnapFest`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #e91e63; font-size: 28px; margin: 0;">🔔 New Enquiry</h1>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 30px; border-radius: 10px; margin-bottom: 20px;">
+            <h2 style="color: #333; font-size: 20px; margin: 0 0 20px 0;">Enquiry Details:</h2>
+            <p><strong>Name:</strong> ${enquiryData.name}</p>
+            <p><strong>Email:</strong> ${enquiryData.email}</p>
+            <p><strong>Phone:</strong> ${enquiryData.phone || 'N/A'}</p>
+            <p><strong>Type:</strong> ${enquiryData.enquiryType}</p>
+            <p><strong>Subject:</strong> ${enquiryData.subject}</p>
+            <p><strong>Message:</strong></p>
+            <p style="background: white; padding: 15px; border-radius: 5px; margin-top: 10px;">${enquiryData.message}</p>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="${process.env.FRONTEND_URL}/admin/enquiries" 
+               style="background: linear-gradient(135deg, #e91e63, #f06292); 
+                      color: white; 
+                      padding: 15px 30px; 
+                      text-decoration: none; 
+                      border-radius: 25px; 
+                      font-weight: bold; 
+                      display: inline-block;">
+              View Enquiry
+            </a>
+          </div>
+        </div>
+      `
+    };
+
+    try {
+      if (this.fallbackMode) {
+        console.log('📧 [FALLBACK MODE] Admin notification email would be sent to:', adminEmail);
+        return { success: true, messageId: 'fallback-mode', fallback: true };
+      }
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Admin notification email sent:', result.messageId);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('❌ Error sending admin notification email:', error);
+      throw error;
+    }
+  }
+
+  // Admin response email to user
+  async sendAdminResponseEmail(userEmail, userName, adminResponse, enquirySubject) {
+    const mailOptions = {
+      from: `"SnapFest" <${process.env.EMAIL_USER}>`,
+      to: userEmail,
+      subject: `Re: ${enquirySubject} - SnapFest`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #e91e63; font-size: 28px; margin: 0;">📧 Response to Your Enquiry</h1>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 30px; border-radius: 10px; margin-bottom: 20px;">
+            <h2 style="color: #333; font-size: 24px; margin: 0 0 20px 0;">Hi ${userName}! 👋</h2>
+            <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+              Thank you for your enquiry. Here's our response:
+            </p>
+            <div style="background: white; padding: 20px; border-radius: 5px; border-left: 4px solid #e91e63;">
+              ${adminResponse}
+            </div>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; color: #888; font-size: 14px;">
+            <p><strong>SnapFest Team</strong><br>Making Your Events Unforgettable ✨</p>
+          </div>
+        </div>
+      `
+    };
+
+    try {
+      if (this.fallbackMode) {
+        console.log('📧 [FALLBACK MODE] Admin response email would be sent to:', userEmail);
+        return { success: true, messageId: 'fallback-mode', fallback: true };
+      }
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Admin response email sent:', result.messageId);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('❌ Error sending admin response email:', error);
+      throw error;
+    }
+  }
 }
 
 export default new EmailService();

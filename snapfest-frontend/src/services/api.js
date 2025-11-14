@@ -332,7 +332,14 @@ export const adminAPI = {
   uploadBeatBloomImages: (beatBloomId, formData) => api.post(`/upload/beatbloom/${beatBloomId}`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
-  deleteImage: (imageUrl, type, id) => api.delete('/upload/image', { data: { imageUrl, type, id } })
+  deleteImage: (imageUrl, type, id) => api.delete('/upload/image', { data: { imageUrl, type, id } }),
+  
+  // Enquiry Management
+  getEnquiries: (params) => api.get('/admin/enquiries', { params }),
+  getEnquiryById: (id) => api.get(`/admin/enquiries/${id}`),
+  getEnquiryStats: () => api.get('/admin/enquiries/stats'),
+  updateEnquiryStatus: (id, status) => api.put(`/admin/enquiries/${id}/status`, { status }),
+  respondToEnquiry: (id, response) => api.post(`/admin/enquiries/${id}/respond`, { response })
 };
 
 export const publicAPI = {

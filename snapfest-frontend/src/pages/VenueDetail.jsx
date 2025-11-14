@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import { publicAPI } from '../services/api';
 import { Card, Button, Badge } from '../components/ui';
+import { useAuth } from '@clerk/clerk-react';
+import toast from 'react-hot-toast';
 
 const VenueDetail = () => {
   const { id } = useParams();
@@ -33,6 +35,15 @@ const VenueDetail = () => {
   const [error, setError] = useState(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
+  const { user, isSignedIn, getToken } = useAuth();
+  const [enquiryForm, setEnquiryForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    eventDate: '',
+    message: ''
+  });
+  const [isSubmittingEnquiry, setIsSubmittingEnquiry] = useState(false);
 
   useEffect(() => {
     const loadVenue = async () => {
@@ -59,6 +70,76 @@ const VenueDetail = () => {
       loadVenue();
     }
   }, [id]);
+
+  // Populate enquiry form if user is logged in
+  useEffect(() => {
+    if (isSignedIn && user) {
+      setEnquiryForm(prev => ({
+        ...prev,
+        name: user.firstName && user.lastName 
+          ? `${user.firstName} ${user.lastName}` 
+          : user.firstName || user.username || '',
+        email: user.primaryEmailAddress?.emailAddress || ''
+      }));
+    }
+  }, [isSignedIn, user]);
+
+  // Handle enquiry form submission
+  const handleEnquirySubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmittingEnquiry(true);
+    
+    try {
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      
+      // Add auth token if user is signed in
+      if (isSignedIn) {
+        const token = await getToken();
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+      }
+      
+      const response = await fetch('http://localhost:5001/api/enquiries', {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({
+          name: enquiryForm.name,
+          email: enquiryForm.email,
+          phone: enquiryForm.phone,
+          enquiryType: 'venue',
+          relatedId: venue?._id,
+          relatedModel: 'Venue',
+          subject: `Enquiry for ${venue?.name || 'Venue'}`,
+          message: enquiryForm.message,
+          eventDate: enquiryForm.eventDate || null
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success('Enquiry sent successfully! We\'ll get back to you soon.');
+        setEnquiryForm({
+          name: isSignedIn && user ? (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName || user.username || '') : '',
+          email: isSignedIn && user ? (user.primaryEmailAddress?.emailAddress || '') : '',
+          phone: '',
+          eventDate: '',
+          message: ''
+        });
+      } else {
+        toast.error(data.message || 'Failed to send enquiry');
+      }
+    } catch (error) {
+      console.error('Error submitting enquiry:', error);
+      toast.error('Failed to send enquiry. Please try again.');
+    } finally {
+      setIsSubmittingEnquiry(false);
+    }
+  };
 
   const formatPrice = (amount) => {
     return new Intl.NumberFormat('en-IN', {
@@ -364,27 +445,37 @@ const VenueDetail = () => {
               {/* Enquiry Form */}
               <Card className="p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Make an Enquiry</h3>
-                <div className="space-y-4">
+                <form onSubmit={handleEnquirySubmit} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Your Name</label>
                     <input
                       type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      value={enquiryForm.name}
+                      onChange={(e) => setEnquiryForm({...enquiryForm, name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                       placeholder="Enter your name"
+                      required
+                      disabled={isSignedIn}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                     <input
                       type="email"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      value={enquiryForm.email}
+                      onChange={(e) => setEnquiryForm({...enquiryForm, email: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                       placeholder="Enter your email"
+                      required
+                      disabled={isSignedIn}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
                     <input
                       type="tel"
+                      value={enquiryForm.phone}
+                      onChange={(e) => setEnquiryForm({...enquiryForm, phone: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                       placeholder="Enter your phone number"
                     />
@@ -393,6 +484,8 @@ const VenueDetail = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Event Date</label>
                     <input
                       type="date"
+                      value={enquiryForm.eventDate}
+                      onChange={(e) => setEnquiryForm({...enquiryForm, eventDate: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                     />
                   </div>
@@ -400,14 +493,21 @@ const VenueDetail = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
                     <textarea
                       rows={3}
+                      value={enquiryForm.message}
+                      onChange={(e) => setEnquiryForm({...enquiryForm, message: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                       placeholder="Tell us about your event..."
+                      required
                     />
                   </div>
-                  <Button className="w-full bg-pink-600 hover:bg-pink-700 text-white">
-                    Send Enquiry
+                  <Button 
+                    type="submit"
+                    disabled={isSubmittingEnquiry}
+                    className="w-full bg-pink-600 hover:bg-pink-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmittingEnquiry ? 'Sending...' : 'Send Enquiry'}
                   </Button>
-                </div>
+                </form>
               </Card>
 
               {/* Venue Stats */}

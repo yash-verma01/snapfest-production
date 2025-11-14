@@ -1,0 +1,262 @@
+import { Enquiry, User } from '../models/index.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
+import emailService from '../services/emailService.js';
+
+// @desc    Create new enquiry
+// @route   POST /api/enquiries
+// @access  Public (optional auth)
+export const createEnquiry = asyncHandler(async (req, res) => {
+  const { name, email, phone, enquiryType, relatedId, relatedModel, subject, message, eventDate } = req.body;
+  
+  // If user is logged in, use their info
+  let finalName = name;
+  let finalEmail = email;
+  let userId = null;
+  
+  if (req.userId) {
+    const user = await User.findById(req.userId);
+    if (user) {
+      finalName = user.name || name;
+      finalEmail = user.email || email;
+      userId = user._id;
+    }
+  }
+  
+  // Validate required fields
+  if (!finalName || !finalEmail || !subject || !message) {
+    return res.status(400).json({
+      success: false,
+      message: 'Name, email, subject, and message are required'
+    });
+  }
+  
+  // Create enquiry
+  const enquiry = await Enquiry.create({
+    userId,
+    name: finalName,
+    email: finalEmail,
+    phone: phone || null,
+    enquiryType: enquiryType || 'general',
+    relatedId: relatedId || null,
+    relatedModel: relatedModel || null,
+    subject,
+    message,
+    eventDate: eventDate ? new Date(eventDate) : null,
+    status: 'new'
+  });
+  
+  // Send confirmation email to user
+  try {
+    await emailService.sendEnquiryConfirmationEmail(
+      finalEmail,
+      finalName,
+      enquiryType || 'general'
+    );
+  } catch (emailError) {
+    console.error('Failed to send enquiry confirmation email:', emailError);
+    // Don't fail the request if email fails
+  }
+  
+  // Send notification email to admin
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+    if (adminEmail) {
+      await emailService.sendAdminEnquiryNotification(adminEmail, {
+        name: finalName,
+        email: finalEmail,
+        phone: phone || 'N/A',
+        enquiryType: enquiryType || 'general',
+        subject,
+        message
+      });
+    }
+  } catch (emailError) {
+    console.error('Failed to send admin notification email:', emailError);
+    // Don't fail the request if email fails
+  }
+  
+  res.status(201).json({
+    success: true,
+    message: 'Enquiry submitted successfully',
+    data: { enquiry }
+  });
+});
+
+// @desc    Get all enquiries (Admin only)
+// @route   GET /api/admin/enquiries
+// @access  Private (Admin only)
+export const getAllEnquiries = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+  
+  const { status, enquiryType, search } = req.query;
+  
+  // Build filter
+  const filter = {};
+  if (status) filter.status = status;
+  if (enquiryType) filter.enquiryType = enquiryType;
+  if (search) {
+    filter.$or = [
+      { name: { $regex: search, $options: 'i' } },
+      { email: { $regex: search, $options: 'i' } },
+      { subject: { $regex: search, $options: 'i' } },
+      { message: { $regex: search, $options: 'i' } }
+    ];
+  }
+  
+  const enquiries = await Enquiry.find(filter)
+    .populate('userId', 'name email')
+    .populate('respondedBy', 'name email')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+  
+  const total = await Enquiry.countDocuments(filter);
+  
+  res.status(200).json({
+    success: true,
+    data: {
+      enquiries,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total
+      }
+    }
+  });
+});
+
+// @desc    Get enquiry by ID (Admin only)
+// @route   GET /api/admin/enquiries/:id
+// @access  Private (Admin only)
+export const getEnquiryById = asyncHandler(async (req, res) => {
+  const enquiry = await Enquiry.findById(req.params.id)
+    .populate('userId', 'name email phone')
+    .populate('respondedBy', 'name email')
+    .populate('relatedId');
+  
+  if (!enquiry) {
+    return res.status(404).json({
+      success: false,
+      message: 'Enquiry not found'
+    });
+  }
+  
+  res.status(200).json({
+    success: true,
+    data: { enquiry }
+  });
+});
+
+// @desc    Update enquiry status (Admin only)
+// @route   PUT /api/admin/enquiries/:id/status
+// @access  Private (Admin only)
+export const updateEnquiryStatus = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+  
+  if (!['new', 'read', 'replied', 'closed'].includes(status)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid status'
+    });
+  }
+  
+  const enquiry = await Enquiry.findById(req.params.id);
+  if (!enquiry) {
+    return res.status(404).json({
+      success: false,
+      message: 'Enquiry not found'
+    });
+  }
+  
+  enquiry.status = status;
+  await enquiry.save();
+  
+  res.status(200).json({
+    success: true,
+    message: 'Enquiry status updated',
+    data: { enquiry }
+  });
+});
+
+// @desc    Respond to enquiry (Admin only)
+// @route   POST /api/admin/enquiries/:id/respond
+// @access  Private (Admin only)
+export const respondToEnquiry = asyncHandler(async (req, res) => {
+  const { response } = req.body;
+  
+  if (!response || !response.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Response is required'
+    });
+  }
+  
+  const enquiry = await Enquiry.findById(req.params.id);
+  if (!enquiry) {
+    return res.status(404).json({
+      success: false,
+      message: 'Enquiry not found'
+    });
+  }
+  
+  enquiry.adminResponse = response;
+  enquiry.respondedBy = req.userId;
+  enquiry.respondedAt = new Date();
+  enquiry.status = 'replied';
+  await enquiry.save();
+  
+  // Send response email to user
+  try {
+    await emailService.sendAdminResponseEmail(
+      enquiry.email,
+      enquiry.name,
+      response,
+      enquiry.subject
+    );
+  } catch (emailError) {
+    console.error('Failed to send admin response email:', emailError);
+    // Don't fail the request if email fails
+  }
+  
+  res.status(200).json({
+    success: true,
+    message: 'Response sent successfully',
+    data: { enquiry }
+  });
+});
+
+// @desc    Get enquiry stats (Admin only)
+// @route   GET /api/admin/enquiries/stats
+// @access  Private (Admin only)
+export const getEnquiryStats = asyncHandler(async (req, res) => {
+  const total = await Enquiry.countDocuments();
+  const newCount = await Enquiry.countDocuments({ status: 'new' });
+  const readCount = await Enquiry.countDocuments({ status: 'read' });
+  const repliedCount = await Enquiry.countDocuments({ status: 'replied' });
+  const closedCount = await Enquiry.countDocuments({ status: 'closed' });
+  
+  // Count by type
+  const byType = await Enquiry.aggregate([
+    { $group: { _id: '$enquiryType', count: { $sum: 1 } } }
+  ]);
+  
+  res.status(200).json({
+    success: true,
+    data: {
+      total,
+      byStatus: {
+        new: newCount,
+        read: readCount,
+        replied: repliedCount,
+        closed: closedCount
+      },
+      byType: byType.reduce((acc, item) => {
+        acc[item._id] = item.count;
+        return acc;
+      }, {})
+    }
+  });
+});
+

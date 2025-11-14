@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPin, Phone, Mail, Clock, Send, MessageCircle, Users, Award } from 'lucide-react';
 import { Card, Button, Input } from '../components/ui';
 import toast from 'react-hot-toast';
+import { useAuth } from '@clerk/clerk-react';
 
 const Contact = () => {
+  const { user, isSignedIn, getToken } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -13,6 +15,19 @@ const Contact = () => {
     inquiryType: 'general'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Populate form if user is logged in
+  useEffect(() => {
+    if (isSignedIn && user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.firstName && user.lastName 
+          ? `${user.firstName} ${user.lastName}` 
+          : user.firstName || user.username || '',
+        email: user.primaryEmailAddress?.emailAddress || ''
+      }));
+    }
+  }, [isSignedIn, user]);
 
   const contactInfo = [
     {
@@ -65,19 +80,49 @@ const Contact = () => {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const headers = {
+        'Content-Type': 'application/json'
+      };
       
-      toast.success('Message sent successfully! We\'ll get back to you soon.');
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        subject: '',
-        message: '',
-        inquiryType: 'general'
+      // Add auth token if user is signed in
+      if (isSignedIn) {
+        const token = await getToken();
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+      }
+      
+      const response = await fetch('http://localhost:5001/api/enquiries', {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          enquiryType: formData.inquiryType,
+          subject: formData.subject,
+          message: formData.message
+        })
       });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success('Message sent successfully! We\'ll get back to you soon.');
+        setFormData({
+          name: isSignedIn && user ? (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName || user.username || '') : '',
+          email: isSignedIn && user ? (user.primaryEmailAddress?.emailAddress || '') : '',
+          phone: '',
+          subject: '',
+          message: '',
+          inquiryType: 'general'
+        });
+      } else {
+        toast.error(data.message || 'Failed to send message. Please try again.');
+      }
     } catch (error) {
+      console.error('Error submitting contact form:', error);
       toast.error('Failed to send message. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -165,6 +210,7 @@ const Contact = () => {
                         placeholder="Your full name"
                         required
                         className="w-full"
+                        disabled={isSignedIn}
                       />
                     </div>
                     <div>
@@ -179,6 +225,7 @@ const Contact = () => {
                         placeholder="your.email@example.com"
                         required
                         className="w-full"
+                        disabled={isSignedIn}
                       />
                     </div>
                   </div>

@@ -7,25 +7,25 @@ import fs from 'fs';
 // Create storage factory that accepts entity type
 const createStorage = (entityType) => {
   return multer.diskStorage({
-    destination: (req, file, cb) => {
+  destination: (req, file, cb) => {
       // Determine upload path based on entity type
       const entityFolder = entityType || 'general';
       const uploadPath = `PUBLIC/uploads/${entityFolder}/`;
       
       // Create directory if it doesn't exist
-      if (!fs.existsSync(uploadPath)) {
-        fs.mkdirSync(uploadPath, { recursive: true });
-      }
-      cb(null, uploadPath);
-    },
-    filename: (req, file, cb) => {
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
       // Generate unique filename
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
       const ext = path.extname(file.originalname);
       const baseName = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9]/g, '-');
       cb(null, `${baseName}-${uniqueSuffix}${ext}`);
-    }
-  });
+  }
+});
 };
 
 // ==================== FILE FILTER ====================
@@ -45,12 +45,12 @@ const fileFilter = (req, file, cb) => {
 const createMulterInstance = (entityType) => {
   return multer({
     storage: createStorage(entityType),
-    fileFilter: fileFilter,
-    limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB limit
-      files: 10 // Maximum 10 files
-    }
-  });
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+    files: 10 // Maximum 10 files
+  }
+});
 };
 
 // ==================== UPLOAD MIDDLEWARE ====================
@@ -182,7 +182,7 @@ export const deleteImage = async (imageUrl) => {
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
       console.log('Deleted file:', filePath);
-      return true;
+    return true;
     } else {
       console.log('File not found:', filePath);
       return false;

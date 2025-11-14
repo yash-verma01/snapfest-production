@@ -3,12 +3,12 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Star, Clock, MapPin, Heart, Share2, CheckCircle, ShoppingCart, Calendar, Phone, Mail, ArrowRight } from 'lucide-react';
 import { Button, Card, Badge } from '../components/ui';
 import { publicAPI } from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@clerk/clerk-react';
 
 const BeatBloomDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { isSignedIn } = useAuth();
   const [beatBloom, setBeatBloom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -73,7 +73,7 @@ const BeatBloomDetail = () => {
   };
 
   const handleAddToCart = () => {
-    if (!user) {
+    if (!isSignedIn) {
       navigate('/login');
       return;
     }
@@ -82,7 +82,7 @@ const BeatBloomDetail = () => {
   };
 
   const handleBookNow = () => {
-    if (!user) {
+    if (!isSignedIn) {
       navigate('/login');
       return;
     }
@@ -221,35 +221,6 @@ const BeatBloomDetail = () => {
                   ))}
                 </div>
               </div>
-
-              {/* Reviews Section */}
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Customer Reviews</h2>
-                <div className="space-y-4">
-                  {/* Sample Review */}
-                  <div className="bg-white p-6 rounded-xl shadow-sm border">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center mr-3">
-                          <span className="text-pink-600 font-semibold">A</span>
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900">Anjali Sharma</h4>
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      <span className="text-sm text-gray-500">2 days ago</span>
-                    </div>
-                    <p className="text-gray-700">
-                      "Excellent DJ service! The sound quality was amazing and the DJ kept everyone dancing all night. Highly recommended!"
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -262,26 +233,6 @@ const BeatBloomDetail = () => {
                   {formatPrice(beatBloom.price)}
                 </div>
                 <p className="text-gray-600">Starting price</p>
-              </div>
-
-              {/* Quantity Selector */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
-                <div className="flex items-center border border-gray-200 rounded-lg">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="p-2 hover:bg-gray-50"
-                  >
-                    -
-                  </button>
-                  <span className="flex-1 text-center py-2">{quantity}</span>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="p-2 hover:bg-gray-50"
-                  >
-                    +
-                  </button>
-                </div>
               </div>
 
               {/* Action Buttons */}
@@ -347,7 +298,7 @@ const BeatBloomDetail = () => {
           <div className="bg-white rounded-2xl max-w-md w-full p-6">
             <h3 className="text-xl font-bold text-gray-900 mb-4">Book This Service</h3>
             <p className="text-gray-600 mb-6">
-              You are about to book <strong>{beatBloom.title}</strong> for <strong>{formatPrice(beatBloom.price * quantity)}</strong>
+              You are about to book <strong>{beatBloom.title}</strong> for <strong>{formatPrice(beatBloom.price)}</strong>
             </p>
             
             <div className="space-y-4">
@@ -388,7 +339,7 @@ const BeatBloomDetail = () => {
               <Button
                 onClick={() => {
                   // Implement booking logic
-                  console.log('Booking service:', { beatBloomId: id, quantity, date: '', time: '' });
+                  console.log('Booking service:', { beatBloomId: id, date: '', time: '' });
                   setShowBookingModal(false);
                 }}
                 className="flex-1 bg-pink-500 hover:bg-pink-600 text-white"

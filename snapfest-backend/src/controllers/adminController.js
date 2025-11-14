@@ -1081,7 +1081,7 @@ export const createPackage = asyncHandler(async (req, res) => {
     description, 
     category, 
     basePrice, 
-    images,
+    images, 
     primaryImage,
     includedFeatures, 
     highlights,

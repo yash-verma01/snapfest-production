@@ -11,6 +11,7 @@ export { default as Event } from './Event.js';
 export { default as Venue } from './Venue.js';
 export { default as BeatBloom } from './BeatBloom.js';
 export { default as AuditLog } from './AuditLog.js';
+export { default as Enquiry } from './Enquiry.js';
 
 // Export all models as default
 import User from './User.js';
@@ -24,6 +25,7 @@ import Event from './Event.js';
 import Venue from './Venue.js';
 import BeatBloom from './BeatBloom.js';
 import AuditLog from './AuditLog.js';
+import Enquiry from './Enquiry.js';
 
 export default {
   User,
@@ -36,5 +38,6 @@ export default {
   Event,
   Venue,
   BeatBloom,
-  AuditLog
+  AuditLog,
+  Enquiry
 };

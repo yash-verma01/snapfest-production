@@ -125,9 +125,9 @@ export const requireAdminClerk = async (req, res, next) => {
     // Note: claims might be in sessionClaims, not directly in clerkAuth
     const sessionClaims = clerkAuth?.sessionClaims || clerkAuth?.claims || {};
     let email = sessionClaims?.email || 
-                sessionClaims?.primary_email_address ||
-                sessionClaims?.emailAddress ||
-                null;
+                  sessionClaims?.primary_email_address ||
+                  sessionClaims?.emailAddress ||
+                  null;
 
     // 3. Try to get publicMetadata from session claims first (preferred - no API call)
     // Session claims may include publicMetadata if Clerk middleware includes it
@@ -144,7 +144,7 @@ export const requireAdminClerk = async (req, res, next) => {
         
         // Fetch publicMetadata if not in claims
         if (!publicMetadata) {
-          publicMetadata = clerkUser.publicMetadata || null;
+        publicMetadata = clerkUser.publicMetadata || null;
         }
         
         // Fetch email if not in claims

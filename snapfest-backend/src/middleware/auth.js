@@ -220,6 +220,17 @@ export const authenticate = async (req, res, next) => {
       
       user = await User.create(userData);
       
+      // Send welcome email for new users
+      if (user && user.email) {
+        try {
+          const emailService = (await import('../services/emailService.js')).default;
+          await emailService.sendWelcomeEmail(user.email, user.name);
+        } catch (emailError) {
+          console.error('Failed to send welcome email:', emailError);
+          // Don't fail authentication if email fails
+        }
+      }
+      
       if (process.env.NODE_ENV === 'development') {
         console.log('✅ Created new user:', { userId: user._id, email: user.email, role: user.role, clerkId: user.clerkId });
       }
@@ -473,6 +484,17 @@ export const optionalAuth = async (req, res, next) => {
         }
         
         user = await User.create(userData);
+        
+        // Send welcome email for new users
+        if (user && user.email) {
+          try {
+            const emailService = (await import('../services/emailService.js')).default;
+            await emailService.sendWelcomeEmail(user.email, user.name);
+          } catch (emailError) {
+            console.error('Failed to send welcome email:', emailError);
+            // Don't fail authentication if email fails
+          }
+        }
         
         if (process.env.NODE_ENV === 'development') {
           console.log('✅ optionalAuth: Created new user:', { userId: user._id, email: user.email, role: user.role });
