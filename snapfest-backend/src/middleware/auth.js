@@ -165,12 +165,20 @@ export const authenticate = async (req, res, next) => {
     const clerkClient = getClerkClient();
     
     let publicMetadata = sessionClaims?.publicMetadata || clerkAuth?.claims?.publicMetadata || null;
+    let clerkUser = null;
     if (!publicMetadata) {
       try {
-        const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+        clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
         publicMetadata = clerkUser.publicMetadata || null;
       } catch (e) {
         // Non-blocking, will default to 'user'
+      }
+    } else {
+      // Still fetch clerkUser to check creation date if needed
+      try {
+        clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+      } catch (e) {
+        // Non-blocking
       }
     }
     
@@ -182,6 +190,29 @@ export const authenticate = async (req, res, next) => {
     let user = await User.findOne({ clerkId: clerkAuth.userId });
     
     if (!user) {
+      // CRITICAL FIX: Check if this is a newly signed up user (no role in metadata yet)
+      // If Clerk user was created recently (within 5 minutes) and has no role in metadata,
+      // don't create them here - let the sync endpoint handle it with the correct role
+      const isNewlySignedUp = !publicMetadata?.role && clerkUser?.createdAt;
+      if (isNewlySignedUp) {
+        const clerkUserCreatedAt = new Date(clerkUser.createdAt);
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        
+        if (clerkUserCreatedAt > fiveMinutesAgo) {
+          // This is a newly signed up user without role - don't create them here
+          // The sync endpoint will create them with the correct role
+          if (process.env.NODE_ENV === 'development') {
+            console.log('⏭️ authenticate: Skipping user creation for newly signed up user - letting sync endpoint handle it');
+          }
+          
+          return res.status(401).json({ 
+            success: false, 
+            message: 'Please complete your signup process. Your account is being set up.',
+            code: 'SIGNUP_IN_PROGRESS'
+          });
+        }
+      }
+      
       // Check if this should be an admin user
       const adminEmail = process.env.ADMIN_EMAIL || 'admin100@gmail.com';
       const adminEmailsEnv = process.env.ADMIN_EMAILS;
@@ -223,8 +254,8 @@ export const authenticate = async (req, res, next) => {
       // Send welcome email for new users
       if (user && user.email) {
         try {
-          const emailService = (await import('../services/emailService.js')).default;
-          await emailService.sendWelcomeEmail(user.email, user.name);
+          const getEmailService = (await import('../services/emailService.js')).default;
+          await getEmailService().sendWelcomeEmail(user.email, user.name);
         } catch (emailError) {
           console.error('Failed to send welcome email:', emailError);
           // Don't fail authentication if email fails
@@ -445,7 +476,13 @@ export const optionalAuth = async (req, res, next) => {
       // Use only User collection for all roles
       let user = await User.findOne({ clerkId: clerkAuth.userId });
       
-      if (!user && email) {
+      // CRITICAL FIX: Don't auto-create users on sync routes
+      // Let the sync endpoint handle user creation with the correct role
+      const isSyncRoute = req.path === '/sync' || 
+                         req.originalUrl?.includes('/sync') ||
+                         req.url?.includes('/sync');
+      
+      if (!user && email && !isSyncRoute) {
         // Check if this should be an admin user
         const adminEmail = process.env.ADMIN_EMAIL || 'admin100@gmail.com';
         const adminEmailsEnv = process.env.ADMIN_EMAILS;
@@ -488,8 +525,8 @@ export const optionalAuth = async (req, res, next) => {
         // Send welcome email for new users
         if (user && user.email) {
           try {
-            const emailService = (await import('../services/emailService.js')).default;
-            await emailService.sendWelcomeEmail(user.email, user.name);
+            const getEmailService = (await import('../services/emailService.js')).default;
+            await getEmailService().sendWelcomeEmail(user.email, user.name);
           } catch (emailError) {
             console.error('Failed to send welcome email:', emailError);
             // Don't fail authentication if email fails
@@ -498,6 +535,11 @@ export const optionalAuth = async (req, res, next) => {
         
         if (process.env.NODE_ENV === 'development') {
           console.log('✅ optionalAuth: Created new user:', { userId: user._id, email: user.email, role: user.role });
+        }
+      } else if (!user && email && isSyncRoute) {
+        // On sync routes, don't create user - let sync endpoint handle it
+        if (process.env.NODE_ENV === 'development') {
+          console.log('⏭️ optionalAuth: Skipping user creation on sync route - letting sync endpoint handle it');
         }
       }
 

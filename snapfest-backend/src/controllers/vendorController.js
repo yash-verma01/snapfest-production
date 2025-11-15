@@ -1749,12 +1749,34 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
     }
   }
   
-  // Verify this is a vendor user (role must be set in Clerk public metadata)
+  // If role is not set in Clerk metadata, update it (for new vendor signups)
+  // This handles the case where vendor signs up but Clerk metadata doesn't have role yet
   if (publicMetadata?.role !== 'vendor') {
-    return res.status(403).json({ 
-      success: false, 
-      message: 'Access denied. Vendor role required. Please ensure your Clerk account has role: vendor in public metadata.' 
-    });
+    try {
+      const clerkClient = getClerkClient();
+      await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
+        publicMetadata: { 
+          ...publicMetadata,
+          role: 'vendor' 
+        }
+      });
+      
+      // Refresh metadata after update
+      const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
+      publicMetadata = updatedUser.publicMetadata || { role: 'vendor' };
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ syncClerkVendor: Set vendor role in Clerk publicMetadata for user:', clerkAuth.userId);
+      }
+    } catch (updateError) {
+      // Log error but don't block - allow vendor creation to proceed
+      console.error('❌ syncClerkVendor: Failed to update Clerk metadata:', {
+        error: updateError.message,
+        userId: clerkAuth.userId
+      });
+      // Set role locally as fallback
+      publicMetadata = { ...publicMetadata, role: 'vendor' };
+    }
   }
   
   // Extract email and name from Clerk session
@@ -1824,6 +1846,7 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
     const existingUser = await User.findOne({ clerkId: clerkAuth.userId });
     if (existingUser) {
       // Update existing user to vendor role
+      const oldRole = existingUser.role;
       existingUser.role = 'vendor';
       if (!existingUser.businessName) {
         existingUser.businessName = `${finalName || finalEmail.split('@')[0]}'s Business`;
@@ -1838,6 +1861,25 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
         };
       }
       vendor = await existingUser.save();
+      
+      // Ensure Clerk metadata is also updated
+      if (publicMetadata?.role !== 'vendor') {
+        try {
+          const clerkClient = getClerkClient();
+          await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
+            publicMetadata: { 
+              ...publicMetadata,
+              role: 'vendor' 
+            }
+          });
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`✅ syncClerkVendor: Updated Clerk metadata and database role from '${oldRole}' to 'vendor'`);
+          }
+        } catch (updateError) {
+          console.error('❌ syncClerkVendor: Failed to update Clerk metadata:', updateError.message);
+        }
+      }
       
       if (process.env.NODE_ENV === 'development') {
         console.log('✅ Updated user role to vendor via sync:', { vendorId: vendor._id, email: vendor.email, clerkId: vendor.clerkId });
@@ -1868,6 +1910,21 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
           totalBookings: 0
         }
       });
+      
+      // Ensure Clerk metadata is set to vendor (should already be set above, but double-check)
+      if (publicMetadata?.role !== 'vendor') {
+        try {
+          const clerkClient = getClerkClient();
+          await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
+            publicMetadata: { 
+              ...publicMetadata,
+              role: 'vendor' 
+            }
+          });
+        } catch (updateError) {
+          console.error('❌ syncClerkVendor: Failed to update Clerk metadata for new vendor:', updateError.message);
+        }
+      }
       
       if (process.env.NODE_ENV === 'development') {
         console.log('✅ Created new vendor via sync:', { vendorId: vendor._id, email: vendor.email, clerkId: vendor.clerkId });

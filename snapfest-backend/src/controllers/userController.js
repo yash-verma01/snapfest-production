@@ -1031,8 +1031,8 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 
   try {
     // Use the email service
-    const emailService = await import('../services/emailService.js');
-    await emailService.default.sendPasswordResetEmail(user.email, user.name, resetToken);
+    const getEmailService = (await import('../services/emailService.js')).default;
+    await getEmailService().sendPasswordResetEmail(user.email, user.name, resetToken);
     console.log('✅ Password reset email sent to:', user.email);
 
     // Create audit log
@@ -1404,8 +1404,8 @@ export const sendEmailVerification = asyncHandler(async (req, res) => {
 
   try {
     // Use the email service
-    const emailService = await import('../services/emailService.js');
-    await emailService.default.sendVerificationEmail(user.email, user.name, verificationToken);
+    const getEmailService = (await import('../services/emailService.js')).default;
+    await getEmailService().sendVerificationEmail(user.email, user.name, verificationToken);
     console.log('✅ Verification email sent to:', user.email);
 
     res.status(200).json({
@@ -1857,6 +1857,43 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
           userId: clerkAuth.userId,
           targetRole: targetRole
         });
+      }
+    }
+    
+    // CRITICAL FIX: Update database role if it doesn't match targetRole
+    // This fixes cases where user was created with wrong role before sync endpoint ran
+    if (targetRole && ['user', 'vendor', 'admin'].includes(targetRole) && user.role !== targetRole) {
+      const oldRole = user.role;
+      user.role = targetRole;
+      
+      // Initialize vendor-specific fields if role changed to vendor
+      if (targetRole === 'vendor' && !user.businessName) {
+        user.businessName = `${user.name || finalName || finalEmail.split('@')[0]}'s Business`;
+        user.servicesOffered = [];
+        user.experience = 0;
+        user.availability = 'AVAILABLE';
+        user.profileComplete = false;
+        user.earningsSummary = {
+          totalEarnings: 0,
+          thisMonthEarnings: 0,
+          totalBookings: 0
+        };
+      }
+      
+      // Remove vendor-specific fields if role changed from vendor to something else
+      if (oldRole === 'vendor' && targetRole !== 'vendor') {
+        user.businessName = undefined;
+        user.servicesOffered = undefined;
+        user.experience = undefined;
+        user.availability = undefined;
+        user.profileComplete = undefined;
+        user.earningsSummary = undefined;
+      }
+      
+      await user.save();
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`✅ syncClerkUser: Updated database role from '${oldRole}' to '${targetRole}' for user:`, clerkAuth.userId);
       }
     }
     

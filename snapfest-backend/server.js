@@ -1,11 +1,27 @@
+// ============================================
+// CRITICAL: Load .env file FIRST before any other imports
+// This ensures environment variables are available when modules are initialized
+// ============================================
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+// Get the directory where server.js is located
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load .env file from the same directory as server.js (snapfest-backend)
+// MUST be done before importing any routes/controllers that use environment variables
+const envResult = dotenv.config({ path: join(__dirname, '.env') });
+
+// ============================================
+// Now import everything else (after .env is loaded)
+// ============================================
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
-import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 import connectDB from './src/config/database.js';
 import userRoutes from './src/routes/userRoutes.js';
 import vendorRoutes from './src/routes/vendorRoutes.js';
@@ -27,13 +43,6 @@ import requestLogger, { enhancedRequestLogger, errorLogger } from './src/middlew
 import { logInfo, logError } from './src/config/logger.js';
 import { clerkMiddleware } from '@clerk/express';
 import { requireAdminClerk } from './src/middleware/requireAdminClerk.js';
-
-// Get the directory where server.js is located
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Load .env file from the same directory as server.js (snapfest-backend)
-const envResult = dotenv.config({ path: join(__dirname, '.env') });
 
 // Single Clerk application configuration
 const requiredKeys = [

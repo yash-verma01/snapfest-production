@@ -3,6 +3,25 @@ import crypto from 'crypto';
 
 class EmailService {
   constructor() {
+    // DEBUG: Check environment variables
+    console.log('🔍 Email Service Initialization Debug:');
+    const emailUser = process.env.EMAIL_USER || process.env.SMTP_USER;
+    const emailPass = process.env.EMAIL_PASSWORD || process.env.SMTP_PASS;
+    
+    console.log('   EMAIL_USER:', emailUser ? `✅ SET (${emailUser})` : '❌ NOT SET');
+    console.log('   EMAIL_PASSWORD:', emailPass ? `✅ SET (${emailPass.length} chars)` : '❌ NOT SET');
+    console.log('   SMTP_USER:', process.env.SMTP_USER || 'NOT SET');
+    console.log('   SMTP_PASS:', process.env.SMTP_PASS ? 'SET' : 'NOT SET');
+    
+    // Check if credentials are available
+    if (!emailUser || !emailPass) {
+      console.error('❌ Email credentials missing!');
+      console.error('   Please set EMAIL_USER and EMAIL_PASSWORD in .env file');
+      this.fallbackMode = true;
+      this.transporter = null;
+      return;
+    }
+    
     // Create transporter for email sending with better configuration
     this.transporter = nodemailer.createTransport({
       service: process.env.EMAIL_SERVICE || 'gmail',
@@ -10,24 +29,39 @@ class EmailService {
       port: process.env.SMTP_PORT || 587,
       secure: process.env.SMTP_SECURE === 'true' || false,
       auth: {
-        user: process.env.EMAIL_USER || process.env.SMTP_USER,
-        pass: process.env.EMAIL_PASSWORD || process.env.SMTP_PASS
+        user: emailUser.trim(),  // Remove any whitespace
+        pass: emailPass.trim()   // Remove any whitespace
       },
       tls: {
         rejectUnauthorized: false
       }
     });
 
-    // Verify transporter configuration
-    this.verifyConnection();
+    // Don't verify connection in constructor (async issue)
+    // Instead, verify on first email send via _ensureConnection()
+    this._connectionVerified = false;
   }
 
-  // Verify email connection
-  async verifyConnection() {
+  // Ensure connection is verified before sending emails (lazy verification)
+  async _ensureConnection() {
+    // If already verified, skip
+    if (this._connectionVerified) {
+      return;
+    }
+    
+    // If no transporter (credentials missing), set fallback mode
+    if (!this.transporter) {
+      this.fallbackMode = true;
+      this._connectionVerified = true;
+      console.log('⚠️ Email service in fallback mode - emails will be logged to console');
+      return;
+    }
+    
     try {
       await this.transporter.verify();
-      console.log('✅ Email service connected successfully');
-      return true;
+      this._connectionVerified = true;
+      this.fallbackMode = false;
+      console.log('✅ Email service connection verified successfully');
     } catch (error) {
       console.error('❌ Email service connection failed:', error.message);
       console.error('Error Code:', error.code);
@@ -48,11 +82,16 @@ class EmailService {
         console.error('3. Check firewall settings');
       }
       
-      // Set fallback mode for development
+      // Set fallback mode and mark as verified (don't retry on every email)
       this.fallbackMode = true;
+      this._connectionVerified = true;
       console.log('⚠️ Email service in fallback mode - emails will be logged to console');
-      return false;
     }
+  }
+
+  // Verify email connection (kept for backward compatibility, but not used in constructor)
+  async verifyConnection() {
+    return this._ensureConnection();
   }
 
   // Generate verification token
@@ -371,6 +410,9 @@ class EmailService {
 
   // Enquiry confirmation email
   async sendEnquiryConfirmationEmail(userEmail, userName, enquiryType) {
+    // Ensure connection is verified before sending
+    await this._ensureConnection();
+    
     const mailOptions = {
       from: `"SnapFest" <${process.env.EMAIL_USER}>`,
       to: userEmail,
@@ -400,7 +442,8 @@ class EmailService {
     };
 
     try {
-      if (this.fallbackMode) {
+      // Check both fallbackMode AND transporter (Solution 2)
+      if (this.fallbackMode || !this.transporter) {
         console.log('📧 [FALLBACK MODE] Enquiry confirmation email would be sent to:', userEmail);
         return { success: true, messageId: 'fallback-mode', fallback: true };
       }
@@ -410,12 +453,17 @@ class EmailService {
       return { success: true, messageId: result.messageId };
     } catch (error) {
       console.error('❌ Error sending enquiry confirmation email:', error);
+      // Set fallback mode on error to prevent repeated failures
+      this.fallbackMode = true;
       throw error;
     }
   }
 
   // Admin notification email for new enquiry
   async sendAdminEnquiryNotification(adminEmail, enquiryData) {
+    // Ensure connection is verified before sending
+    await this._ensureConnection();
+    
     const mailOptions = {
       from: `"SnapFest" <${process.env.EMAIL_USER}>`,
       to: adminEmail,
@@ -454,7 +502,8 @@ class EmailService {
     };
 
     try {
-      if (this.fallbackMode) {
+      // Check both fallbackMode AND transporter (Solution 2)
+      if (this.fallbackMode || !this.transporter) {
         console.log('📧 [FALLBACK MODE] Admin notification email would be sent to:', adminEmail);
         return { success: true, messageId: 'fallback-mode', fallback: true };
       }
@@ -464,12 +513,17 @@ class EmailService {
       return { success: true, messageId: result.messageId };
     } catch (error) {
       console.error('❌ Error sending admin notification email:', error);
+      // Set fallback mode on error to prevent repeated failures
+      this.fallbackMode = true;
       throw error;
     }
   }
 
   // Admin response email to user
   async sendAdminResponseEmail(userEmail, userName, adminResponse, enquirySubject) {
+    // Ensure connection is verified before sending
+    await this._ensureConnection();
+    
     const mailOptions = {
       from: `"SnapFest" <${process.env.EMAIL_USER}>`,
       to: userEmail,
@@ -498,7 +552,8 @@ class EmailService {
     };
 
     try {
-      if (this.fallbackMode) {
+      // Check both fallbackMode AND transporter (Solution 2)
+      if (this.fallbackMode || !this.transporter) {
         console.log('📧 [FALLBACK MODE] Admin response email would be sent to:', userEmail);
         return { success: true, messageId: 'fallback-mode', fallback: true };
       }
@@ -508,10 +563,30 @@ class EmailService {
       return { success: true, messageId: result.messageId };
     } catch (error) {
       console.error('❌ Error sending admin response email:', error);
+      // Set fallback mode on error to prevent repeated failures
+      this.fallbackMode = true;
       throw error;
     }
   }
 }
 
-export default new EmailService();
+// ============================================
+// LAZY INITIALIZATION PATTERN
+// ============================================
+// Instead of creating the instance immediately on import (which happens before dotenv.config()),
+// we create it lazily when first accessed. This ensures dotenv.config() has already run.
+// ============================================
+
+let emailServiceInstance = null;
+
+const getEmailService = () => {
+  if (!emailServiceInstance) {
+    emailServiceInstance = new EmailService();
+  }
+  return emailServiceInstance;
+};
+
+// Export the function itself (not calling it) - this ensures lazy initialization
+// Usage: const emailService = getEmailService(); emailService.sendEmail(...)
+export default getEmailService;
 

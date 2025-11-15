@@ -2,7 +2,8 @@ import { Payment, Booking, AuditLog, OTP, User } from '../models/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import OTPService from '../services/otpService.js';
 import RazorpayService from '../services/razorpayService.js';
-import emailService from '../services/emailService.js';
+// Use lazy initialization - getEmailService is a function that returns the instance
+import getEmailService from '../services/emailService.js';
 
 // @desc    Get user payments
 // @route   GET /api/payments
@@ -470,7 +471,7 @@ export const verifyPayment = asyncHandler(async (req, res) => {
       // Send OTP to user via email
       if (user && user.email) {
         try {
-          await emailService.sendEmail(
+          await getEmailService().sendEmail(
             user.email,
             'SnapFest - Full Payment OTP Verification',
             `
@@ -707,7 +708,7 @@ export const confirmCashPayment = asyncHandler(async (req, res) => {
     // Send OTP to user via email
     if (user && user.email) {
       try {
-        await emailService.sendEmail(
+        await getEmailService().sendEmail(
           user.email,
           'SnapFest - Cash Payment OTP Verification',
           `

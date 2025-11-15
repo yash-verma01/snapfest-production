@@ -1,6 +1,7 @@
 import { Enquiry, User } from '../models/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
-import emailService from '../services/emailService.js';
+// Use lazy initialization - getEmailService is a function that returns the instance
+import getEmailService from '../services/emailService.js';
 
 // @desc    Create new enquiry
 // @route   POST /api/enquiries
@@ -47,13 +48,22 @@ export const createEnquiry = asyncHandler(async (req, res) => {
   
   // Send confirmation email to user
   try {
-    await emailService.sendEnquiryConfirmationEmail(
+    const result = await getEmailService().sendEnquiryConfirmationEmail(
       finalEmail,
       finalName,
       enquiryType || 'general'
     );
+    
+    // Check if email was actually sent or just logged (Solution 3)
+    if (result && result.fallback) {
+      console.warn('⚠️ Email sent in FALLBACK MODE - user will NOT receive email');
+      console.warn('⚠️ Email would have been sent to:', finalEmail);
+    } else {
+      console.log('✅ Email successfully sent to:', finalEmail);
+    }
   } catch (emailError) {
-    console.error('Failed to send enquiry confirmation email:', emailError);
+    console.error('❌ Failed to send enquiry confirmation email:', emailError);
+    console.error('❌ User email:', finalEmail);
     // Don't fail the request if email fails
   }
   
@@ -61,7 +71,7 @@ export const createEnquiry = asyncHandler(async (req, res) => {
   try {
     const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
     if (adminEmail) {
-      await emailService.sendAdminEnquiryNotification(adminEmail, {
+      const result = await getEmailService().sendAdminEnquiryNotification(adminEmail, {
         name: finalName,
         email: finalEmail,
         phone: phone || 'N/A',
@@ -69,9 +79,18 @@ export const createEnquiry = asyncHandler(async (req, res) => {
         subject,
         message
       });
+      
+      // Check if email was actually sent or just logged (Solution 3)
+      if (result && result.fallback) {
+        console.warn('⚠️ Admin notification sent in FALLBACK MODE - admin will NOT receive email');
+        console.warn('⚠️ Email would have been sent to:', adminEmail);
+      } else {
+        console.log('✅ Admin notification successfully sent to:', adminEmail);
+      }
     }
   } catch (emailError) {
-    console.error('Failed to send admin notification email:', emailError);
+    console.error('❌ Failed to send admin notification email:', emailError);
+    console.error('❌ Admin email:', process.env.ADMIN_EMAIL || process.env.EMAIL_USER);
     // Don't fail the request if email fails
   }
   
@@ -209,14 +228,23 @@ export const respondToEnquiry = asyncHandler(async (req, res) => {
   
   // Send response email to user
   try {
-    await emailService.sendAdminResponseEmail(
+    const result = await getEmailService().sendAdminResponseEmail(
       enquiry.email,
       enquiry.name,
       response,
       enquiry.subject
     );
+    
+    // Check if email was actually sent or just logged (Solution 3)
+    if (result && result.fallback) {
+      console.warn('⚠️ Admin response sent in FALLBACK MODE - user will NOT receive email');
+      console.warn('⚠️ Email would have been sent to:', enquiry.email);
+    } else {
+      console.log('✅ Admin response email successfully sent to:', enquiry.email);
+    }
   } catch (emailError) {
-    console.error('Failed to send admin response email:', emailError);
+    console.error('❌ Failed to send admin response email:', emailError);
+    console.error('❌ User email:', enquiry.email);
     // Don't fail the request if email fails
   }
   

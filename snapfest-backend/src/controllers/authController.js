@@ -308,8 +308,8 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 
   // Send email with reset token
   try {
-    const emailService = await import('../services/emailService.js');
-    await emailService.default.sendPasswordResetEmail(user.email, user.name, resetToken);
+    const getEmailService = (await import('../services/emailService.js')).default;
+    await getEmailService().sendPasswordResetEmail(user.email, user.name, resetToken);
     console.log('✅ Password reset email sent to:', user.email);
   } catch (error) {
     console.error('❌ Error sending password reset email:', error);
