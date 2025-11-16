@@ -1452,7 +1452,7 @@ export const getAllPayments = asyncHandler(async (req, res) => {
   if (method) filter.method = method;
 
   const payments = await Payment.find(filter)
-    .populate('bookingId', 'userId packageId eventDate location guests status')
+    .populate('bookingId', 'userId packageId eventDate location status')
     .populate('bookingId.userId', 'name email')
     .populate('bookingId.packageId', 'title category basePrice')
     .sort({ createdAt: -1 })
@@ -1478,7 +1478,7 @@ export const getPaymentById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const payment = await Payment.findById(id)
-    .populate('bookingId', 'userId packageId eventDate location guests status')
+    .populate('bookingId', 'userId packageId eventDate location status')
     .populate('bookingId.userId', 'name email')
     .populate('bookingId.packageId', 'title category basePrice');
 
@@ -1601,7 +1601,7 @@ export const getPaymentStats = asyncHandler(async (req, res) => {
 // ==================== OTP MANAGEMENT ====================
 export const getPendingOTPs = asyncHandler(async (req, res) => {
   const pendingOTPs = await OTP.find({ isUsed: false, expiresAt: { $gt: new Date() } })
-    .populate('bookingId', 'userId packageId eventDate location guests status')
+    .populate('bookingId', 'userId packageId eventDate location status')
     .populate('bookingId.userId', 'name email')
     .populate('bookingId.packageId', 'title category')
     .sort({ createdAt: -1 });
@@ -1731,6 +1731,110 @@ export const verifyOTP = asyncHandler(async (req, res) => {
       booking,
       otpType: otpResult.otp.type,
       newStatus: booking.status
+    }
+  });
+});
+
+// @desc    Generate verification OTP for completed booking
+// @route   POST /api/admin/bookings/:id/generate-otp
+// @access  Private/Admin
+export const generateBookingVerificationOTP = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  // Find booking
+  const booking = await Booking.findById(id)
+    .populate('userId', 'name email phone')
+    .populate('assignedVendorId', 'name email phone');
+
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found'
+    });
+  }
+
+  // Check if booking is COMPLETED (vendor has marked it complete)
+  if (booking.status !== 'COMPLETED') {
+    return res.status(400).json({
+      success: false,
+      message: 'OTP can only be generated for COMPLETED bookings. Current status: ' + booking.status
+    });
+  }
+
+  // Check if valid OTP already exists
+  if (booking.verificationOTP && booking.verificationOTPExpiresAt > new Date()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Valid OTP already exists for this booking',
+      data: {
+        otp: booking.verificationOTP,
+        expiresAt: booking.verificationOTPExpiresAt
+      }
+    });
+  }
+
+  // Generate OTP
+  const otpData = OTPService.generateBookingVerificationOTP();
+
+  // Store OTP in booking
+  booking.verificationOTP = otpData.code;
+  booking.verificationOTPExpiresAt = otpData.expiresAt;
+  booking.verificationOTPGeneratedAt = new Date();
+  booking.verificationOTPGeneratedBy = req.userId;
+  await booking.save();
+
+  // Send OTP to user via Email
+  try {
+    const EmailService = (await import('../services/emailService.js')).default;
+    const emailService = new EmailService();
+    
+    const emailSubject = 'Your Booking Verification OTP';
+    const emailContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #e91e63;">Booking Verification OTP</h2>
+        <p>Hi ${booking.userId.name},</p>
+        <p>Your verification OTP for booking #${booking._id.slice(-8)} is:</p>
+        <div style="background: #f0f0f0; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; margin: 20px 0;">
+          ${otpData.code}
+        </div>
+        <p>This OTP is valid for 10 minutes.</p>
+        <p>Please share this OTP with your vendor to verify the booking completion.</p>
+      </div>
+    `;
+    
+    await emailService.sendEmail(booking.userId.email, emailSubject, emailContent);
+  } catch (emailError) {
+    console.error('❌ Failed to send OTP email:', emailError);
+    // Continue even if email fails
+  }
+
+  // Send OTP to user via SMS (if phone number exists)
+  if (booking.userId.phone) {
+    try {
+      const smsService = (await import('../services/smsService.js')).default;
+      await smsService.sendOTP(
+        booking.userId.phone,
+        otpData.code,
+        booking.userId.name,
+        booking._id
+      );
+    } catch (smsError) {
+      console.error('❌ Failed to send OTP SMS:', smsError);
+      // Continue even if SMS fails
+    }
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'OTP generated and sent to user successfully',
+    data: {
+      bookingId: booking._id,
+      otp: otpData.code,
+      expiresAt: otpData.expiresAt,
+      sentTo: {
+        email: booking.userId.email,
+        phone: booking.userId.phone || 'Not available'
+      }
     }
   });
 });

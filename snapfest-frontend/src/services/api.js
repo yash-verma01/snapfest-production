@@ -147,6 +147,7 @@ export const vendorAPI = {
   startBooking: (id) => api.put(`/vendors/bookings/${id}/start`),
   completeBooking: (id, data) => api.put(`/vendors/bookings/${id}/complete`, data),
   cancelBooking: (id) => api.put(`/vendors/bookings/${id}/cancel`),
+  verifyBookingOTP: (bookingId, data) => api.post(`/vendors/bookings/${bookingId}/verify-otp`, data),
   
   // OTP Management
   getPendingOTPs: () => api.get('/vendors/otps/pending'),
@@ -234,6 +235,7 @@ export const adminAPI = {
   updateBooking: (id, data) => api.put(`/admin/bookings/${id}`, data),
   assignVendor: (id, data) => api.put(`/admin/bookings/${id}/assign-vendor`, data),
   cancelBooking: (id, data) => api.put(`/admin/bookings/${id}/cancel`, data),
+  generateBookingOTP: (bookingId) => api.post(`/admin/bookings/${bookingId}/generate-otp`),
   
   // Payment Management
   getPayments: (params) => api.get('/admin/payments', { params }),

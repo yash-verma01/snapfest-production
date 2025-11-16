@@ -116,7 +116,6 @@ const VendorAssignmentModal = ({ isOpen, onClose, booking, onAssignmentSuccess, 
                 <p className="flex items-center"><DollarSign className="w-4 h-4 mr-2 text-primary-500" /> <strong>Amount Paid:</strong> ₹{booking.amountPaid?.toLocaleString()}</p>
                 <p className="flex items-center"><Calendar className="w-4 h-4 mr-2 text-primary-500" /> <strong>Event Date:</strong> {new Date(booking.eventDate).toLocaleDateString()}</p>
                 <p className="flex items-center"><MapPin className="w-4 h-4 mr-2 text-primary-500" /> <strong>Location:</strong> {booking.location}</p>
-                <p className="flex items-center"><Users className="w-4 h-4 mr-2 text-primary-500" /> <strong>Guests:</strong> {booking.guests}</p>
                 <p className="flex items-center"><Info className="w-4 h-4 mr-2 text-primary-500" /> <strong>Status:</strong> <Badge className={`ml-2 ${getStatusBadgeColor(booking.status)}`}>{booking.status}</Badge></p>
                 {booking.assignedVendorId && (
                   <p className="flex items-center"><UserCheck className="w-4 h-4 mr-2 text-green-500" /> <strong>Assigned Vendor:</strong> {booking.assignedVendorId?.businessName || booking.assignedVendorId?.name}</p>

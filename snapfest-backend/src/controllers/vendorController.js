@@ -893,6 +893,86 @@ export const completeBooking = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Verify booking OTP (Vendor)
+// @route   POST /api/vendors/bookings/:id/verify-otp
+// @access  Private/Vendor
+export const verifyBookingOTP = asyncHandler(async (req, res) => {
+  const { otp } = req.body;
+  const { id } = req.params;
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
+
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  // Find booking
+  const booking = await Booking.findOne({
+    _id: id,
+    assignedVendorId: vendor._id,
+    status: 'COMPLETED'
+  });
+
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found or not assigned to you'
+    });
+  }
+
+  // Check if OTP exists
+  if (!booking.verificationOTP) {
+    return res.status(400).json({
+      success: false,
+      message: 'No OTP has been generated for this booking. Please ask admin to generate OTP.'
+    });
+  }
+
+  // Check if OTP is expired
+  if (booking.verificationOTPExpiresAt < new Date()) {
+    return res.status(400).json({
+      success: false,
+      message: 'OTP has expired. Please ask admin to generate a new OTP.'
+    });
+  }
+
+  // Check if OTP is already verified
+  if (booking.otpVerified) {
+    return res.status(400).json({
+      success: false,
+      message: 'OTP has already been verified for this booking'
+    });
+  }
+
+  // Verify OTP
+  if (booking.verificationOTP !== otp) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid OTP. Please check and try again.'
+    });
+  }
+
+  // OTP is valid - mark as verified
+  booking.otpVerified = true;
+  booking.otpVerifiedAt = new Date();
+  await booking.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'OTP verified successfully. Booking is now verified.',
+    data: {
+      booking: {
+        id: booking._id,
+        status: booking.status,
+        otpVerified: booking.otpVerified,
+        otpVerifiedAt: booking.otpVerifiedAt
+      }
+    }
+  });
+});
+
 export const cancelBooking = asyncHandler(async (req, res) => {
   const { cancellationReason } = req.body || {};
   const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });

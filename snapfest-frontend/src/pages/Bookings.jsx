@@ -17,7 +17,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { Card, Button, Badge } from '../components/ui';
-import { userAPI } from '../services/api';
+import { userAPI, bookingAPI } from '../services/api';
 import { dateUtils } from '../utils';
 
 const Bookings = () => {
@@ -43,30 +43,18 @@ const Bookings = () => {
       setLoading(true);
       console.log('📅 Frontend: Loading bookings...');
       
-      // Use the bookingAPI service which should call /api/bookings
-      const response = await fetch('http://localhost:5001/api/bookings', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
+      // Use bookingAPI which handles Clerk cookie authentication properly
+      const response = await bookingAPI.getBookings({
+        page: 1,
+        limit: 50
       });
       
-      console.log('📅 Frontend: Response status:', response.status);
-      console.log('📅 Frontend: Response headers:', response.headers);
+      console.log('📅 Frontend: Bookings response:', response.data);
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.log('📅 Frontend: Error response:', errorText);
-        throw new Error(`Failed to fetch bookings: ${response.status} ${errorText}`);
-      }
-      
-      const data = await response.json();
-      console.log('📅 Frontend: Bookings response:', data);
-      
-      setBookings(data.data?.bookings || []);
+      setBookings(response.data.data?.bookings || []);
     } catch (error) {
       console.error('Error loading bookings:', error);
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
     } finally {
       setLoading(false);
     }
@@ -260,10 +248,6 @@ const Bookings = () => {
                         <div className="flex items-center text-sm text-gray-600 mb-2">
                           <MapPin className="w-4 h-4 mr-2" />
                           <span>{booking.location || 'Location not specified'}</span>
-                        </div>
-                        <div className="flex items-center text-sm text-gray-600 mb-2">
-                          <Users className="w-4 h-4 mr-2" />
-                          <span>{booking.guests} guests</span>
                         </div>
                         <div className="flex items-center text-sm text-gray-600">
                           <Clock className="w-4 h-4 mr-2" />

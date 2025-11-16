@@ -17,7 +17,6 @@ const BookingCard = ({
     packageData: pkg,
     eventDate,
     location,
-    guests,
     totalAmount,
     status,
     createdAt,
@@ -93,10 +92,6 @@ const BookingCard = ({
             <div className="flex items-center text-sm text-gray-600">
               <Calendar className="w-4 h-4 mr-2 text-gray-400" />
               <span>{formatDate(eventDate)}</span>
-            </div>
-            <div className="flex items-center text-sm text-gray-600">
-              <Users className="w-4 h-4 mr-2 text-gray-400" />
-              <span>{guests} guests</span>
             </div>
             <div className="flex items-center text-sm text-gray-600">
               <MapPin className="w-4 h-4 mr-2 text-gray-400" />

@@ -249,12 +249,6 @@ export const validateBooking = [
     .isLength({ min: 5, max: 200 })
     .withMessage('Location must be between 5 and 200 characters'),
   
-  body('guests')
-    .notEmpty()
-    .withMessage('Number of guests is required')
-    .isInt({ min: 1, max: 1000 })
-    .withMessage('Number of guests must be between 1 and 1000'),
-  
   handleValidationErrors
 ];
 
@@ -519,12 +513,6 @@ export const validateCartItem = [
     .withMessage('Package ID is required')
     .isMongoId()
     .withMessage('Invalid package ID'),
-  
-  body('guests')
-    .notEmpty()
-    .withMessage('Number of guests is required')
-    .isInt({ min: 1, max: 1000 })
-    .withMessage('Number of guests must be between 1 and 1000'),
   
   body('eventDate')
     .notEmpty()

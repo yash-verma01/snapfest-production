@@ -94,14 +94,13 @@ export const getBookingById = asyncHandler(async (req, res) => {
 // @route   POST /api/bookings
 // @access  Private
 export const createBooking = asyncHandler(async (req, res) => {
-  const { packageId, eventDate, location, guests, customization } = req.body;
+  const { packageId, eventDate, location, customization } = req.body;
 
   console.log('📅 Booking Controller: Creating booking');
   console.log('📅 Booking Controller: Package ID:', packageId);
   console.log('📅 Booking Controller: User ID:', req.userId);
   console.log('📅 Booking Controller: Event Date:', eventDate);
   console.log('📅 Booking Controller: Location:', location);
-  console.log('📅 Booking Controller: Guests:', guests);
 
   // Verify package exists
   const packageData = await Package.findById(packageId);
@@ -125,7 +124,6 @@ export const createBooking = asyncHandler(async (req, res) => {
     packageId,
     eventDate: new Date(eventDate),
     location,
-    guests,
     customization,
     totalAmount,
     partialAmount,

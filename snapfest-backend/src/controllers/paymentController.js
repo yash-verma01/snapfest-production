@@ -29,7 +29,7 @@ export const getUserPayments = asyncHandler(async (req, res) => {
   }
 
   const payments = await Payment.find(query)
-    .populate('bookingId', 'packageId eventDate location guests totalAmount amountPaid')
+    .populate('bookingId', 'packageId eventDate location totalAmount amountPaid')
     .populate('bookingId.packageId', 'title category basePrice')
     .skip(skip)
     .limit(limit)
@@ -60,7 +60,7 @@ export const getPaymentById = asyncHandler(async (req, res) => {
   const userId = req.userId;
 
   const payment = await Payment.findOne({ _id: id, userId })
-    .populate('bookingId', 'packageId eventDate location guests status')
+    .populate('bookingId', 'packageId eventDate location status')
     .populate('bookingId.packageId', 'title category basePrice description');
 
   if (!payment) {
@@ -112,7 +112,7 @@ export const createPayment = asyncHandler(async (req, res) => {
   });
 
   // Populate the payment
-  await payment.populate('bookingId', 'packageId eventDate location guests');
+  await payment.populate('bookingId', 'packageId eventDate location');
 
   // Create audit log
   // DISABLED: await AuditLog.create({

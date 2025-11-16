@@ -153,10 +153,6 @@ const AssignedBookings = () => {
                       <span>{booking.location}</span>
                     </div>
                     <div className="flex items-center text-sm text-gray-600">
-                      <Users className="w-4 h-4 mr-2 text-primary-500" />
-                      <span>{booking.guests} guests</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600">
                       <DollarSign className="w-4 h-4 mr-2 text-primary-500" />
                       <span>₹{booking.totalAmount?.toLocaleString()}</span>
                     </div>
@@ -270,7 +266,6 @@ const AssignedBookings = () => {
                   <div className="space-y-2 text-sm">
                     <p><strong>Date:</strong> {formatDate(selectedBooking.eventDate)}</p>
                     <p><strong>Location:</strong> {selectedBooking.location}</p>
-                    <p><strong>Guests:</strong> {selectedBooking.guests}</p>
                     <p><strong>Package:</strong> {selectedBooking.packageId?.title}</p>
                     <p><strong>Category:</strong> {selectedBooking.packageId?.category}</p>
                   </div>

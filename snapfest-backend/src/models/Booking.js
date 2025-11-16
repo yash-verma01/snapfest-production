@@ -25,10 +25,6 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  guests: {
-    type: Number,
-    required: true
-  },
   customization: {
     type: String,
     default: ''
@@ -61,6 +57,23 @@ const bookingSchema = new mongoose.Schema({
   },
   otpVerifiedAt: {
     type: Date,
+    default: null
+  },
+  verificationOTP: {
+    type: String,
+    default: null
+  },
+  verificationOTPExpiresAt: {
+    type: Date,
+    default: null
+  },
+  verificationOTPGeneratedAt: {
+    type: Date,
+    default: null
+  },
+  verificationOTPGeneratedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
     default: null
   }
 }, {

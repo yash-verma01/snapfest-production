@@ -14,7 +14,8 @@ import {
   Clock,
   AlertCircle,
   User,
-  UserCheck
+  UserCheck,
+  Key
 } from 'lucide-react';
 import { useUser, useClerk } from '@clerk/clerk-react';
 import { vendorAPI } from '../services/api';
@@ -23,6 +24,7 @@ import VendorStatsCard from '../components/vendor/VendorStatsCard';
 import OTPVerification from '../components/vendor/OTPVerification';
 import VendorBookingCard from '../components/vendor/VendorBookingCard';
 import AssignedBookings from '../components/vendor/AssignedBookings';
+import ModalPortal from '../components/modals/ModalPortal';
 import { Card, Button, Badge } from '../components/ui';
 
 const VendorDashboard = () => {
@@ -41,6 +43,10 @@ const VendorDashboard = () => {
   const [error, setError] = useState(null);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showOTPModal, setShowOTPModal] = useState(false);
+  const [showBookingOTPModal, setShowBookingOTPModal] = useState(false);
+  const [selectedBookingForOTP, setSelectedBookingForOTP] = useState(null);
+  const [otpCode, setOtpCode] = useState('');
+  const [verifyingOTP, setVerifyingOTP] = useState(false);
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -154,6 +160,41 @@ const VendorDashboard = () => {
 
   const handleOTPError = (error) => {
     console.error('OTP verification error:', error);
+  };
+
+  const handleVerifyBookingOTP = async (booking) => {
+    setSelectedBookingForOTP(booking);
+    setShowBookingOTPModal(true);
+    setOtpCode('');
+  };
+
+  const handleOTPSubmit = async () => {
+    if (!otpCode || otpCode.length !== 6) {
+      alert('Please enter a valid 6-digit OTP');
+      return;
+    }
+
+    if (!selectedBookingForOTP) {
+      alert('No booking selected');
+      return;
+    }
+
+    try {
+      setVerifyingOTP(true);
+      await vendorAPI.verifyBookingOTP(selectedBookingForOTP._id, { otp: otpCode });
+      alert('OTP verified successfully! Booking is now verified.');
+      setShowBookingOTPModal(false);
+      setOtpCode('');
+      setSelectedBookingForOTP(null);
+      // Refresh bookings
+      const response = await vendorAPI.getBookings({ limit: 10 });
+      setBookings(response.data.data.bookings || []);
+    } catch (error) {
+      console.error('Error verifying OTP:', error);
+      alert(error.response?.data?.message || 'Failed to verify OTP');
+    } finally {
+      setVerifyingOTP(false);
+    }
   };
 
   const stats = [
@@ -327,21 +368,44 @@ const VendorDashboard = () => {
               ) : (
                 <div className="space-y-4">
                   {bookings.map((booking) => (
-                    <VendorBookingCard
-                      key={booking._id}
-                      booking={booking}
-                      onAccept={handleAcceptBooking}
-                      onReject={handleRejectBooking}
-                      onStart={handleStartBooking}
-                      onComplete={handleCompleteBooking}
-                      onCancel={handleCancelBooking}
-                      onViewDetails={(booking) => {
-                        console.log('View booking details:', booking._id);
-                      }}
-                      onMessageCustomer={(booking) => {
-                        console.log('Message customer for:', booking._id);
-                      }}
-                    />
+                    <div key={booking._id} className="relative">
+                      <VendorBookingCard
+                        booking={booking}
+                        onAccept={handleAcceptBooking}
+                        onReject={handleRejectBooking}
+                        onStart={handleStartBooking}
+                        onComplete={handleCompleteBooking}
+                        onCancel={handleCancelBooking}
+                        onViewDetails={(booking) => {
+                          console.log('View booking details:', booking._id);
+                        }}
+                        onMessageCustomer={(booking) => {
+                          console.log('Message customer for:', booking._id);
+                        }}
+                      />
+                      {/* Add Verify OTP button for COMPLETED bookings */}
+                      {booking.status === 'COMPLETED' && !booking.otpVerified && (
+                        <div className="mt-2 flex justify-end">
+                          <Button
+                            onClick={() => handleVerifyBookingOTP(booking)}
+                            size="sm"
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            <Key className="w-4 h-4 mr-2" />
+                            Verify Booking OTP
+                          </Button>
+                        </div>
+                      )}
+                      {/* Show verified badge */}
+                      {booking.status === 'COMPLETED' && booking.otpVerified && (
+                        <div className="mt-2 flex justify-end">
+                          <Badge className="bg-green-100 text-green-800">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Verified
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
@@ -467,6 +531,81 @@ const VendorDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Booking OTP Verification Modal */}
+      <ModalPortal isOpen={showBookingOTPModal}>
+        <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold">Verify Booking OTP</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setShowBookingOTPModal(false);
+                setOtpCode('');
+                setSelectedBookingForOTP(null);
+              }}
+            >
+              ×
+            </Button>
+          </div>
+          
+          {selectedBookingForOTP && (
+            <>
+              <p className="text-sm text-gray-600 mb-4">
+                Enter the OTP provided by the customer for booking #{selectedBookingForOTP._id.slice(-8)}
+              </p>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Booking Details
+                </label>
+                <div className="bg-gray-50 p-3 rounded-lg text-sm">
+                  <p><strong>Package:</strong> {selectedBookingForOTP.packageId?.title || 'N/A'}</p>
+                  <p><strong>Date:</strong> {new Date(selectedBookingForOTP.eventDate).toLocaleDateString()}</p>
+                  <p><strong>Location:</strong> {selectedBookingForOTP.location || 'N/A'}</p>
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  OTP Code
+                </label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="Enter 6-digit OTP"
+                  className="w-full px-4 py-3 border rounded-lg text-center text-2xl tracking-widest focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  autoFocus
+                />
+              </div>
+              
+              <div className="flex space-x-2">
+                <Button
+                  onClick={handleOTPSubmit}
+                  disabled={verifyingOTP || otpCode.length !== 6}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  {verifyingOTP ? 'Verifying...' : 'Verify OTP'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowBookingOTPModal(false);
+                    setOtpCode('');
+                    setSelectedBookingForOTP(null);
+                  }}
+                  disabled={verifyingOTP}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </ModalPortal>
     </div>
   );
 };

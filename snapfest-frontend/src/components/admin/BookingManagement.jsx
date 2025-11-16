@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Search, Filter, Eye, Edit, CheckCircle, XCircle, Clock, UserPlus } from 'lucide-react';
+import { Calendar, Search, Filter, Eye, Edit, CheckCircle, XCircle, Clock, UserPlus, ShieldCheck } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { Card, Button, Badge } from '../ui';
 import VendorAssignmentModal from './VendorAssignmentModal';
@@ -16,6 +16,7 @@ const BookingManagement = () => {
   const [assigningVendor, setAssigningVendor] = useState(false);
   const [showEditVendorModal, setShowEditVendorModal] = useState(false);
   const [editingBooking, setEditingBooking] = useState(null);
+  const [generatingOTP, setGeneratingOTP] = useState(false);
 
   useEffect(() => {
     loadBookings();
@@ -104,6 +105,22 @@ const BookingManagement = () => {
       alert('Failed to change vendor. Please try again.');
     } finally {
       setAssigningVendor(false);
+    }
+  };
+
+  const handleGenerateOTP = async (bookingId) => {
+    if (!window.confirm('Generate and send OTP to user?')) return;
+    
+    try {
+      setGeneratingOTP(true);
+      const response = await adminAPI.generateBookingOTP(bookingId);
+      alert('OTP generated and sent to user successfully!');
+      loadBookings();
+    } catch (error) {
+      console.error('Error generating OTP:', error);
+      alert(error.response?.data?.message || 'Failed to generate OTP');
+    } finally {
+      setGeneratingOTP(false);
     }
   };
 
@@ -252,11 +269,17 @@ const BookingManagement = () => {
                 {bookings.map((booking) => (
                   <tr key={booking._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        #{booking._id.slice(-8)}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {booking.guests} guests
+                      <div className="flex items-center space-x-2">
+                        <div className="text-sm font-medium text-gray-900">
+                          #{booking._id.slice(-8)}
+                        </div>
+                        {/* Verified Indicator */}
+                        {booking.otpVerified && (
+                          <Badge className="bg-green-100 text-green-800 flex items-center">
+                            <ShieldCheck className="w-3 h-3 mr-1" />
+                            Verified
+                          </Badge>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -276,12 +299,27 @@ const BookingManagement = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge className={getStatusBadgeColor(booking.status)}>
-                        <span className="flex items-center">
-                          {getStatusIcon(booking.status)}
-                          <span className="ml-1">{booking.status}</span>
-                        </span>
-                      </Badge>
+                      <div className="flex flex-col space-y-1">
+                        <Badge className={getStatusBadgeColor(booking.status)}>
+                          <span className="flex items-center">
+                            {getStatusIcon(booking.status)}
+                            <span className="ml-1">{booking.status}</span>
+                          </span>
+                        </Badge>
+                        {/* Verification Status Badge */}
+                        {booking.status === 'COMPLETED' && booking.otpVerified && (
+                          <Badge className="bg-green-100 text-green-800 text-xs flex items-center">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            OTP Verified
+                          </Badge>
+                        )}
+                        {booking.status === 'COMPLETED' && !booking.otpVerified && (
+                          <Badge className="bg-yellow-100 text-yellow-800 text-xs flex items-center">
+                            <Clock className="w-3 h-3 mr-1" />
+                            Pending Verification
+                          </Badge>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {booking.assignedVendorId ? (
@@ -301,7 +339,7 @@ const BookingManagement = () => {
                       {new Date(booking.eventDate).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 flex-wrap gap-1">
                         <Button variant="outline" size="sm">
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -323,6 +361,26 @@ const BookingManagement = () => {
                           >
                             <UserPlus className="w-4 h-4" />
                           </Button>
+                        )}
+                        {/* Generate OTP button - only show for COMPLETED bookings */}
+                        {booking.status === 'COMPLETED' && !booking.otpVerified && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleGenerateOTP(booking._id)}
+                            disabled={generatingOTP}
+                            className="text-green-600 hover:text-green-700"
+                            title="Generate OTP"
+                          >
+                            {generatingOTP ? 'Generating...' : '🔐 Generate OTP'}
+                          </Button>
+                        )}
+                        {/* Show verified badge if OTP is verified */}
+                        {booking.otpVerified && (
+                          <Badge className="bg-green-100 text-green-800 flex items-center">
+                            <ShieldCheck className="w-3 h-3 mr-1" />
+                            ✓ Verified
+                          </Badge>
                         )}
                         {booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED' && (
                           <Button

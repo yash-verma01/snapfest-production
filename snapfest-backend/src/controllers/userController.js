@@ -790,7 +790,6 @@ export const getUserPayments = asyncHandler(async (req, res) => {
           packageId: booking.packageId,
           eventDate: booking.eventDate,
           location: booking.location,
-          guests: booking.guests,
           status: booking.status,
           totalAmount: booking.totalAmount,
           amountPaid: booking.amountPaid,

@@ -47,6 +47,7 @@ import {
   getPendingOTPs,
   generateOTP,
   verifyOTP,
+  generateBookingVerificationOTP,
   
   // Analytics & Reports
   getDashboard,
@@ -175,6 +176,7 @@ router.get('/bookings/:id', getBookingById);
 router.put('/bookings/:id/status', updateBookingStatus);
 router.put('/bookings/:id/cancel', cancelBooking);
 router.post('/bookings/:id/assign-vendor', assignVendorToBooking);
+router.post('/bookings/:id/generate-otp', generateBookingVerificationOTP);
 // Test route to verify routing is working
 router.post('/bookings/test-assign', (req, res) => {
   try {

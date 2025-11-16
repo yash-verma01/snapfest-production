@@ -24,6 +24,7 @@ import {
   cancelBooking,
   acceptBooking,
   rejectBooking,
+  verifyBookingOTP,
   
   // OTP Verification System
   getPendingOTPs,
@@ -104,6 +105,7 @@ router.put('/bookings/:id/status', updateBookingStatus);
 router.put('/bookings/:id/start', startBooking);
 router.put('/bookings/:id/complete', completeBooking);
 router.put('/bookings/:id/cancel', cancelBooking);
+router.post('/bookings/:id/verify-otp', verifyBookingOTP);
 router.get('/bookings/:id', getVendorBookingById);
 
 // ==================== OTP VERIFICATION SYSTEM ====================
