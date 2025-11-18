@@ -19,12 +19,17 @@ import {
 import { Card, Button, Badge } from '../components/ui';
 import { userAPI, bookingAPI } from '../services/api';
 import { dateUtils } from '../utils';
+import BookingDetailsModal from '../components/modals/BookingDetailsModal';
+import SupportModal from '../components/modals/SupportModal';
 
 const Bookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [showBookingDetails, setShowBookingDetails] = useState(false);
+  const [showSupportModal, setShowSupportModal] = useState(false);
+  const [selectedBookingForSupport, setSelectedBookingForSupport] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     status: '',
@@ -60,14 +65,9 @@ const Bookings = () => {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'PENDING_PARTIAL_PAYMENT':
-        return 'warning';
-      case 'PARTIALLY_PAID':
-        return 'info';
-      case 'FULLY_PAID':
-        return 'success';
+  const getStatusColor = (vendorStatus) => {
+    // Use vendorStatus if available, fallback to status for backward compatibility
+    switch (vendorStatus) {
       case 'ASSIGNED':
         return 'primary';
       case 'IN_PROGRESS':
@@ -81,14 +81,9 @@ const Bookings = () => {
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'PENDING_PARTIAL_PAYMENT':
-        return <Clock className="w-4 h-4" />;
-      case 'PARTIALLY_PAID':
-        return <AlertCircle className="w-4 h-4" />;
-      case 'FULLY_PAID':
-        return <CheckCircle className="w-4 h-4" />;
+  const getStatusIcon = (vendorStatus) => {
+    // Use vendorStatus if available, fallback to status for backward compatibility
+    switch (vendorStatus) {
       case 'ASSIGNED':
         return <Users className="w-4 h-4" />;
       case 'IN_PROGRESS':
@@ -111,7 +106,9 @@ const Bookings = () => {
   };
 
   const filteredBookings = bookings.filter(booking => {
-    const matchesStatus = !filters.status || booking.status === filters.status;
+    // Use vendorStatus for filtering, fallback to status for backward compatibility
+    const displayStatus = booking.vendorStatus || booking.status;
+    const matchesStatus = !filters.status || displayStatus === filters.status;
     const matchesSearch = !filters.search || 
       booking.packageId?.title?.toLowerCase().includes(filters.search.toLowerCase()) ||
       booking.location?.toLowerCase().includes(filters.search.toLowerCase());
@@ -178,9 +175,6 @@ const Bookings = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="">All Statuses</option>
-                  <option value="PENDING_PARTIAL_PAYMENT">Pending Payment</option>
-                  <option value="PARTIALLY_PAID">Partially Paid</option>
-                  <option value="FULLY_PAID">Fully Paid</option>
                   <option value="ASSIGNED">Assigned</option>
                   <option value="IN_PROGRESS">In Progress</option>
                   <option value="COMPLETED">Completed</option>
@@ -221,9 +215,9 @@ const Bookings = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-4 mb-4">
-                      <Badge className={`${getStatusColor(booking.status)} flex items-center space-x-2`}>
-                        {getStatusIcon(booking.status)}
-                        <span>{booking.status.replace(/_/g, ' ')}</span>
+                      <Badge className={`${getStatusColor(booking.vendorStatus || booking.status)} flex items-center space-x-2`}>
+                        {getStatusIcon(booking.vendorStatus || booking.status)}
+                        <span>{(booking.vendorStatus || booking.status).replace(/_/g, ' ')}</span>
                       </Badge>
                       <span className="text-sm text-gray-500">
                         #{booking._id.slice(-8)}
@@ -274,7 +268,10 @@ const Bookings = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setSelectedBooking(booking)}
+                      onClick={() => {
+                        setSelectedBooking(booking);
+                        setShowBookingDetails(true);
+                      }}
                       className="flex items-center space-x-2"
                     >
                       <Eye className="w-4 h-4" />
@@ -291,6 +288,10 @@ const Bookings = () => {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => {
+                        setSelectedBookingForSupport(booking._id);
+                        setShowSupportModal(true);
+                      }}
                       className="flex items-center space-x-2"
                     >
                       <MessageSquare className="w-4 h-4" />
@@ -303,6 +304,28 @@ const Bookings = () => {
           )}
         </div>
       </div>
+
+      {/* Booking Details Modal */}
+      {selectedBooking && (
+        <BookingDetailsModal
+          isOpen={showBookingDetails}
+          onClose={() => {
+            setShowBookingDetails(false);
+            setSelectedBooking(null);
+          }}
+          bookingId={selectedBooking._id}
+        />
+      )}
+
+      {/* Support Modal */}
+      <SupportModal
+        isOpen={showSupportModal}
+        onClose={() => {
+          setShowSupportModal(false);
+          setSelectedBookingForSupport(null);
+        }}
+        bookingId={selectedBookingForSupport}
+      />
     </div>
   );
 };

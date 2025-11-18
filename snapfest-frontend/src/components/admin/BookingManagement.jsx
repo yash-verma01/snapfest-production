@@ -306,6 +306,21 @@ const BookingManagement = () => {
                             <span className="ml-1">{booking.status}</span>
                           </span>
                         </Badge>
+                        {/* Payment Status Badge */}
+                        {booking.paymentStatus && (
+                          <Badge className={
+                            booking.paymentStatus === 'FULLY_PAID' ? 'bg-green-100 text-green-800' :
+                            booking.paymentStatus === 'PARTIALLY_PAID' ? 'bg-yellow-100 text-yellow-800' :
+                            booking.paymentStatus === 'PENDING_PAYMENT' ? 'bg-orange-100 text-orange-800' :
+                            booking.paymentStatus === 'FAILED_PAYMENT' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }>
+                            <span className="text-xs">
+                              Payment: {booking.paymentStatus.replace(/_/g, ' ')}
+                              {booking.onlinePaymentDone && ' (Online)'}
+                            </span>
+                          </Badge>
+                        )}
                         {/* Verification Status Badge */}
                         {booking.status === 'COMPLETED' && booking.otpVerified && (
                           <Badge className="bg-green-100 text-green-800 text-xs flex items-center">
@@ -313,10 +328,16 @@ const BookingManagement = () => {
                             OTP Verified
                           </Badge>
                         )}
-                        {booking.status === 'COMPLETED' && !booking.otpVerified && (
+                        {booking.status === 'COMPLETED' && !booking.otpVerified && !booking.onlinePaymentDone && (
                           <Badge className="bg-yellow-100 text-yellow-800 text-xs flex items-center">
                             <Clock className="w-3 h-3 mr-1" />
                             Pending Verification
+                          </Badge>
+                        )}
+                        {booking.status === 'COMPLETED' && booking.onlinePaymentDone && (
+                          <Badge className="bg-blue-100 text-blue-800 text-xs flex items-center">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Online Payment Done
                           </Badge>
                         )}
                       </div>
@@ -362,8 +383,8 @@ const BookingManagement = () => {
                             <UserPlus className="w-4 h-4" />
                           </Button>
                         )}
-                        {/* Generate OTP button - only show for COMPLETED bookings */}
-                        {booking.status === 'COMPLETED' && !booking.otpVerified && (
+                        {/* Generate OTP button - only show for COMPLETED bookings that are NOT fully paid online */}
+                        {booking.status === 'COMPLETED' && !booking.otpVerified && !booking.onlinePaymentDone && (
                           <Button
                             variant="outline"
                             size="sm"

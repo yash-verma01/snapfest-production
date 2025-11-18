@@ -27,6 +27,7 @@ const Cart = () => {
   const { cart, loading, error, removeFromCart, clearCart, calculateTotal, refreshCart } = useCart();
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState(null);
+  const [paymentPercentage, setPaymentPercentage] = useState(20); // Default 20%, can be 20-100%
 
   // Debug cart data
   useEffect(() => {
@@ -100,7 +101,8 @@ const Cart = () => {
           eventDate: item.eventDate,
           location: item.location,
           guests: item.guests,
-          customization: item.customization || ''
+          customization: item.customization || '',
+          paymentPercentage: paymentPercentage // Include payment percentage
         };
 
         console.log('🛒 Cart: Creating booking for item:', bookingData);
@@ -183,7 +185,7 @@ const Cart = () => {
           partialAmount,
           'INR',
           `SnapFest - ${booking.packageId?.title || 'Photography Package'}`,
-          `Partial payment (20%) for ${booking.packageId?.title || 'Photography Package'}`,
+          `Initial payment (${paymentPercentage}%) for ${booking.packageId?.title || 'Photography Package'}`,
           {
             name: user?.fullName || 'Customer',
             email: user?.primaryEmailAddress?.emailAddress || '',
@@ -503,19 +505,43 @@ const Cart = () => {
                     <span className="text-primary-600">{formatPrice(cartTotal.total + cartTotal.tax)}</span>
                   </div>
                   
+                  {/* Payment Percentage Selector */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Initial Payment Percentage: <span className="text-primary-600 font-semibold">{paymentPercentage}%</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="20"
+                      max="100"
+                      step="5"
+                      value={paymentPercentage}
+                      onChange={(e) => setPaymentPercentage(Number(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>20%</span>
+                      <span>100%</span>
+                    </div>
+                  </div>
+
                   <div className="bg-blue-50 p-3 rounded-lg">
                     <div className="text-sm text-blue-800">
                       <div className="font-semibold mb-1">Payment Summary:</div>
                       <div className="flex justify-between">
-                        <span>Partial Payment (20%):</span>
-                        <span className="font-semibold">{formatPrice((cartTotal.total + cartTotal.tax) * 0.2)}</span>
+                        <span>Initial Payment ({paymentPercentage}%):</span>
+                        <span className="font-semibold">
+                          {formatPrice((cartTotal.total + cartTotal.tax) * (paymentPercentage / 100))}
+                        </span>
                       </div>
                       <div className="flex justify-between text-xs text-blue-600 mt-1">
-                        <span>Remaining (80%):</span>
-                        <span>{formatPrice((cartTotal.total + cartTotal.tax) * 0.8)}</span>
+                        <span>Remaining ({100 - paymentPercentage}%):</span>
+                        <span>
+                          {formatPrice((cartTotal.total + cartTotal.tax) * ((100 - paymentPercentage) / 100))}
+                        </span>
                       </div>
                       <div className="text-xs text-blue-600 mt-1">
-                        * Remaining amount to be paid on event day
+                        * Remaining amount to be paid later
                       </div>
                     </div>
                   </div>
@@ -542,7 +568,7 @@ const Cart = () => {
                     ) : (
                       <>
                         <CreditCard className="w-5 h-5 mr-2" />
-                        Pay Partial Amount (20%)
+                        Pay {paymentPercentage}% (₹{formatPrice((cartTotal.total + cartTotal.tax) * (paymentPercentage / 100))})
                       </>
                     )}
                   </Button>

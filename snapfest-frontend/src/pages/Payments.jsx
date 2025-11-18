@@ -61,10 +61,12 @@ const Payments = () => {
 
   const filteredPaymentDetails = paymentDetails.filter(detail => {
     if (filter === 'all') return true;
-    if (filter === 'fully_paid') return detail.paymentSummary.isFullyPaid;
-    if (filter === 'partially_paid') return detail.paymentSummary.isPartiallyPaid;
-    if (filter === 'pending') return detail.paymentSummary.hasPendingPayments;
-    if (filter === 'failed') return detail.paymentSummary.hasFailedPayments;
+    // Use paymentStatus from booking or paymentSummary
+    const paymentStatus = detail.booking.paymentStatus || detail.paymentSummary.paymentStatus;
+    if (filter === 'fully_paid') return paymentStatus === 'FULLY_PAID';
+    if (filter === 'partially_paid') return paymentStatus === 'PARTIALLY_PAID';
+    if (filter === 'pending') return paymentStatus === 'PENDING_PAYMENT';
+    if (filter === 'failed') return paymentStatus === 'FAILED_PAYMENT';
     return true;
   });
 
@@ -220,11 +222,11 @@ const Payments = () => {
                 onChange={(e) => setFilter(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
-                <option value="all">All Bookings</option>
+                <option value="all">All Statuses</option>
                 <option value="fully_paid">Fully Paid</option>
                 <option value="partially_paid">Partially Paid</option>
-                <option value="pending">Pending Payments</option>
-                <option value="failed">Failed Payments</option>
+                <option value="pending">Pending Payment</option>
+                <option value="failed">Failed Payment</option>
               </select>
             </div>
           </div>
@@ -262,8 +264,17 @@ const Payments = () => {
                         <h3 className="text-lg font-semibold text-gray-900">
                           {booking.packageId?.title || 'Photography Package'}
                         </h3>
-                        <Badge variant={getBookingStatusColor(booking.status)} size="sm">
-                          {booking.status.replace('_', ' ')}
+                        <Badge 
+                          variant={
+                            booking.paymentStatus === 'FULLY_PAID' ? 'success' :
+                            booking.paymentStatus === 'PARTIALLY_PAID' ? 'warning' :
+                            booking.paymentStatus === 'PENDING_PAYMENT' ? 'danger' :
+                            booking.paymentStatus === 'FAILED_PAYMENT' ? 'danger' :
+                            getBookingStatusColor(booking.status)
+                          } 
+                          size="sm"
+                        >
+                          {(booking.paymentStatus || booking.status).replace(/_/g, ' ')}
                         </Badge>
                       </div>
                       <p className="text-sm text-gray-600">
@@ -294,10 +305,6 @@ const Payments = () => {
                     <div className="flex items-center text-sm text-gray-600">
                       <MapPin className="w-4 h-4 mr-2" />
                       <span>{booking.location}</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Users className="w-4 h-4 mr-2" />
-                      <span>{booking.guests} guests</span>
                     </div>
                   </div>
 

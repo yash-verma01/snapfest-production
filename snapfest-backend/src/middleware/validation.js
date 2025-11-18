@@ -41,6 +41,10 @@ export const validateUserRegistration = [
     .trim()
     .notEmpty()
     .withMessage('Phone number is required')
+    .customSanitizer((value) => {
+      // Remove all non-digit characters (hyphens, spaces, parentheses, etc.)
+      return value ? value.replace(/\D/g, '') : value;
+    })
     .matches(/^[6-9]\d{9}$/)
     .withMessage('Please provide a valid 10-digit phone number'),
   
@@ -135,6 +139,10 @@ export const validateProfileUpdate = [
   body('phone')
     .optional()
     .trim()
+    .customSanitizer((value) => {
+      // Remove all non-digit characters (hyphens, spaces, parentheses, etc.)
+      return value ? value.replace(/\D/g, '') : value;
+    })
     .matches(/^[6-9]\d{9}$/)
     .withMessage('Please provide a valid 10-digit phone number'),
   

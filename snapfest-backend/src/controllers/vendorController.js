@@ -773,7 +773,8 @@ export const updateBookingStatus = asyncHandler(async (req, res) => {
     });
   }
 
-  // Validate status transition
+  // Validate status transition (use vendorStatus for validation)
+  const currentVendorStatus = booking.vendorStatus || booking.status;
   const validTransitions = {
     'ASSIGNED': ['IN_PROGRESS', 'CANCELLED'],
     'IN_PROGRESS': ['COMPLETED', 'CANCELLED'],
@@ -781,15 +782,22 @@ export const updateBookingStatus = asyncHandler(async (req, res) => {
     'CANCELLED': []
   };
 
-  if (!validTransitions[booking.status]?.includes(status)) {
+  if (!validTransitions[currentVendorStatus]?.includes(status)) {
     return res.status(400).json({
       success: false,
-      message: `Cannot change status from ${booking.status} to ${status}`
+      message: `Cannot change status from ${currentVendorStatus} to ${status}`
     });
   }
 
-  // Update booking
-  booking.status = status;
+  // Update booking - use vendorStatus for vendor updates
+  booking.vendorStatus = status;
+  // Also update main status for backward compatibility
+  if (status === 'COMPLETED') {
+    booking.status = 'COMPLETED';
+  } else if (status === 'CANCELLED') {
+    booking.status = 'CANCELLED';
+  }
+  
   if (notes) booking.vendorNotes = notes;
 
   // Set timestamps based on status
@@ -876,7 +884,8 @@ export const completeBooking = asyncHandler(async (req, res) => {
     });
   }
 
-  booking.status = 'COMPLETED';
+  booking.vendorStatus = 'COMPLETED';
+  booking.status = 'COMPLETED'; // Also update main status
   booking.completedAt = new Date();
   if (completionNotes) booking.completionNotes = completionNotes;
 
@@ -1636,7 +1645,8 @@ export const acceptBooking = asyncHandler(async (req, res) => {
     });
   }
 
-  booking.status = 'IN_PROGRESS';
+  booking.vendorStatus = 'IN_PROGRESS';
+  booking.status = 'IN_PROGRESS'; // Also update main status
   booking.vendorAcceptedAt = new Date();
   await booking.save();
 

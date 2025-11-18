@@ -94,13 +94,14 @@ export const getBookingById = asyncHandler(async (req, res) => {
 // @route   POST /api/bookings
 // @access  Private
 export const createBooking = asyncHandler(async (req, res) => {
-  const { packageId, eventDate, location, customization } = req.body;
+  const { packageId, eventDate, location, customization, paymentPercentage } = req.body;
 
   console.log('📅 Booking Controller: Creating booking');
   console.log('📅 Booking Controller: Package ID:', packageId);
   console.log('📅 Booking Controller: User ID:', req.userId);
   console.log('📅 Booking Controller: Event Date:', eventDate);
   console.log('📅 Booking Controller: Location:', location);
+  console.log('📅 Booking Controller: Payment Percentage:', paymentPercentage);
 
   // Verify package exists
   const packageData = await Package.findById(packageId);
@@ -114,10 +115,13 @@ export const createBooking = asyncHandler(async (req, res) => {
     });
   }
 
+  // Validate payment percentage (20-100%)
+  const validPaymentPercentage = Math.max(20, Math.min(100, paymentPercentage || 20));
+  
   // Calculate total amount
   const baseAmount = packageData.basePrice;
   const totalAmount = baseAmount; // Add taxes, add-ons later
-  const partialAmount = Math.round(totalAmount * 0.2); // 20% advance payment
+  const partialAmount = Math.round(totalAmount * (validPaymentPercentage / 100));
 
   const booking = await Booking.create({
     userId: req.userId,
@@ -127,6 +131,9 @@ export const createBooking = asyncHandler(async (req, res) => {
     customization,
     totalAmount,
     partialAmount,
+    paymentPercentage: validPaymentPercentage,
+    paymentPercentagePaid: 0,
+    paymentStatus: 'PENDING_PAYMENT',
     status: 'PENDING_PARTIAL_PAYMENT'
   });
 
@@ -234,7 +241,8 @@ export const assignVendorToBooking = asyncHandler(async (req, res) => {
   }
 
   booking.assignedVendorId = vendorId;
-  booking.status = 'ASSIGNED';
+  booking.vendorStatus = 'ASSIGNED';
+  booking.status = 'ASSIGNED'; // Also update main status
   await booking.save();
 
   // Create audit log

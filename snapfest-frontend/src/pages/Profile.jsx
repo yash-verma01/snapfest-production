@@ -10,7 +10,6 @@ import {
   Save, 
   X,
   Camera,
-  Shield,
   Star,
   Package,
   CreditCard
@@ -29,7 +28,9 @@ const Profile = () => {
     rating: 5,
     feedback: ''
   });
-  const [emailVerificationLoading, setEmailVerificationLoading] = useState(false);
+  
+  // State for backend profile data (phone and address are stored in backend, not Clerk)
+  const [backendProfile, setBackendProfile] = useState(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -45,25 +46,87 @@ const Profile = () => {
     dateOfBirth: ''
   });
 
+  // Fetch backend profile on mount and when user changes
   useEffect(() => {
+    const loadBackendProfile = async () => {
+      try {
+        const response = await userAPI.getUserProfile();
+        const profileData = response.data.data.user;
+        console.log('🔍 Backend profile loaded:', profileData);
+        console.log('🔍 Backend profile name:', profileData.name);
+        console.log('🔍 Backend profile name type:', typeof profileData.name);
+        console.log('🔍 Backend profile name length:', profileData.name?.length);
+        console.log('🔍 Clerk user fullName:', user?.fullName);
+        console.log('🔍 Clerk user firstName:', user?.firstName);
+        console.log('🔍 Clerk user lastName:', user?.lastName);
+        
+        setBackendProfile(profileData);
+        
+        // Get name from backend first, then fallback to Clerk
+        let displayName = profileData.name;
+        
+        // If backend name is empty/null/undefined, use Clerk's name
+        if (!displayName || displayName.trim() === '') {
+          displayName = user?.fullName || 
+                       (user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : null) ||
+                       user?.firstName ||
+                       user?.lastName ||
+                       '';
+          
+          // If we got name from Clerk but backend doesn't have it, update backend
+          if (displayName && displayName.trim() !== '') {
+            console.log('🔍 Backend name is empty, updating from Clerk:', displayName);
+            try {
+              await userAPI.updateUserProfile({ name: displayName });
+              // Reload profile after update
+              const updatedResponse = await userAPI.getUserProfile();
+              const updatedProfileData = updatedResponse.data.data.user;
+              setBackendProfile(updatedProfileData);
+              console.log('🔍 Backend profile updated with name:', updatedProfileData.name);
+            } catch (updateError) {
+              console.error('Error updating name in backend:', updateError);
+            }
+          }
+        }
+        
+        console.log('🔍 Final displayName:', displayName);
+        
+        setFormData(prev => ({
+          name: displayName || prev.name || '',
+          email: profileData.email || user?.primaryEmailAddress?.emailAddress || prev.email || '',
+          phone: profileData.phone || prev.phone || '',
+          address: profileData.address || prev.address || {
+            street: '',
+            city: '',
+            state: '',
+            pincode: '',
+            country: 'India'
+          },
+          dateOfBirth: prev.dateOfBirth || ''
+        }));
+      } catch (error) {
+        console.error('Error loading backend profile:', error);
+        // Fallback to Clerk data if backend fetch fails
+        if (user) {
+          setFormData({
+            name: user.fullName || '',
+            email: user.primaryEmailAddress?.emailAddress || '',
+            phone: user.phoneNumbers?.[0]?.phoneNumber || '',
+            address: {
+              street: '',
+              city: '',
+              state: '',
+              pincode: '',
+              country: 'India'
+            },
+            dateOfBirth: ''
+          });
+        }
+      }
+    };
+
     if (user) {
-      console.log('🔍 Frontend: User object loaded:', user);
-      console.log('🔍 Frontend: User address:', user.address);
-      console.log('🔍 Frontend: User address type:', typeof user.address);
-      console.log('🔍 Frontend: User address keys:', user.address ? Object.keys(user.address) : 'No address');
-      setFormData({
-        name: user.fullName || '',
-        email: user.primaryEmailAddress?.emailAddress || '',
-        phone: user.phoneNumbers?.[0]?.phoneNumber || '',
-        address: user.address || {
-          street: '',
-          city: '',
-          state: '',
-          pincode: '',
-          country: 'India'
-        },
-        dateOfBirth: user.dateOfBirth || ''
-      });
+      loadBackendProfile();
     }
   }, [user]);
 
@@ -141,23 +204,6 @@ const Profile = () => {
     }
   };
 
-  const handleSendEmailVerification = async () => {
-    console.log('🔍 Email verification button clicked!');
-    try {
-      setEmailVerificationLoading(true);
-      console.log('📧 Calling sendEmailVerification API...');
-      const response = await userAPI.sendEmailVerification();
-      console.log('✅ Email verification response:', response);
-      alert('Verification email sent! Please check your inbox.');
-    } catch (error) {
-      console.error('❌ Error sending verification email:', error);
-      console.error('❌ Error details:', error.response?.data);
-      alert('Error sending verification email. Please try again.');
-    } finally {
-      setEmailVerificationLoading(false);
-    }
-  };
-
   const handleSave = async () => {
     try {
       setLoading(true);
@@ -167,7 +213,10 @@ const Profile = () => {
       console.log('🔍 Frontend: Profile update response:', response.data);
       console.log('🔍 Frontend: User data from response:', response.data.data.user);
       console.log('🔍 Frontend: Address from response:', response.data.data.user.address);
-      // Clerk handles identity; backend profile is already persisted
+      
+      // Update backend profile state with the response data
+      setBackendProfile(response.data.data.user);
+      
       setIsEditing(false);
       alert('Profile updated successfully!');
     } catch (error) {
@@ -179,18 +228,19 @@ const Profile = () => {
   };
 
   const handleCancel = () => {
+    // Reset formData to current backend profile or Clerk user data
     setFormData({
-      name: user.name || '',
-      email: user.email || '',
-      phone: user.phone || '',
-      address: user.address || {
+      name: backendProfile?.name || user?.fullName || '',
+      email: backendProfile?.email || user?.primaryEmailAddress?.emailAddress || '',
+      phone: backendProfile?.phone || '',
+      address: backendProfile?.address || {
         street: '',
         city: '',
         state: '',
         pincode: '',
         country: 'India'
       },
-      dateOfBirth: user.dateOfBirth || ''
+      dateOfBirth: ''
     });
     setIsEditing(false);
   };
@@ -385,8 +435,25 @@ const Profile = () => {
                       <User className="w-8 h-8 text-primary-600" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{user.fullName}</h3>
-                      <p className="text-gray-600">{user.primaryEmailAddress?.emailAddress}</p>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {(() => {
+                          const name = formData.name || 
+                                      backendProfile?.name || 
+                                      user?.fullName || 
+                                      (user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : null) ||
+                                      user?.firstName ||
+                                      user?.lastName ||
+                                      (user?.primaryEmailAddress?.emailAddress?.split('@')[0]) ||
+                                      'User';
+                          console.log('🔍 Display name check:', {
+                            formDataName: formData.name,
+                            backendProfileName: backendProfile?.name,
+                            userFullName: user?.fullName,
+                            finalName: name
+                          });
+                          return name;
+                        })()}
+                      </h3>
                       <Badge className="mt-1 bg-green-100 text-green-800">
                         {user.role === 'user' ? 'Customer' : user.role}
                       </Badge>
@@ -398,30 +465,9 @@ const Profile = () => {
                       <Mail className="w-5 h-5 text-gray-400" />
                       <div className="flex-1">
                         <p className="text-sm text-gray-500">Email</p>
-                        <p className="font-medium text-gray-900">{user.email}</p>
-                        <div className="flex items-center space-x-2 mt-1">
-                          {user.isEmailVerified ? (
-                            <Badge className="bg-green-100 text-green-800">
-                              <Shield className="w-3 h-3 mr-1" />
-                              Verified
-                            </Badge>
-                          ) : (
-                            <div className="flex items-center space-x-2">
-                              <Badge className="bg-yellow-100 text-yellow-800">
-                                <Shield className="w-3 h-3 mr-1" />
-                                Unverified
-                              </Badge>
-                              <Button
-                                size="sm"
-                                onClick={handleSendEmailVerification}
-                                disabled={emailVerificationLoading}
-                                className="text-xs"
-                              >
-                                {emailVerificationLoading ? 'Sending...' : 'Verify Email'}
-                              </Button>
-                            </div>
-                          )}
-                        </div>
+                        <p className="font-medium text-gray-900">
+                          {backendProfile?.email || user.primaryEmailAddress?.emailAddress || user.email || 'Not provided'}
+                        </p>
                       </div>
                     </div>
 
@@ -429,7 +475,9 @@ const Profile = () => {
                       <Phone className="w-5 h-5 text-gray-400" />
                       <div>
                         <p className="text-sm text-gray-500">Phone</p>
-                        <p className="font-medium text-gray-900">{user.phone || 'Not provided'}</p>
+                        <p className="font-medium text-gray-900">
+                          {backendProfile?.phone || 'Not provided'}
+                        </p>
                       </div>
                     </div>
 
@@ -438,20 +486,21 @@ const Profile = () => {
                       <div>
                         <p className="text-sm text-gray-500">Address</p>
                         {(() => {
+                          const address = backendProfile?.address;
                           console.log('🔍 Frontend: Address display check:', {
-                            hasAddress: !!user.address,
-                            address: user.address,
-                            hasStreet: user.address?.street,
-                            hasCity: user.address?.city,
-                            hasState: user.address?.state
+                            hasAddress: !!address,
+                            address: address,
+                            hasStreet: address?.street,
+                            hasCity: address?.city,
+                            hasState: address?.state
                           });
-                          return user.address && (user.address.street || user.address.city || user.address.state) ? (
+                          return address && (address.street || address.city || address.state) ? (
                             <div className="text-sm">
-                              {user.address.street && <p className="font-medium text-gray-900">{user.address.street}</p>}
+                              {address.street && <p className="font-medium text-gray-900">{address.street}</p>}
                               <p className="text-gray-600">
-                                {[user.address.city, user.address.state, user.address.pincode].filter(Boolean).join(', ')}
+                                {[address.city, address.state, address.pincode].filter(Boolean).join(', ')}
                               </p>
-                              {user.address.country && <p className="text-gray-600">{user.address.country}</p>}
+                              {address.country && <p className="text-gray-600">{address.country}</p>}
                             </div>
                           ) : (
                             <p className="font-medium text-gray-900">Not provided</p>
@@ -638,29 +687,6 @@ const Profile = () => {
               </div>
             </Card>
 
-            {/* Account Security */}
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Security</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Shield className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-600">Email Verified</span>
-                  </div>
-                  <Badge className="bg-green-100 text-green-800">
-                    {user.isEmailVerified ? 'Verified' : 'Pending'}
-                  </Badge>
-                </div>
-                
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => window.location.href = '/user/profile'}
-                >
-                  Change Password
-                </Button>
-              </div>
-            </Card>
           </div>
         </div>
       </div>

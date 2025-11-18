@@ -21,6 +21,8 @@ import {
   getUserStats,
   updateBookingStatus,
   getBookingInvoice,
+  getBookingDetails,
+  submitSupportRequest,
   addTestimonial,
   getUserTestimonials,
   sendEmailVerification,
@@ -71,8 +73,12 @@ router.get('/stats', getUserStats);
 // Booking management
 router.get('/bookings/upcoming', getUpcomingBookings);
 router.get('/bookings/history', getBookingHistory);
+router.get('/bookings/:id/details', getBookingDetails);
 router.get('/bookings/:id/invoice', getBookingInvoice);
 router.put('/bookings/:id/status', validateBookingStatus, updateBookingStatus);
+
+// Support
+router.post('/support', submitSupportRequest);
 
 // Payment history
 router.get('/payments', getUserPayments);

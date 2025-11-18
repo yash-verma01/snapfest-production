@@ -784,6 +784,16 @@ export const getUserPayments = asyncHandler(async (req, res) => {
       const remainingAmount = booking.totalAmount - totalPaid;
       const paymentProgress = booking.totalAmount > 0 ? (totalPaid / booking.totalAmount) * 100 : 0;
 
+      // Determine payment status from booking
+      let paymentStatus = booking.paymentStatus || 'PENDING_PAYMENT';
+      if (totalPaid >= booking.totalAmount) {
+        paymentStatus = 'FULLY_PAID';
+      } else if (totalPaid > 0) {
+        paymentStatus = 'PARTIALLY_PAID';
+      } else if (failedAmount > 0) {
+        paymentStatus = 'FAILED_PAYMENT';
+      }
+
       return {
         booking: {
           _id: booking._id,
@@ -791,9 +801,13 @@ export const getUserPayments = asyncHandler(async (req, res) => {
           eventDate: booking.eventDate,
           location: booking.location,
           status: booking.status,
+          vendorStatus: booking.vendorStatus,
           totalAmount: booking.totalAmount,
           amountPaid: booking.amountPaid,
           partialAmount: booking.partialAmount,
+          paymentStatus: booking.paymentStatus,
+          paymentPercentagePaid: booking.paymentPercentagePaid,
+          onlinePaymentDone: booking.onlinePaymentDone,
           createdAt: booking.createdAt,
           updatedAt: booking.updatedAt
         },
@@ -804,6 +818,7 @@ export const getUserPayments = asyncHandler(async (req, res) => {
           failedAmount,
           remainingAmount,
           paymentProgress: Math.round(paymentProgress),
+          paymentStatus, // Use calculated paymentStatus
           isFullyPaid: totalPaid >= booking.totalAmount,
           isPartiallyPaid: totalPaid > 0 && totalPaid < booking.totalAmount,
           hasPendingPayments: pendingAmount > 0,
@@ -1255,6 +1270,48 @@ export const updateBookingStatus = asyncHandler(async (req, res) => {
     success: true,
     message: 'Booking status updated successfully',
     data: { booking }
+  });
+});
+
+// @desc    Get booking details with all information
+// @route   GET /api/users/bookings/:id/details
+// @access  Private
+export const getBookingDetails = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.userId;
+
+  const booking = await Booking.findOne({ _id: id, userId })
+    .populate('packageId', 'title category basePrice images primaryImage description features')
+    .populate('userId', 'name email phone')
+    .populate('assignedVendorId', 'name email phone businessName');
+
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found or does not belong to you'
+    });
+  }
+
+  // Get all payments for this booking
+  const payments = await Payment.find({ bookingId: booking._id })
+    .sort({ createdAt: -1 });
+
+  const remainingAmount = booking.totalAmount - booking.amountPaid;
+
+  res.status(200).json({
+    success: true,
+    data: {
+      booking,
+      payments,
+      paymentSummary: {
+        totalAmount: booking.totalAmount,
+        amountPaid: booking.amountPaid,
+        remainingAmount,
+        paymentStatus: booking.paymentStatus,
+        paymentPercentagePaid: booking.paymentPercentagePaid,
+        onlinePaymentDone: booking.onlinePaymentDone
+      }
+    }
   });
 });
 
@@ -1939,5 +1996,86 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
       roleSet: clerkPublicMetadata?.role || null
     }
   });
+});
+
+// @desc    Submit support request
+// @route   POST /api/users/support
+// @access  Private
+export const submitSupportRequest = asyncHandler(async (req, res) => {
+  const { bookingId, subject, message } = req.body;
+  const userId = req.userId;
+
+  // Validate required fields
+  if (!subject || !message) {
+    return res.status(400).json({
+      success: false,
+      message: 'Subject and message are required'
+    });
+  }
+
+  // Get user details
+  const user = await User.findById(userId);
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'User not found'
+    });
+  }
+
+  // Get admin email from environment
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@snapfest.com';
+
+  // Get booking details if bookingId is provided
+  let bookingDetails = null;
+  if (bookingId) {
+    const booking = await Booking.findById(bookingId)
+      .populate('packageId', 'title');
+    if (booking && booking.userId.toString() === userId.toString()) {
+      bookingDetails = {
+        id: booking._id,
+        packageTitle: booking.packageId?.title,
+        eventDate: booking.eventDate,
+        location: booking.location
+      };
+    }
+  }
+
+  // Send email to admin
+  try {
+    const emailService = (await import('../services/emailService.js')).default;
+    const getEmailService = emailService;
+    const emailServiceInstance = getEmailService();
+
+    const emailSubject = `Support Request: ${subject}`;
+    const emailContent = `
+      <h2>New Support Request from ${user.name}</h2>
+      <p><strong>User Email:</strong> ${user.email}</p>
+      <p><strong>User Phone:</strong> ${user.phone || 'Not provided'}</p>
+      ${bookingDetails ? `
+        <h3>Related Booking:</h3>
+        <p><strong>Booking ID:</strong> ${bookingDetails.id}</p>
+        <p><strong>Package:</strong> ${bookingDetails.packageTitle}</p>
+        <p><strong>Event Date:</strong> ${new Date(bookingDetails.eventDate).toLocaleDateString()}</p>
+        <p><strong>Location:</strong> ${bookingDetails.location}</p>
+      ` : ''}
+      <h3>Message:</h3>
+      <p>${message.replace(/\n/g, '<br>')}</p>
+      <hr>
+      <p><small>This is an automated email from SnapFest support system.</small></p>
+    `;
+
+    await emailServiceInstance.sendEmail(adminEmail, emailSubject, emailContent);
+
+    res.status(200).json({
+      success: true,
+      message: 'Support request submitted successfully. We will get back to you soon.'
+    });
+  } catch (error) {
+    console.error('Error sending support email:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to submit support request. Please try again later.'
+    });
+  }
 });
 

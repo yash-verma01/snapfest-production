@@ -34,6 +34,18 @@ const bookingSchema = new mongoose.Schema({
     enum: ['PENDING_PARTIAL_PAYMENT', 'PARTIALLY_PAID', 'ASSIGNED', 'FULLY_PAID', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
     default: 'PENDING_PARTIAL_PAYMENT'
   },
+  // Vendor status - updated by vendor in dashboard
+  vendorStatus: {
+    type: String,
+    enum: ['ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
+    default: null
+  },
+  // Payment status - updated when payments are processed
+  paymentStatus: {
+    type: String,
+    enum: ['PENDING_PAYMENT', 'PARTIALLY_PAID', 'FULLY_PAID', 'FAILED_PAYMENT'],
+    default: 'PENDING_PAYMENT'
+  },
   amountPaid: {
     type: Number,
     default: 0
@@ -45,6 +57,25 @@ const bookingSchema = new mongoose.Schema({
   totalAmount: {
     type: Number,
     required: true
+  },
+  // Payment percentage configuration (20-100%)
+  paymentPercentage: {
+    type: Number,
+    default: 20,
+    min: 20,
+    max: 100
+  },
+  // Track how much percentage has been paid (0-100%)
+  paymentPercentagePaid: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100
+  },
+  // Flag to indicate if 100% payment is done online
+  onlinePaymentDone: {
+    type: Boolean,
+    default: false
   },
   assignedVendorId: {
     type: mongoose.Schema.Types.ObjectId,

@@ -196,9 +196,10 @@ export const createPartialPaymentOrder = asyncHandler(async (req, res) => {
     });
   }
 
-  // Calculate partial amount (20%)
-  const partialAmount = Math.round(booking.totalAmount * 0.2);
+  // Calculate partial amount based on paymentPercentage
+  const partialAmount = Math.round(booking.totalAmount * (booking.paymentPercentage / 100));
   console.log('💳 Payment Controller: Booking total amount:', booking.totalAmount);
+  console.log('💳 Payment Controller: Payment percentage:', booking.paymentPercentage);
   console.log('💳 Payment Controller: Calculated partial amount:', partialAmount);
 
   // Create Razorpay order
@@ -455,10 +456,17 @@ export const verifyPayment = asyncHandler(async (req, res) => {
     booking.amountPaid = booking.amountPaid + payment.amount;
     console.log('💳 Payment Verification: Updated amountPaid to:', booking.amountPaid);
     
+    // Calculate payment percentage paid
+    booking.paymentPercentagePaid = Math.round((booking.amountPaid / booking.totalAmount) * 100);
+    console.log('💳 Payment Verification: Payment percentage paid:', booking.paymentPercentagePaid);
+    
     // Check if this completes the payment
     if (booking.amountPaid >= booking.totalAmount) {
       console.log('💳 Payment Verification: Payment is FULLY_PAID');
       booking.status = 'FULLY_PAID';
+      booking.paymentStatus = 'FULLY_PAID';
+      booking.paymentPercentagePaid = 100;
+      booking.onlinePaymentDone = true; // Mark as fully paid online
       
       // Generate OTP for vendor verification
       const otp = await OTPService.createOTP(booking._id, 'FULL_PAYMENT');
@@ -514,6 +522,7 @@ export const verifyPayment = asyncHandler(async (req, res) => {
       // Partial payment completed
       console.log('💳 Payment Verification: Payment is PARTIALLY_PAID');
       booking.status = 'PARTIALLY_PAID';
+      booking.paymentStatus = 'PARTIALLY_PAID';
       await booking.save();
       console.log('💳 Payment Verification: Booking saved with PARTIALLY_PAID status');
 
@@ -565,8 +574,8 @@ export const processPartialPayment = asyncHandler(async (req, res) => {
     });
   }
 
-  // Calculate partial amount (20%)
-  const partialAmount = Math.round(booking.totalAmount * 0.2);
+  // Calculate partial amount based on paymentPercentage
+  const partialAmount = Math.round(booking.totalAmount * (booking.paymentPercentage / 100));
 
   // Create payment record
   const payment = await Payment.create({
@@ -582,6 +591,8 @@ export const processPartialPayment = asyncHandler(async (req, res) => {
   booking.amountPaid = partialAmount;
   booking.partialAmount = partialAmount;
   booking.status = 'PARTIALLY_PAID';
+  booking.paymentStatus = 'PARTIALLY_PAID';
+  booking.paymentPercentagePaid = Math.round((partialAmount / booking.totalAmount) * 100);
   await booking.save();
 
   // Create audit log
@@ -643,6 +654,9 @@ export const processFullPayment = asyncHandler(async (req, res) => {
   // Update booking
   booking.amountPaid = booking.totalAmount;
   booking.status = 'FULLY_PAID';
+  booking.paymentStatus = 'FULLY_PAID';
+  booking.paymentPercentagePaid = 100;
+  booking.onlinePaymentDone = true; // Mark as fully paid online
   await booking.save();
 
   // Generate OTP for vendor verification

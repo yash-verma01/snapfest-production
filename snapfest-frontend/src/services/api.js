@@ -87,8 +87,12 @@ export const userAPI = {
   // Bookings
   getUpcomingBookings: () => api.get('/users/bookings/upcoming'),
   getBookingHistory: () => api.get('/users/bookings/history'),
+  getBookingDetails: (id) => api.get(`/users/bookings/${id}/details`),
   getBookingInvoice: (id) => api.get(`/users/bookings/${id}/invoice`),
   updateBookingStatus: (id, data) => api.put(`/users/bookings/${id}/status`, data),
+  
+  // Support
+  submitSupportRequest: (data) => api.post('/users/support', data),
   
   // Payments
   getPayments: () => api.get('/users/payments'),
