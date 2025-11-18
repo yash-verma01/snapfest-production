@@ -374,11 +374,11 @@ export const getUserDashboard = asyncHandler(async (req, res) => {
   const totalBookings = await Booking.countDocuments({ userId });
   const activeBookings = await Booking.countDocuments({ 
     userId, 
-    status: { $in: ['PENDING_PARTIAL_PAYMENT', 'PARTIALLY_PAID', 'ASSIGNED', 'IN_PROGRESS'] }
+    vendorStatus: { $in: ['ASSIGNED', 'IN_PROGRESS'] }
   });
   const completedBookings = await Booking.countDocuments({ 
     userId, 
-    status: 'COMPLETED' 
+    vendorStatus: 'COMPLETED' 
   });
 
   // Get recent bookings
@@ -649,9 +649,9 @@ export const getUpcomingBookings = asyncHandler(async (req, res) => {
   console.log('📅 User Controller: Getting upcoming bookings for user:', userId);
 
   // First, let's see ALL bookings for this user
-  const allUserBookings = await Booking.find({ userId }).select('status eventDate createdAt');
+  const allUserBookings = await Booking.find({ userId }).select('vendorStatus eventDate createdAt');
   console.log('📅 User Controller: All user bookings:', allUserBookings.length);
-  console.log('📅 User Controller: Booking statuses:', allUserBookings.map(b => ({ status: b.status, eventDate: b.eventDate, createdAt: b.createdAt })));
+  console.log('📅 User Controller: Booking vendor statuses:', allUserBookings.map(b => ({ vendorStatus: b.vendorStatus, eventDate: b.eventDate, createdAt: b.createdAt })));
 
   const currentDate = new Date();
   console.log('📅 User Controller: Current date:', currentDate);
@@ -800,13 +800,13 @@ export const getUserPayments = asyncHandler(async (req, res) => {
           packageId: booking.packageId,
           eventDate: booking.eventDate,
           location: booking.location,
-          status: booking.status,
           vendorStatus: booking.vendorStatus,
           totalAmount: booking.totalAmount,
           amountPaid: booking.amountPaid,
-          partialAmount: booking.partialAmount,
+          remainingAmount: booking.remainingAmount,
           paymentStatus: booking.paymentStatus,
           paymentPercentagePaid: booking.paymentPercentagePaid,
+          remainingPercentage: booking.remainingPercentage,
           onlinePaymentDone: booking.onlinePaymentDone,
           createdAt: booking.createdAt,
           updatedAt: booking.updatedAt
@@ -1254,8 +1254,8 @@ export const updateBookingStatus = asyncHandler(async (req, res) => {
     });
   }
 
-  // Update booking status
-  booking.status = status;
+  // Update booking vendor status
+  booking.vendorStatus = status;
   await booking.save();
 
   // Create audit log

@@ -332,7 +332,7 @@ export const getVendorDashboard = asyncHandler(async (req, res) => {
   // Get pending bookings
   const pendingBookings = await Booking.countDocuments({ 
     assignedVendorId: vendor._id, 
-    status: { $in: ['ASSIGNED', 'IN_PROGRESS'] } 
+    vendorStatus: { $in: ['ASSIGNED', 'IN_PROGRESS'] } 
   });
 
   // Get completed bookings this month
@@ -340,7 +340,7 @@ export const getVendorDashboard = asyncHandler(async (req, res) => {
   currentMonth.setDate(1);
   const completedThisMonth = await Booking.countDocuments({
     assignedVendorId: vendor._id,
-    status: 'COMPLETED',
+    vendorStatus: 'COMPLETED',
     completedAt: { $gte: currentMonth }
   });
 
@@ -349,7 +349,7 @@ export const getVendorDashboard = asyncHandler(async (req, res) => {
     {
       $match: {
         vendorId: vendor._id,
-        status: 'COMPLETED',
+        vendorStatus: 'COMPLETED',
         createdAt: { $gte: currentMonth }
       }
     },
@@ -411,7 +411,7 @@ export const getVendorStats = asyncHandler(async (req, res) => {
     {
       $match: {
         vendorId: vendor._id,
-        status: 'COMPLETED',
+        vendorStatus: 'COMPLETED',
         createdAt: { $gte: sixMonthsAgo }
       }
     },
@@ -500,7 +500,7 @@ export const getVendorEarnings = asyncHandler(async (req, res) => {
     {
       $match: {
         vendorId: vendor._id,
-        status: 'COMPLETED',
+        vendorStatus: 'COMPLETED',
         createdAt: { $gte: startDate, $lte: endDate }
       }
     },
@@ -519,7 +519,7 @@ export const getVendorEarnings = asyncHandler(async (req, res) => {
     {
       $match: {
         vendorId: vendor._id,
-        status: 'COMPLETED',
+        vendorStatus: 'COMPLETED',
         createdAt: { $gte: startDate, $lte: endDate }
       }
     },
@@ -563,11 +563,11 @@ export const getVendorPerformance = asyncHandler(async (req, res) => {
   const totalBookings = await Booking.countDocuments({ vendorId: vendor._id });
   const completedBookings = await Booking.countDocuments({ 
     vendorId: vendor._id, 
-    status: 'COMPLETED' 
+    vendorStatus: 'COMPLETED' 
   });
   const cancelledBookings = await Booking.countDocuments({ 
     vendorId: vendor._id, 
-    status: 'CANCELLED' 
+    vendorStatus: 'CANCELLED' 
   });
 
   // Calculate completion rate
@@ -579,7 +579,7 @@ export const getVendorPerformance = asyncHandler(async (req, res) => {
     {
       $match: {
         vendorId: vendor._id,
-        status: { $in: ['IN_PROGRESS', 'COMPLETED'] }
+        vendorStatus: { $in: ['IN_PROGRESS', 'COMPLETED'] }
       }
     },
     {
@@ -660,7 +660,7 @@ export const getVendorBookings = asyncHandler(async (req, res) => {
   // Build query for assigned bookings first
   let assignedQuery = { assignedVendorId: vendor._id };
   if (status) {
-    assignedQuery.status = status;
+    assignedQuery.vendorStatus = status;
   }
 
   console.log('🔍 Vendor Bookings Debug:', {
@@ -673,7 +673,7 @@ export const getVendorBookings = asyncHandler(async (req, res) => {
   // Build query for other bookings (legacy vendorId field)
   let otherQuery = { vendorId: vendor._id };
   if (status) {
-    otherQuery.status = status;
+    otherQuery.vendorStatus = status;
   }
 
   // Get assigned bookings first (prioritized)
@@ -791,12 +791,6 @@ export const updateBookingStatus = asyncHandler(async (req, res) => {
 
   // Update booking - use vendorStatus for vendor updates
   booking.vendorStatus = status;
-  // Also update main status for backward compatibility
-  if (status === 'COMPLETED') {
-    booking.status = 'COMPLETED';
-  } else if (status === 'CANCELLED') {
-    booking.status = 'CANCELLED';
-  }
   
   if (notes) booking.vendorNotes = notes;
 
@@ -831,7 +825,7 @@ export const startBooking = asyncHandler(async (req, res) => {
   const booking = await Booking.findOne({
     _id: req.params.id,
     assignedVendorId: req.userId,
-    status: 'FULLY_PAID'
+    paymentStatus: 'FULLY_PAID'
   });
 
   if (!booking) {
@@ -874,7 +868,7 @@ export const completeBooking = asyncHandler(async (req, res) => {
   const booking = await Booking.findOne({
     _id: req.params.id,
     assignedVendorId: vendor._id,
-    status: 'IN_PROGRESS'
+    vendorStatus: 'IN_PROGRESS'
   });
 
   if (!booking) {
@@ -885,7 +879,6 @@ export const completeBooking = asyncHandler(async (req, res) => {
   }
 
   booking.vendorStatus = 'COMPLETED';
-  booking.status = 'COMPLETED'; // Also update main status
   booking.completedAt = new Date();
   if (completionNotes) booking.completionNotes = completionNotes;
 
@@ -921,7 +914,7 @@ export const verifyBookingOTP = asyncHandler(async (req, res) => {
   const booking = await Booking.findOne({
     _id: id,
     assignedVendorId: vendor._id,
-    status: 'COMPLETED'
+    vendorStatus: 'COMPLETED'
   });
 
   if (!booking) {
@@ -974,7 +967,7 @@ export const verifyBookingOTP = asyncHandler(async (req, res) => {
     data: {
       booking: {
         id: booking._id,
-        status: booking.status,
+        vendorStatus: booking.vendorStatus,
         otpVerified: booking.otpVerified,
         otpVerifiedAt: booking.otpVerifiedAt
       }
@@ -996,7 +989,7 @@ export const cancelBooking = asyncHandler(async (req, res) => {
   const booking = await Booking.findOne({
     _id: req.params.id,
     vendorId: vendor._id,
-    status: { $in: ['ASSIGNED', 'IN_PROGRESS'] }
+    vendorStatus: { $in: ['ASSIGNED', 'IN_PROGRESS'] }
   });
 
   if (!booking) {
@@ -1033,7 +1026,7 @@ export const getPendingOTPs = asyncHandler(async (req, res) => {
   // Get bookings that need OTP verification
   const bookings = await Booking.find({
     assignedVendorId: req.userId,
-    status: 'FULLY_PAID',
+    paymentStatus: 'FULLY_PAID',
     otpVerified: false
   })
     .populate('userId', 'name phone')
@@ -1061,7 +1054,7 @@ export const verifyOTP = asyncHandler(async (req, res) => {
   const booking = await Booking.findOne({
     _id: bookingId,
     assignedVendorId: req.userId,
-    status: 'FULLY_PAID'
+    paymentStatus: 'FULLY_PAID'
   });
 
   if (!booking) {
@@ -1153,7 +1146,7 @@ export const requestNewOTP = asyncHandler(async (req, res) => {
   const booking = await Booking.findOne({
     _id: bookingId,
     vendorId: vendor._id,
-    status: 'FULLY_PAID'
+    paymentStatus: 'FULLY_PAID'
   });
 
   if (!booking) {
@@ -1646,7 +1639,6 @@ export const acceptBooking = asyncHandler(async (req, res) => {
   }
 
   booking.vendorStatus = 'IN_PROGRESS';
-  booking.status = 'IN_PROGRESS'; // Also update main status
   booking.vendorAcceptedAt = new Date();
   await booking.save();
 

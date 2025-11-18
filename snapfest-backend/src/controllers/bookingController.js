@@ -13,9 +13,9 @@ export const getUserBookings = asyncHandler(async (req, res) => {
 
   let query = { userId: req.userId };
 
-  // Filter by status
+  // Filter by vendor status
   if (req.query.status) {
-    query.status = req.query.status;
+    query.vendorStatus = req.query.status;
   }
 
   // Filter by date range
@@ -121,7 +121,8 @@ export const createBooking = asyncHandler(async (req, res) => {
   // Calculate total amount
   const baseAmount = packageData.basePrice;
   const totalAmount = baseAmount; // Add taxes, add-ons later
-  const partialAmount = Math.round(totalAmount * (validPaymentPercentage / 100));
+  const initialPayment = Math.round(totalAmount * (validPaymentPercentage / 100));
+  const remainingAmount = totalAmount - initialPayment;
 
   const booking = await Booking.create({
     userId: req.userId,
@@ -130,19 +131,21 @@ export const createBooking = asyncHandler(async (req, res) => {
     location,
     customization,
     totalAmount,
-    partialAmount,
+    amountPaid: 0, // Will be updated when payment is made
+    remainingAmount: remainingAmount,
     paymentPercentage: validPaymentPercentage,
     paymentPercentagePaid: 0,
+    remainingPercentage: 100 - validPaymentPercentage,
     paymentStatus: 'PENDING_PAYMENT',
-    status: 'PENDING_PARTIAL_PAYMENT'
+    vendorStatus: null // Will be set when vendor is assigned
   });
 
   // Populate the booking
   await booking.populate('packageId', 'title category basePrice');
 
   console.log('📅 Booking Controller: Booking created successfully:', booking._id);
-  console.log('📅 Booking Controller: Booking status:', booking.status);
-  console.log('📅 Booking Controller: Booking partial amount:', booking.partialAmount);
+  console.log('📅 Booking Controller: Booking vendor status:', booking.vendorStatus);
+  console.log('📅 Booking Controller: Booking remaining amount:', booking.remainingAmount);
 
   // Create audit log
   // DISABLED: await AuditLog.create({
@@ -159,17 +162,17 @@ export const createBooking = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Update booking status
+// @desc    Update booking vendor status
 // @route   PUT /api/bookings/:id/status
 // @access  Private
 export const updateBookingStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
-  const validStatuses = ['PENDING_PARTIAL_PAYMENT', 'PARTIALLY_PAID', 'ASSIGNED', 'FULLY_PAID', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
+  const validStatuses = ['ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
 
   if (!validStatuses.includes(status)) {
     return res.status(400).json({
       success: false,
-      message: 'Invalid status'
+      message: 'Invalid vendor status'
     });
   }
 
@@ -197,8 +200,8 @@ export const updateBookingStatus = asyncHandler(async (req, res) => {
     });
   }
 
-  const oldStatus = booking.status;
-  booking.status = status;
+  const oldStatus = booking.vendorStatus;
+  booking.vendorStatus = status;
   await booking.save();
 
   // Create audit log
@@ -242,7 +245,6 @@ export const assignVendorToBooking = asyncHandler(async (req, res) => {
 
   booking.assignedVendorId = vendorId;
   booking.vendorStatus = 'ASSIGNED';
-  booking.status = 'ASSIGNED'; // Also update main status
   await booking.save();
 
   // Create audit log
@@ -324,22 +326,22 @@ export const cancelBooking = asyncHandler(async (req, res) => {
   }
 
   // Check if booking can be cancelled
-  if (booking.status === 'COMPLETED') {
+  if (booking.vendorStatus === 'COMPLETED') {
     return res.status(400).json({
       success: false,
       message: 'Cannot cancel completed booking'
     });
   }
 
-  if (booking.status === 'CANCELLED') {
+  if (booking.vendorStatus === 'CANCELLED') {
     return res.status(400).json({
       success: false,
       message: 'Booking is already cancelled'
     });
   }
 
-  // Update booking status
-  booking.status = 'CANCELLED';
+  // Update booking vendor status
+  booking.vendorStatus = 'CANCELLED';
   await booking.save();
 
   // Create audit log

@@ -64,7 +64,7 @@ const PaymentSuccess = () => {
           {/* Action Buttons */}
           <div className="space-y-3">
             <Button 
-              onClick={() => navigate('/bookings')}
+              onClick={() => navigate('/user/bookings')}
               className="w-full"
               size="lg"
             >

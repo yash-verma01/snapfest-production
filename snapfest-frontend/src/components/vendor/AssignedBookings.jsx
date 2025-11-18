@@ -137,9 +137,9 @@ const AssignedBookings = () => {
                         {booking.packageId?.title} - {booking.packageId?.category}
                       </p>
                     </div>
-                    <Badge className={getStatusBadgeColor(booking.status)}>
-                      {getStatusIcon(booking.status)}
-                      <span className="ml-1">{booking.status}</span>
+                    <Badge className={getStatusBadgeColor(booking.vendorStatus || 'ASSIGNED')}>
+                      {getStatusIcon(booking.vendorStatus || 'ASSIGNED')}
+                      <span className="ml-1">{booking.vendorStatus || 'ASSIGNED'}</span>
                     </Badge>
                   </div>
 
@@ -208,7 +208,7 @@ const AssignedBookings = () => {
                     View Details
                   </Button>
                   
-                  {booking.status === 'ASSIGNED' && (
+                  {booking.vendorStatus === 'ASSIGNED' && (
                     <div className="flex flex-col space-y-2">
                       <Button
                         onClick={() => handleAcceptBooking(booking._id)}
@@ -228,7 +228,7 @@ const AssignedBookings = () => {
                     </div>
                   )}
                   
-                  {booking.status === 'IN_PROGRESS' && (
+                  {booking.vendorStatus === 'IN_PROGRESS' && (
                     <div className="flex flex-col space-y-2">
                       <Button
                         onClick={() => handleCompleteBooking(booking._id)}

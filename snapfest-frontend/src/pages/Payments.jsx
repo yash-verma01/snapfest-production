@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   CreditCard, 
   Download, 
@@ -19,19 +19,22 @@ import {
   Users,
   Package,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Loader2
 } from 'lucide-react';
 import { Card, Button, Badge } from '../components/ui';
-import { userAPI } from '../services/api';
+import { userAPI, paymentAPI } from '../services/api';
 import { dummyBookings } from '../data';
 import { dateUtils } from '../utils';
 
 const Payments = () => {
+  const navigate = useNavigate();
   const [paymentDetails, setPaymentDetails] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all');
   const [expandedBookings, setExpandedBookings] = useState(new Set());
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   useEffect(() => {
     const loadPayments = async () => {
@@ -270,11 +273,11 @@ const Payments = () => {
                             booking.paymentStatus === 'PARTIALLY_PAID' ? 'warning' :
                             booking.paymentStatus === 'PENDING_PAYMENT' ? 'danger' :
                             booking.paymentStatus === 'FAILED_PAYMENT' ? 'danger' :
-                            getBookingStatusColor(booking.status)
+                            'default'
                           } 
                           size="sm"
                         >
-                          {(booking.paymentStatus || booking.status).replace(/_/g, ' ')}
+                          {booking.paymentStatus?.replace(/_/g, ' ') || 'PENDING'}
                         </Badge>
                       </div>
                       <p className="text-sm text-gray-600">
@@ -406,10 +409,20 @@ const Payments = () => {
                       <Button
                         size="sm"
                         onClick={() => handleRetryPayment(booking._id)}
+                        disabled={processingPayment}
                         className="flex items-center justify-center"
                       >
-                        <CreditCard className="w-4 h-4 mr-1" />
-                        Pay Remaining
+                        {processingPayment ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="w-4 h-4 mr-1" />
+                            Pay Remaining
+                          </>
+                        )}
                       </Button>
                     )}
                     <Button

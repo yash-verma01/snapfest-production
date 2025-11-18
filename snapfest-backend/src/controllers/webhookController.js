@@ -85,15 +85,20 @@ async function handlePaymentCaptured(payment) {
         // Update booking amount paid
         booking.amountPaid = booking.amountPaid + paymentRecord.amount;
         
-        // Calculate payment percentage paid
+        // Calculate payment percentage paid and remaining
         booking.paymentPercentagePaid = Math.round((booking.amountPaid / booking.totalAmount) * 100);
+        booking.remainingPercentage = 100 - booking.paymentPercentagePaid;
+        booking.remainingAmount = booking.totalAmount - booking.amountPaid;
+        
+        // Set onlinePaymentDone to true for ANY online payment
+        booking.onlinePaymentDone = true;
         
         // Check if payment is complete
         if (booking.amountPaid >= booking.totalAmount) {
-          booking.status = 'FULLY_PAID';
           booking.paymentStatus = 'FULLY_PAID';
           booking.paymentPercentagePaid = 100;
-          booking.onlinePaymentDone = true; // Mark as fully paid online
+          booking.remainingPercentage = 0;
+          booking.remainingAmount = 0;
         } else {
           booking.paymentStatus = 'PARTIALLY_PAID';
         }

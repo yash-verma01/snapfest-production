@@ -188,11 +188,12 @@ export const createPartialPaymentOrder = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check if booking is in correct status
-  if (booking.status !== 'PENDING_PARTIAL_PAYMENT') {
+  // Check if booking is in correct payment status
+  // Allow payment if payment is pending or partially paid
+  if (!['PENDING_PAYMENT', 'PARTIALLY_PAID'].includes(booking.paymentStatus)) {
     return res.status(400).json({
       success: false,
-      message: 'Booking is not ready for partial payment'
+      message: 'Booking is not ready for payment'
     });
   }
 
@@ -294,11 +295,12 @@ export const createFullPaymentOrder = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check if booking is in correct status
-  if (booking.status !== 'PARTIALLY_PAID' && booking.status !== 'ASSIGNED') {
+  // Check if booking is in correct payment status
+  // Allow full payment if partially paid
+  if (booking.paymentStatus !== 'PARTIALLY_PAID') {
     return res.status(400).json({
       success: false,
-      message: 'Booking is not ready for full payment'
+      message: 'Booking is not ready for full payment. Please make partial payment first.'
     });
   }
 
@@ -450,23 +452,30 @@ export const verifyPayment = asyncHandler(async (req, res) => {
       id: booking._id,
       currentAmountPaid: booking.amountPaid,
       totalAmount: booking.totalAmount,
-      status: booking.status
+      paymentStatus: booking.paymentStatus,
+      vendorStatus: booking.vendorStatus
     });
     
     booking.amountPaid = booking.amountPaid + payment.amount;
     console.log('💳 Payment Verification: Updated amountPaid to:', booking.amountPaid);
     
-    // Calculate payment percentage paid
+    // Calculate payment percentage paid and remaining
     booking.paymentPercentagePaid = Math.round((booking.amountPaid / booking.totalAmount) * 100);
+    booking.remainingPercentage = 100 - booking.paymentPercentagePaid;
+    booking.remainingAmount = booking.totalAmount - booking.amountPaid;
     console.log('💳 Payment Verification: Payment percentage paid:', booking.paymentPercentagePaid);
+    console.log('💳 Payment Verification: Remaining percentage:', booking.remainingPercentage);
+    
+    // Set onlinePaymentDone to true for ANY online payment
+    booking.onlinePaymentDone = true;
     
     // Check if this completes the payment
     if (booking.amountPaid >= booking.totalAmount) {
       console.log('💳 Payment Verification: Payment is FULLY_PAID');
-      booking.status = 'FULLY_PAID';
       booking.paymentStatus = 'FULLY_PAID';
       booking.paymentPercentagePaid = 100;
-      booking.onlinePaymentDone = true; // Mark as fully paid online
+      booking.remainingPercentage = 0;
+      booking.remainingAmount = 0;
       
       // Generate OTP for vendor verification
       const otp = await OTPService.createOTP(booking._id, 'FULL_PAYMENT');
@@ -521,7 +530,6 @@ export const verifyPayment = asyncHandler(async (req, res) => {
     } else {
       // Partial payment completed
       console.log('💳 Payment Verification: Payment is PARTIALLY_PAID');
-      booking.status = 'PARTIALLY_PAID';
       booking.paymentStatus = 'PARTIALLY_PAID';
       await booking.save();
       console.log('💳 Payment Verification: Booking saved with PARTIALLY_PAID status');
@@ -566,11 +574,12 @@ export const processPartialPayment = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check if booking is in correct status
-  if (booking.status !== 'PENDING_PARTIAL_PAYMENT') {
+  // Check if booking is in correct payment status
+  // Allow payment if payment is pending or partially paid
+  if (!['PENDING_PAYMENT', 'PARTIALLY_PAID'].includes(booking.paymentStatus)) {
     return res.status(400).json({
       success: false,
-      message: 'Booking is not ready for partial payment'
+      message: 'Booking is not ready for payment'
     });
   }
 
@@ -589,10 +598,11 @@ export const processPartialPayment = asyncHandler(async (req, res) => {
 
   // Update booking
   booking.amountPaid = partialAmount;
-  booking.partialAmount = partialAmount;
-  booking.status = 'PARTIALLY_PAID';
+  booking.remainingAmount = booking.totalAmount - partialAmount;
   booking.paymentStatus = 'PARTIALLY_PAID';
   booking.paymentPercentagePaid = Math.round((partialAmount / booking.totalAmount) * 100);
+  booking.remainingPercentage = 100 - booking.paymentPercentagePaid;
+  booking.onlinePaymentDone = true; // Set for ANY online payment
   await booking.save();
 
   // Create audit log
@@ -630,11 +640,12 @@ export const processFullPayment = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check if booking is in correct status
-  if (booking.status !== 'PARTIALLY_PAID' && booking.status !== 'ASSIGNED') {
+  // Check if booking is in correct payment status
+  // Allow full payment if partially paid
+  if (booking.paymentStatus !== 'PARTIALLY_PAID') {
     return res.status(400).json({
       success: false,
-      message: 'Booking is not ready for full payment'
+      message: 'Booking is not ready for full payment. Please make partial payment first.'
     });
   }
 
@@ -653,10 +664,11 @@ export const processFullPayment = asyncHandler(async (req, res) => {
 
   // Update booking
   booking.amountPaid = booking.totalAmount;
-  booking.status = 'FULLY_PAID';
+  booking.remainingAmount = 0;
   booking.paymentStatus = 'FULLY_PAID';
   booking.paymentPercentagePaid = 100;
-  booking.onlinePaymentDone = true; // Mark as fully paid online
+  booking.remainingPercentage = 0;
+  booking.onlinePaymentDone = true; // Set for ANY online payment
   await booking.save();
 
   // Generate OTP for vendor verification
@@ -709,7 +721,7 @@ export const confirmCashPayment = asyncHandler(async (req, res) => {
   
   // If this completes the payment
   if (booking.amountPaid >= booking.totalAmount) {
-    booking.status = 'FULLY_PAID';
+    booking.paymentStatus = 'FULLY_PAID';
     
     // Generate OTP for verification
     const otp = await OTPService.createOTP(bookingId, 'FULL_PAYMENT');
@@ -807,7 +819,8 @@ export const verifyPaymentOTP = asyncHandler(async (req, res) => {
   // Update booking
   booking.otpVerified = true;
   booking.otpVerifiedAt = new Date();
-  booking.status = 'IN_PROGRESS';
+  // Note: vendorStatus should be updated by vendor, not here
+  // This is just for OTP verification
   await booking.save();
 
   // Create audit log
@@ -875,11 +888,23 @@ export const processRefund = asyncHandler(async (req, res) => {
   payment.refundAmount = amount || payment.amount;
   await payment.save();
 
-  // Update booking status
+  // Update booking payment status
   const booking = await Booking.findById(payment.bookingId);
   if (booking) {
     booking.amountPaid = booking.amountPaid - (amount || payment.amount);
-    booking.status = 'CANCELLED';
+    // Recalculate payment status
+    if (booking.amountPaid <= 0) {
+      booking.paymentStatus = 'PENDING_PAYMENT';
+      booking.paymentPercentagePaid = 0;
+      booking.remainingPercentage = 100;
+      booking.remainingAmount = booking.totalAmount;
+    } else if (booking.amountPaid < booking.totalAmount) {
+      booking.paymentStatus = 'PARTIALLY_PAID';
+      booking.paymentPercentagePaid = Math.round((booking.amountPaid / booking.totalAmount) * 100);
+      booking.remainingPercentage = 100 - booking.paymentPercentagePaid;
+      booking.remainingAmount = booking.totalAmount - booking.amountPaid;
+    }
+    // Note: vendorStatus should be updated separately if needed
     await booking.save();
   }
 

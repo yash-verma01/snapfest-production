@@ -106,8 +106,8 @@ const Bookings = () => {
   };
 
   const filteredBookings = bookings.filter(booking => {
-    // Use vendorStatus for filtering, fallback to status for backward compatibility
-    const displayStatus = booking.vendorStatus || booking.status;
+    // Use vendorStatus for filtering
+    const displayStatus = booking.vendorStatus;
     const matchesStatus = !filters.status || displayStatus === filters.status;
     const matchesSearch = !filters.search || 
       booking.packageId?.title?.toLowerCase().includes(filters.search.toLowerCase()) ||
@@ -215,9 +215,9 @@ const Bookings = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-4 mb-4">
-                      <Badge className={`${getStatusColor(booking.vendorStatus || booking.status)} flex items-center space-x-2`}>
-                        {getStatusIcon(booking.vendorStatus || booking.status)}
-                        <span>{(booking.vendorStatus || booking.status).replace(/_/g, ' ')}</span>
+                      <Badge className={`${getStatusColor(booking.vendorStatus)} flex items-center space-x-2`}>
+                        {getStatusIcon(booking.vendorStatus)}
+                        <span>{(booking.vendorStatus || 'Not Assigned').replace(/_/g, ' ')}</span>
                       </Badge>
                       <span className="text-sm text-gray-500">
                         #{booking._id.slice(-8)}

@@ -127,7 +127,7 @@ const Cart = () => {
         console.log('🛒 Cart: Booking created successfully:', result.data);
         console.log('🛒 Cart: Booking data structure:', result.data.booking);
         console.log('🛒 Cart: Booking ID:', result.data.booking._id);
-        console.log('🛒 Cart: Booking partial amount:', result.data.booking.partialAmount);
+        console.log('🛒 Cart: Booking remaining amount:', result.data.booking.remainingAmount);
         return result.data;
       });
 
@@ -145,20 +145,21 @@ const Cart = () => {
           throw new Error('Invalid booking data received');
         }
         
-        const partialAmount = booking.partialAmount;
-        console.log('🛒 Cart: Processing partial payment for booking:', booking._id, 'Amount:', partialAmount);
+        // Calculate initial payment amount based on paymentPercentage
+        const initialPaymentAmount = Math.round(booking.totalAmount * (paymentPercentage / 100));
+        console.log('🛒 Cart: Processing initial payment for booking:', booking._id, 'Amount:', initialPaymentAmount);
         
         // Validate amount
-        if (!partialAmount || partialAmount <= 0) {
-          throw new Error(`Invalid partial amount: ${partialAmount}`);
+        if (!initialPaymentAmount || initialPaymentAmount <= 0) {
+          throw new Error(`Invalid initial payment amount: ${initialPaymentAmount}`);
         }
 
         // Create partial payment order
-        console.log('🛒 Cart: Creating payment order for booking:', booking._id, 'Amount:', partialAmount);
+        console.log('🛒 Cart: Creating payment order for booking:', booking._id, 'Amount:', initialPaymentAmount);
         
         const requestData = {
           bookingId: booking._id,
-          amount: partialAmount
+          amount: initialPaymentAmount
         };
         
         console.log('🛒 Cart: Sending payment order request:', requestData);
@@ -172,7 +173,7 @@ const Cart = () => {
         if (!orderResponse.data.success) {
           console.error('🛒 Cart: Payment order creation failed:', orderResponse);
           console.error('🛒 Cart: Booking ID used:', booking._id);
-          console.error('🛒 Cart: Amount used:', partialAmount);
+          console.error('🛒 Cart: Amount used:', initialPaymentAmount);
           throw new Error(orderResponse.data.message || 'Failed to create payment order');
         }
 
@@ -182,7 +183,7 @@ const Cart = () => {
         // Open Razorpay checkout
         const paymentResult = await paymentService.openCheckout(
           orderData.order.id,
-          partialAmount,
+          initialPaymentAmount,
           'INR',
           `SnapFest - ${booking.packageId?.title || 'Photography Package'}`,
           `Initial payment (${paymentPercentage}%) for ${booking.packageId?.title || 'Photography Package'}`,
@@ -222,7 +223,7 @@ const Cart = () => {
       alert('Payment successful! Your bookings have been confirmed. You will receive an email confirmation shortly.');
       
       // Navigate to bookings page
-      navigate('/bookings');
+      navigate('/user/bookings');
 
     } catch (error) {
       console.error('🛒 Cart: Payment error:', error);

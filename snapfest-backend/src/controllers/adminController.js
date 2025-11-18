@@ -38,7 +38,7 @@ export const getDashboard = asyncHandler(async (req, res) => {
   });
 
   const pendingBookings = await Booking.countDocuments({ 
-    status: 'PENDING_PARTIAL_PAYMENT' 
+    paymentStatus: 'PENDING_PAYMENT' 
   });
 
   // Get revenue stats for current month
@@ -48,7 +48,7 @@ export const getDashboard = asyncHandler(async (req, res) => {
   const monthlyRevenue = await Payment.aggregate([
     {
       $match: {
-        status: 'COMPLETED',
+        vendorStatus: 'COMPLETED',
         createdAt: { $gte: currentMonth }
       }
     },

@@ -149,12 +149,9 @@ const BookingManagement = () => {
     }
   };
 
-  const getStatusBadgeColor = (status) => {
-    switch (status) {
-      case 'PENDING_PARTIAL_PAYMENT': return 'bg-yellow-100 text-yellow-800';
-      case 'PARTIALLY_PAID': return 'bg-blue-100 text-blue-800';
+  const getStatusBadgeColor = (vendorStatus) => {
+    switch (vendorStatus) {
       case 'ASSIGNED': return 'bg-purple-100 text-purple-800';
-      case 'FULLY_PAID': return 'bg-green-100 text-green-800';
       case 'IN_PROGRESS': return 'bg-indigo-100 text-indigo-800';
       case 'COMPLETED': return 'bg-green-100 text-green-800';
       case 'CANCELLED': return 'bg-red-100 text-red-800';
@@ -162,11 +159,12 @@ const BookingManagement = () => {
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
+  const getStatusIcon = (vendorStatus) => {
+    switch (vendorStatus) {
       case 'COMPLETED': return <CheckCircle className="w-4 h-4" />;
       case 'CANCELLED': return <XCircle className="w-4 h-4" />;
       case 'IN_PROGRESS': return <Clock className="w-4 h-4" />;
+      case 'ASSIGNED': return <UserPlus className="w-4 h-4" />;
       default: return <Calendar className="w-4 h-4" />;
     }
   };
@@ -300,10 +298,10 @@ const BookingManagement = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col space-y-1">
-                        <Badge className={getStatusBadgeColor(booking.status)}>
+                        <Badge className={getStatusBadgeColor(booking.vendorStatus || 'Not Assigned')}>
                           <span className="flex items-center">
-                            {getStatusIcon(booking.status)}
-                            <span className="ml-1">{booking.status}</span>
+                            {getStatusIcon(booking.vendorStatus || 'Not Assigned')}
+                            <span className="ml-1">{booking.vendorStatus || 'Not Assigned'}</span>
                           </span>
                         </Badge>
                         {/* Payment Status Badge */}
@@ -322,19 +320,19 @@ const BookingManagement = () => {
                           </Badge>
                         )}
                         {/* Verification Status Badge */}
-                        {booking.status === 'COMPLETED' && booking.otpVerified && (
+                        {booking.vendorStatus === 'COMPLETED' && booking.otpVerified && (
                           <Badge className="bg-green-100 text-green-800 text-xs flex items-center">
                             <CheckCircle className="w-3 h-3 mr-1" />
                             OTP Verified
                           </Badge>
                         )}
-                        {booking.status === 'COMPLETED' && !booking.otpVerified && !booking.onlinePaymentDone && (
+                        {booking.vendorStatus === 'COMPLETED' && !booking.otpVerified && !booking.onlinePaymentDone && (
                           <Badge className="bg-yellow-100 text-yellow-800 text-xs flex items-center">
                             <Clock className="w-3 h-3 mr-1" />
                             Pending Verification
                           </Badge>
                         )}
-                        {booking.status === 'COMPLETED' && booking.onlinePaymentDone && (
+                        {booking.vendorStatus === 'COMPLETED' && booking.onlinePaymentDone && (
                           <Badge className="bg-blue-100 text-blue-800 text-xs flex items-center">
                             <CheckCircle className="w-3 h-3 mr-1" />
                             Online Payment Done
@@ -373,7 +371,7 @@ const BookingManagement = () => {
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        {!booking.assignedVendorId && booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED' && (
+                        {!booking.assignedVendorId && booking.vendorStatus !== 'COMPLETED' && booking.vendorStatus !== 'CANCELLED' && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -384,7 +382,7 @@ const BookingManagement = () => {
                           </Button>
                         )}
                         {/* Generate OTP button - only show for COMPLETED bookings that are NOT fully paid online */}
-                        {booking.status === 'COMPLETED' && !booking.otpVerified && !booking.onlinePaymentDone && (
+                        {booking.vendorStatus === 'COMPLETED' && !booking.otpVerified && !booking.onlinePaymentDone && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -403,7 +401,7 @@ const BookingManagement = () => {
                             ✓ Verified
                           </Badge>
                         )}
-                        {booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED' && (
+                        {booking.vendorStatus !== 'COMPLETED' && booking.vendorStatus !== 'CANCELLED' && (
                           <Button
                             variant="outline"
                             size="sm"

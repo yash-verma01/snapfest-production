@@ -71,9 +71,9 @@ const VendorBookingCard = ({
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'PENDING':
+  const getStatusColor = (vendorStatus) => {
+    switch (vendorStatus) {
+      case 'ASSIGNED':
         return 'warning';
       case 'IN_PROGRESS':
         return 'info';
@@ -81,27 +81,21 @@ const VendorBookingCard = ({
         return 'success';
       case 'CANCELLED':
         return 'danger';
-      case 'REJECTED':
-        return 'danger';
       default:
         return 'default';
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'PENDING':
-        return <Clock className="w-4 h-4" />;
+  const getStatusIcon = (vendorStatus) => {
+    switch (vendorStatus) {
+      case 'ASSIGNED':
+        return <UserCheck className="w-4 h-4" />;
       case 'IN_PROGRESS':
         return <Camera className="w-4 h-4" />;
       case 'COMPLETED':
         return <CheckCircle className="w-4 h-4" />;
       case 'CANCELLED':
         return <X className="w-4 h-4" />;
-      case 'REJECTED':
-        return <AlertCircle className="w-4 h-4" />;
-      case 'ASSIGNED':
-        return <UserCheck className="w-4 h-4" />;
       default:
         return <Clock className="w-4 h-4" />;
     }
@@ -110,8 +104,8 @@ const VendorBookingCard = ({
   const getActionButtons = () => {
     const buttons = [];
 
-    switch (booking.status) {
-      case 'PENDING':
+    switch (booking.vendorStatus) {
+      case 'ASSIGNED':
         buttons.push(
           <Button
             key="accept"
@@ -215,9 +209,9 @@ const VendorBookingCard = ({
               </p>
             </div>
             <div className="flex items-center space-x-2">
-              {getStatusIcon(booking.status)}
-              <Badge variant={getStatusColor(booking.status)} size="sm">
-                {booking.status.replace('_', ' ')}
+              {getStatusIcon(booking.vendorStatus || 'ASSIGNED')}
+              <Badge variant={getStatusColor(booking.vendorStatus || 'ASSIGNED')} size="sm">
+                {(booking.vendorStatus || 'ASSIGNED').replace('_', ' ')}
               </Badge>
               {booking.assignedVendorId && (
                 <Badge variant="success" size="sm" className="bg-green-100 text-green-800">
@@ -292,11 +286,11 @@ const VendorBookingCard = ({
                   {booking.paymentStatus || 'PENDING'}
                 </Badge>
               </div>
-              {booking.partialAmount && (
+              {booking.remainingAmount !== undefined && (
                 <div className="text-sm">
-                  <span className="text-gray-600">Partial Payment:</span>
+                  <span className="text-gray-600">Remaining Amount:</span>
                   <span className="font-medium ml-1">
-                    {formatPrice(booking.partialAmount)}
+                    {formatPrice(booking.remainingAmount)}
                   </span>
                 </div>
               )}
