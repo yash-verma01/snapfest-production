@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { 
   Users, 
   Calendar, 
@@ -9,8 +8,6 @@ import {
   Bell,
   Settings,
   LogOut,
-  BarChart3,
-  PieChart,
   Activity,
   AlertTriangle,
   CheckCircle,
@@ -47,7 +44,6 @@ const AdminDashboard = () => {
     window.location.href = '/sign-in';
   };
   const [dashboardData, setDashboardData] = useState(null);
-  const [analytics, setAnalytics] = useState(null);
   const [systemStats, setSystemStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -127,12 +123,6 @@ const AdminDashboard = () => {
         console.log('Dashboard response:', dashboardResponse.data);
         setDashboardData(dashboardResponse.data.data);
         
-        // Load analytics
-        console.log('Fetching analytics data...');
-        const analyticsResponse = await adminAPI.getAnalytics();
-        console.log('Analytics response:', analyticsResponse.data);
-        setAnalytics(analyticsResponse.data.data);
-        
         // Load system stats
         console.log('Fetching system stats...');
         const statsResponse = await adminAPI.getSystemStats();
@@ -154,13 +144,6 @@ const AdminDashboard = () => {
             monthly: 0
           }
         });
-        setAnalytics({
-          revenueGrowth: 0,
-          userGrowth: 0,
-          bookingGrowth: 0,
-          topCategories: [],
-          monthlyRevenue: []
-        });
         setSystemStats({
           users: {
             active: 0
@@ -179,36 +162,36 @@ const AdminDashboard = () => {
       title: 'Total Users',
       value: dashboardData?.overview?.totalUsers || 0,
       icon: <Users className="w-6 h-6 text-blue-600" />,
-      change: `+${analytics?.userGrowth || 0}% this month`,
+      change: 'Registered users',
       changeType: 'positive',
-      description: 'Registered users',
+      description: 'Total registered users',
       trend: 'up'
     },
     {
       title: 'Total Vendors',
       value: dashboardData?.overview?.totalVendors || 0,
       icon: <Shield className="w-6 h-6 text-green-600" />,
-      change: '+3 this week',
+      change: 'Active photographers',
       changeType: 'positive',
-      description: 'Active photographers',
+      description: 'Total active vendors',
       trend: 'up'
     },
     {
       title: 'Total Bookings',
       value: dashboardData?.overview?.totalBookings || 0,
       icon: <Calendar className="w-6 h-6 text-purple-600" />,
-      change: `+${analytics?.bookingGrowth || 0}% this month`,
+      change: 'All time bookings',
       changeType: 'positive',
-      description: 'All time bookings',
+      description: 'Total bookings',
       trend: 'up'
     },
     {
       title: 'Monthly Revenue',
       value: `₹${(dashboardData?.revenue?.monthly || 0).toLocaleString()}`,
       icon: <CreditCard className="w-6 h-6 text-yellow-600" />,
-      change: `+${analytics?.revenueGrowth || 0}% this month`,
+      change: 'This month revenue',
       changeType: 'positive',
-      description: 'This month revenue',
+      description: 'Current month revenue',
       trend: 'up'
     }
   ];
@@ -268,12 +251,6 @@ const AdminDashboard = () => {
                   ← Back
                 </Button>
               )}
-              <Link to="/admin/analytics">
-                <Button variant="outline" size="sm">
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Analytics
-                </Button>
-              </Link>
               <Button variant="outline" size="sm" onClick={logout}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
@@ -522,13 +499,6 @@ const AdminDashboard = () => {
           </div>
         )}
         {activeTab === 'emails' && <EmailManagement />}
-        {activeTab === 'analytics' && (
-          <div className="text-center py-12">
-            <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Analytics</h3>
-            <p className="text-gray-600">Analytics dashboard coming soon...</p>
-          </div>
-        )}
 
         {activeTab === 'dashboard' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -641,14 +611,6 @@ const AdminDashboard = () => {
                     <Mail className="w-4 h-4 mr-2" />
                     Email Management
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    className={`w-full justify-start ${activeTab === 'analytics' ? 'bg-primary-50 text-primary-600' : ''}`}
-                    onClick={() => handleNavigation('analytics')}
-                  >
-                    <BarChart3 className="w-4 h-4 mr-2" />
-                    Analytics
-                  </Button>
                 </div>
               </Card>
 
@@ -687,26 +649,6 @@ const AdminDashboard = () => {
                 </div>
               </Card>
 
-              {/* Top Categories */}
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Categories</h3>
-                <div className="space-y-3">
-                  {analytics?.topCategories?.map((category, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">{category}</span>
-                      <div className="flex items-center">
-                        <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                          <div 
-                            className="bg-primary-600 h-2 rounded-full" 
-                            style={{ width: `${(index + 1) * 25}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-sm text-gray-600">{(index + 1) * 25}%</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
             </div>
           </div>
         )}

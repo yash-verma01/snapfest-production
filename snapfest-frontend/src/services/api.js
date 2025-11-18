@@ -136,7 +136,7 @@ export const vendorAPI = {
   updateVendorProfile: (data) => api.put('/vendors/profile', data),
   changeVendorPassword: (data) => api.put('/vendors/change-password', data),
   
-  // Dashboard & Analytics
+  // Dashboard
   getDashboard: () => api.get('/vendors/dashboard'),
   getStats: () => api.get('/vendors/stats'),
   getPerformance: () => api.get('/vendors/performance'),
@@ -204,9 +204,8 @@ export const adminAPI = {
   login: (credentials) => api.post('/admin/auth/login', credentials),
   logout: () => api.post('/admin/logout'),
   
-  // Dashboard & Analytics
+  // Dashboard
   getDashboard: () => api.get('/admin/dashboard'),
-  getAnalytics: () => api.get('/admin/analytics'),
   getSystemStats: () => api.get('/admin/stats'),
   
   // User Management
@@ -294,18 +293,6 @@ export const adminAPI = {
     console.log('🔍 API Debug - assignVendorToBooking called with:', { id, data });
     console.log('🔍 API Debug - URL will be:', `/admin/bookings/${id}/assign-vendor`);
     return api.post(`/admin/bookings/${id}/assign-vendor`, data);
-  },
-  
-  // Test method to verify routing
-  testAssign: () => {
-    console.log('🧪 Testing route...');
-    return api.post(`/admin/bookings/test-assign`, {});
-  },
-  
-  // Simple test method
-  simpleTest: () => {
-    console.log('🧪 Simple test...');
-    return api.post(`/admin/bookings/simple-test`, {});
   },
   
   // Testimonial Management

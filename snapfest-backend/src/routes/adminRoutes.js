@@ -49,9 +49,8 @@ import {
   verifyOTP,
   generateBookingVerificationOTP,
   
-  // Analytics & Reports
+  // Dashboard & Reports
   getDashboard,
-  getAnalytics,
   getAuditLogs,
   getSystemStats,
   
@@ -129,9 +128,8 @@ router.get('/test', (req, res) => {
 // All routes below are protected by requireAdminClerk middleware (applied at router level)
 // No need for authenticate/adminOnly on individual routes
 
-// ==================== DASHBOARD & ANALYTICS ====================
+// ==================== DASHBOARD ====================
 router.get('/dashboard', getDashboard);
-router.get('/analytics', getAnalytics);
 router.get('/stats', getSystemStats);
 router.get('/audit-logs', validatePagination, getAuditLogs);
 
@@ -164,12 +162,6 @@ router.put('/packages/:id/toggle-status', togglePackageStatus);
 router.delete('/packages/:id', deletePackage);
 
 // ==================== BOOKING MANAGEMENT ====================
-// Simple test route
-router.post('/bookings/simple-test', (req, res) => {
-  console.log('🧪 Simple test route hit!');
-  res.json({ success: true, message: 'Simple test working' });
-});
-
 router.get('/bookings', validatePagination, getAllBookings);
 router.get('/bookings/stats', getBookingStats);
 router.get('/bookings/:id', getBookingById);
@@ -177,19 +169,6 @@ router.put('/bookings/:id/status', updateBookingStatus);
 router.put('/bookings/:id/cancel', cancelBooking);
 router.post('/bookings/:id/assign-vendor', assignVendorToBooking);
 router.post('/bookings/:id/generate-otp', generateBookingVerificationOTP);
-// Test route to verify routing is working
-router.post('/bookings/test-assign', (req, res) => {
-  try {
-    console.log('🧪 Test route hit!');
-    console.log('🧪 Request URL:', req.url);
-    console.log('🧪 Request method:', req.method);
-    console.log('🧪 User:', req.user);
-    res.json({ success: true, message: 'Test route working' });
-  } catch (error) {
-    console.error('🧪 Test route error:', error);
-    res.status(500).json({ success: false, message: 'Test route error', error: error.message });
-  }
-});
 
 // ==================== PAYMENT MANAGEMENT ====================
 router.get('/payments', validatePagination, getAllPayments);

@@ -85,130 +85,6 @@ export const getDashboard = asyncHandler(async (req, res) => {
   });
 });
 
-export const getAnalytics = asyncHandler(async (req, res) => {
-  const { period = 'month' } = req.query;
-  
-  let startDate;
-  const endDate = new Date();
-  
-  switch (period) {
-    case 'week':
-      startDate = new Date();
-      startDate.setDate(startDate.getDate() - 7);
-      break;
-    case 'month':
-      startDate = new Date();
-      startDate.setMonth(startDate.getMonth() - 1);
-      break;
-    case 'year':
-      startDate = new Date();
-      startDate.setFullYear(startDate.getFullYear() - 1);
-      break;
-    default:
-      startDate = new Date();
-      startDate.setMonth(startDate.getMonth() - 1);
-  }
-
-  // User analytics
-  const userAnalytics = await User.aggregate([
-    {
-      $match: {
-        createdAt: { $gte: startDate, $lte: endDate }
-      }
-    },
-    {
-      $group: {
-        _id: '$role',
-        count: { $sum: 1 }
-      }
-    }
-  ]);
-
-  // Booking analytics
-  const bookingAnalytics = await Booking.aggregate([
-    {
-      $match: {
-        createdAt: { $gte: startDate, $lte: endDate }
-      }
-    },
-    {
-      $group: {
-        _id: '$status',
-        count: { $sum: 1 }
-      }
-    }
-  ]);
-
-  // Revenue analytics
-  const revenueAnalytics = await Payment.aggregate([
-    {
-      $match: {
-        status: 'COMPLETED',
-        createdAt: { $gte: startDate, $lte: endDate }
-      }
-    },
-    {
-      $group: {
-        _id: {
-          year: { $year: '$createdAt' },
-          month: { $month: '$createdAt' },
-          day: { $dayOfMonth: '$createdAt' }
-        },
-        total: { $sum: '$amount' },
-        count: { $sum: 1 }
-      }
-    },
-    { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
-  ]);
-
-  // Package popularity
-  const packageAnalytics = await Booking.aggregate([
-    {
-      $match: {
-        createdAt: { $gte: startDate, $lte: endDate }
-      }
-    },
-    {
-      $group: {
-        _id: '$packageId',
-        count: { $sum: 1 }
-      }
-    },
-    {
-      $lookup: {
-        from: 'packages',
-        localField: '_id',
-        foreignField: '_id',
-        as: 'package'
-      }
-    },
-    {
-      $unwind: '$package'
-    },
-    {
-      $project: {
-        packageName: '$package.name',
-        count: 1
-      }
-    },
-    { $sort: { count: -1 } },
-    { $limit: 10 }
-  ]);
-
-  res.status(200).json({
-    success: true,
-    data: {
-      period,
-      startDate,
-      endDate,
-      userAnalytics,
-      bookingAnalytics,
-      revenueAnalytics,
-      packageAnalytics
-    }
-  });
-});
-
 export const getSystemStats = asyncHandler(async (req, res) => {
   // System-wide statistics
   const totalUsers = await User.countDocuments({ role: 'user' });
@@ -755,7 +631,7 @@ export const assignVendorToBooking = asyncHandler(async (req, res) => {
 
   // Update booking with assigned vendor
   booking.assignedVendorId = vendorId;
-  booking.status = 'ASSIGNED';
+  booking.vendorStatus = 'ASSIGNED';
   booking.assignedAt = new Date();
   booking.assignedBy = req.userId;
 
@@ -975,14 +851,14 @@ export const cancelBooking = asyncHandler(async (req, res) => {
     });
   }
 
-  if (booking.status === 'CANCELLED') {
+  if (booking.vendorStatus === 'CANCELLED') {
     return res.status(400).json({
       success: false,
       message: 'Booking is already cancelled'
     });
   }
 
-  booking.status = 'CANCELLED';
+  booking.vendorStatus = 'CANCELLED';
   booking.cancelledAt = new Date();
   booking.cancellationReason = req.body.reason || 'Cancelled by admin';
   await booking.save();
@@ -993,7 +869,7 @@ export const cancelBooking = asyncHandler(async (req, res) => {
     data: {
       booking: {
         id: booking._id,
-        status: booking.status,
+        vendorStatus: booking.vendorStatus,
         cancelledAt: booking.cancelledAt,
         cancellationReason: booking.cancellationReason
       }
@@ -1331,7 +1207,7 @@ export const getAllBookings = asyncHandler(async (req, res) => {
 
   // Build query
   let query = {};
-  if (status) query.status = status;
+  if (status) query.vendorStatus = status;
 
   // Build sort object
   const sort = {};
@@ -1390,17 +1266,26 @@ export const updateBookingStatus = asyncHandler(async (req, res) => {
     });
   }
 
-  booking.status = status;
+  // Validate status is a valid vendorStatus
+  const validStatuses = ['ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid vendor status. Must be one of: ${validStatuses.join(', ')}`
+    });
+  }
+
+  booking.vendorStatus = status;
   booking.updatedAt = new Date();
   await booking.save();
 
   res.status(200).json({
     success: true,
-    message: 'Booking status updated successfully',
+    message: 'Booking vendor status updated successfully',
     data: {
       booking: {
         id: booking._id,
-        status: booking.status,
+        vendorStatus: booking.vendorStatus,
         updatedAt: booking.updatedAt
       }
     }
@@ -1409,14 +1294,14 @@ export const updateBookingStatus = asyncHandler(async (req, res) => {
 
 export const getBookingStats = asyncHandler(async (req, res) => {
   const totalBookings = await Booking.countDocuments();
-  const pendingBookings = await Booking.countDocuments({ status: 'PENDING_PARTIAL_PAYMENT' });
-  const confirmedBookings = await Booking.countDocuments({ status: 'IN_PROGRESS' });
-  const completedBookings = await Booking.countDocuments({ status: 'COMPLETED' });
-  const cancelledBookings = await Booking.countDocuments({ status: 'CANCELLED' });
+  const assignedBookings = await Booking.countDocuments({ vendorStatus: 'ASSIGNED' });
+  const inProgressBookings = await Booking.countDocuments({ vendorStatus: 'IN_PROGRESS' });
+  const completedBookings = await Booking.countDocuments({ vendorStatus: 'COMPLETED' });
+  const cancelledBookings = await Booking.countDocuments({ vendorStatus: 'CANCELLED' });
 
   // Revenue stats
   const totalRevenue = await Booking.aggregate([
-    { $match: { status: 'COMPLETED' } },
+    { $match: { vendorStatus: 'COMPLETED' } },
     { $group: { _id: null, total: { $sum: '$totalAmount' } } }
   ]);
 
@@ -1625,11 +1510,11 @@ export const generateOTP = asyncHandler(async (req, res) => {
   }
 
   // Check if booking is ready for OTP generation
-  const validStatuses = ['PARTIALLY_PAID', 'FULLY_PAID', 'ASSIGNED'];
-  if (!validStatuses.includes(booking.status)) {
+  // OTP can be generated for COMPLETED bookings (vendor has marked it complete)
+  if (booking.vendorStatus !== 'COMPLETED') {
     return res.status(400).json({
       success: false,
-      message: `Booking is not ready for OTP generation. Current status: ${booking.status}`
+      message: `Booking is not ready for OTP generation. Vendor status must be COMPLETED. Current status: ${booking.vendorStatus || 'Not assigned'}`
     });
   }
 
@@ -1703,15 +1588,22 @@ export const verifyOTP = asyncHandler(async (req, res) => {
     });
   }
 
-  // Update booking status based on OTP type
-  if (otpResult.otp.type === 'PARTIAL_PAYMENT') {
-    booking.status = 'PARTIALLY_PAID';
-  } else if (otpResult.otp.type === 'FULL_PAYMENT') {
-    booking.status = 'FULLY_PAID';
-  }
+  // Note: OTP verification doesn't change vendorStatus
+  // Payment status is updated separately when payment is processed
+  // OTP verification just marks the booking as verified
 
   booking.otpVerified = true;
   booking.otpVerifiedAt = new Date();
+
+  // Check if payment is complete and update payment status
+  // This handles cases where cash payment was made but paymentStatus wasn't updated
+  if (booking.amountPaid >= booking.totalAmount && booking.paymentStatus !== 'FULLY_PAID') {
+    booking.paymentStatus = 'FULLY_PAID';
+    booking.paymentPercentagePaid = 100;
+    booking.remainingPercentage = 0;
+    booking.remainingAmount = 0;
+  }
+
   await booking.save();
 
   // Create audit log only if actorId is available - DISABLED
@@ -1754,10 +1646,10 @@ export const generateBookingVerificationOTP = asyncHandler(async (req, res) => {
   }
 
   // Check if booking is COMPLETED (vendor has marked it complete)
-  if (booking.status !== 'COMPLETED') {
+  if (booking.vendorStatus !== 'COMPLETED') {
     return res.status(400).json({
       success: false,
-      message: 'OTP can only be generated for COMPLETED bookings. Current status: ' + booking.status
+      message: 'OTP can only be generated for COMPLETED bookings. Current vendor status: ' + (booking.vendorStatus || 'Not assigned')
     });
   }
 

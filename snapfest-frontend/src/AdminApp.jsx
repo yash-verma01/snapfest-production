@@ -14,7 +14,6 @@ import Footer from './components/Footer';
 // Admin Pages only
 import { SignIn, SignUp } from '@clerk/clerk-react';
 import AdminDashboard from './pages/AdminDashboard';
-import AdminAnalytics from './pages/AdminAnalytics';
 import AdminProfile from './pages/AdminProfile';
 import NotFound from './pages/NotFound';
 
@@ -111,7 +110,6 @@ function AdminApp() {
               
               {/* Protected Routes - Admin Only */}
               <Route path="/admin/dashboard" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
-              <Route path="/admin/analytics" element={<AdminGuard><AdminAnalytics /></AdminGuard>} />
               <Route path="/admin/profile" element={<AdminGuard><AdminProfile /></AdminGuard>} />
               
               {/* 404 Route */}

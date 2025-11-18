@@ -73,7 +73,6 @@ export const dummyAdmin = {
     'manage_vendors',
     'manage_packages',
     'manage_bookings',
-    'view_analytics',
     'manage_payments'
   ]
 };

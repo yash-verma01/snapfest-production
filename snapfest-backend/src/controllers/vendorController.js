@@ -774,7 +774,7 @@ export const updateBookingStatus = asyncHandler(async (req, res) => {
   }
 
   // Validate status transition (use vendorStatus for validation)
-  const currentVendorStatus = booking.vendorStatus || booking.status;
+  const currentVendorStatus = booking.vendorStatus || 'ASSIGNED'; // Default to ASSIGNED if null
   const validTransitions = {
     'ASSIGNED': ['IN_PROGRESS', 'CANCELLED'],
     'IN_PROGRESS': ['COMPLETED', 'CANCELLED'],
@@ -825,25 +825,19 @@ export const startBooking = asyncHandler(async (req, res) => {
   const booking = await Booking.findOne({
     _id: req.params.id,
     assignedVendorId: req.userId,
-    paymentStatus: 'FULLY_PAID'
+    vendorStatus: 'ASSIGNED'
   });
 
   if (!booking) {
     return res.status(404).json({
       success: false,
-      message: 'Booking not found or not ready to start. Payment must be completed and OTP verified.'
+      message: 'Booking not found or not in ASSIGNED status. Please accept the booking first.'
     });
   }
 
-  // Check if OTP has been verified
-  if (!booking.otpVerified) {
-    return res.status(400).json({
-      success: false,
-      message: 'OTP verification required before starting the event'
-    });
-  }
+  // Note: OTP verification happens AFTER event completion, not before starting
 
-  booking.status = 'IN_PROGRESS';
+  booking.vendorStatus = 'IN_PROGRESS';
   booking.startedAt = new Date();
   await booking.save();
 
@@ -959,6 +953,16 @@ export const verifyBookingOTP = asyncHandler(async (req, res) => {
   // OTP is valid - mark as verified
   booking.otpVerified = true;
   booking.otpVerifiedAt = new Date();
+
+  // Check if payment is complete and update payment status
+  // This handles cases where cash payment was made but paymentStatus wasn't updated
+  if (booking.amountPaid >= booking.totalAmount && booking.paymentStatus !== 'FULLY_PAID') {
+    booking.paymentStatus = 'FULLY_PAID';
+    booking.paymentPercentagePaid = 100;
+    booking.remainingPercentage = 0;
+    booking.remainingAmount = 0;
+  }
+
   await booking.save();
 
   res.status(200).json({
@@ -968,6 +972,7 @@ export const verifyBookingOTP = asyncHandler(async (req, res) => {
       booking: {
         id: booking._id,
         vendorStatus: booking.vendorStatus,
+        paymentStatus: booking.paymentStatus,
         otpVerified: booking.otpVerified,
         otpVerifiedAt: booking.otpVerifiedAt
       }
@@ -999,7 +1004,7 @@ export const cancelBooking = asyncHandler(async (req, res) => {
     });
   }
 
-  booking.status = 'CANCELLED';
+  booking.vendorStatus = 'CANCELLED';
   booking.cancelledAt = new Date();
   if (cancellationReason) booking.cancellationReason = cancellationReason;
 
@@ -1638,6 +1643,14 @@ export const acceptBooking = asyncHandler(async (req, res) => {
     });
   }
 
+  // Check if booking is in ASSIGNED state (or null for new assignments)
+  if (booking.vendorStatus !== null && booking.vendorStatus !== 'ASSIGNED') {
+    return res.status(400).json({
+      success: false,
+      message: `Cannot accept booking. Current status: ${booking.vendorStatus}`
+    });
+  }
+
   booking.vendorStatus = 'IN_PROGRESS';
   booking.vendorAcceptedAt = new Date();
   await booking.save();
@@ -1672,7 +1685,9 @@ export const rejectBooking = asyncHandler(async (req, res) => {
     });
   }
 
-  booking.status = 'REJECTED';
+  // Note: REJECTED is not a valid vendorStatus, so we'll set it to CANCELLED
+  // or you might want to handle rejection differently
+  booking.vendorStatus = 'CANCELLED';
   booking.vendorRejectedAt = new Date();
   booking.rejectionReason = reason;
   await booking.save();

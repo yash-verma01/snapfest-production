@@ -25,7 +25,6 @@ import VendorBookings from './pages/VendorBookings';
 import VendorEarnings from './pages/VendorEarnings';
 import VendorSettings from './pages/VendorSettings';
 import AdminDashboard from './pages/AdminDashboard';
-import AdminAnalytics from './pages/AdminAnalytics';
 import AdminProfile from './pages/AdminProfile';
 import Profile from './pages/Profile';
 import VendorProfile from './pages/VendorProfile';
@@ -177,11 +176,6 @@ function App() {
             <Route path="/admin/dashboard" element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/analytics" element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminAnalytics />
               </ProtectedRoute>
             } />
             <Route path="/admin/profile" element={

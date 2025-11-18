@@ -129,26 +129,6 @@ const BookingManagement = () => {
     setSelectedBooking(null);
   };
 
-  const testRoute = async () => {
-    try {
-      console.log('🧪 Testing route...');
-      const response = await adminAPI.testAssign();
-      console.log('✅ Test route response:', response);
-    } catch (error) {
-      console.error('❌ Test route error:', error);
-    }
-  };
-
-  const simpleTest = async () => {
-    try {
-      console.log('🧪 Simple test...');
-      const response = await adminAPI.simpleTest();
-      console.log('✅ Simple test response:', response);
-    } catch (error) {
-      console.error('❌ Simple test error:', error);
-    }
-  };
-
   const getStatusBadgeColor = (vendorStatus) => {
     switch (vendorStatus) {
       case 'ASSIGNED': return 'bg-purple-100 text-purple-800';
@@ -220,22 +200,6 @@ const BookingManagement = () => {
             >
               <Filter className="w-4 h-4 mr-2" />
               Apply Filters
-            </Button>
-            
-            <Button
-              variant="outline"
-              onClick={testRoute}
-              className="w-full mt-2"
-            >
-              🧪 Test Route
-            </Button>
-            
-            <Button
-              variant="outline"
-              onClick={simpleTest}
-              className="w-full mt-2"
-            >
-              🧪 Simple Test
             </Button>
           </div>
         </div>
@@ -326,13 +290,13 @@ const BookingManagement = () => {
                             OTP Verified
                           </Badge>
                         )}
-                        {booking.vendorStatus === 'COMPLETED' && !booking.otpVerified && !booking.onlinePaymentDone && (
+                        {booking.vendorStatus === 'COMPLETED' && !booking.otpVerified && booking.paymentStatus !== 'FULLY_PAID' && (
                           <Badge className="bg-yellow-100 text-yellow-800 text-xs flex items-center">
                             <Clock className="w-3 h-3 mr-1" />
                             Pending Verification
                           </Badge>
                         )}
-                        {booking.vendorStatus === 'COMPLETED' && booking.onlinePaymentDone && (
+                        {booking.vendorStatus === 'COMPLETED' && booking.paymentStatus === 'FULLY_PAID' && booking.onlinePaymentDone && (
                           <Badge className="bg-blue-100 text-blue-800 text-xs flex items-center">
                             <CheckCircle className="w-3 h-3 mr-1" />
                             Online Payment Done
@@ -382,7 +346,7 @@ const BookingManagement = () => {
                           </Button>
                         )}
                         {/* Generate OTP button - only show for COMPLETED bookings that are NOT fully paid online */}
-                        {booking.vendorStatus === 'COMPLETED' && !booking.otpVerified && !booking.onlinePaymentDone && (
+                        {booking.vendorStatus === 'COMPLETED' && !booking.otpVerified && booking.paymentStatus !== 'FULLY_PAID' && (
                           <Button
                             variant="outline"
                             size="sm"

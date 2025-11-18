@@ -72,7 +72,10 @@ const VendorBookingCard = ({
   };
 
   const getStatusColor = (vendorStatus) => {
-    switch (vendorStatus) {
+    // Normalize null to ASSIGNED if booking is assigned
+    const normalizedStatus = vendorStatus || (booking?.assignedVendorId ? 'ASSIGNED' : null);
+    
+    switch (normalizedStatus) {
       case 'ASSIGNED':
         return 'warning';
       case 'IN_PROGRESS':
@@ -87,7 +90,10 @@ const VendorBookingCard = ({
   };
 
   const getStatusIcon = (vendorStatus) => {
-    switch (vendorStatus) {
+    // Normalize null to ASSIGNED if booking is assigned
+    const normalizedStatus = vendorStatus || (booking?.assignedVendorId ? 'ASSIGNED' : null);
+    
+    switch (normalizedStatus) {
       case 'ASSIGNED':
         return <UserCheck className="w-4 h-4" />;
       case 'IN_PROGRESS':
@@ -104,7 +110,11 @@ const VendorBookingCard = ({
   const getActionButtons = () => {
     const buttons = [];
 
-    switch (booking.vendorStatus) {
+    // Normalize vendorStatus: if null but assigned to vendor, treat as ASSIGNED
+    const normalizedStatus = booking.vendorStatus || 
+      (booking.assignedVendorId ? 'ASSIGNED' : null);
+
+    switch (normalizedStatus) {
       case 'ASSIGNED':
         buttons.push(
           <Button
@@ -167,6 +177,10 @@ const VendorBookingCard = ({
           );
         }
         break;
+      default:
+        // If status is null and not assigned, don't show action buttons
+        // This handles edge cases where booking exists but isn't assigned
+        break;
     }
 
     // Add common buttons
@@ -209,9 +223,9 @@ const VendorBookingCard = ({
               </p>
             </div>
             <div className="flex items-center space-x-2">
-              {getStatusIcon(booking.vendorStatus || 'ASSIGNED')}
-              <Badge variant={getStatusColor(booking.vendorStatus || 'ASSIGNED')} size="sm">
-                {(booking.vendorStatus || 'ASSIGNED').replace('_', ' ')}
+              {getStatusIcon(booking.vendorStatus)}
+              <Badge variant={getStatusColor(booking.vendorStatus)} size="sm">
+                {(booking.vendorStatus || (booking.assignedVendorId ? 'ASSIGNED' : 'Not Assigned')).replace('_', ' ')}
               </Badge>
               {booking.assignedVendorId && (
                 <Badge variant="success" size="sm" className="bg-green-100 text-green-800">

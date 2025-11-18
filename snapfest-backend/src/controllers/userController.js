@@ -768,8 +768,8 @@ export const getUserPayments = asyncHandler(async (req, res) => {
         payment.bookingId.toString() === booking._id.toString()
       );
 
-      // Calculate payment totals
-      const totalPaid = bookingPayments
+      // Calculate payment totals from Payment records (for history/display)
+      const totalPaidFromPayments = bookingPayments
         .filter(p => p.status === 'SUCCESS')
         .reduce((sum, p) => sum + p.amount, 0);
       
@@ -781,10 +781,14 @@ export const getUserPayments = asyncHandler(async (req, res) => {
         .filter(p => p.status === 'FAILED')
         .reduce((sum, p) => sum + p.amount, 0);
 
+      // Use booking.amountPaid as source of truth (includes cash payments)
+      // This ensures cash payments are properly reflected even if Payment records don't exist
+      const totalPaid = booking.amountPaid || 0;
       const remainingAmount = booking.totalAmount - totalPaid;
       const paymentProgress = booking.totalAmount > 0 ? (totalPaid / booking.totalAmount) * 100 : 0;
 
-      // Determine payment status from booking
+      // Determine payment status - use booking.amountPaid as primary source
+      // This handles cases where cash payments were made but Payment records weren't created
       let paymentStatus = booking.paymentStatus || 'PENDING_PAYMENT';
       if (totalPaid >= booking.totalAmount) {
         paymentStatus = 'FULLY_PAID';
@@ -813,12 +817,13 @@ export const getUserPayments = asyncHandler(async (req, res) => {
         },
         payments: bookingPayments,
         paymentSummary: {
-          totalPaid,
+          totalPaid, // Uses booking.amountPaid (includes cash payments)
+          totalPaidFromPayments, // Amount from Payment records only (for reference)
           pendingAmount,
           failedAmount,
           remainingAmount,
           paymentProgress: Math.round(paymentProgress),
-          paymentStatus, // Use calculated paymentStatus
+          paymentStatus, // Uses booking.amountPaid for calculation
           isFullyPaid: totalPaid >= booking.totalAmount,
           isPartiallyPaid: totalPaid > 0 && totalPaid < booking.totalAmount,
           hasPendingPayments: pendingAmount > 0,

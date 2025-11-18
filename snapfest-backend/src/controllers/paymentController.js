@@ -719,9 +719,27 @@ export const confirmCashPayment = asyncHandler(async (req, res) => {
   // Update booking with cash payment
   booking.amountPaid = booking.amountPaid + amount;
   
+  // Create Payment record for cash payment (for history and tracking)
+  const cashPayment = await Payment.create({
+    userId: booking.userId,
+    bookingId: booking._id,
+    method: 'CASH',
+    amount: amount,
+    status: 'SUCCESS',
+    transactionId: `CASH-${bookingId}-${Date.now()}`,
+    paymentDetails: {
+      confirmedBy: vendorId,
+      confirmedAt: new Date(),
+      paymentType: 'cash'
+    }
+  });
+  
   // If this completes the payment
   if (booking.amountPaid >= booking.totalAmount) {
     booking.paymentStatus = 'FULLY_PAID';
+    booking.paymentPercentagePaid = 100;
+    booking.remainingPercentage = 0;
+    booking.remainingAmount = 0;
     
     // Generate OTP for verification
     const otp = await OTPService.createOTP(bookingId, 'FULL_PAYMENT');
@@ -765,6 +783,7 @@ export const confirmCashPayment = asyncHandler(async (req, res) => {
       message: 'Cash payment confirmed. OTP generated for verification.',
       data: { 
         booking,
+        payment: cashPayment,
         otp: {
           code: otp.code,
           expiresAt: otp.expiresAt
@@ -772,6 +791,16 @@ export const confirmCashPayment = asyncHandler(async (req, res) => {
       }
     });
   } else {
+    // Update payment percentage for partial payment
+    booking.paymentPercentagePaid = Math.round((booking.amountPaid / booking.totalAmount) * 100);
+    booking.remainingPercentage = 100 - booking.paymentPercentagePaid;
+    booking.remainingAmount = booking.totalAmount - booking.amountPaid;
+    
+    // Ensure payment status is correct for partial payment
+    if (booking.paymentStatus === 'PENDING_PAYMENT' && booking.amountPaid > 0) {
+      booking.paymentStatus = 'PARTIALLY_PAID';
+    }
+    
     await booking.save();
     
     res.status(200).json({
@@ -779,6 +808,7 @@ export const confirmCashPayment = asyncHandler(async (req, res) => {
       message: 'Cash payment recorded. Partial payment received.',
       data: { 
         booking,
+        payment: cashPayment,
         remainingAmount: booking.totalAmount - booking.amountPaid
       }
     });

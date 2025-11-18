@@ -91,32 +91,28 @@ const VendorBookings = () => {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'ACCEPTED': return 'bg-blue-100 text-blue-800';
+  const getStatusColor = (vendorStatus) => {
+    switch (vendorStatus) {
+      case 'ASSIGNED': return 'bg-yellow-100 text-yellow-800';
       case 'IN_PROGRESS': return 'bg-purple-100 text-purple-800';
       case 'COMPLETED': return 'bg-green-100 text-green-800';
       case 'CANCELLED': return 'bg-red-100 text-red-800';
-      case 'REJECTED': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'PENDING': return <Clock className="w-4 h-4" />;
-      case 'ACCEPTED': return <CheckCircle className="w-4 h-4" />;
+  const getStatusIcon = (vendorStatus) => {
+    switch (vendorStatus) {
+      case 'ASSIGNED': return <Clock className="w-4 h-4" />;
       case 'IN_PROGRESS': return <AlertCircle className="w-4 h-4" />;
       case 'COMPLETED': return <CheckCircle className="w-4 h-4" />;
       case 'CANCELLED': return <XCircle className="w-4 h-4" />;
-      case 'REJECTED': return <XCircle className="w-4 h-4" />;
       default: return <Clock className="w-4 h-4" />;
     }
   };
 
   const filteredBookings = bookings.filter(booking => {
-    const matchesStatus = !filters.status || booking.status === filters.status;
+    const matchesStatus = !filters.status || booking.vendorStatus === filters.status;
     const matchesSearch = !filters.search || 
       booking.userId?.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
       booking.packageId?.title?.toLowerCase().includes(filters.search.toLowerCase());
@@ -254,9 +250,9 @@ const VendorBookings = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-4 mb-4">
-                      <Badge className={`${getStatusColor(booking.status)} flex items-center space-x-2`}>
-                        {getStatusIcon(booking.status)}
-                        <span>{booking.status}</span>
+                      <Badge className={`${getStatusColor(booking.vendorStatus || 'ASSIGNED')} flex items-center space-x-2`}>
+                        {getStatusIcon(booking.vendorStatus || 'ASSIGNED')}
+                        <span>{booking.vendorStatus || 'ASSIGNED'}</span>
                       </Badge>
                       <span className="text-sm text-gray-500">
                         #{booking._id.slice(-8)}
@@ -337,7 +333,7 @@ const VendorBookings = () => {
                         <span>View Details</span>
                       </Button>
 
-                      {booking.status === 'PENDING' && (
+                      {(booking.vendorStatus === 'ASSIGNED' || booking.vendorStatus === null) && (
                         <>
                           <Button
                             onClick={() => handleBookingAction(booking._id, 'accept')}
@@ -355,7 +351,7 @@ const VendorBookings = () => {
                         </>
                       )}
 
-                      {booking.status === 'ACCEPTED' && (
+                      {booking.vendorStatus === 'ASSIGNED' && (
                         <Button
                           onClick={() => handleBookingAction(booking._id, 'start')}
                           className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -364,7 +360,7 @@ const VendorBookings = () => {
                         </Button>
                       )}
 
-                      {booking.status === 'IN_PROGRESS' && (
+                      {booking.vendorStatus === 'IN_PROGRESS' && (
                         <Button
                           onClick={() => handleBookingAction(booking._id, 'complete')}
                           className="bg-green-600 hover:bg-green-700 text-white"

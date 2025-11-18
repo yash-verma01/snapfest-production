@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useUser } from '@clerk/clerk-react';
 import { 
   CreditCard, 
   Download, 
@@ -26,15 +27,20 @@ import { Card, Button, Badge } from '../components/ui';
 import { userAPI, paymentAPI } from '../services/api';
 import { dummyBookings } from '../data';
 import { dateUtils } from '../utils';
+import BookingDetailsModal from '../components/modals/BookingDetailsModal';
+import { paymentService, loadRazorpayScript } from '../services/paymentService';
 
 const Payments = () => {
   const navigate = useNavigate();
+  const { user } = useUser();
   const [paymentDetails, setPaymentDetails] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all');
   const [expandedBookings, setExpandedBookings] = useState(new Set());
   const [processingPayment, setProcessingPayment] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [showBookingDetails, setShowBookingDetails] = useState(false);
 
   useEffect(() => {
     const loadPayments = async () => {
@@ -172,14 +178,87 @@ const Payments = () => {
     console.log('Download invoice for payment:', paymentId);
   };
 
-  const handleViewDetails = (paymentId) => {
-    // TODO: Navigate to payment details
-    console.log('View payment details:', paymentId);
+  const handleViewDetails = (bookingId) => {
+    setSelectedBooking(bookingId);
+    setShowBookingDetails(true);
   };
 
-  const handleRetryPayment = (paymentId) => {
-    // TODO: Implement payment retry
-    console.log('Retry payment:', paymentId);
+  const handleRetryPayment = async (bookingId) => {
+    try {
+      setProcessingPayment(true);
+      
+      // Get booking details to calculate remaining amount
+      const bookingResponse = await userAPI.getBookingDetails(bookingId);
+      const bookingData = bookingResponse.data.data;
+      const remainingAmount = bookingData.paymentSummary.remainingAmount;
+      
+      if (remainingAmount <= 0) {
+        alert('No remaining amount to pay');
+        setProcessingPayment(false);
+        return;
+      }
+      
+      // Create payment order for remaining amount
+      const orderResponse = await paymentAPI.createFullPaymentOrder({
+        bookingId: bookingId
+      });
+      
+      if (!orderResponse.data.success) {
+        throw new Error(orderResponse.data.message || 'Failed to create payment order');
+      }
+      
+      const orderData = orderResponse.data.data;
+      
+      // Load Razorpay script
+      await loadRazorpayScript();
+      
+      if (!window.Razorpay) {
+        throw new Error('Razorpay script failed to load');
+      }
+      
+      // Open Razorpay checkout using paymentService
+      const paymentResult = await paymentService.openCheckout(
+        orderData.order.id,
+        remainingAmount,
+        'INR',
+        'SnapFest',
+        `Remaining payment for Booking ${bookingId.slice(-8)}`,
+        {
+          name: user?.fullName || 'Customer',
+          email: user?.primaryEmailAddress?.emailAddress || '',
+          contact: user?.phoneNumbers?.[0]?.phoneNumber || ''
+        }
+      );
+      
+      // Verify payment
+      const verifyResponse = await paymentAPI.verifyPayment({
+        bookingId: bookingId,
+        paymentId: paymentResult.razorpay_payment_id,
+        orderId: paymentResult.razorpay_order_id,
+        signature: paymentResult.razorpay_signature
+      });
+      
+      if (verifyResponse.data.success) {
+        alert('Payment successful!');
+        // Reload payments to reflect updated status
+        const paymentsResponse = await userAPI.getPayments();
+        setPaymentDetails(paymentsResponse.data.data?.paymentDetails || []);
+        // Navigate to success page or refresh
+        navigate('/user/bookings');
+      } else {
+        throw new Error(verifyResponse.data.message || 'Payment verification failed');
+      }
+      
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      if (error.success === false && error.error === 'Payment cancelled by user') {
+        // User cancelled, don't show error
+        return;
+      }
+      alert(error.response?.data?.message || error.message || 'Payment failed. Please try again.');
+    } finally {
+      setProcessingPayment(false);
+    }
   };
 
   if (loading) {
@@ -474,6 +553,18 @@ const Payments = () => {
           </Card>
         )}
       </div>
+
+      {/* Booking Details Modal */}
+      {selectedBooking && (
+        <BookingDetailsModal
+          isOpen={showBookingDetails}
+          onClose={() => {
+            setShowBookingDetails(false);
+            setSelectedBooking(null);
+          }}
+          bookingId={selectedBooking}
+        />
+      )}
     </div>
   );
 };

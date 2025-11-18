@@ -384,7 +384,7 @@ const VendorDashboard = () => {
                         }}
                       />
                       {/* Add Verify OTP button for COMPLETED bookings */}
-                      {booking.status === 'COMPLETED' && !booking.otpVerified && (
+                      {booking.vendorStatus === 'COMPLETED' && !booking.otpVerified && (
                         <div className="mt-2 flex justify-end">
                           <Button
                             onClick={() => handleVerifyBookingOTP(booking)}
@@ -397,7 +397,7 @@ const VendorDashboard = () => {
                         </div>
                       )}
                       {/* Show verified badge */}
-                      {booking.status === 'COMPLETED' && booking.otpVerified && (
+                      {booking.vendorStatus === 'COMPLETED' && booking.otpVerified && (
                         <div className="mt-2 flex justify-end">
                           <Badge className="bg-green-100 text-green-800">
                             <CheckCircle className="w-3 h-3 mr-1" />
