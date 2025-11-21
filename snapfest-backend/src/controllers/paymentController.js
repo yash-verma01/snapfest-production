@@ -482,8 +482,32 @@ export const verifyPayment = asyncHandler(async (req, res) => {
       
       await booking.save();
 
-      // Get user details for sending OTP
+      // Get user details and populate booking with package
       const user = await User.findById(userId);
+      await booking.populate('packageId', 'title');
+      
+      // Send booking confirmation email
+      if (user && user.email && booking.packageId) {
+        try {
+          await getEmailService().sendBookingConfirmationEmail(
+            user.email,
+            user.name,
+            {
+              bookingId: booking._id.toString().slice(-8),
+              packageTitle: booking.packageId.title,
+              eventDate: booking.eventDate,
+              location: booking.location,
+              totalAmount: booking.totalAmount,
+              amountPaid: booking.amountPaid,
+              remainingAmount: booking.remainingAmount,
+              customization: booking.customization || ''
+            }
+          );
+          console.log('✅ Booking confirmation email sent to:', user.email);
+        } catch (emailError) {
+          console.error('❌ Failed to send booking confirmation email:', emailError);
+        }
+      }
       
       // Send OTP to user via email
       if (user && user.email) {
@@ -533,6 +557,33 @@ export const verifyPayment = asyncHandler(async (req, res) => {
       booking.paymentStatus = 'PARTIALLY_PAID';
       await booking.save();
       console.log('💳 Payment Verification: Booking saved with PARTIALLY_PAID status');
+
+      // Get user details and populate booking with package
+      const user = await User.findById(userId);
+      await booking.populate('packageId', 'title');
+      
+      // Send booking confirmation email
+      if (user && user.email && booking.packageId) {
+        try {
+          await getEmailService().sendBookingConfirmationEmail(
+            user.email,
+            user.name,
+            {
+              bookingId: booking._id.toString().slice(-8),
+              packageTitle: booking.packageId.title,
+              eventDate: booking.eventDate,
+              location: booking.location,
+              totalAmount: booking.totalAmount,
+              amountPaid: booking.amountPaid,
+              remainingAmount: booking.remainingAmount,
+              customization: booking.customization || ''
+            }
+          );
+          console.log('✅ Booking confirmation email sent to:', user.email);
+        } catch (emailError) {
+          console.error('❌ Failed to send booking confirmation email:', emailError);
+        }
+      }
 
       // Create audit log
       // DISABLED: await AuditLog.create({
@@ -605,6 +656,33 @@ export const processPartialPayment = asyncHandler(async (req, res) => {
   booking.onlinePaymentDone = true; // Set for ANY online payment
   await booking.save();
 
+  // Get user details and populate booking with package
+  const user = await User.findById(userId);
+  await booking.populate('packageId', 'title');
+  
+  // Send booking confirmation email
+  if (user && user.email && booking.packageId) {
+    try {
+      await getEmailService().sendBookingConfirmationEmail(
+        user.email,
+        user.name,
+        {
+          bookingId: booking._id.toString().slice(-8),
+          packageTitle: booking.packageId.title,
+          eventDate: booking.eventDate,
+          location: booking.location,
+          totalAmount: booking.totalAmount,
+          amountPaid: booking.amountPaid,
+          remainingAmount: booking.remainingAmount,
+          customization: booking.customization || ''
+        }
+      );
+      console.log('✅ Booking confirmation email sent to:', user.email);
+    } catch (emailError) {
+      console.error('❌ Failed to send booking confirmation email:', emailError);
+    }
+  }
+
   // Create audit log
   // DISABLED: await AuditLog.create({
   //     actorId: userId,
@@ -673,6 +751,33 @@ export const processFullPayment = asyncHandler(async (req, res) => {
 
   // Generate OTP for vendor verification
   const otp = await OTPService.createOTP(bookingId, 'FULL_PAYMENT');
+
+  // Get user details and populate booking with package
+  const user = await User.findById(userId);
+  await booking.populate('packageId', 'title');
+  
+  // Send booking confirmation email
+  if (user && user.email && booking.packageId) {
+    try {
+      await getEmailService().sendBookingConfirmationEmail(
+        user.email,
+        user.name,
+        {
+          bookingId: booking._id.toString().slice(-8),
+          packageTitle: booking.packageId.title,
+          eventDate: booking.eventDate,
+          location: booking.location,
+          totalAmount: booking.totalAmount,
+          amountPaid: booking.amountPaid,
+          remainingAmount: booking.remainingAmount,
+          customization: booking.customization || ''
+        }
+      );
+      console.log('✅ Booking confirmation email sent to:', user.email);
+    } catch (emailError) {
+      console.error('❌ Failed to send booking confirmation email:', emailError);
+    }
+  }
 
   // Create audit log
   // DISABLED: await AuditLog.create({
@@ -746,8 +851,32 @@ export const confirmCashPayment = asyncHandler(async (req, res) => {
     
     await booking.save();
 
-    // Get user details for sending OTP
+    // Get user details and populate booking with package
     const user = await User.findById(booking.userId);
+    await booking.populate('packageId', 'title');
+    
+    // Send booking confirmation email
+    if (user && user.email && booking.packageId) {
+      try {
+        await getEmailService().sendBookingConfirmationEmail(
+          user.email,
+          user.name,
+          {
+            bookingId: booking._id.toString().slice(-8),
+            packageTitle: booking.packageId.title,
+            eventDate: booking.eventDate,
+            location: booking.location,
+            totalAmount: booking.totalAmount,
+            amountPaid: booking.amountPaid,
+            remainingAmount: booking.remainingAmount,
+            customization: booking.customization || ''
+          }
+        );
+        console.log('✅ Booking confirmation email sent to:', user.email);
+      } catch (emailError) {
+        console.error('❌ Failed to send booking confirmation email:', emailError);
+      }
+    }
     
     // Send OTP to user via email
     if (user && user.email) {

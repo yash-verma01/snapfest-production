@@ -252,63 +252,46 @@ export const getSystemHealth = asyncHandler(async (req, res) => {
     };
   }
 
-  // Check Email Service
+  // Check Email Service (SendGrid)
   try {
-    const emailUser = process.env.EMAIL_USER || process.env.SMTP_USER;
-    const emailPass = process.env.EMAIL_PASSWORD || process.env.SMTP_PASS;
     const sendGridKey = process.env.SENDGRID_API_KEY;
 
     if (sendGridKey) {
-      // Check SendGrid
-      const sgMail = (await import('@sendgrid/mail')).default;
-      sgMail.setApiKey(sendGridKey);
-      
-      // Try to verify API key by making a lightweight request
-      // SendGrid doesn't have a simple ping, so we'll check if key is set
-      if (sendGridKey && sendGridKey.length > 0) {
+      // Verify SendGrid API key by making a lightweight request
+      const response = await fetch('https://api.sendgrid.com/v3/user/profile', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${sendGridKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        healthStatus.emailService = {
+          status: 'online',
+          message: 'SendGrid configured and verified'
+        };
+      } else if (response.status === 401 || response.status === 403) {
+        healthStatus.emailService = {
+          status: 'offline',
+          message: 'SendGrid API key invalid or unauthorized'
+        };
+      } else {
         healthStatus.emailService = {
           status: 'online',
           message: 'SendGrid configured'
         };
-      } else {
-        healthStatus.emailService = {
-          status: 'offline',
-          message: 'SendGrid API key not set'
-        };
       }
-    } else if (emailUser && emailPass) {
-      // Check Gmail/Nodemailer
-      const nodemailer = (await import('nodemailer')).default;
-      const transporter = nodemailer.createTransport({
-        service: process.env.EMAIL_SERVICE || 'gmail',
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: process.env.SMTP_PORT || 587,
-        secure: process.env.SMTP_SECURE === 'true' || false,
-        auth: {
-          user: emailUser.trim(),
-          pass: emailPass.trim()
-        },
-        tls: {
-          rejectUnauthorized: false
-        }
-      });
-
-      // Verify connection
-      await transporter.verify();
-      healthStatus.emailService = {
-        status: 'online',
-        message: 'Email service connected'
-      };
     } else {
       healthStatus.emailService = {
         status: 'offline',
-        message: 'Email credentials not configured'
+        message: 'SENDGRID_API_KEY not configured'
       };
     }
   } catch (error) {
     healthStatus.emailService = {
       status: 'offline',
-      message: error.message || 'Email service unavailable'
+      message: error.message || 'SendGrid service unavailable'
     };
   }
 
@@ -2037,318 +2020,6 @@ export const getTestimonialStats = asyncHandler(async (req, res) => {
       approved: approvedTestimonials
     }
   });
-});
-
-// ==================== ADMIN EMAIL MANAGEMENT ====================
-
-// @desc    Send welcome email to user
-// @route   POST /api/admin/email/welcome
-// @access  Private (Admin only)
-export const sendWelcomeEmail = asyncHandler(async (req, res) => {
-  const { userId } = req.body;
-
-  if (!userId) {
-    return res.status(400).json({
-      success: false,
-      message: 'User ID is required'
-    });
-  }
-
-  const user = await User.findById(userId);
-  if (!user) {
-    return res.status(404).json({
-      success: false,
-      message: 'User not found'
-    });
-  }
-
-  try {
-    // Import admin email service
-    const AdminEmailService = (await import('../services/adminEmailService.js')).default;
-    
-    // Send welcome email
-    await AdminEmailService.sendWelcomeEmail(user.email, user.name);
-
-    // Create audit log only if actorId is available
-    // DISABLED: if (req.userId) {
-  //       // DISABLED: await AuditLog.create({
-  //   //         actorId: req.userId,
-  //   //         action: 'SEND_EMAIL',
-  //   //         targetId: user._id,
-  //   //         description: `Admin sent welcome email to ${user.email}`
-  //   //       });
-  //     }
-
-    res.status(200).json({
-      success: true,
-      message: 'Welcome email sent successfully',
-      data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Error sending welcome email:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to send welcome email. Please try again.'
-    });
-  }
-});
-
-// @desc    Send account activation email
-// @route   POST /api/admin/email/activate
-// @access  Private (Admin only)
-export const sendActivationEmail = asyncHandler(async (req, res) => {
-  const { userId } = req.body;
-
-  if (!userId) {
-    return res.status(400).json({
-      success: false,
-      message: 'User ID is required'
-    });
-  }
-
-  const user = await User.findById(userId);
-  if (!user) {
-    return res.status(404).json({
-      success: false,
-      message: 'User not found'
-    });
-  }
-
-  try {
-    // Import admin email service
-    const AdminEmailService = (await import('../services/adminEmailService.js')).default;
-    
-    // Send activation email
-    await AdminEmailService.sendAccountActivationEmail(user.email, user.name);
-
-    // Create audit log only if actorId is available
-    // DISABLED: if (req.userId) {
-  //       // DISABLED: await AuditLog.create({
-  //   //         actorId: req.userId,
-  //   //         action: 'SEND_EMAIL',
-  //   //         targetId: user._id,
-  //   //         description: `Admin sent activation email to ${user.email}`
-  //   //       });
-  //     }
-
-    res.status(200).json({
-      success: true,
-      message: 'Activation email sent successfully',
-      data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Error sending activation email:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to send activation email. Please try again.'
-    });
-  }
-});
-
-// @desc    Send account deactivation email
-// @route   POST /api/admin/email/deactivate
-// @access  Private (Admin only)
-export const sendDeactivationEmail = asyncHandler(async (req, res) => {
-  const { userId, reason } = req.body;
-
-  if (!userId) {
-    return res.status(400).json({
-      success: false,
-      message: 'User ID is required'
-    });
-  }
-
-  const user = await User.findById(userId);
-  if (!user) {
-    return res.status(404).json({
-      success: false,
-      message: 'User not found'
-    });
-  }
-
-  try {
-    // Import admin email service
-    const AdminEmailService = (await import('../services/adminEmailService.js')).default;
-    
-    // Send deactivation email
-    await AdminEmailService.sendAccountDeactivationEmail(user.email, user.name, reason);
-
-    // Create audit log only if actorId is available
-    // DISABLED: if (req.userId) {
-  //       // DISABLED: await AuditLog.create({
-  //   //         actorId: req.userId,
-  //   //         action: 'SEND_EMAIL',
-  //   //         targetId: user._id,
-  //   //         description: `Admin sent deactivation email to ${user.email}`
-  //   //       });
-  //     }
-
-    res.status(200).json({
-      success: true,
-      message: 'Deactivation email sent successfully',
-      data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Error sending deactivation email:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to send deactivation email. Please try again.'
-    });
-  }
-});
-
-// @desc    Send custom email to user
-// @route   POST /api/admin/email/custom
-// @access  Private (Admin only)
-export const sendCustomEmail = asyncHandler(async (req, res) => {
-  const { userId, subject, message, adminName } = req.body;
-
-  if (!userId || !subject || !message) {
-    return res.status(400).json({
-      success: false,
-      message: 'User ID, subject, and message are required'
-    });
-  }
-
-  const user = await User.findById(userId);
-  if (!user) {
-    return res.status(404).json({
-      success: false,
-      message: 'User not found'
-    });
-  }
-
-  try {
-    // Import admin email service
-    const AdminEmailService = (await import('../services/adminEmailService.js')).default;
-    
-    // Send custom email
-    await AdminEmailService.sendCustomEmail(
-      user.email, 
-      user.name, 
-      subject, 
-      message, 
-      adminName || 'SnapFest Admin'
-    );
-
-    // Create audit log only if actorId is available
-    // DISABLED: if (req.userId) {
-  //       // DISABLED: await AuditLog.create({
-  //   //         actorId: req.userId,
-  //   //         action: 'SEND_EMAIL',
-  //   //         targetId: user._id,
-  //   //         description: `Admin sent custom email to ${user.email}: ${subject}`
-  //   //       });
-  //     }
-
-    res.status(200).json({
-      success: true,
-      message: 'Custom email sent successfully',
-      data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email
-        },
-        email: {
-          subject,
-          message
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Error sending custom email:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to send custom email. Please try again.'
-    });
-  }
-});
-
-// @desc    Send bulk email to multiple users
-// @route   POST /api/admin/email/bulk
-// @access  Private (Admin only)
-export const sendBulkEmail = asyncHandler(async (req, res) => {
-  const { userIds, subject, message, adminName } = req.body;
-
-  if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
-    return res.status(400).json({
-      success: false,
-      message: 'User IDs array is required'
-    });
-  }
-
-  if (!subject || !message) {
-    return res.status(400).json({
-      success: false,
-      message: 'Subject and message are required'
-    });
-  }
-
-  try {
-    // Get users data
-    const users = await User.find({ _id: { $in: userIds } });
-    const userEmails = users.map(user => ({ email: user.email, name: user.name }));
-
-    // Import admin email service
-    const AdminEmailService = (await import('../services/adminEmailService.js')).default;
-    
-    // Send bulk email
-    const results = await AdminEmailService.sendBulkEmail(
-      userEmails, 
-      subject, 
-      message, 
-      adminName || 'SnapFest Admin'
-    );
-
-    // Create audit log only if actorId is available
-    // DISABLED: if (req.userId) {
-  //       // DISABLED: await AuditLog.create({
-  //   //         actorId: req.userId,
-  //   //         action: 'SEND_BULK_EMAIL',
-  //   //         targetId: null,
-  //   //         description: `Admin sent bulk email to ${userIds.length} users: ${subject}`
-  //   //       });
-  //     }
-
-    const successCount = results.filter(r => r.success).length;
-    const failureCount = results.filter(r => !r.success).length;
-
-    res.status(200).json({
-      success: true,
-      message: `Bulk email sent successfully. ${successCount} successful, ${failureCount} failed.`,
-      data: {
-        total: userIds.length,
-        successful: successCount,
-        failed: failureCount,
-        results
-      }
-    });
-  } catch (error) {
-    console.error('Error sending bulk email:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to send bulk email. Please try again.'
-    });
-  }
 });
 
 // ==================== BEAT & BLOOM MANAGEMENT ====================

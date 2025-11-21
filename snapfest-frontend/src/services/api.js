@@ -302,12 +302,6 @@ export const adminAPI = {
   approveTestimonial: (id) => api.put(`/admin/testimonials/${id}/approve`),
   rejectTestimonial: (id) => api.put(`/admin/testimonials/${id}/reject`),
   
-  // Email Management
-  sendWelcomeEmail: (userId) => api.post('/admin/email/welcome', { userId }),
-  sendActivationEmail: (userId) => api.post('/admin/email/activate', { userId }),
-  sendDeactivationEmail: (userId, reason) => api.post('/admin/email/deactivate', { userId, reason }),
-  sendCustomEmail: (userId, subject, message, adminName) => api.post('/admin/email/custom', { userId, subject, message, adminName }),
-  sendBulkEmail: (userIds, subject, message, adminName) => api.post('/admin/email/bulk', { userIds, subject, message, adminName }),
   
   // Admin Profile Management
   getProfile: () => api.get('/admin/profile'),

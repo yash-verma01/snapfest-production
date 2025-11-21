@@ -3,6 +3,7 @@ import { MapPin, Phone, Mail, Clock, Send, MessageCircle, Users, Award } from 'l
 import { Card, Button, Input } from '../components/ui';
 import toast from 'react-hot-toast';
 import { useAuth } from '@clerk/clerk-react';
+import { userAPI } from '../services/api';
 
 const Contact = () => {
   const { user, isSignedIn, getToken } = useAuth();
@@ -16,17 +17,39 @@ const Contact = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Populate form if user is logged in
+  // Fetch user profile from backend if logged in
   useEffect(() => {
-    if (isSignedIn && user) {
-      setFormData(prev => ({
-        ...prev,
-        name: user.firstName && user.lastName 
-          ? `${user.firstName} ${user.lastName}` 
-          : user.firstName || user.username || '',
-        email: user.primaryEmailAddress?.emailAddress || ''
-      }));
-    }
+    const loadUserProfile = async () => {
+      if (isSignedIn) {
+        try {
+          // Fetch user profile from backend
+          const response = await userAPI.getUserProfile();
+          const profileData = response.data.data.user;
+          
+          // Populate form with backend data
+          setFormData(prev => ({
+            ...prev,
+            name: profileData.name || '',
+            email: profileData.email || '',
+            phone: profileData.phone || ''
+          }));
+        } catch (error) {
+          console.error('Error loading user profile:', error);
+          // Fallback to Clerk data if backend fails
+          if (user) {
+            setFormData(prev => ({
+              ...prev,
+              name: user.firstName && user.lastName 
+                ? `${user.firstName} ${user.lastName}` 
+                : user.firstName || user.username || user.fullName || '',
+              email: user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress || ''
+            }));
+          }
+        }
+      }
+    };
+
+    loadUserProfile();
   }, [isSignedIn, user]);
 
   const contactInfo = [
@@ -110,14 +133,55 @@ const Contact = () => {
       
       if (data.success) {
         toast.success('Message sent successfully! We\'ll get back to you soon.');
-        setFormData({
-          name: isSignedIn && user ? (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName || user.username || '') : '',
-          email: isSignedIn && user ? (user.primaryEmailAddress?.emailAddress || '') : '',
-          phone: '',
-          subject: '',
-          message: '',
-          inquiryType: 'general'
-        });
+        
+        // Reload user profile to reset form with correct values
+        if (isSignedIn) {
+          try {
+            const response = await userAPI.getUserProfile();
+            const profileData = response.data.data.user;
+            setFormData({
+              name: profileData.name || '',
+              email: profileData.email || '',
+              phone: profileData.phone || '',
+              subject: '',
+              message: '',
+              inquiryType: 'general'
+            });
+          } catch (error) {
+            // Fallback to Clerk data or empty form
+            if (user) {
+              setFormData({
+                name: user.firstName && user.lastName 
+                  ? `${user.firstName} ${user.lastName}` 
+                  : user.firstName || user.username || '',
+                email: user.primaryEmailAddress?.emailAddress || '',
+                phone: '',
+                subject: '',
+                message: '',
+                inquiryType: 'general'
+              });
+            } else {
+              setFormData({
+                name: '',
+                email: '',
+                phone: '',
+                subject: '',
+                message: '',
+                inquiryType: 'general'
+              });
+            }
+          }
+        } else {
+          // Clear form for non-logged-in users
+          setFormData({
+            name: '',
+            email: '',
+            phone: '',
+            subject: '',
+            message: '',
+            inquiryType: 'general'
+          });
+        }
       } else {
         toast.error(data.message || 'Failed to send message. Please try again.');
       }
@@ -240,7 +304,7 @@ const Contact = () => {
                         name="phone"
                         value={formData.phone}
                         onChange={handleChange}
-                        placeholder="+91 98765 43210"
+                        placeholder="Enter your phone number"
                         className="w-full"
                       />
                     </div>

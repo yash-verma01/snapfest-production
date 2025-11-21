@@ -22,7 +22,7 @@ import {
   Camera,
   Shield
 } from 'lucide-react';
-import { publicAPI } from '../services/api';
+import { publicAPI, userAPI } from '../services/api';
 import { Card, Button, Badge } from '../components/ui';
 import { useAuth } from '@clerk/clerk-react';
 import toast from 'react-hot-toast';
@@ -71,17 +71,39 @@ const VenueDetail = () => {
     }
   }, [id]);
 
-  // Populate enquiry form if user is logged in
+  // Fetch user profile from backend if logged in
   useEffect(() => {
-    if (isSignedIn && user) {
-      setEnquiryForm(prev => ({
-        ...prev,
-        name: user.firstName && user.lastName 
-          ? `${user.firstName} ${user.lastName}` 
-          : user.firstName || user.username || '',
-        email: user.primaryEmailAddress?.emailAddress || ''
-      }));
-    }
+    const loadUserProfile = async () => {
+      if (isSignedIn) {
+        try {
+          // Fetch user profile from backend
+          const response = await userAPI.getUserProfile();
+          const profileData = response.data.data.user;
+          
+          // Populate form with backend data
+          setEnquiryForm(prev => ({
+            ...prev,
+            name: profileData.name || '',
+            email: profileData.email || '',
+            phone: profileData.phone || ''
+          }));
+        } catch (error) {
+          console.error('Error loading user profile:', error);
+          // Fallback to Clerk data if backend fails
+          if (user) {
+            setEnquiryForm(prev => ({
+              ...prev,
+              name: user.firstName && user.lastName 
+                ? `${user.firstName} ${user.lastName}` 
+                : user.firstName || user.username || user.fullName || '',
+              email: user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress || ''
+            }));
+          }
+        }
+      }
+    };
+
+    loadUserProfile();
   }, [isSignedIn, user]);
 
   // Handle enquiry form submission
@@ -113,7 +135,7 @@ const VenueDetail = () => {
           enquiryType: 'venue',
           relatedId: venue?._id,
           relatedModel: 'Venue',
-          subject: `Enquiry for ${venue?.name || 'Venue'}`,
+          subject: 'Enquiry',
           message: enquiryForm.message,
           eventDate: enquiryForm.eventDate || null
         })
@@ -123,13 +145,50 @@ const VenueDetail = () => {
       
       if (data.success) {
         toast.success('Enquiry sent successfully! We\'ll get back to you soon.');
-        setEnquiryForm({
-          name: isSignedIn && user ? (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName || user.username || '') : '',
-          email: isSignedIn && user ? (user.primaryEmailAddress?.emailAddress || '') : '',
-          phone: '',
-          eventDate: '',
-          message: ''
-        });
+        
+        // Reload user profile to reset form with correct values
+        if (isSignedIn) {
+          try {
+            const response = await userAPI.getUserProfile();
+            const profileData = response.data.data.user;
+            setEnquiryForm({
+              name: profileData.name || '',
+              email: profileData.email || '',
+              phone: profileData.phone || '',
+              eventDate: '',
+              message: ''
+            });
+          } catch (error) {
+            // Fallback to Clerk data or empty form
+            if (user) {
+              setEnquiryForm({
+                name: user.firstName && user.lastName 
+                  ? `${user.firstName} ${user.lastName}` 
+                  : user.firstName || user.username || '',
+                email: user.primaryEmailAddress?.emailAddress || '',
+                phone: '',
+                eventDate: '',
+                message: ''
+              });
+            } else {
+              setEnquiryForm({
+                name: '',
+                email: '',
+                phone: '',
+                eventDate: '',
+                message: ''
+              });
+            }
+          }
+        } else {
+          setEnquiryForm({
+            name: '',
+            email: '',
+            phone: '',
+            eventDate: '',
+            message: ''
+          });
+        }
       } else {
         toast.error(data.message || 'Failed to send enquiry');
       }

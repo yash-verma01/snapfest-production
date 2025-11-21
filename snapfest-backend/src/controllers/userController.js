@@ -54,6 +54,16 @@ export const register = asyncHandler(async (req, res) => {
     role
   });
 
+  // Send welcome email
+  try {
+    const getEmailService = (await import('../services/emailService.js')).default;
+    await getEmailService().sendWelcomeEmail(user.email, user.name);
+    console.log('✅ Welcome email sent to:', user.email);
+  } catch (emailError) {
+    console.error('❌ Failed to send welcome email:', emailError);
+    // Don't fail registration if email fails
+  }
+
   // Generate token
   const token = AuthService.generateToken(user._id, user.role);
 

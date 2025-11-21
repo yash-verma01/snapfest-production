@@ -408,6 +408,35 @@ const EnquiryManagement = () => {
                   </div>
                 </div>
 
+                {selectedEnquiry.relatedId && selectedEnquiry.relatedModel && (
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-gray-700">Related {selectedEnquiry.relatedModel}</label>
+                    <div className="mt-1">
+                      {selectedEnquiry.relatedModel === 'Venue' && selectedEnquiry.relatedId.name && (
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-pink-100 text-pink-800">Venue</Badge>
+                          <span className="text-sm text-gray-900 font-medium">{selectedEnquiry.relatedId.name}</span>
+                          {selectedEnquiry.relatedId.location && (
+                            <span className="text-sm text-gray-500">({selectedEnquiry.relatedId.location})</span>
+                          )}
+                        </div>
+                      )}
+                      {selectedEnquiry.relatedModel === 'Package' && selectedEnquiry.relatedId.title && (
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-purple-100 text-purple-800">Package</Badge>
+                          <span className="text-sm text-gray-900 font-medium">{selectedEnquiry.relatedId.title}</span>
+                        </div>
+                      )}
+                      {selectedEnquiry.relatedModel === 'Event' && selectedEnquiry.relatedId.name && (
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-blue-100 text-blue-800">Event</Badge>
+                          <span className="text-sm text-gray-900 font-medium">{selectedEnquiry.relatedId.name}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label className="text-sm font-medium text-gray-700">Subject</label>
                   <div className="mt-1 text-sm text-gray-900">{selectedEnquiry.subject}</div>

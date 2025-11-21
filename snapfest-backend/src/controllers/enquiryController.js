@@ -127,6 +127,7 @@ export const getAllEnquiries = asyncHandler(async (req, res) => {
   const enquiries = await Enquiry.find(filter)
     .populate('userId', 'name email')
     .populate('respondedBy', 'name email')
+    .populate('relatedId') // Populate venue/package/event info
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
@@ -227,25 +228,64 @@ export const respondToEnquiry = asyncHandler(async (req, res) => {
   await enquiry.save();
   
   // Send response email to user
-  try {
-    const result = await getEmailService().sendAdminResponseEmail(
-      enquiry.email,
-      enquiry.name,
-      response,
-      enquiry.subject
-    );
-    
-    // Check if email was actually sent or just logged (Solution 3)
-    if (result && result.fallback) {
-      console.warn('⚠️ Admin response sent in FALLBACK MODE - user will NOT receive email');
-      console.warn('⚠️ Email would have been sent to:', enquiry.email);
-    } else {
+  // Check if email exists and is valid before sending
+  if (!enquiry.email || enquiry.email.trim() === '') {
+    console.error('❌ Cannot send email: enquiry.email is empty or null');
+    console.error('❌ Enquiry ID:', enquiry._id);
+    console.error('❌ Enquiry email value:', enquiry.email);
+  } else {
+    try {
+      // Get email service instance and check initialization
+      const emailService = getEmailService();
+      console.log('🔍 Email Service Status Check:');
+      console.log('  - Email service instance:', emailService ? 'EXISTS' : 'NULL');
+      console.log('  - Email service initialized:', emailService?.initialized ? 'YES' : 'NO');
+      console.log('  - SENDGRID_API_KEY exists:', process.env.SENDGRID_API_KEY ? 'YES' : 'NO');
+      console.log('  - SENDGRID_API_KEY length:', process.env.SENDGRID_API_KEY?.length || 0);
+      console.log('  - EMAIL_FROM:', process.env.EMAIL_FROM || 'NOT SET');
+      
+      console.log('📧 Preparing to send admin response email to:', enquiry.email);
+      console.log('📧 Enquiry details:', {
+        id: enquiry._id,
+        name: enquiry.name,
+        email: enquiry.email,
+        subject: enquiry.subject,
+        responseLength: response?.length || 0
+      });
+      
+      console.log('📧 Calling sendAdminResponseEmail with parameters:');
+      console.log('  - userEmail:', enquiry.email);
+      console.log('  - userName:', enquiry.name || 'User');
+      console.log('  - adminResponse length:', response?.length || 0);
+      console.log('  - enquirySubject:', enquiry.subject || 'Your Enquiry');
+
+      const result = await emailService.sendAdminResponseEmail(
+        enquiry.email,
+        enquiry.name || 'User',
+        response,
+        enquiry.subject || 'Your Enquiry'
+      );
+      
       console.log('✅ Admin response email successfully sent to:', enquiry.email);
+      console.log('✅ Email result:', {
+        success: result.success,
+        messageId: result.messageId,
+        provider: result.provider
+      });
+    } catch (emailError) {
+      console.error('❌ Failed to send admin response email:', emailError);
+      console.error('❌ Error message:', emailError.message);
+      console.error('❌ Error stack:', emailError.stack);
+      console.error('❌ Error name:', emailError.name);
+      console.error('❌ User email:', enquiry.email);
+      console.error('❌ Enquiry subject:', enquiry.subject);
+      console.error('❌ Response length:', response?.length || 0);
+      if (emailError.response) {
+        console.error('❌ Error response status:', emailError.response.statusCode);
+        console.error('❌ Error response body:', JSON.stringify(emailError.response.body, null, 2));
+      }
+      // Don't fail the request if email fails
     }
-  } catch (emailError) {
-    console.error('❌ Failed to send admin response email:', emailError);
-    console.error('❌ User email:', enquiry.email);
-    // Don't fail the request if email fails
   }
   
   res.status(200).json({

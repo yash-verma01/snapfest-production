@@ -65,12 +65,6 @@ import {
   rejectTestimonial,
   getTestimonialStats,
   
-  // Email Management
-  sendWelcomeEmail,
-  sendActivationEmail,
-  sendDeactivationEmail,
-  sendCustomEmail,
-  sendBulkEmail,
   getAdminProfile,
   updateAdminProfile
 } from '../controllers/adminController.js';
@@ -223,13 +217,6 @@ router.get('/testimonials', validatePagination, getAllTestimonials);
 router.get('/testimonials/stats', getTestimonialStats);
 router.put('/testimonials/:id/approve', approveTestimonial);
 router.put('/testimonials/:id/reject', rejectTestimonial);
-
-// ==================== EMAIL MANAGEMENT ====================
-router.post('/email/welcome', sendWelcomeEmail);
-router.post('/email/activate', sendActivationEmail);
-router.post('/email/deactivate', sendDeactivationEmail);
-router.post('/email/custom', sendCustomEmail);
-router.post('/email/bulk', sendBulkEmail);
 
 // ==================== ADMIN PROFILE MANAGEMENT ====================
 router.get('/profile', getAdminProfile);

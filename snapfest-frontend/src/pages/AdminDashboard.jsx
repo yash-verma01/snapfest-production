@@ -27,7 +27,6 @@ import UserManagement from '../components/admin/UserManagement';
 import BookingManagement from '../components/admin/BookingManagement';
 import PaymentManagement from '../components/admin/PaymentManagement';
 import VendorManagement from '../components/admin/VendorManagement';
-import EmailManagement from '../components/admin/EmailManagement';
 import PackageManagement from '../components/admin/PackageManagement';
 import EventManagement from '../components/admin/EventManagement';
 import VenueManagement from '../components/admin/VenueManagement';
@@ -522,14 +521,6 @@ const AdminDashboard = () => {
                     <MessageSquare className="w-4 h-4 mr-2" />
                     Manage Testimonials
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    className={`w-full justify-start ${activeTab === 'emails' ? 'bg-primary-50 text-primary-600' : ''}`}
-                    onClick={() => handleNavigation('emails')}
-                  >
-                    <Mail className="w-4 h-4 mr-2" />
-                    Email Management
-                  </Button>
                 </div>
               </Card>
             </div>
@@ -771,7 +762,6 @@ const AdminDashboard = () => {
             </Card>
           </div>
         )}
-        {activeTab === 'emails' && <EmailManagement />}
       </div>
     </div>
   );
