@@ -1,6 +1,8 @@
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { User, Package, Booking, Payment, OTP, Review, Event, Venue, BeatBloom, AuditLog } from '../models/index.js';
 import OTPService from '../services/otpService.js';
+import mongoose from 'mongoose';
+import RazorpayService from '../services/razorpayService.js';
 
 // ==================== DASHBOARD & ANALYTICS ====================
 export const getDashboard = asyncHandler(async (req, res) => {
@@ -44,11 +46,12 @@ export const getDashboard = asyncHandler(async (req, res) => {
   // Get revenue stats for current month
   const currentMonth = new Date();
   currentMonth.setDate(1);
+  currentMonth.setHours(0, 0, 0, 0); // Set to start of day for accurate month filtering
   
   const monthlyRevenue = await Payment.aggregate([
     {
       $match: {
-        vendorStatus: 'COMPLETED',
+        status: 'SUCCESS', // Payment model uses 'status' field, not 'vendorStatus'
         createdAt: { $gte: currentMonth }
       }
     },
@@ -165,6 +168,154 @@ export const getSystemStats = asyncHandler(async (req, res) => {
         totalVendorEarnings: vendorPerformance[0]?.totalEarnings || 0
       }
     }
+  });
+});
+
+// ==================== SYSTEM HEALTH CHECK ====================
+export const getSystemHealth = asyncHandler(async (req, res) => {
+  const healthStatus = {
+    database: { status: 'offline', message: 'Unknown' },
+    apiServer: { status: 'online', message: 'Server is running' },
+    paymentGateway: { status: 'offline', message: 'Unknown' },
+    emailService: { status: 'offline', message: 'Unknown' }
+  };
+
+  // Check Database Connection
+  try {
+    const dbState = mongoose.connection.readyState;
+    // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+    if (dbState === 1) {
+      // Test with a simple query
+      await mongoose.connection.db.admin().ping();
+      healthStatus.database = {
+        status: 'online',
+        message: 'Connected successfully'
+      };
+    } else {
+      healthStatus.database = {
+        status: 'offline',
+        message: `Connection state: ${dbState === 0 ? 'Disconnected' : dbState === 2 ? 'Connecting' : 'Disconnecting'}`
+      };
+    }
+  } catch (error) {
+    healthStatus.database = {
+      status: 'offline',
+      message: error.message || 'Connection failed'
+    };
+  }
+
+  // Check Payment Gateway (Razorpay)
+  try {
+    const keyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_RWpCivnUSkVbTS';
+    const keySecret = process.env.RAZORPAY_KEY_SECRET || 'hlA0mfH2eHc3BNh1iSGYshtw';
+    
+    if (!keyId || !keySecret) {
+      healthStatus.paymentGateway = {
+        status: 'offline',
+        message: 'Credentials not configured'
+      };
+    } else {
+      // Try to initialize Razorpay and make a lightweight API call
+      const Razorpay = (await import('razorpay')).default;
+      const razorpay = new Razorpay({
+        key_id: keyId,
+        key_secret: keySecret
+      });
+      
+      // Try to fetch payment methods (lightweight API call)
+      try {
+        await razorpay.payments.all({ count: 1 });
+        healthStatus.paymentGateway = {
+          status: 'online',
+          message: 'Razorpay connected'
+        };
+      } catch (apiError) {
+        // If API call fails but credentials are set, check error type
+        if (apiError.statusCode === 401 || apiError.statusCode === 403) {
+          healthStatus.paymentGateway = {
+            status: 'offline',
+            message: 'Invalid credentials'
+          };
+        } else {
+          // Network or other error - credentials might be valid but API unreachable
+          healthStatus.paymentGateway = {
+            status: 'offline',
+            message: apiError.message || 'API unreachable'
+          };
+        }
+      }
+    }
+  } catch (error) {
+    healthStatus.paymentGateway = {
+      status: 'offline',
+      message: error.message || 'Connection failed'
+    };
+  }
+
+  // Check Email Service
+  try {
+    const emailUser = process.env.EMAIL_USER || process.env.SMTP_USER;
+    const emailPass = process.env.EMAIL_PASSWORD || process.env.SMTP_PASS;
+    const sendGridKey = process.env.SENDGRID_API_KEY;
+
+    if (sendGridKey) {
+      // Check SendGrid
+      const sgMail = (await import('@sendgrid/mail')).default;
+      sgMail.setApiKey(sendGridKey);
+      
+      // Try to verify API key by making a lightweight request
+      // SendGrid doesn't have a simple ping, so we'll check if key is set
+      if (sendGridKey && sendGridKey.length > 0) {
+        healthStatus.emailService = {
+          status: 'online',
+          message: 'SendGrid configured'
+        };
+      } else {
+        healthStatus.emailService = {
+          status: 'offline',
+          message: 'SendGrid API key not set'
+        };
+      }
+    } else if (emailUser && emailPass) {
+      // Check Gmail/Nodemailer
+      const nodemailer = (await import('nodemailer')).default;
+      const transporter = nodemailer.createTransport({
+        service: process.env.EMAIL_SERVICE || 'gmail',
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: process.env.SMTP_PORT || 587,
+        secure: process.env.SMTP_SECURE === 'true' || false,
+        auth: {
+          user: emailUser.trim(),
+          pass: emailPass.trim()
+        },
+        tls: {
+          rejectUnauthorized: false
+        }
+      });
+
+      // Verify connection
+      await transporter.verify();
+      healthStatus.emailService = {
+        status: 'online',
+        message: 'Email service connected'
+      };
+    } else {
+      healthStatus.emailService = {
+        status: 'offline',
+        message: 'Email credentials not configured'
+      };
+    }
+  } catch (error) {
+    healthStatus.emailService = {
+      status: 'offline',
+      message: error.message || 'Email service unavailable'
+    };
+  }
+
+  res.status(200).json({
+    success: true,
+    data: healthStatus,
+    timestamp: new Date().toISOString()
   });
 });
 

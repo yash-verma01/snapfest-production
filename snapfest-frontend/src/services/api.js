@@ -283,6 +283,7 @@ export const adminAPI = {
   
   // Additional missing admin endpoints
   getSystemStats: () => api.get('/admin/stats'),
+  getSystemHealth: () => api.get('/admin/health'),
   searchUsers: (params) => api.get('/admin/users/search', { params }),
   searchVendors: (params) => api.get('/admin/vendors/search', { params }),
   getUserStats: () => api.get('/admin/users/stats'),

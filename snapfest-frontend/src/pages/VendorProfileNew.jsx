@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { 
   User, 
   Mail, 
@@ -35,7 +34,6 @@ import { Card, Button, Badge } from '../components/ui';
 import { vendorAPI } from '../services/api';
 
 const VendorProfileNew = () => {
-  const { user, updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [vendorData, setVendorData] = useState(null);
@@ -65,28 +63,30 @@ const VendorProfileNew = () => {
   const loadVendorProfile = async () => {
     try {
       setLoading(true);
-      const response = await vendorAPI.getProfile();
-      const data = response.data.data;
-      setVendorData(data);
+      const response = await vendorAPI.getVendorProfile();
+      if (response.data.success) {
+        const data = response.data.data;
+        setVendorData(data);
       
-      setFormData({
-        name: data.user.name,
-        email: data.user.email,
-        phone: data.user.phone,
-        businessName: data.vendor.businessName,
-        businessType: data.vendor.businessType || '',
-        servicesOffered: data.vendor.servicesOffered || [],
-        experience: data.vendor.experience || 0,
-        location: data.vendor.location || '',
-        bio: data.vendor.bio || '',
-        availability: data.vendor.availability || 'AVAILABLE',
-        portfolio: data.vendor.portfolio || [],
-        pricing: data.vendor.pricing || {
-          basePrice: 0,
-          perHourRate: 0,
-          packagePricing: []
-        }
-      });
+        setFormData({
+          name: data.user?.name || data.vendor?.name || '',
+          email: data.user?.email || data.vendor?.email || '',
+          phone: data.user?.phone || data.vendor?.phone || '',
+          businessName: data.vendor.businessName || '',
+          businessType: data.vendor.businessType || '',
+          servicesOffered: data.vendor.servicesOffered || [],
+          experience: data.vendor.experience || 0,
+          location: data.vendor.location || '',
+          bio: data.vendor.bio || '',
+          availability: data.vendor.availability || 'AVAILABLE',
+          portfolio: data.vendor.portfolio || [],
+          pricing: data.vendor.pricing || {
+            basePrice: 0,
+            perHourRate: 0,
+            packagePricing: []
+          }
+        });
+      }
     } catch (error) {
       console.error('Error loading vendor profile:', error);
     } finally {
@@ -115,9 +115,11 @@ const VendorProfileNew = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      const response = await vendorAPI.updateProfile(formData);
-      setVendorData(response.data.data);
-      setIsEditing(false);
+      const response = await vendorAPI.updateVendorProfile(formData);
+      if (response.data.success) {
+        setVendorData(response.data.data);
+        setIsEditing(false);
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
     } finally {
@@ -194,8 +196,8 @@ const VendorProfileNew = () => {
                       </div>
                     )}
                   </div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-1">{vendorData.user.name}</h2>
-                  <p className="text-gray-600 text-sm mb-3">{vendorData.user.email}</p>
+                  <h2 className="text-xl font-bold text-gray-900 mb-1">{vendorData.user?.name || vendorData.vendor?.name || 'Vendor'}</h2>
+                  <p className="text-gray-600 text-sm mb-3">{vendorData.user?.email || vendorData.vendor?.email || ''}</p>
                   <Badge 
                     className={`px-3 py-1 text-xs font-medium ${
                       vendorData.vendor.profileComplete 

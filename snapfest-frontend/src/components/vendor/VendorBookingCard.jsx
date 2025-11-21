@@ -216,7 +216,7 @@ const VendorBookingCard = ({
           <div className="flex items-start justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                {booking.package?.title || 'Photography Package'}
+                {booking.packageId?.title || 'Photography Package'}
               </h3>
               <p className="text-sm text-gray-600">
                 Booking ID: #{booking._id}
@@ -258,15 +258,15 @@ const VendorBookingCard = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
               <div className="flex items-center">
                 <span className="text-gray-600 w-20">Name:</span>
-                <span className="font-medium">{booking.customer?.name || 'N/A'}</span>
+                <span className="font-medium">{booking.userId?.name || 'N/A'}</span>
               </div>
               <div className="flex items-center">
                 <span className="text-gray-600 w-20">Phone:</span>
-                <span className="font-medium">{booking.customer?.phone || 'N/A'}</span>
+                <span className="font-medium">{booking.userId?.phone || 'N/A'}</span>
               </div>
               <div className="flex items-center">
                 <span className="text-gray-600 w-20">Email:</span>
-                <span className="font-medium">{booking.customer?.email || 'N/A'}</span>
+                <span className="font-medium">{booking.userId?.email || 'N/A'}</span>
               </div>
               <div className="flex items-center">
                 <span className="text-gray-600 w-20">Amount:</span>

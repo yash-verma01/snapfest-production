@@ -454,9 +454,6 @@ const Profile = () => {
                           return name;
                         })()}
                       </h3>
-                      <Badge className="mt-1 bg-green-100 text-green-800">
-                        {user.role === 'user' ? 'Customer' : user.role}
-                      </Badge>
                     </div>
                   </div>
 

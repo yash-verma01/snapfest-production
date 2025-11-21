@@ -3,27 +3,24 @@ import { Link } from 'react-router-dom';
 import { 
   Calendar, 
   CreditCard, 
-  Users, 
   TrendingUp, 
   Camera,
-  Bell,
   Settings,
   LogOut,
   Shield,
   CheckCircle,
   Clock,
-  AlertCircle,
   User,
   UserCheck,
-  Key
+  Key,
+  Search,
+  Filter
 } from 'lucide-react';
 import { useUser, useClerk } from '@clerk/clerk-react';
 import { vendorAPI } from '../services/api';
-import { dummyVendor, dummyBookings } from '../data';
 import VendorStatsCard from '../components/vendor/VendorStatsCard';
 import OTPVerification from '../components/vendor/OTPVerification';
 import VendorBookingCard from '../components/vendor/VendorBookingCard';
-import AssignedBookings from '../components/vendor/AssignedBookings';
 import ModalPortal from '../components/modals/ModalPortal';
 import { Card, Button, Badge } from '../components/ui';
 
@@ -41,12 +38,17 @@ const VendorDashboard = () => {
   const [pendingOTPs, setPendingOTPs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedBooking, setSelectedBooking] = useState(null);
   const [showOTPModal, setShowOTPModal] = useState(false);
   const [showBookingOTPModal, setShowBookingOTPModal] = useState(false);
   const [selectedBookingForOTP, setSelectedBookingForOTP] = useState(null);
   const [otpCode, setOtpCode] = useState('');
   const [verifyingOTP, setVerifyingOTP] = useState(false);
+  
+  // Filter state
+  const [bookingFilter, setBookingFilter] = useState('all'); // 'all', 'assigned', 'pending', 'in_progress', 'completed'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showBookingDetails, setShowBookingDetails] = useState(false);
+  const [selectedBookingDetails, setSelectedBookingDetails] = useState(null);
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -68,25 +70,11 @@ const VendorDashboard = () => {
       } catch (err) {
         console.error('Error loading dashboard data:', err);
         setError(err.message);
-        // Fallback to dummy data
-        setDashboardData({
-          totalBookings: 12,
-          pendingBookings: 3,
-          completedBookings: 8,
-          totalEarnings: 240000,
-          thisMonthEarnings: 45000,
-          averageRating: 4.9
-        });
-        setBookings(dummyBookings.slice(0, 5));
-        setPendingOTPs([
-          {
-            _id: 'otp_001',
-            bookingId: 'booking_001',
-            amount: 20000,
-            expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-            createdAt: new Date().toISOString()
-          }
-        ]);
+        // Don't use dummy data - just leave as empty arrays
+        // This prevents showing incorrect data when there's an error
+        setDashboardData(null);
+        setBookings([]);
+        setPendingOTPs([]);
       } finally {
         setLoading(false);
       }
@@ -153,9 +141,44 @@ const VendorDashboard = () => {
   const handleOTPVerified = (otpData) => {
     console.log('OTP verified:', otpData);
     setShowOTPModal(false);
-    setSelectedBooking(null);
     // Refresh data
     window.location.reload();
+  };
+  
+  // Filter bookings function
+  const getFilteredBookings = () => {
+    let filtered = bookings || [];
+    
+    // Filter by status
+    if (bookingFilter !== 'all') {
+      if (bookingFilter === 'assigned') {
+        filtered = filtered.filter(b => b.assignedVendorId);
+      } else {
+        filtered = filtered.filter(b => {
+          const status = b.vendorStatus || (b.assignedVendorId ? 'ASSIGNED' : null);
+          return status === bookingFilter.toUpperCase();
+        });
+      }
+    }
+    
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(b => 
+        b.packageId?.title?.toLowerCase().includes(query) ||
+        b.location?.toLowerCase().includes(query) ||
+        b._id?.toLowerCase().includes(query) ||
+        b.customerId?.name?.toLowerCase().includes(query)
+      );
+    }
+    
+    return filtered;
+  };
+  
+  // View booking details handler
+  const handleViewDetails = (booking) => {
+    setSelectedBookingDetails(booking);
+    setShowBookingDetails(true);
   };
 
   const handleOTPError = (error) => {
@@ -338,17 +361,91 @@ const VendorDashboard = () => {
               </Card>
             )}
 
-            {/* Recent Bookings */}
+            {/* Unified Bookings Section */}
             <Card className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Recent Bookings</h2>
-                <Button variant="outline" size="sm">
-                  View All
-                </Button>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">All Bookings</h2>
+                  <p className="text-sm text-gray-600">Manage all your bookings in one place</p>
+                </div>
+                <Link to="/vendor/bookings">
+                  <Button variant="outline" size="sm">
+                    View All
+                  </Button>
+                </Link>
               </div>
-              
+
+              {/* Filters Section */}
+              <div className="mb-6 space-y-4">
+                {/* Status Tabs */}
+                <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-4">
+                  <button
+                    onClick={() => setBookingFilter('all')}
+                    className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                      bookingFilter === 'all'
+                        ? 'bg-primary-600 text-white border-b-2 border-primary-600'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
+                  >
+                    All ({bookings?.length || 0})
+                  </button>
+                  <button
+                    onClick={() => setBookingFilter('assigned')}
+                    className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                      bookingFilter === 'assigned'
+                        ? 'bg-primary-600 text-white border-b-2 border-primary-600'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
+                  >
+                    Assigned ({bookings?.filter(b => b.assignedVendorId)?.length || 0})
+                  </button>
+                  <button
+                    onClick={() => setBookingFilter('pending')}
+                    className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                      bookingFilter === 'pending'
+                        ? 'bg-primary-600 text-white border-b-2 border-primary-600'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
+                  >
+                    Pending ({bookings?.filter(b => !b.vendorStatus || b.vendorStatus === 'PENDING')?.length || 0})
+                  </button>
+                  <button
+                    onClick={() => setBookingFilter('in_progress')}
+                    className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                      bookingFilter === 'in_progress'
+                        ? 'bg-primary-600 text-white border-b-2 border-primary-600'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
+                  >
+                    In Progress ({bookings?.filter(b => b.vendorStatus === 'IN_PROGRESS')?.length || 0})
+                  </button>
+                  <button
+                    onClick={() => setBookingFilter('completed')}
+                    className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                      bookingFilter === 'completed'
+                        ? 'bg-primary-600 text-white border-b-2 border-primary-600'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
+                  >
+                    Completed ({bookings?.filter(b => b.vendorStatus === 'COMPLETED')?.length || 0})
+                  </button>
+                </div>
+
+                {/* Search Bar */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search bookings by package, location, or booking ID..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+              </div>
+
               {/* Assigned Bookings Alert */}
-              {bookings.some(booking => booking.assignedVendorId) && (
+              {bookingFilter === 'all' && bookings?.some(booking => booking.assignedVendorId) && (
                 <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                   <div className="flex items-center">
                     <UserCheck className="w-5 h-5 text-green-600 mr-2" />
@@ -358,17 +455,36 @@ const VendorDashboard = () => {
                   </div>
                 </div>
               )}
-              
+
+              {/* Bookings List */}
               {!bookings || bookings.length === 0 ? (
                 <div className="text-center py-8">
                   <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600 mb-2">No bookings yet</p>
                   <p className="text-sm text-gray-500">Your bookings will appear here</p>
                 </div>
+              ) : getFilteredBookings().length === 0 ? (
+                <div className="text-center py-8">
+                  <Filter className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 mb-2">No bookings match your filters</p>
+                  <Button variant="outline" size="sm" onClick={() => { setBookingFilter('all'); setSearchQuery(''); }}>
+                    Clear Filters
+                  </Button>
+                </div>
               ) : (
                 <div className="space-y-4">
-                  {bookings.map((booking) => (
+                  {getFilteredBookings().map((booking) => (
                     <div key={booking._id} className="relative">
+                      {/* Assigned Badge */}
+                      {booking.assignedVendorId && (
+                        <div className="absolute top-2 right-2 z-10">
+                          <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                            <UserCheck className="w-3 h-3 mr-1" />
+                            Assigned
+                          </Badge>
+                        </div>
+                      )}
+                      
                       <VendorBookingCard
                         booking={booking}
                         onAccept={handleAcceptBooking}
@@ -376,14 +492,13 @@ const VendorDashboard = () => {
                         onStart={handleStartBooking}
                         onComplete={handleCompleteBooking}
                         onCancel={handleCancelBooking}
-                        onViewDetails={(booking) => {
-                          console.log('View booking details:', booking._id);
-                        }}
+                        onViewDetails={handleViewDetails}
                         onMessageCustomer={(booking) => {
                           console.log('Message customer for:', booking._id);
                         }}
                       />
-                      {/* Add Verify OTP button for COMPLETED bookings */}
+                      
+                      {/* Verify OTP button for COMPLETED bookings */}
                       {booking.vendorStatus === 'COMPLETED' && !booking.otpVerified && (
                         <div className="mt-2 flex justify-end">
                           <Button
@@ -396,6 +511,7 @@ const VendorDashboard = () => {
                           </Button>
                         </div>
                       )}
+                      
                       {/* Show verified badge */}
                       {booking.vendorStatus === 'COMPLETED' && booking.otpVerified && (
                         <div className="mt-2 flex justify-end">
@@ -410,73 +526,10 @@ const VendorDashboard = () => {
                 </div>
               )}
             </Card>
-
-            {/* Assigned Bookings */}
-            <AssignedBookings />
           </div>
 
           {/* Sidebar */}
           <div className="space-y-8">
-            {/* Quick Actions */}
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-              <div className="space-y-3">
-                <Button
-                  onClick={() => setShowOTPModal(true)}
-                  className="w-full justify-start"
-                  disabled={!pendingOTPs || pendingOTPs.length === 0}
-                >
-                  <Shield className="w-4 h-4 mr-2" />
-                  Verify OTPs ({pendingOTPs?.length || 0})
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Camera className="w-4 h-4 mr-2" />
-                  Upload Photos
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  View Earnings
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Profile Settings
-                </Button>
-              </div>
-            </Card>
-
-            {/* Profile Summary */}
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Summary</h3>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-                    <Camera className="w-6 h-6 text-primary-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{user?.name || 'Vendor Name'}</p>
-                    <p className="text-sm text-gray-600">{user?.email || 'vendor@example.com'}</p>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Vendor since</span>
-                    <span className="font-medium">January 2023</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Total events</span>
-                    <span className="font-medium">{dashboardData?.totalBookings || 0}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Rating</span>
-                    <Badge variant="success" size="sm">
-                      {dashboardData?.averageRating || 0} ⭐
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
             {/* Tips & Guidelines */}
             <Card className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Tips & Guidelines</h3>
@@ -523,7 +576,7 @@ const VendorDashboard = () => {
                 </Button>
               </div>
               <OTPVerification
-                bookingId={selectedBooking?._id || pendingOTPs?.[0]?.bookingId}
+                bookingId={pendingOTPs?.[0]?.bookingId}
                 onVerified={handleOTPVerified}
                 onError={handleOTPError}
               />
@@ -606,6 +659,65 @@ const VendorDashboard = () => {
           )}
         </div>
       </ModalPortal>
+
+      {/* Booking Details Modal */}
+      {showBookingDetails && selectedBookingDetails && (
+        <ModalPortal isOpen={showBookingDetails}>
+          <div className="bg-white p-6 rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold">Booking Details</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowBookingDetails(false);
+                  setSelectedBookingDetails(null);
+                }}
+              >
+                ×
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Event Details</h4>
+                  <div className="space-y-2 text-sm">
+                    <p><strong>Date:</strong> {new Date(selectedBookingDetails.eventDate).toLocaleDateString()}</p>
+                    <p><strong>Location:</strong> {selectedBookingDetails.location}</p>
+                    <p><strong>Package:</strong> {selectedBookingDetails.packageId?.title}</p>
+                    <p><strong>Category:</strong> {selectedBookingDetails.packageId?.category}</p>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Payment Details</h4>
+                  <div className="space-y-2 text-sm">
+                    <p><strong>Total Amount:</strong> ₹{selectedBookingDetails.totalAmount?.toLocaleString()}</p>
+                    <p><strong>Amount Paid:</strong> ₹{selectedBookingDetails.amountPaid?.toLocaleString()}</p>
+                    <p><strong>Status:</strong> <Badge>{selectedBookingDetails.status}</Badge></p>
+                    <p><strong>Vendor Status:</strong> <Badge>{selectedBookingDetails.vendorStatus || 'N/A'}</Badge></p>
+                  </div>
+                </div>
+              </div>
+              
+              {selectedBookingDetails.customization && (
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Customization</h4>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <pre className="text-sm text-gray-700 whitespace-pre-wrap">
+                      {typeof selectedBookingDetails.customization === 'string' 
+                        ? selectedBookingDetails.customization 
+                        : JSON.stringify(selectedBookingDetails.customization, null, 2)
+                      }
+                    </pre>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </ModalPortal>
+      )}
     </div>
   );
 };

@@ -185,6 +185,13 @@ export const getVendorProfile = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     data: {
+      user: {
+        id: vendor._id,
+        name: vendor.name,
+        email: vendor.email,
+        phone: vendor.phone,
+        profileImage: vendor.profileImage
+      },
       vendor: {
         id: vendor._id,
         clerkId: vendor.clerkId,
@@ -325,7 +332,7 @@ export const getVendorDashboard = asyncHandler(async (req, res) => {
   // Get recent bookings
   const recentBookings = await Booking.find({ assignedVendorId: vendor._id })
     .populate('userId', 'name email phone')
-    .populate('packageId', 'name category')
+    .populate('packageId', 'title category')
     .sort({ createdAt: -1 })
     .limit(5);
 
@@ -345,11 +352,24 @@ export const getVendorDashboard = asyncHandler(async (req, res) => {
   });
 
   // Get total earnings this month
+  // Calculate earnings from payments for bookings assigned to this vendor and completed
   const earningsThisMonth = await Payment.aggregate([
     {
+      $lookup: {
+        from: 'bookings',
+        localField: 'bookingId',
+        foreignField: '_id',
+        as: 'booking'
+      }
+    },
+    {
+      $unwind: '$booking'
+    },
+    {
       $match: {
-        vendorId: vendor._id,
-        vendorStatus: 'COMPLETED',
+        'booking.assignedVendorId': vendor._id,
+        'booking.vendorStatus': 'COMPLETED',
+        status: 'SUCCESS',
         createdAt: { $gte: currentMonth }
       }
     },
@@ -409,9 +429,21 @@ export const getVendorStats = asyncHandler(async (req, res) => {
   
   const monthlyEarnings = await Payment.aggregate([
     {
+      $lookup: {
+        from: 'bookings',
+        localField: 'bookingId',
+        foreignField: '_id',
+        as: 'booking'
+      }
+    },
+    {
+      $unwind: '$booking'
+    },
+    {
       $match: {
-        vendorId: vendor._id,
-        vendorStatus: 'COMPLETED',
+        'booking.assignedVendorId': vendor._id,
+        'booking.vendorStatus': 'COMPLETED',
+        status: 'SUCCESS',
         createdAt: { $gte: sixMonthsAgo }
       }
     },
@@ -498,9 +530,21 @@ export const getVendorEarnings = asyncHandler(async (req, res) => {
   // Get earnings for the period
   const earnings = await Payment.aggregate([
     {
+      $lookup: {
+        from: 'bookings',
+        localField: 'bookingId',
+        foreignField: '_id',
+        as: 'booking'
+      }
+    },
+    {
+      $unwind: '$booking'
+    },
+    {
       $match: {
-        vendorId: vendor._id,
-        vendorStatus: 'COMPLETED',
+        'booking.assignedVendorId': vendor._id,
+        'booking.vendorStatus': 'COMPLETED',
+        status: 'SUCCESS',
         createdAt: { $gte: startDate, $lte: endDate }
       }
     },
@@ -517,9 +561,21 @@ export const getVendorEarnings = asyncHandler(async (req, res) => {
   // Get daily earnings breakdown
   const dailyEarnings = await Payment.aggregate([
     {
+      $lookup: {
+        from: 'bookings',
+        localField: 'bookingId',
+        foreignField: '_id',
+        as: 'booking'
+      }
+    },
+    {
+      $unwind: '$booking'
+    },
+    {
       $match: {
-        vendorId: vendor._id,
-        vendorStatus: 'COMPLETED',
+        'booking.assignedVendorId': vendor._id,
+        'booking.vendorStatus': 'COMPLETED',
+        status: 'SUCCESS',
         createdAt: { $gte: startDate, $lte: endDate }
       }
     },
@@ -679,7 +735,7 @@ export const getVendorBookings = asyncHandler(async (req, res) => {
   // Get assigned bookings first (prioritized)
   const assignedBookings = await Booking.find(assignedQuery)
     .populate('userId', 'name email phone')
-    .populate('packageId', 'name category price')
+    .populate('packageId', 'title category basePrice')
     .populate('assignedVendorId', 'name email')
     .sort({ assignedAt: -1, createdAt: -1 })
     .limit(limit);
@@ -691,7 +747,7 @@ export const getVendorBookings = asyncHandler(async (req, res) => {
   if (remainingLimit > 0) {
     otherBookings = await Booking.find(otherQuery)
       .populate('userId', 'name email phone')
-      .populate('packageId', 'name category price')
+      .populate('packageId', 'title category basePrice')
       .sort({ createdAt: -1 })
       .limit(remainingLimit);
   }
@@ -734,7 +790,7 @@ export const getVendorBookingById = asyncHandler(async (req, res) => {
     vendorId: vendor._id
   })
     .populate('userId', 'name email phone')
-    .populate('packageId', 'name category price description')
+    .populate('packageId', 'title category basePrice description')
     .populate('addOns', 'name price');
 
   if (!booking) {
@@ -876,8 +932,49 @@ export const completeBooking = asyncHandler(async (req, res) => {
   booking.completedAt = new Date();
   if (completionNotes) booking.completionNotes = completionNotes;
 
-  // Update vendor stats
+  // Calculate earnings from successful payments for this booking
+  const bookingPayments = await Payment.aggregate([
+    {
+      $match: {
+        bookingId: booking._id,
+        status: 'SUCCESS'
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        totalAmount: { $sum: '$amount' }
+      }
+    }
+  ]);
+
+  const bookingEarnings = bookingPayments[0]?.totalAmount || 0;
+
+  // Update vendor stats and earnings
   vendor.totalBookings += 1;
+  
+  // Update total earnings
+  if (bookingEarnings > 0) {
+    vendor.totalEarnings = (vendor.totalEarnings || 0) + bookingEarnings;
+    
+    // Update earningsSummary
+    if (!vendor.earningsSummary) {
+      vendor.earningsSummary = {
+        totalEarnings: 0,
+        thisMonthEarnings: 0,
+        totalBookings: 0
+      };
+    }
+    vendor.earningsSummary.totalEarnings = (vendor.earningsSummary.totalEarnings || 0) + bookingEarnings;
+    
+    // Update this month earnings if booking is completed this month
+    const currentMonth = new Date();
+    currentMonth.setDate(1);
+    if (booking.completedAt >= currentMonth) {
+      vendor.earningsSummary.thisMonthEarnings = (vendor.earningsSummary.thisMonthEarnings || 0) + bookingEarnings;
+    }
+  }
+  
   await vendor.save();
 
   await booking.save();
@@ -1370,10 +1467,86 @@ export const sendMessageToAdmin = asyncHandler(async (req, res) => {
 
 // ==================== EARNINGS & PAYOUTS ====================
 export const getMonthlyEarnings = asyncHandler(async (req, res) => {
+  const vendor = req.user || await User.findOne({ _id: req.userId, role: 'vendor' });
+  
+  if (!vendor) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vendor profile not found'
+    });
+  }
+
+  const { months = 6 } = req.query; // Default to last 6 months
+  const monthsAgo = new Date();
+  monthsAgo.setMonth(monthsAgo.getMonth() - parseInt(months));
+  
+  // Get monthly earnings breakdown
+  const monthlyEarnings = await Payment.aggregate([
+    {
+      $lookup: {
+        from: 'bookings',
+        localField: 'bookingId',
+        foreignField: '_id',
+        as: 'booking'
+      }
+    },
+    {
+      $unwind: '$booking'
+    },
+    {
+      $match: {
+        'booking.assignedVendorId': vendor._id,
+        'booking.vendorStatus': 'COMPLETED',
+        status: 'SUCCESS',
+        createdAt: { $gte: monthsAgo }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' }
+        },
+        totalEarnings: { $sum: '$amount' },
+        transactionCount: { $sum: 1 },
+        averageEarning: { $avg: '$amount' }
+      }
+    },
+    {
+      $sort: { '_id.year': 1, '_id.month': 1 }
+    },
+    {
+      $project: {
+        _id: 0,
+        year: '$_id.year',
+        month: '$_id.month',
+        monthName: {
+          $arrayElemAt: [
+            ['', 'January', 'February', 'March', 'April', 'May', 'June', 
+             'July', 'August', 'September', 'October', 'November', 'December'],
+            '$_id.month'
+          ]
+        },
+        totalEarnings: 1,
+        transactionCount: 1,
+        averageEarning: { $round: ['$averageEarning', 2] }
+      }
+    }
+  ]);
+
+  // Calculate total for the period
+  const totalEarnings = monthlyEarnings.reduce((sum, month) => sum + month.totalEarnings, 0);
+  const totalTransactions = monthlyEarnings.reduce((sum, month) => sum + month.transactionCount, 0);
+
   res.status(200).json({
     success: true,
-    message: 'Get monthly earnings endpoint - To be implemented',
-    data: { earnings: 'Coming soon' }
+    data: {
+      period: `${months} months`,
+      totalEarnings,
+      totalTransactions,
+      averageMonthlyEarning: totalEarnings / Math.max(monthlyEarnings.length, 1),
+      monthlyBreakdown: monthlyEarnings
+    }
   });
 });
 

@@ -277,6 +277,39 @@ export const updateProfile = asyncHandler(async (req, res) => {
   await user.save();
   console.log('🔍 User saved with address:', user.address);
 
+  // Update Clerk user's firstName and lastName if name was updated
+  if (name) {
+    try {
+      const { getAuth } = await import('@clerk/express');
+      const { createClerkClient } = await import('@clerk/clerk-sdk-node');
+      
+      const getClerkClient = () => createClerkClient({ 
+        secretKey: process.env.CLERK_SECRET_KEY || process.env.CLERK_SECRET_KEY_USER
+      });
+      
+      const clerkAuth = getAuth(req);
+      if (clerkAuth?.userId) {
+        const clerkClient = getClerkClient();
+        
+        // Split name into firstName and lastName
+        const nameParts = name.trim().split(/\s+/);
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        
+        // Update Clerk user
+        await clerkClient.users.updateUser(clerkAuth.userId, {
+          firstName: firstName,
+          lastName: lastName
+        });
+        
+        console.log('✅ Updated Clerk user name:', { firstName, lastName });
+      }
+    } catch (clerkError) {
+      console.error('❌ Failed to update Clerk user name:', clerkError);
+      // Don't fail the request if Clerk update fails - database is already updated
+    }
+  }
+
   // Create audit log
   // DISABLED: await AuditLog.create({
   //     actorId: req.userId,

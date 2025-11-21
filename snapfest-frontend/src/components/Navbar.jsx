@@ -7,6 +7,7 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [userRole, setUserRole] = useState(null);
+  const [backendUserName, setBackendUserName] = useState(null);
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
   const navigate = useNavigate();
@@ -40,6 +41,35 @@ const Navbar = () => {
       // Use Clerk metadata if available
       setUserRole(user.publicMetadata.role);
     }
+  }, [user, isLoaded]);
+
+  // Fetch backend profile name to display in navbar
+  useEffect(() => {
+    const fetchBackendProfile = async () => {
+      if (isLoaded && user) {
+        try {
+          const response = await fetch('http://localhost:5001/api/users/profile', {
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const userName = data.data?.user?.name;
+            if (userName) {
+              setBackendUserName(userName);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching backend profile:', error);
+          // Silently fail - will use Clerk fallback
+        }
+      }
+    };
+    
+    fetchBackendProfile();
   }, [user, isLoaded]);
 
   const handleLogout = async () => {
@@ -171,7 +201,23 @@ const Navbar = () => {
                     <User className="w-3 h-3 text-white" />
                   </div>
                   <div className="text-left">
-                    <div className="font-semibold text-xs">{user?.firstName || 'User'}</div>
+                    <div className="font-semibold text-xs">
+                      {(() => {
+                        // Extract first name from backend name if it exists
+                        if (backendUserName) {
+                          return backendUserName.split(' ')[0];
+                        }
+                        // Use Clerk firstName if available
+                        if (user?.firstName) {
+                          return user.firstName;
+                        }
+                        // Extract first name from fullName if available
+                        if (user?.fullName) {
+                          return user.fullName.split(' ')[0];
+                        }
+                        return 'User';
+                      })()}
+                    </div>
                     <div className="text-xs text-pink-600 font-medium">
                       {getRoleDisplayName()}
                     </div>

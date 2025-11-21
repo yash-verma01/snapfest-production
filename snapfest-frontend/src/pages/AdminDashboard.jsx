@@ -11,12 +11,13 @@ import {
   Activity,
   AlertTriangle,
   CheckCircle,
-  Clock,
   Package,
   Home,
   MessageSquare,
   Star,
-  Mail
+  Mail,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useUser, useClerk } from '@clerk/clerk-react';
 import { adminAPI } from '../services/api';
@@ -44,7 +45,6 @@ const AdminDashboard = () => {
     window.location.href = '/sign-in';
   };
   const [dashboardData, setDashboardData] = useState(null);
-  const [systemStats, setSystemStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -52,6 +52,8 @@ const AdminDashboard = () => {
   const [testimonials, setTestimonials] = useState([]);
   const [testimonialStats, setTestimonialStats] = useState(null);
   const [testimonialLoading, setTestimonialLoading] = useState(false);
+  const [showAllActivities, setShowAllActivities] = useState(false);
+  const [systemHealth, setSystemHealth] = useState(null);
 
   // Navigation handler
   const handleNavigation = (tab) => {
@@ -123,11 +125,11 @@ const AdminDashboard = () => {
         console.log('Dashboard response:', dashboardResponse.data);
         setDashboardData(dashboardResponse.data.data);
         
-        // Load system stats
-        console.log('Fetching system stats...');
-        const statsResponse = await adminAPI.getSystemStats();
-        console.log('System stats response:', statsResponse.data);
-        setSystemStats(statsResponse.data.data);
+        // Load system health
+        console.log('Fetching system health...');
+        const healthResponse = await adminAPI.getSystemHealth();
+        console.log('System health response:', healthResponse.data);
+        setSystemHealth(healthResponse.data.data);
         
       } catch (err) {
         console.error('Error loading dashboard data:', err);
@@ -142,19 +144,32 @@ const AdminDashboard = () => {
           },
           revenue: {
             monthly: 0
+          },
+          recentActivity: {
+            bookings: [],
+            users: [],
+            vendors: []
           }
         });
-        setSystemStats({
-          users: {
-            active: 0
-          }
-        });
+        setSystemHealth(null);
       } finally {
         setLoading(false);
       }
     };
 
     loadDashboardData();
+    
+    // Refresh health status every 2 minutes
+    const healthInterval = setInterval(async () => {
+      try {
+        const healthResponse = await adminAPI.getSystemHealth();
+        setSystemHealth(healthResponse.data.data);
+      } catch (err) {
+        console.error('Error refreshing system health:', err);
+      }
+    }, 120000); // 2 minutes = 120000 milliseconds
+
+    return () => clearInterval(healthInterval);
   }, []);
 
   const stats = [
@@ -196,32 +211,72 @@ const AdminDashboard = () => {
     }
   ];
 
-  const systemHealth = [
-    {
-      title: 'System Uptime',
-      value: `${systemStats?.systemUptime || 99.8}%`,
-      icon: <Activity className="w-5 h-5 text-green-600" />,
-      status: 'healthy'
-    },
-    {
-      title: 'Active Users',
-      value: systemStats?.users?.active || 0,
-      icon: <Users className="w-5 h-5 text-blue-600" />,
-      status: 'normal'
-    },
-    {
-      title: 'Response Time',
-      value: `${systemStats?.averageResponseTime || 120}ms`,
-      icon: <Clock className="w-5 h-5 text-yellow-600" />,
-      status: 'normal'
-    },
-    {
-      title: 'Pending Bookings',
-      value: dashboardData?.overview?.pendingBookings || 0,
-      icon: <AlertTriangle className="w-5 h-5 text-orange-600" />,
-      status: dashboardData?.overview?.pendingBookings > 10 ? 'warning' : 'normal'
+  // Helper function to format time ago
+  const getTimeAgo = (date) => {
+    if (!date) return 'Unknown time';
+    const now = new Date();
+    const past = new Date(date);
+    const diffInSeconds = Math.floor((now - past) / 1000);
+    
+    if (diffInSeconds < 60) return `${diffInSeconds} second${diffInSeconds !== 1 ? 's' : ''} ago`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minute${Math.floor(diffInSeconds / 60) !== 1 ? 's' : ''} ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hour${Math.floor(diffInSeconds / 3600) !== 1 ? 's' : ''} ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} day${Math.floor(diffInSeconds / 86400) !== 1 ? 's' : ''} ago`;
+    return `${Math.floor(diffInSeconds / 604800)} week${Math.floor(diffInSeconds / 604800) !== 1 ? 's' : ''} ago`;
+  };
+
+  // Process recent activity from backend data
+  const getRecentActivities = () => {
+    const activities = [];
+    const recentActivity = dashboardData?.recentActivity || { bookings: [], users: [], vendors: [] };
+
+    // Add recent bookings
+    if (recentActivity.bookings && Array.isArray(recentActivity.bookings)) {
+      recentActivity.bookings.forEach(booking => {
+        activities.push({
+          action: 'New booking created',
+          user: booking.packageId?.name || booking.packageId?.title || 'Package',
+          details: booking.userId?.name || booking.userId?.email || 'User',
+          time: booking.createdAt,
+          type: 'booking',
+          id: booking._id
+        });
+      });
     }
-  ];
+
+    // Add recent users
+    if (recentActivity.users && Array.isArray(recentActivity.users)) {
+      recentActivity.users.forEach(user => {
+        activities.push({
+          action: 'New user registration',
+          user: user.name || user.email || 'User',
+          details: user.email || 'No email',
+          time: user.createdAt,
+          type: 'user',
+          id: user._id
+        });
+      });
+    }
+
+    // Add recent vendors
+    if (recentActivity.vendors && Array.isArray(recentActivity.vendors)) {
+      recentActivity.vendors.forEach(vendor => {
+        activities.push({
+          action: 'New vendor registration',
+          user: vendor.name || vendor.email || 'Vendor',
+          details: vendor.businessName || vendor.email || 'Vendor',
+          time: vendor.createdAt,
+          type: 'vendor',
+          id: vendor._id
+        });
+      });
+    }
+
+    // Sort by time (most recent first) and limit to 10
+    return activities
+      .sort((a, b) => new Date(b.time) - new Date(a.time))
+      .slice(0, 10);
+  };
 
   if (loading) {
     return (
@@ -304,65 +359,283 @@ const AdminDashboard = () => {
               </Card>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Main Content */}
-              <div className="lg:col-span-2 space-y-8">
-                {/* System Health */}
-                <Card className="p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">System Health</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {systemHealth.map((item, index) => (
-                      <div key={index} className="text-center p-4 bg-gray-50 rounded-lg">
-                        <div className="flex items-center justify-center mb-2">
-                          {item.icon}
-                        </div>
-                        <div className="text-lg font-semibold text-gray-900">{item.value}</div>
-                        <div className="text-sm text-gray-600">{item.title}</div>
-                        <div className={`mt-2 text-xs px-2 py-1 rounded-full ${
-                          item.status === 'healthy' ? 'bg-green-100 text-green-800' :
-                          item.status === 'warning' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {item.status}
-                        </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Recent Activity */}
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
+                <div className="space-y-4">
+                  {(() => {
+                    const activities = getRecentActivities();
+                    const displayActivities = showAllActivities ? activities : activities.slice(0, 5);
+                    const hasMore = activities.length > 5;
+                    
+                    return activities.length > 0 ? (
+                      <>
+                        {displayActivities.map((activity, index) => (
+                          <div key={`${activity.type}-${activity.id || index}`} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                              activity.type === 'user' ? 'bg-blue-100' :
+                              activity.type === 'booking' ? 'bg-green-100' :
+                              activity.type === 'vendor' ? 'bg-purple-100' :
+                              'bg-gray-100'
+                            }`}>
+                              {activity.type === 'user' ? <Users className="w-4 h-4 text-blue-600" /> :
+                               activity.type === 'booking' ? <Calendar className="w-4 h-4 text-green-600" /> :
+                               activity.type === 'vendor' ? <Shield className="w-4 h-4 text-purple-600" /> :
+                               <Activity className="w-4 h-4 text-gray-600" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{activity.action}</p>
+                              <p className="text-xs text-gray-600 truncate">{activity.user}</p>
+                              {activity.details && activity.details !== activity.user && (
+                                <p className="text-xs text-gray-500 truncate">{activity.details}</p>
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">
+                              {getTimeAgo(activity.time)}
+                            </div>
+                          </div>
+                        ))}
+                        {hasMore && (
+                          <div className="pt-2">
+                            <Button
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => setShowAllActivities(!showAllActivities)}
+                            >
+                              {showAllActivities ? (
+                                <>
+                                  <ChevronUp className="w-4 h-4 mr-2" />
+                                  Show Less
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDown className="w-4 h-4 mr-2" />
+                                  Show More ({activities.length - 5} more)
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Activity className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-600">No recent activity</p>
                       </div>
-                    ))}
-                  </div>
-                </Card>
+                    );
+                  })()}
+                </div>
+              </Card>
 
-                {/* Recent Activity */}
-                <Card className="p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
-                  <div className="space-y-4">
-                    {[
-                      { action: 'New user registration', user: 'John Doe', time: '2 minutes ago', type: 'user' },
-                      { action: 'Booking completed', user: 'Wedding Photography', time: '15 minutes ago', type: 'booking' },
-                      { action: 'Payment processed', user: '₹25,000', time: '1 hour ago', type: 'payment' },
-                      { action: 'Vendor approved', user: 'Photography Studio', time: '2 hours ago', type: 'vendor' },
-                      { action: 'System backup', user: 'Database backup completed', time: '3 hours ago', type: 'system' }
-                    ].map((activity, index) => (
-                      <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          activity.type === 'user' ? 'bg-blue-100' :
-                          activity.type === 'booking' ? 'bg-green-100' :
-                          activity.type === 'payment' ? 'bg-yellow-100' :
-                          'bg-gray-100'
-                        }`}>
-                          {activity.type === 'user' ? <Users className="w-4 h-4 text-blue-600" /> :
-                           activity.type === 'booking' ? <Calendar className="w-4 h-4 text-green-600" /> :
-                           activity.type === 'payment' ? <CreditCard className="w-4 h-4 text-yellow-600" /> :
-                           <Activity className="w-4 h-4 text-gray-600" />}
+              {/* Navigation */}
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Navigation</h3>
+                <div className="space-y-2">
+                  <Button 
+                    className={`w-full justify-start ${activeTab === 'dashboard' ? 'bg-primary-600 text-white' : ''}`}
+                    onClick={() => handleNavigation('dashboard')}
+                  >
+                    <Home className="w-4 h-4 mr-2" />
+                    Dashboard
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className={`w-full justify-start ${activeTab === 'users' ? 'bg-primary-50 text-primary-600' : ''}`}
+                    onClick={() => handleNavigation('users')}
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Manage Users
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className={`w-full justify-start ${activeTab === 'bookings' ? 'bg-primary-50 text-primary-600' : ''}`}
+                    onClick={() => handleNavigation('bookings')}
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Manage Bookings
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className={`w-full justify-start ${activeTab === 'packages' ? 'bg-primary-50 text-primary-600' : ''}`}
+                    onClick={() => handleNavigation('packages')}
+                  >
+                    <Package className="w-4 h-4 mr-2" />
+                    Manage Packages
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className={`w-full justify-start ${activeTab === 'events' ? 'bg-primary-50 text-primary-600' : ''}`}
+                    onClick={() => handleNavigation('events')}
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Manage Events
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className={`w-full justify-start ${activeTab === 'venues' ? 'bg-primary-50 text-primary-600' : ''}`}
+                    onClick={() => handleNavigation('venues')}
+                  >
+                    <Home className="w-4 h-4 mr-2" />
+                    Manage Venues
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className={`w-full justify-start ${activeTab === 'beatbloom' ? 'bg-primary-50 text-primary-600' : ''}`}
+                    onClick={() => handleNavigation('beatbloom')}
+                  >
+                    <Star className="w-4 h-4 mr-2" />
+                    Beat & Bloom
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className={`w-full justify-start ${activeTab === 'enquiries' ? 'bg-primary-50 text-primary-600' : ''}`}
+                    onClick={() => handleNavigation('enquiries')}
+                  >
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Enquiries
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className={`w-full justify-start ${activeTab === 'vendors' ? 'bg-primary-50 text-primary-600' : ''}`}
+                    onClick={() => handleNavigation('vendors')}
+                  >
+                    <Shield className="w-4 h-4 mr-2" />
+                    Manage Vendors
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className={`w-full justify-start ${activeTab === 'payments' ? 'bg-primary-50 text-primary-600' : ''}`}
+                    onClick={() => handleNavigation('payments')}
+                  >
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Payment Reports
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className={`w-full justify-start ${activeTab === 'testimonials' ? 'bg-primary-50 text-primary-600' : ''}`}
+                    onClick={() => {
+                      handleNavigation('testimonials');
+                      loadTestimonials();
+                    }}
+                  >
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Manage Testimonials
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className={`w-full justify-start ${activeTab === 'emails' ? 'bg-primary-50 text-primary-600' : ''}`}
+                    onClick={() => handleNavigation('emails')}
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Email Management
+                  </Button>
+                </div>
+              </Card>
+            </div>
+
+            {/* System Status - Full width below */}
+            <div className="mt-8">
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">System Status</h3>
+                  {systemHealth && (
+                    <span className="text-xs text-gray-500">
+                      Last updated: {new Date(systemHealth.timestamp || Date.now()).toLocaleTimeString()}
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {(() => {
+                    const getStatusDisplay = (serviceName) => {
+                      const service = systemHealth?.[serviceName];
+                      const isOnline = service?.status === 'online';
+                      
+                      return (
+                        <div 
+                          key={serviceName}
+                          className={`relative flex flex-col p-3 rounded-lg group ${
+                            isOnline ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-gray-700 capitalize">
+                              {serviceName === 'apiServer' ? 'API Server' : 
+                               serviceName === 'paymentGateway' ? 'Payment Gateway' :
+                               serviceName === 'emailService' ? 'Email Service' : serviceName}
+                            </span>
+                            <div className="flex items-center">
+                              {isOnline ? (
+                                <>
+                                  <CheckCircle className="w-4 h-4 text-green-600 mr-1" />
+                                  <span className="text-sm text-green-600 font-medium">Online</span>
+                                </>
+                              ) : (
+                                <>
+                                  <AlertTriangle className="w-4 h-4 text-red-600 mr-1" />
+                                  <span className="text-sm text-red-600 font-medium">Offline</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          {service?.message && (
+                            <div className="mt-1">
+                              <span className="text-xs text-gray-500 truncate block" title={service.message}>
+                                {service.message}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                          <p className="text-xs text-gray-600">{activity.user}</p>
-                        </div>
-                        <div className="text-xs text-gray-500">{activity.time}</div>
-                      </div>
-                    ))}
+                      );
+                    };
+
+                    return systemHealth ? (
+                      <>
+                        {getStatusDisplay('database')}
+                        {getStatusDisplay('apiServer')}
+                        {getStatusDisplay('paymentGateway')}
+                        {getStatusDisplay('emailService')}
+                      </>
+                    ) : (
+                      <>
+                        {['database', 'apiServer', 'paymentGateway', 'emailService'].map((service) => (
+                          <div key={service} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <span className="text-sm text-gray-600 capitalize">
+                              {service === 'apiServer' ? 'API Server' : 
+                               service === 'paymentGateway' ? 'Payment Gateway' :
+                               service === 'emailService' ? 'Email Service' : service}
+                            </span>
+                            <div className="flex items-center">
+                              <div className="w-4 h-4 border-2 border-gray-300 border-t-primary-600 rounded-full animate-spin mr-1"></div>
+                              <span className="text-sm text-gray-500">Checking...</span>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    );
+                  })()}
+                </div>
+                {systemHealth && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>Status details available on hover</span>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const healthResponse = await adminAPI.getSystemHealth();
+                            setSystemHealth(healthResponse.data.data);
+                          } catch (err) {
+                            console.error('Error refreshing health:', err);
+                          }
+                        }}
+                        className="text-primary-600 hover:text-primary-700 font-medium"
+                      >
+                        Refresh Status
+                      </button>
+                    </div>
                   </div>
-                </Card>
-              </div>
+                )}
+              </Card>
             </div>
           </>
         )}
@@ -499,159 +772,6 @@ const AdminDashboard = () => {
           </div>
         )}
         {activeTab === 'emails' && <EmailManagement />}
-
-        {activeTab === 'dashboard' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-8">
-              {/* Content already rendered above */}
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-8">
-              {/* Navigation */}
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Navigation</h3>
-                <div className="space-y-2">
-                  <Button 
-                    className={`w-full justify-start ${activeTab === 'dashboard' ? 'bg-primary-600 text-white' : ''}`}
-                    onClick={() => handleNavigation('dashboard')}
-                  >
-                    <Home className="w-4 h-4 mr-2" />
-                    Dashboard
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className={`w-full justify-start ${activeTab === 'users' ? 'bg-primary-50 text-primary-600' : ''}`}
-                    onClick={() => handleNavigation('users')}
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    Manage Users
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className={`w-full justify-start ${activeTab === 'bookings' ? 'bg-primary-50 text-primary-600' : ''}`}
-                    onClick={() => handleNavigation('bookings')}
-                  >
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Manage Bookings
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className={`w-full justify-start ${activeTab === 'packages' ? 'bg-primary-50 text-primary-600' : ''}`}
-                    onClick={() => handleNavigation('packages')}
-                  >
-                    <Package className="w-4 h-4 mr-2" />
-                    Manage Packages
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className={`w-full justify-start ${activeTab === 'events' ? 'bg-primary-50 text-primary-600' : ''}`}
-                    onClick={() => handleNavigation('events')}
-                  >
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Manage Events
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className={`w-full justify-start ${activeTab === 'venues' ? 'bg-primary-50 text-primary-600' : ''}`}
-                    onClick={() => handleNavigation('venues')}
-                  >
-                    <Home className="w-4 h-4 mr-2" />
-                    Manage Venues
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className={`w-full justify-start ${activeTab === 'beatbloom' ? 'bg-primary-50 text-primary-600' : ''}`}
-                    onClick={() => handleNavigation('beatbloom')}
-                  >
-                    <Star className="w-4 h-4 mr-2" />
-                    Beat & Bloom
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className={`w-full justify-start ${activeTab === 'enquiries' ? 'bg-primary-50 text-primary-600' : ''}`}
-                    onClick={() => handleNavigation('enquiries')}
-                  >
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Enquiries
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className={`w-full justify-start ${activeTab === 'vendors' ? 'bg-primary-50 text-primary-600' : ''}`}
-                    onClick={() => handleNavigation('vendors')}
-                  >
-                    <Shield className="w-4 h-4 mr-2" />
-                    Manage Vendors
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className={`w-full justify-start ${activeTab === 'payments' ? 'bg-primary-50 text-primary-600' : ''}`}
-                    onClick={() => handleNavigation('payments')}
-                  >
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Payment Reports
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className={`w-full justify-start ${activeTab === 'testimonials' ? 'bg-primary-50 text-primary-600' : ''}`}
-                    onClick={() => {
-                      handleNavigation('testimonials');
-                      loadTestimonials();
-                    }}
-                  >
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Manage Testimonials
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className={`w-full justify-start ${activeTab === 'emails' ? 'bg-primary-50 text-primary-600' : ''}`}
-                    onClick={() => handleNavigation('emails')}
-                  >
-                    <Mail className="w-4 h-4 mr-2" />
-                    Email Management
-                  </Button>
-                </div>
-              </Card>
-
-              {/* System Status */}
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">System Status</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Database</span>
-                    <div className="flex items-center">
-                      <CheckCircle className="w-4 h-4 text-green-600 mr-1" />
-                      <span className="text-sm text-green-600">Online</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">API Server</span>
-                    <div className="flex items-center">
-                      <CheckCircle className="w-4 h-4 text-green-600 mr-1" />
-                      <span className="text-sm text-green-600">Online</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Payment Gateway</span>
-                    <div className="flex items-center">
-                      <CheckCircle className="w-4 h-4 text-green-600 mr-1" />
-                      <span className="text-sm text-green-600">Online</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Email Service</span>
-                    <div className="flex items-center">
-                      <CheckCircle className="w-4 h-4 text-green-600 mr-1" />
-                      <span className="text-sm text-green-600">Online</span>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
