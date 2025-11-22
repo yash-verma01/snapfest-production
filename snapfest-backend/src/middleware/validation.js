@@ -228,11 +228,30 @@ export const validatePackage = [
 
 // Booking validation
 export const validateBooking = [
+  // Either packageId or beatBloomId is required, but not both
+  body().custom((value) => {
+    const { packageId, beatBloomId } = value;
+    
+    if (!packageId && !beatBloomId) {
+      throw new Error('Either packageId or beatBloomId is required');
+    }
+    
+    if (packageId && beatBloomId) {
+      throw new Error('Cannot provide both packageId and beatBloomId');
+    }
+    
+    return true;
+  }),
+  
   body('packageId')
-    .notEmpty()
-    .withMessage('Package ID is required')
+    .optional()
     .isMongoId()
     .withMessage('Invalid package ID'),
+  
+  body('beatBloomId')
+    .optional()
+    .isMongoId()
+    .withMessage('Invalid BeatBloom ID'),
   
   body('eventDate')
     .notEmpty()
@@ -514,23 +533,59 @@ export const validateSearch = [
   handleValidationErrors
 ];
 
-// Cart item validation
+// Cart item validation - Supports both Packages and BeatBloom
 export const validateCartItem = [
-  body('packageId')
-    .notEmpty()
-    .withMessage('Package ID is required')
-    .isMongoId()
-    .withMessage('Invalid package ID'),
+  // Validate itemType (optional, defaults to 'package' for backward compatibility)
+  body('itemType')
+    .optional()
+    .isIn(['package', 'beatbloom'])
+    .withMessage('itemType must be either "package" or "beatbloom"'),
+  
+  // Conditional validation: packageId required for packages, beatBloomId for beatbloom
+  body().custom((value, { req }) => {
+    const itemType = req.body.itemType || 'package'; // Default to 'package' for backward compatibility
+    
+    if (itemType === 'package') {
+      if (!value.packageId) {
+        throw new Error('Package ID is required for package items');
+      }
+      // Validate MongoDB ID format
+      const mongoIdRegex = /^[0-9a-fA-F]{24}$/;
+      if (!mongoIdRegex.test(value.packageId)) {
+        throw new Error('Invalid package ID format');
+      }
+    } else if (itemType === 'beatbloom') {
+      if (!value.beatBloomId) {
+        throw new Error('BeatBloom ID is required for beatbloom items');
+      }
+      // Validate MongoDB ID format
+      const mongoIdRegex = /^[0-9a-fA-F]{24}$/;
+      if (!mongoIdRegex.test(value.beatBloomId)) {
+        throw new Error('Invalid BeatBloom ID format');
+      }
+    }
+    
+    return true;
+  }),
   
   body('eventDate')
     .notEmpty()
     .withMessage('Event date is required')
-    .isISO8601()
-    .withMessage('Event date must be a valid date')
     .custom((value) => {
+      // Accept both YYYY-MM-DD format (from HTML date input) and ISO8601
+      const dateRegex = /^\d{4}-\d{2}-\d{2}/;
+      if (!dateRegex.test(value)) {
+        throw new Error('Event date must be in YYYY-MM-DD format');
+      }
+      
       const eventDate = new Date(value);
+      if (isNaN(eventDate.getTime())) {
+        throw new Error('Event date must be a valid date');
+      }
+      
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+      eventDate.setHours(0, 0, 0, 0);
       
       if (eventDate < today) {
         throw new Error('Event date cannot be in the past');
@@ -544,6 +599,11 @@ export const validateCartItem = [
     .withMessage('Location is required')
     .isLength({ min: 5, max: 200 })
     .withMessage('Location must be between 5 and 200 characters'),
+  
+  body('guests')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Guests must be a positive integer'),
   
   handleValidationErrors
 ];

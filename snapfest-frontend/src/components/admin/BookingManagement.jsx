@@ -249,8 +249,19 @@ const BookingManagement = () => {
                       <div className="text-sm text-gray-500">{booking.userId?.email}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{booking.packageId?.title}</div>
-                      <div className="text-sm text-gray-500">{booking.packageId?.category}</div>
+                      {booking.packageId ? (
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{booking.packageId.title}</div>
+                          <div className="text-sm text-gray-500">{booking.packageId.category}</div>
+                        </div>
+                      ) : booking.beatBloomId ? (
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{booking.beatBloomId.title}</div>
+                          <div className="text-sm text-gray-500">Service - {booking.beatBloomId.category}</div>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-500 italic">N/A</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
@@ -335,7 +346,10 @@ const BookingManagement = () => {
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        {!booking.assignedVendorId && booking.vendorStatus !== 'COMPLETED' && booking.vendorStatus !== 'CANCELLED' && (
+                        {!booking.assignedVendorId && 
+                         booking.vendorStatus !== 'COMPLETED' && 
+                         booking.vendorStatus !== 'CANCELLED' && 
+                         booking.paymentStatus !== 'PENDING_PAYMENT' && (
                           <Button
                             variant="outline"
                             size="sm"

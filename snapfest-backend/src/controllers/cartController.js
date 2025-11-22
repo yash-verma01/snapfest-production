@@ -1,4 +1,4 @@
-import { Cart, Package, AuditLog } from '../models/index.js';
+import { Cart, Package, BeatBloom, AuditLog } from '../models/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 
 // @desc    Get user cart
@@ -27,35 +27,44 @@ export const getCart = asyncHandler(async (req, res) => {
 
   try {
     const cartItems = await Cart.find({ userId })
-      .populate('packageId', 'title category basePrice description images')
+      .populate('packageId', 'title category basePrice perGuestPrice description images')
+      .populate('beatBloomId', 'title category price description images primaryImage')
       .sort({ createdAt: -1 });
     
     console.log('🛒 Cart Controller: Found cart items:', cartItems.length);
 
-    // Filter out items with invalid or missing package data
+    // Filter and validate items - handle both types
     const validCartItems = cartItems.filter(item => {
-      if (!item.packageId) {
-        console.log('Cart item has null packageId:', item._id);
-        return false;
-      }
-      if (!item.packageId.title) {
-        console.log('Cart item has null package title:', item._id);
-        return false;
-      }
-      if (item.packageId.basePrice === null || item.packageId.basePrice === undefined) {
-        console.log('Cart item has null basePrice:', item._id, 'Package:', item.packageId.title);
-        return false;
+      // Backward compatibility: if no itemType, assume it's a package
+      const itemType = item.itemType || 'package';
+      
+      if (itemType === 'package') {
+        if (!item.packageId || !item.packageId.title || item.packageId.basePrice === null) {
+          return false;
+        }
+      } else if (itemType === 'beatbloom') {
+        if (!item.beatBloomId || !item.beatBloomId.title || item.beatBloomId.price === null) {
+          return false;
+        }
       }
       return true;
     });
 
-    // Calculate total with additional safety checks
+    // Calculate total - handle both types
     let totalAmount = 0;
     validCartItems.forEach(item => {
       try {
-        const basePrice = item.packageId.basePrice || 0;
-        const itemTotal = basePrice;
-        totalAmount += itemTotal;
+        const itemType = item.itemType || 'package'; // Backward compatibility
+        
+        if (itemType === 'package') {
+          const basePrice = item.packageId.basePrice || 0;
+          const perGuestPrice = item.packageId.perGuestPrice || 0;
+          const itemTotal = basePrice + (perGuestPrice * (item.guests || 1));
+          totalAmount += itemTotal;
+        } else if (itemType === 'beatbloom') {
+          const price = item.beatBloomId.price || 0;
+          totalAmount += price;
+        }
       } catch (error) {
         console.error('Error calculating item total:', error, 'Item:', item._id);
       }
@@ -87,70 +96,120 @@ export const getCart = asyncHandler(async (req, res) => {
 // @route   POST /api/cart
 // @access  Private
 export const addToCart = asyncHandler(async (req, res) => {
-  const { packageId, guests, eventDate, location, customization } = req.body;
+  const { packageId, beatBloomId, itemType = 'package', guests, eventDate, location, customization } = req.body;
   const userId = req.userId;
 
-  // Verify package exists
-  const packageData = await Package.findById(packageId);
-  if (!packageData) {
-    return res.status(404).json({
+  // Validate itemType
+  if (!['package', 'beatbloom'].includes(itemType)) {
+    return res.status(400).json({
       success: false,
-      message: 'Package not found'
+      message: 'Invalid itemType. Must be "package" or "beatbloom"'
     });
   }
 
-  // Check if item already exists in cart
-  const existingCartItem = await Cart.findOne({ userId, packageId });
-  
-  if (existingCartItem) {
-    // Update existing item
-    existingCartItem.guests = guests;
-    existingCartItem.eventDate = eventDate;
-    existingCartItem.location = location;
-    existingCartItem.customization = customization;
-    await existingCartItem.save();
+  if (itemType === 'package') {
+    // Existing package logic - unchanged
+    if (!packageId) {
+      return res.status(400).json({
+        success: false,
+        message: 'packageId is required for package items'
+      });
+    }
+    
+    const packageData = await Package.findById(packageId);
+    if (!packageData) {
+      return res.status(404).json({
+        success: false,
+        message: 'Package not found'
+      });
+    }
 
-    // Create audit log
-    // DISABLED: await AuditLog.create({
-  //       actorId: userId,
-  //       action: 'UPDATE',
-  //       targetId: existingCartItem._id,
-  //       description: 'Cart item updated'
-  //     });
+    const existingCartItem = await Cart.findOne({ userId, packageId, itemType: 'package' });
+    
+    if (existingCartItem) {
+      existingCartItem.guests = guests;
+      existingCartItem.eventDate = eventDate;
+      existingCartItem.location = location;
+      existingCartItem.customization = customization;
+      await existingCartItem.save();
+      await existingCartItem.populate('packageId', 'title category basePrice description images');
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Cart item updated successfully',
+        data: { cartItem: existingCartItem }
+      });
+    }
 
-    return res.status(200).json({
+    const cartItem = await Cart.create({
+      userId,
+      packageId,
+      itemType: 'package',
+      guests: guests || 1,
+      eventDate: new Date(eventDate),
+      location,
+      customization
+    });
+
+    await cartItem.populate('packageId', 'title category basePrice description images');
+
+    return res.status(201).json({
       success: true,
-      message: 'Cart item updated successfully',
-      data: { cartItem: existingCartItem }
+      message: 'Item added to cart successfully',
+      data: { cartItem }
+    });
+    
+  } else if (itemType === 'beatbloom') {
+    // New BeatBloom logic
+    if (!beatBloomId) {
+      return res.status(400).json({
+        success: false,
+        message: 'beatBloomId is required for beatbloom items'
+      });
+    }
+    
+    const beatBloomData = await BeatBloom.findById(beatBloomId);
+    if (!beatBloomData) {
+      return res.status(404).json({
+        success: false,
+        message: 'BeatBloom service not found'
+      });
+    }
+
+    const existingCartItem = await Cart.findOne({ userId, beatBloomId, itemType: 'beatbloom' });
+    
+    if (existingCartItem) {
+      existingCartItem.eventDate = eventDate;
+      existingCartItem.location = location;
+      existingCartItem.customization = customization;
+      await existingCartItem.save();
+      await existingCartItem.populate('beatBloomId', 'title category price description images primaryImage');
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Cart item updated successfully',
+        data: { cartItem: existingCartItem }
+      });
+    }
+
+    const cartItem = await Cart.create({
+      userId,
+      beatBloomId,
+      itemType: 'beatbloom',
+      guests: 1, // BeatBloom items don't have per-guest pricing
+      eventDate: new Date(eventDate),
+      location,
+      customization
+    });
+
+    await cartItem.populate('beatBloomId', 'title category price description images primaryImage');
+
+    return res.status(201).json({
+      success: true,
+      message: 'Item added to cart successfully',
+      data: { cartItem }
     });
   }
-
-  // Create new cart item
-  const cartItem = await Cart.create({
-    userId,
-    packageId,
-    guests,
-    eventDate: new Date(eventDate),
-    location,
-    customization
-  });
-
-  // Populate the cart item
-  await cartItem.populate('packageId', 'title category basePrice description images');
-
-  // Create audit log
-  // DISABLED: await AuditLog.create({
-  //     actorId: userId,
-  //     action: 'CREATE',
-  //     targetId: cartItem._id,
-  //     description: 'Item added to cart'
-  //   });
-
-  res.status(201).json({
-    success: true,
-    message: 'Item added to cart successfully',
-    data: { cartItem }
-  });
 });
 
 // @desc    Update cart item
@@ -178,8 +237,13 @@ export const updateCartItem = asyncHandler(async (req, res) => {
 
   await cartItem.save();
 
-  // Populate the cart item
-  await cartItem.populate('packageId', 'title category basePrice description images');
+  // Populate the cart item based on type
+  const itemType = cartItem.itemType || 'package';
+  if (itemType === 'package') {
+    await cartItem.populate('packageId', 'title category basePrice description images');
+  } else if (itemType === 'beatbloom') {
+    await cartItem.populate('beatBloomId', 'title category price description images primaryImage');
+  }
 
   // Create audit log
   // DISABLED: await AuditLog.create({
@@ -260,21 +324,37 @@ export const getCartStats = asyncHandler(async (req, res) => {
   const totalItems = await Cart.countDocuments({ userId });
   
   const cartItems = await Cart.find({ userId })
-    .populate('packageId', 'basePrice');
+    .populate('packageId', 'basePrice perGuestPrice')
+    .populate('beatBloomId', 'price');
 
-  // Filter out items with invalid package data
-  const validCartItems = cartItems.filter(item => 
-    item.packageId && 
-    item.packageId.basePrice !== null && 
-    item.packageId.basePrice !== undefined
-  );
+  // Filter out items with invalid data - handle both types
+  const validCartItems = cartItems.filter(item => {
+    const itemType = item.itemType || 'package';
+    if (itemType === 'package') {
+      return item.packageId && 
+             item.packageId.basePrice !== null && 
+             item.packageId.basePrice !== undefined;
+    } else if (itemType === 'beatbloom') {
+      return item.beatBloomId && 
+             item.beatBloomId.price !== null && 
+             item.beatBloomId.price !== undefined;
+    }
+    return false;
+  });
 
   let totalAmount = 0;
   validCartItems.forEach(item => {
     try {
-      const basePrice = item.packageId.basePrice || 0;
-      const itemTotal = basePrice;
-      totalAmount += itemTotal;
+      const itemType = item.itemType || 'package';
+      if (itemType === 'package') {
+        const basePrice = item.packageId.basePrice || 0;
+        const perGuestPrice = item.packageId.perGuestPrice || 0;
+        const itemTotal = basePrice + (perGuestPrice * (item.guests || 1));
+        totalAmount += itemTotal;
+      } else if (itemType === 'beatbloom') {
+        const price = item.beatBloomId.price || 0;
+        totalAmount += price;
+      }
     } catch (error) {
       console.error('Error calculating item total in getCartStats:', error, 'Item:', item._id);
     }

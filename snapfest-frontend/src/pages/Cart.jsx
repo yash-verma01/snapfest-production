@@ -18,6 +18,7 @@ import { Card, Button, Badge } from '../components/ui';
 import { priceCalculator } from '../utils';
 import { paymentAPI } from '../services/api';
 import { paymentService } from '../services/paymentService';
+import toast from 'react-hot-toast';
 // Debug components removed - cart is now working
 
 const Cart = () => {
@@ -84,26 +85,58 @@ const Cart = () => {
       console.log('🛒 Cart: Creating bookings...');
       console.log('🛒 Cart: Cart items structure:', cart.items);
       
-      const bookingPromises = cart.items.map(async (item) => {
+      // Process all items (both packages and BeatBloom)
+      const allItems = cart.items;
+      
+      if (allItems.length === 0) {
+        toast.error('Your cart is empty. Please add items before proceeding to checkout.');
+        setIsProcessingPayment(false);
+        return;
+      }
+      
+      const bookingPromises = allItems.map(async (item) => {
         // Debug the item structure
         console.log('🛒 Cart: Item structure:', item);
+        console.log('🛒 Cart: Item type:', item.itemType || 'package');
         console.log('🛒 Cart: Item packageId:', item.packageId);
-        console.log('🛒 Cart: Item package:', item.package);
+        console.log('🛒 Cart: Item beatBloomId:', item.beatBloomId);
         
-        const packageId = item.packageId?._id || item.packageId;
+        const itemType = item.itemType || 'package';
+        let bookingData;
         
-        if (!packageId) {
-          throw new Error(`Package ID not found for cart item: ${item._id}`);
+        if (itemType === 'beatbloom') {
+          // Handle BeatBloom items
+          const beatBloomId = item.beatBloomId?._id || item.beatBloomId;
+          
+          if (!beatBloomId) {
+            throw new Error(`BeatBloom ID not found for cart item: ${item._id}`);
+          }
+          
+          bookingData = {
+            beatBloomId: beatBloomId,
+            eventDate: item.eventDate,
+            location: item.location,
+            guests: item.guests || 1,
+            customization: item.customization || '',
+            paymentPercentage: paymentPercentage // Include payment percentage
+          };
+        } else {
+          // Handle package items (existing functionality)
+          const packageId = item.packageId?._id || item.packageId;
+          
+          if (!packageId) {
+            throw new Error(`Package ID not found for cart item: ${item._id}`);
+          }
+          
+          bookingData = {
+            packageId: packageId,
+            eventDate: item.eventDate,
+            location: item.location,
+            guests: item.guests,
+            customization: item.customization || '',
+            paymentPercentage: paymentPercentage // Include payment percentage
+          };
         }
-        
-        const bookingData = {
-          packageId: packageId,
-          eventDate: item.eventDate,
-          location: item.location,
-          guests: item.guests,
-          customization: item.customization || '',
-          paymentPercentage: paymentPercentage // Include payment percentage
-        };
 
         console.log('🛒 Cart: Creating booking for item:', bookingData);
         
@@ -217,13 +250,34 @@ const Cart = () => {
       const paymentResults = await Promise.all(paymentPromises);
       console.log('🛒 Cart: All payments processed successfully:', paymentResults);
 
-      // Step 3: Clear cart and show success
+      // Step 3: Clear cart
       await clearCart();
       
-      alert('Payment successful! Your bookings have been confirmed. You will receive an email confirmation shortly.');
-      
-      // Navigate to bookings page
-      navigate('/user/bookings');
+      // Navigate to payment success page (same as Book Now flow)
+      // Use first booking data for success page display
+      if (paymentResults && paymentResults.length > 0) {
+        const firstResult = paymentResults[0];
+        // verifyResponse.data.data contains { payment, booking, remainingAmount }
+        const booking = firstResult.booking;
+        const remainingAmount = firstResult.remainingAmount || booking?.remainingAmount || 0;
+        const amount = firstResult.payment?.amount || booking?.amountPaid || (booking?.totalAmount * (paymentPercentage / 100));
+        
+        if (booking && booking._id) {
+          navigate('/payment/success', { 
+            state: { 
+              bookingId: booking._id,
+              amount: amount,
+              remainingAmount: remainingAmount
+            }
+          });
+        } else {
+          // Fallback to bookings page if booking data is missing
+          navigate('/user/bookings');
+        }
+      } else {
+        // Fallback to bookings page if no payment results
+        navigate('/user/bookings');
+      }
 
     } catch (error) {
       console.error('🛒 Cart: Payment error:', error);
@@ -349,52 +403,78 @@ const Cart = () => {
                 {console.log('🛒 Cart: Rendering cart items:', cart.items)}
                 {cart.items.map((item) => {
               try {
-                // Check if package data exists and is valid
-                if (!item.packageId || !item.packageId.title) {
-                  console.warn('🛒 Cart: Invalid package data for item:', item._id);
-                  return null; // Skip rendering this item
+                // Determine item type (backward compatible: default to 'package')
+                const itemType = item.itemType || 'package';
+                
+                // Get item data based on type
+                let itemData, itemTitle, itemDescription, itemImage, itemPrice;
+                
+                if (itemType === 'package') {
+                  if (!item.packageId || !item.packageId.title) {
+                    console.warn('🛒 Cart: Invalid package data for item:', item._id);
+                    return null; // Skip rendering this item
+                  }
+                  itemData = item.packageId;
+                  itemTitle = itemData.title;
+                  itemDescription = itemData.description;
+                  itemImage = itemData.images?.[0];
+                  const basePrice = itemData.basePrice || 0;
+                  const perGuestPrice = itemData.perGuestPrice || 0;
+                  itemPrice = basePrice + (perGuestPrice * (item.guests || 1));
+                } else if (itemType === 'beatbloom') {
+                  if (!item.beatBloomId || !item.beatBloomId.title) {
+                    console.warn('🛒 Cart: Invalid beatbloom data for item:', item._id);
+                    return null; // Skip rendering this item
+                  }
+                  itemData = item.beatBloomId;
+                  itemTitle = itemData.title;
+                  itemDescription = itemData.description;
+                  itemImage = itemData.primaryImage || itemData.images?.[0];
+                  itemPrice = itemData.price || 0;
+                } else {
+                  return null; // Unknown item type
                 }
-                
-                const packageData = item.packageId;
-                
-                // Calculate item pricing using database values with null checks
-                const basePrice = packageData.basePrice || 0;
-                const perGuestPrice = packageData.perGuestPrice || 0;
-                const guests = item.guests || 1;
-                const itemTotal = basePrice + (perGuestPrice * guests);
 
               return (
                 <Card key={item._id} className="p-6">
                   <div className="flex flex-col md:flex-row gap-6">
-                    {/* Package Image */}
+                    {/* Item Image */}
                     <div className="md:w-48 flex-shrink-0">
                       <img
-                        src={packageData.images?.[0] || '/api/placeholder/300/200'}
-                        alt={packageData.title}
+                        src={itemImage || '/api/placeholder/300/200'}
+                        alt={itemTitle}
                         className="w-full h-32 object-cover rounded-lg"
                       />
                     </div>
 
-                    {/* Package Details */}
+                    {/* Item Details */}
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-4">
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                            {packageData.title}
-                          </h3>
-                          <p className="text-sm text-gray-600 mb-2">
-                            {packageData.description}
-                          </p>
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            <div className="flex items-center">
-                              <Users className="w-4 h-4 mr-1" />
-                              Max {packageData.maxGuests || 50} guests
-                            </div>
-                            <div className="flex items-center">
-                              <Clock className="w-4 h-4 mr-1" />
-                              {packageData.features?.[0] || 'Professional service'}
-                            </div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-lg font-semibold text-gray-900">
+                              {itemTitle}
+                            </h3>
+                            <Badge variant="secondary" size="sm">
+                              {itemType === 'beatbloom' ? 'Service' : 'Package'}
+                            </Badge>
                           </div>
+                          <p className="text-sm text-gray-600 mb-2">
+                            {itemDescription}
+                          </p>
+                          {/* Only show guest info for packages */}
+                          {itemType === 'package' && (
+                            <div className="flex items-center space-x-4 text-sm text-gray-500">
+                              <div className="flex items-center">
+                                <Users className="w-4 h-4 mr-1" />
+                                Max {itemData.maxGuests || 50} guests
+                              </div>
+                              <div className="flex items-center">
+                                <Clock className="w-4 h-4 mr-1" />
+                                {itemData.features?.[0] || 'Professional service'}
+                              </div>
+                            </div>
+                          )}
                         </div>
                         <Button
                           variant="ghost"
@@ -408,12 +488,14 @@ const Cart = () => {
 
                       {/* Item Details Display */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div className="flex items-center space-x-2">
-                          <Users className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-600">
-                            <strong>Guests:</strong> {item.guests || 1}
-                          </span>
-                        </div>
+                        {itemType === 'package' && (
+                          <div className="flex items-center space-x-2">
+                            <Users className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm text-gray-600">
+                              <strong>Guests:</strong> {item.guests || 1}
+                            </span>
+                          </div>
+                        )}
 
                         <div className="flex items-center space-x-2">
                           <Calendar className="w-4 h-4 text-gray-400" />
@@ -442,15 +524,29 @@ const Cart = () => {
                       {/* Price Display */}
                       <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                         <div className="text-sm text-gray-600">
-                          Base: {formatPrice(basePrice || 0)} + Per Guest: {formatPrice(perGuestPrice || 0)} × {item.guests || 1}
+                          {itemType === 'package' ? (
+                            <>
+                              Base: {formatPrice(itemData.basePrice || 0)}
+                              {itemData.perGuestPrice > 0 && (
+                                <>
+                                  <span className="mx-2">+</span>
+                                  <span>Per Guest: {formatPrice(itemData.perGuestPrice)} × {item.guests || 1}</span>
+                                </>
+                              )}
+                            </>
+                          ) : (
+                            <span>Service Price: {formatPrice(itemData.price || 0)}</span>
+                          )}
                         </div>
                         <div className="text-right">
                           <div className="text-lg font-semibold text-primary-600">
-                            {formatPrice(itemTotal || 0)}
+                            {formatPrice(itemPrice)}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            Total for {item.guests || 1} guests
-                          </div>
+                          {itemType === 'package' && (
+                            <div className="text-sm text-gray-500">
+                              Total for {item.guests || 1} guests
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

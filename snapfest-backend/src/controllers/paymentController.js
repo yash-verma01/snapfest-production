@@ -29,8 +29,9 @@ export const getUserPayments = asyncHandler(async (req, res) => {
   }
 
   const payments = await Payment.find(query)
-    .populate('bookingId', 'packageId eventDate location totalAmount amountPaid')
+    .populate('bookingId', 'packageId beatBloomId eventDate location totalAmount amountPaid')
     .populate('bookingId.packageId', 'title category basePrice')
+    .populate('bookingId.beatBloomId', 'title category price')
     .skip(skip)
     .limit(limit)
     .sort({ createdAt: -1 });
@@ -60,8 +61,9 @@ export const getPaymentById = asyncHandler(async (req, res) => {
   const userId = req.userId;
 
   const payment = await Payment.findOne({ _id: id, userId })
-    .populate('bookingId', 'packageId eventDate location status')
-    .populate('bookingId.packageId', 'title category basePrice description');
+    .populate('bookingId', 'packageId beatBloomId eventDate location status')
+    .populate('bookingId.packageId', 'title category basePrice description')
+    .populate('bookingId.beatBloomId', 'title category price description');
 
   if (!payment) {
     return res.status(404).json({
@@ -112,7 +114,9 @@ export const createPayment = asyncHandler(async (req, res) => {
   });
 
   // Populate the payment
-  await payment.populate('bookingId', 'packageId eventDate location');
+  await payment.populate([
+    { path: 'bookingId', select: 'packageId beatBloomId eventDate location' }
+  ]);
 
   // Create audit log
   // DISABLED: await AuditLog.create({
@@ -482,19 +486,23 @@ export const verifyPayment = asyncHandler(async (req, res) => {
       
       await booking.save();
 
-      // Get user details and populate booking with package
+      // Get user details and populate booking with package/beatbloom
       const user = await User.findById(userId);
-      await booking.populate('packageId', 'title');
+      await booking.populate([
+        { path: 'packageId', select: 'title' },
+        { path: 'beatBloomId', select: 'title' }
+      ]);
       
       // Send booking confirmation email
-      if (user && user.email && booking.packageId) {
+      const itemTitle = booking.packageId?.title || booking.beatBloomId?.title;
+      if (user && user.email && itemTitle) {
         try {
           await getEmailService().sendBookingConfirmationEmail(
             user.email,
             user.name,
             {
               bookingId: booking._id.toString().slice(-8),
-              packageTitle: booking.packageId.title,
+              packageTitle: itemTitle,
               eventDate: booking.eventDate,
               location: booking.location,
               totalAmount: booking.totalAmount,
@@ -558,19 +566,23 @@ export const verifyPayment = asyncHandler(async (req, res) => {
       await booking.save();
       console.log('💳 Payment Verification: Booking saved with PARTIALLY_PAID status');
 
-      // Get user details and populate booking with package
+      // Get user details and populate booking with package/beatbloom
       const user = await User.findById(userId);
-      await booking.populate('packageId', 'title');
+      await booking.populate([
+        { path: 'packageId', select: 'title' },
+        { path: 'beatBloomId', select: 'title' }
+      ]);
       
       // Send booking confirmation email
-      if (user && user.email && booking.packageId) {
+      const itemTitle = booking.packageId?.title || booking.beatBloomId?.title;
+      if (user && user.email && itemTitle) {
         try {
           await getEmailService().sendBookingConfirmationEmail(
             user.email,
             user.name,
             {
               bookingId: booking._id.toString().slice(-8),
-              packageTitle: booking.packageId.title,
+              packageTitle: itemTitle,
               eventDate: booking.eventDate,
               location: booking.location,
               totalAmount: booking.totalAmount,
@@ -656,19 +668,23 @@ export const processPartialPayment = asyncHandler(async (req, res) => {
   booking.onlinePaymentDone = true; // Set for ANY online payment
   await booking.save();
 
-  // Get user details and populate booking with package
+  // Get user details and populate booking with package/beatbloom
   const user = await User.findById(userId);
-  await booking.populate('packageId', 'title');
+  await booking.populate([
+    { path: 'packageId', select: 'title' },
+    { path: 'beatBloomId', select: 'title' }
+  ]);
   
   // Send booking confirmation email
-  if (user && user.email && booking.packageId) {
+  const itemTitle = booking.packageId?.title || booking.beatBloomId?.title;
+  if (user && user.email && itemTitle) {
     try {
       await getEmailService().sendBookingConfirmationEmail(
         user.email,
         user.name,
         {
           bookingId: booking._id.toString().slice(-8),
-          packageTitle: booking.packageId.title,
+          packageTitle: itemTitle,
           eventDate: booking.eventDate,
           location: booking.location,
           totalAmount: booking.totalAmount,
@@ -752,19 +768,23 @@ export const processFullPayment = asyncHandler(async (req, res) => {
   // Generate OTP for vendor verification
   const otp = await OTPService.createOTP(bookingId, 'FULL_PAYMENT');
 
-  // Get user details and populate booking with package
+  // Get user details and populate booking with package/beatbloom
   const user = await User.findById(userId);
-  await booking.populate('packageId', 'title');
+  await booking.populate([
+    { path: 'packageId', select: 'title' },
+    { path: 'beatBloomId', select: 'title' }
+  ]);
   
   // Send booking confirmation email
-  if (user && user.email && booking.packageId) {
+  const itemTitle = booking.packageId?.title || booking.beatBloomId?.title;
+  if (user && user.email && itemTitle) {
     try {
       await getEmailService().sendBookingConfirmationEmail(
         user.email,
         user.name,
         {
           bookingId: booking._id.toString().slice(-8),
-          packageTitle: booking.packageId.title,
+          packageTitle: itemTitle,
           eventDate: booking.eventDate,
           location: booking.location,
           totalAmount: booking.totalAmount,
@@ -851,19 +871,23 @@ export const confirmCashPayment = asyncHandler(async (req, res) => {
     
     await booking.save();
 
-    // Get user details and populate booking with package
+    // Get user details and populate booking with package/beatbloom
     const user = await User.findById(booking.userId);
-    await booking.populate('packageId', 'title');
+    await booking.populate([
+      { path: 'packageId', select: 'title' },
+      { path: 'beatBloomId', select: 'title' }
+    ]);
     
     // Send booking confirmation email
-    if (user && user.email && booking.packageId) {
+    const itemTitle = booking.packageId?.title || booking.beatBloomId?.title;
+    if (user && user.email && itemTitle) {
       try {
         await getEmailService().sendBookingConfirmationEmail(
           user.email,
           user.name,
           {
             bookingId: booking._id.toString().slice(-8),
-            packageTitle: booking.packageId.title,
+            packageTitle: itemTitle,
             eventDate: booking.eventDate,
             location: booking.location,
             totalAmount: booking.totalAmount,

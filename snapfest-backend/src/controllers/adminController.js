@@ -171,137 +171,6 @@ export const getSystemStats = asyncHandler(async (req, res) => {
   });
 });
 
-// ==================== SYSTEM HEALTH CHECK ====================
-export const getSystemHealth = asyncHandler(async (req, res) => {
-  const healthStatus = {
-    database: { status: 'offline', message: 'Unknown' },
-    apiServer: { status: 'online', message: 'Server is running' },
-    paymentGateway: { status: 'offline', message: 'Unknown' },
-    emailService: { status: 'offline', message: 'Unknown' }
-  };
-
-  // Check Database Connection
-  try {
-    const dbState = mongoose.connection.readyState;
-    // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
-    if (dbState === 1) {
-      // Test with a simple query
-      await mongoose.connection.db.admin().ping();
-      healthStatus.database = {
-        status: 'online',
-        message: 'Connected successfully'
-      };
-    } else {
-      healthStatus.database = {
-        status: 'offline',
-        message: `Connection state: ${dbState === 0 ? 'Disconnected' : dbState === 2 ? 'Connecting' : 'Disconnecting'}`
-      };
-    }
-  } catch (error) {
-    healthStatus.database = {
-      status: 'offline',
-      message: error.message || 'Connection failed'
-    };
-  }
-
-  // Check Payment Gateway (Razorpay)
-  try {
-    const keyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_RWpCivnUSkVbTS';
-    const keySecret = process.env.RAZORPAY_KEY_SECRET || 'hlA0mfH2eHc3BNh1iSGYshtw';
-    
-    if (!keyId || !keySecret) {
-      healthStatus.paymentGateway = {
-        status: 'offline',
-        message: 'Credentials not configured'
-      };
-    } else {
-      // Try to initialize Razorpay and make a lightweight API call
-      const Razorpay = (await import('razorpay')).default;
-      const razorpay = new Razorpay({
-        key_id: keyId,
-        key_secret: keySecret
-      });
-      
-      // Try to fetch payment methods (lightweight API call)
-      try {
-        await razorpay.payments.all({ count: 1 });
-        healthStatus.paymentGateway = {
-          status: 'online',
-          message: 'Razorpay connected'
-        };
-      } catch (apiError) {
-        // If API call fails but credentials are set, check error type
-        if (apiError.statusCode === 401 || apiError.statusCode === 403) {
-          healthStatus.paymentGateway = {
-            status: 'offline',
-            message: 'Invalid credentials'
-          };
-        } else {
-          // Network or other error - credentials might be valid but API unreachable
-          healthStatus.paymentGateway = {
-            status: 'offline',
-            message: apiError.message || 'API unreachable'
-          };
-        }
-      }
-    }
-  } catch (error) {
-    healthStatus.paymentGateway = {
-      status: 'offline',
-      message: error.message || 'Connection failed'
-    };
-  }
-
-  // Check Email Service (SendGrid)
-  try {
-    const sendGridKey = process.env.SENDGRID_API_KEY;
-
-    if (sendGridKey) {
-      // Verify SendGrid API key by making a lightweight request
-      const response = await fetch('https://api.sendgrid.com/v3/user/profile', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${sendGridKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        healthStatus.emailService = {
-          status: 'online',
-          message: 'SendGrid configured and verified'
-        };
-      } else if (response.status === 401 || response.status === 403) {
-        healthStatus.emailService = {
-          status: 'offline',
-          message: 'SendGrid API key invalid or unauthorized'
-        };
-      } else {
-        healthStatus.emailService = {
-          status: 'online',
-          message: 'SendGrid configured'
-        };
-      }
-    } else {
-      healthStatus.emailService = {
-        status: 'offline',
-        message: 'SENDGRID_API_KEY not configured'
-      };
-    }
-  } catch (error) {
-    healthStatus.emailService = {
-      status: 'offline',
-      message: error.message || 'SendGrid service unavailable'
-    };
-  }
-
-  res.status(200).json({
-    success: true,
-    data: healthStatus,
-    timestamp: new Date().toISOString()
-  });
-});
-
 export const getAuditLogs = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
@@ -770,6 +639,9 @@ export const assignVendorToBooking = asyncHandler(async (req, res) => {
   booking.assignedBy = req.userId;
 
   await booking.save();
+
+  // Populate the vendor before returning so frontend can display it immediately
+  await booking.populate('assignedVendorId', 'businessName name email phone');
 
   res.status(200).json({
     success: true,
@@ -1349,8 +1221,9 @@ export const getAllBookings = asyncHandler(async (req, res) => {
 
   const bookings = await Booking.find(query)
     .populate('userId', 'name email phone')
-    .populate('assignedVendorId', 'businessName email phone')
+    .populate('assignedVendorId', 'businessName name email phone')
     .populate('packageId', 'title category basePrice')
+    .populate('beatBloomId', 'title category price')
     .skip(skip)
     .limit(limit)
     .sort(sort);
@@ -1373,8 +1246,9 @@ export const getAllBookings = asyncHandler(async (req, res) => {
 export const getBookingById = asyncHandler(async (req, res) => {
   const booking = await Booking.findById(req.params.id)
     .populate('userId', 'name email phone address')
-    .populate('vendorId', 'businessName email phone address')
-    .populate('packageId', 'title category basePrice features images');
+    .populate('assignedVendorId', 'businessName name email phone address')
+    .populate('packageId', 'title category basePrice features images')
+    .populate('beatBloomId', 'title category price description');
 
   if (!booking) {
     return res.status(404).json({

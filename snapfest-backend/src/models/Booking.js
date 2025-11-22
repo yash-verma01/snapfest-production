@@ -10,7 +10,16 @@ const bookingSchema = new mongoose.Schema({
   packageId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Package',
-    required: true
+    required: function() {
+      return !this.beatBloomId; // Required only if beatBloomId is not present
+    }
+  },
+  beatBloomId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'BeatBloom',
+    required: function() {
+      return !this.packageId; // Required only if packageId is not present
+    }
   },
   vendorId: {
     type: mongoose.Schema.Types.ObjectId,

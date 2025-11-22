@@ -14,7 +14,8 @@ import {
   Video,
   Heart,
   Share2,
-  SlidersHorizontal
+  SlidersHorizontal,
+  X
 } from 'lucide-react';
 import { publicAPI } from '../services/api';
 import { dummyEvents, eventTypes } from '../data';
@@ -38,6 +39,8 @@ const EventsEnhanced = () => {
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [selectedRating, setSelectedRating] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
+  const [selectedEventForGallery, setSelectedEventForGallery] = useState(null);
+  const [showGalleryModal, setShowGalleryModal] = useState(false);
 
   useEffect(() => {
     const loadEvents = async () => {
@@ -616,9 +619,18 @@ const EventsEnhanced = () => {
                             View Details
                           </Button>
                         </Link>
-                        <Link to="/gallery" className="text-pink-600 hover:text-pink-700 text-sm font-medium">
-                          View Gallery
-                        </Link>
+                        {event.images && event.images.length > 0 && (
+                          <Button
+                            variant="ghost"
+                            className="text-pink-600 hover:text-pink-700 text-sm font-medium"
+                            onClick={() => {
+                              setSelectedEventForGallery(event);
+                              setShowGalleryModal(true);
+                            }}
+                          >
+                            View Gallery
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </Card>
@@ -652,6 +664,39 @@ const EventsEnhanced = () => {
           )}
         </div>
       </section>
+
+      {/* Gallery Modal */}
+      {showGalleryModal && selectedEventForGallery && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="relative max-w-4xl max-h-full bg-white rounded-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-2xl font-bold text-gray-900">
+                {selectedEventForGallery.title} - Gallery
+              </h3>
+              <button
+                onClick={() => {
+                  setShowGalleryModal(false);
+                  setSelectedEventForGallery(null);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-[70vh] overflow-y-auto">
+              {selectedEventForGallery.images?.map((image, index) => (
+                <img
+                  key={index}
+                  src={image}
+                  alt={`${selectedEventForGallery.title} - Photo ${index + 1}`}
+                  className="w-full h-48 object-cover rounded-lg cursor-pointer hover:scale-105 transition-transform"
+                  onClick={() => window.open(image, '_blank')}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

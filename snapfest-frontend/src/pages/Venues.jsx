@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   MapPin, 
   Star, 
@@ -18,6 +18,7 @@ import { Card, Button, Badge } from '../components/ui';
 import { publicAPI } from '../services/api';
 
 const Venues = () => {
+  const navigate = useNavigate();
   const [venues, setVenues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('grid');
@@ -307,16 +308,9 @@ const Venues = () => {
 
                     {/* Actions */}
                     <div className="flex gap-2">
-                      <Button
-                        className="flex-1 bg-pink-600 hover:bg-pink-700 text-white"
-                        disabled={!venue.isAvailable}
-                      >
-                        {venue.isAvailable ? 'Enquiry Now' : 'Unavailable'}
-                      </Button>
-                      <Link to={`/venues/${venue._id || venue.id}`}>
+                      <Link to={`/venues/${venue._id || venue.id}`} className="flex-1">
                         <Button
-                          variant="outline"
-                          className="px-4"
+                          className="w-full bg-pink-600 hover:bg-pink-700 text-white"
                         >
                           View Details
                         </Button>

@@ -49,13 +49,27 @@ const useCart = () => {
       const cartItems = dataNode.cartItems ?? dataNode.items ?? [];
       console.log('🛒 useCart: Raw cart items:', cartItems);
       
-      // Filter out items with invalid package data
-      const validCartItems = cartItems.filter(item => 
-        item.packageId && 
-        item.packageId.title && 
-        item.packageId.basePrice !== null && 
-        item.packageId.basePrice !== undefined
-      );
+      // Filter out items with invalid data - handle both types
+      const validCartItems = cartItems.filter(item => {
+        // Determine item type (backward compatible: default to 'package')
+        const itemType = item.itemType || 'package';
+        
+        if (itemType === 'package') {
+          // Validate package items
+          return item.packageId && 
+                 item.packageId.title && 
+                 item.packageId.basePrice !== null && 
+                 item.packageId.basePrice !== undefined;
+        } else if (itemType === 'beatbloom') {
+          // Validate BeatBloom items
+          return item.beatBloomId && 
+                 item.beatBloomId.title && 
+                 item.beatBloomId.price !== null && 
+                 item.beatBloomId.price !== undefined;
+        }
+        
+        return false; // Unknown item type
+      });
       
       console.log('🛒 useCart: Valid cart items:', validCartItems);
       
@@ -89,9 +103,10 @@ const useCart = () => {
     }
   }, [isLoaded, user]); // Update dependencies to include isLoaded and user
 
-  const addToCart = useCallback(async (packageId, customization = {}, extra = {}) => {
+  const addToCart = useCallback(async (itemId, customization = {}, extra = {}, itemType = 'package') => {
     console.log('🛒 useCart: Starting addToCart...');
-    console.log('🛒 useCart: packageId:', packageId);
+    console.log('🛒 useCart: itemId:', itemId);
+    console.log('🛒 useCart: itemType:', itemType);
     console.log('🛒 useCart: customization:', customization);
     console.log('🛒 useCart: extra:', extra);
     
@@ -106,7 +121,8 @@ const useCart = () => {
     try {
       // Prepare request data in the format expected by backend
       const requestData = {
-        packageId,
+        [itemType === 'package' ? 'packageId' : 'beatBloomId']: itemId,
+        itemType: itemType,
         guests: extra.guests || 1,
         eventDate: extra.eventDate || new Date().toISOString().split('T')[0],
         location: extra.location || '',
@@ -241,32 +257,50 @@ const useCart = () => {
     let travelFee = 0;
 
     cartItems.forEach(item => {
-      // Use packageId instead of package for data access
-      const packageData = item.packageId || item.package || {};
+      // Determine item type (backward compatible: default to 'package')
+      const itemType = item.itemType || 'package';
       
-      // Skip items with invalid package data
-      if (!packageData || !packageData.title || packageData.basePrice === null || packageData.basePrice === undefined) {
-        console.warn('🛒 useCart: Skipping item with invalid package data:', item._id);
-        return;
+      if (itemType === 'package') {
+        // Use packageId instead of package for data access
+        const packageData = item.packageId || item.package || {};
+        
+        // Skip items with invalid package data
+        if (!packageData || !packageData.title || packageData.basePrice === null || packageData.basePrice === undefined) {
+          console.warn('🛒 useCart: Skipping item with invalid package data:', item._id);
+          return;
+        }
+        
+        // Calculate base price
+        const basePrice = packageData.basePrice || 0;
+        const perGuestPrice = packageData.perGuestPrice || 0;
+        const guests = item.guests || 1;
+        
+        // Calculate item total
+        const itemTotal = basePrice + (perGuestPrice * guests);
+        subtotal += itemTotal;
+        
+        // Add any add-ons
+        if (item.addOns && item.addOns.length > 0) {
+          item.addOns.forEach(addOn => {
+            addOnsTotal += addOn.price || 0;
+          });
+        }
+      } else if (itemType === 'beatbloom') {
+        // Handle BeatBloom items
+        const beatBloomData = item.beatBloomId || {};
+        
+        // Skip items with invalid beatbloom data
+        if (!beatBloomData || !beatBloomData.title || beatBloomData.price === null || beatBloomData.price === undefined) {
+          console.warn('🛒 useCart: Skipping item with invalid beatbloom data:', item._id);
+          return;
+        }
+        
+        // BeatBloom items have fixed price (no per-guest pricing)
+        const price = beatBloomData.price || 0;
+        subtotal += price;
       }
       
-      // Calculate base price
-      const basePrice = packageData.basePrice || 0;
-      const perGuestPrice = packageData.perGuestPrice || 0;
-      const guests = item.guests || 1;
-      
-      // Calculate item total
-      const itemTotal = basePrice + (perGuestPrice * guests);
-      subtotal += itemTotal;
-      
-      // Add any add-ons
-      if (item.addOns && item.addOns.length > 0) {
-        item.addOns.forEach(addOn => {
-          addOnsTotal += addOn.price || 0;
-        });
-      }
-      
-      // Add travel fee if location is far
+      // Add travel fee if location is far (applies to both types)
       if (item.location && item.location.toLowerCase().includes('outstation')) {
         travelFee += 2000; // Fixed travel fee for outstation
       }

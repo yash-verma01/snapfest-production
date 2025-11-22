@@ -16,6 +16,7 @@ import { useCart } from '../hooks';
 import { useAuth } from '../context/AuthContext';
 import { Card, Button, Badge } from '../components/ui';
 import { paymentAPI } from '../services/api';
+import toast from 'react-hot-toast';
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -64,14 +65,28 @@ const Checkout = () => {
     try {
       // For each cart item, create a booking and process partial payment
       const bookingPromises = cart.items.map(async (item) => {
-        // Create booking first
-        const bookingData = {
-          packageId: item.packageId?._id || item.package?._id,
-          eventDate: item.eventDate,
-          location: item.location,
-          guests: item.guests,
-          customization: item.customization || ''
-        };
+        const itemType = item.itemType || 'package';
+        let bookingData;
+        
+        if (itemType === 'beatbloom') {
+          // Handle BeatBloom items
+          bookingData = {
+            beatBloomId: item.beatBloomId?._id || item.beatBloomId,
+            eventDate: item.eventDate,
+            location: item.location,
+            guests: item.guests || 1,
+            customization: item.customization || ''
+          };
+        } else {
+          // Handle package items (existing functionality)
+          bookingData = {
+            packageId: item.packageId?._id || item.package?._id,
+            eventDate: item.eventDate,
+            location: item.location,
+            guests: item.guests,
+            customization: item.customization || ''
+          };
+        }
 
         console.log('💳 Checkout: Creating booking...', bookingData);
         
@@ -301,14 +316,26 @@ const Checkout = () => {
                       <CreditCard className="w-6 h-6 text-gray-400" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">{item.packageId?.title || item.package?.title}</h3>
+                      <h3 className="font-medium text-gray-900">
+                        {(item.itemType || 'package') === 'beatbloom' 
+                          ? (item.beatBloomId?.title || 'Service')
+                          : (item.packageId?.title || item.package?.title || 'Package')
+                        }
+                      </h3>
                       <p className="text-sm text-gray-600">
                         {item.guests} guests • {item.eventDate} • {item.location}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-gray-900">
-                        {formatPrice((item.packageId?.basePrice || item.package?.basePrice || 0) + ((item.packageId?.perGuestPrice || item.package?.perGuestPrice || 0) * item.guests))}
+                        {(() => {
+                          const itemType = item.itemType || 'package';
+                          if (itemType === 'beatbloom') {
+                            return formatPrice(item.beatBloomId?.price || 0);
+                          } else {
+                            return formatPrice((item.packageId?.basePrice || item.package?.basePrice || 0) + ((item.packageId?.perGuestPrice || item.package?.perGuestPrice || 0) * (item.guests || 1)));
+                          }
+                        })()}
                       </p>
                     </div>
                   </div>

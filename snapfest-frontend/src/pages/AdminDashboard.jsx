@@ -52,7 +52,6 @@ const AdminDashboard = () => {
   const [testimonialStats, setTestimonialStats] = useState(null);
   const [testimonialLoading, setTestimonialLoading] = useState(false);
   const [showAllActivities, setShowAllActivities] = useState(false);
-  const [systemHealth, setSystemHealth] = useState(null);
 
   // Navigation handler
   const handleNavigation = (tab) => {
@@ -124,12 +123,6 @@ const AdminDashboard = () => {
         console.log('Dashboard response:', dashboardResponse.data);
         setDashboardData(dashboardResponse.data.data);
         
-        // Load system health
-        console.log('Fetching system health...');
-        const healthResponse = await adminAPI.getSystemHealth();
-        console.log('System health response:', healthResponse.data);
-        setSystemHealth(healthResponse.data.data);
-        
       } catch (err) {
         console.error('Error loading dashboard data:', err);
         setError(err.message);
@@ -150,25 +143,12 @@ const AdminDashboard = () => {
             vendors: []
           }
         });
-        setSystemHealth(null);
       } finally {
         setLoading(false);
       }
     };
 
     loadDashboardData();
-    
-    // Refresh health status every 2 minutes
-    const healthInterval = setInterval(async () => {
-      try {
-        const healthResponse = await adminAPI.getSystemHealth();
-        setSystemHealth(healthResponse.data.data);
-      } catch (err) {
-        console.error('Error refreshing system health:', err);
-      }
-    }, 120000); // 2 minutes = 120000 milliseconds
-
-    return () => clearInterval(healthInterval);
   }, []);
 
   const stats = [
@@ -522,110 +502,6 @@ const AdminDashboard = () => {
                     Manage Testimonials
                   </Button>
                 </div>
-              </Card>
-            </div>
-
-            {/* System Status - Full width below */}
-            <div className="mt-8">
-              <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">System Status</h3>
-                  {systemHealth && (
-                    <span className="text-xs text-gray-500">
-                      Last updated: {new Date(systemHealth.timestamp || Date.now()).toLocaleTimeString()}
-                    </span>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {(() => {
-                    const getStatusDisplay = (serviceName) => {
-                      const service = systemHealth?.[serviceName];
-                      const isOnline = service?.status === 'online';
-                      
-                      return (
-                        <div 
-                          key={serviceName}
-                          className={`relative flex flex-col p-3 rounded-lg group ${
-                            isOnline ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-700 capitalize">
-                              {serviceName === 'apiServer' ? 'API Server' : 
-                               serviceName === 'paymentGateway' ? 'Payment Gateway' :
-                               serviceName === 'emailService' ? 'Email Service' : serviceName}
-                            </span>
-                            <div className="flex items-center">
-                              {isOnline ? (
-                                <>
-                                  <CheckCircle className="w-4 h-4 text-green-600 mr-1" />
-                                  <span className="text-sm text-green-600 font-medium">Online</span>
-                                </>
-                              ) : (
-                                <>
-                                  <AlertTriangle className="w-4 h-4 text-red-600 mr-1" />
-                                  <span className="text-sm text-red-600 font-medium">Offline</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          {service?.message && (
-                            <div className="mt-1">
-                              <span className="text-xs text-gray-500 truncate block" title={service.message}>
-                                {service.message}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    };
-
-                    return systemHealth ? (
-                      <>
-                        {getStatusDisplay('database')}
-                        {getStatusDisplay('apiServer')}
-                        {getStatusDisplay('paymentGateway')}
-                        {getStatusDisplay('emailService')}
-                      </>
-                    ) : (
-                      <>
-                        {['database', 'apiServer', 'paymentGateway', 'emailService'].map((service) => (
-                          <div key={service} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <span className="text-sm text-gray-600 capitalize">
-                              {service === 'apiServer' ? 'API Server' : 
-                               service === 'paymentGateway' ? 'Payment Gateway' :
-                               service === 'emailService' ? 'Email Service' : service}
-                            </span>
-                            <div className="flex items-center">
-                              <div className="w-4 h-4 border-2 border-gray-300 border-t-primary-600 rounded-full animate-spin mr-1"></div>
-                              <span className="text-sm text-gray-500">Checking...</span>
-                            </div>
-                          </div>
-                        ))}
-                      </>
-                    );
-                  })()}
-                </div>
-                {systemHealth && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>Status details available on hover</span>
-                      <button
-                        onClick={async () => {
-                          try {
-                            const healthResponse = await adminAPI.getSystemHealth();
-                            setSystemHealth(healthResponse.data.data);
-                          } catch (err) {
-                            console.error('Error refreshing health:', err);
-                          }
-                        }}
-                        className="text-primary-600 hover:text-primary-700 font-medium"
-                      >
-                        Refresh Status
-                      </button>
-                    </div>
-                  </div>
-                )}
               </Card>
             </div>
           </>

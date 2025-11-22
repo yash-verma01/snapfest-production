@@ -27,13 +27,13 @@ import {
 import { Button, Card, Badge } from '../components/ui';
 import { useUser } from '@clerk/clerk-react';
 import { useCart } from '../hooks';
-import { publicAPI } from '../services/api';
+import { publicAPI, bookingAPI, paymentAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 const PackageDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
   const { addToCart, loading: cartLoading } = useCart();
   
   const [packageData, setPackageData] = useState(null);
@@ -47,6 +47,8 @@ const PackageDetail = () => {
   const [selectedCustomizations, setSelectedCustomizations] = useState({});
   const [removedFeatures, setRemovedFeatures] = useState({});
   const [customization, setCustomization] = useState({});
+  const [paymentPercentage, setPaymentPercentage] = useState(20); // Default 20%
+  const [showPaymentPercentageModal, setShowPaymentPercentageModal] = useState(false);
 
   useEffect(() => {
     const fetchPackage = async () => {
@@ -131,7 +133,7 @@ const PackageDetail = () => {
     }
   };
 
-  const handleBookNow = () => {
+  const handleBookNow = async () => {
     if (!isSignedIn) {
       toast.error('Please login to book packages');
       navigate('/sign-in');
@@ -148,10 +150,151 @@ const PackageDetail = () => {
       return;
     }
     
-    // Add to cart first, then redirect to checkout
-    handleAddToCart().then(() => {
-      navigate('/checkout');
-    });
+    // Open payment percentage modal instead of creating booking directly
+    setShowPaymentPercentageModal(true);
+  };
+
+  const handleConfirmBooking = async () => {
+    // Close modal first
+    setShowPaymentPercentageModal(false);
+    
+    // Create booking directly (not add to cart)
+    try {
+      // Prepare customization data for backend
+      const customizationData = {
+        selectedCustomizations,
+        customizations: Object.keys(selectedCustomizations).map(key => ({
+          optionId: key,
+          quantity: selectedCustomizations[key].quantity,
+          price: selectedCustomizations[key].price
+        })),
+        removedFeatures: Object.keys(removedFeatures).map(key => ({
+          name: removedFeatures[key].name,
+          price: removedFeatures[key].price
+        }))
+      };
+
+      // Step 1: Create booking directly
+      const bookingResponse = await bookingAPI.createBooking({
+        packageId: id,
+        eventDate,
+        location: location.trim(),
+        guests: guests || 1,
+        customization: JSON.stringify(customizationData),
+        paymentPercentage: paymentPercentage // Use selected percentage
+      });
+
+      if (!bookingResponse.data.success) {
+        throw new Error(bookingResponse.data.message || 'Failed to create booking');
+      }
+
+      const booking = bookingResponse.data.data.booking;
+      console.log('📅 PackageDetail: Booking created:', booking._id);
+
+      // Step 2: Create partial payment order (same as checkout flow)
+      const paymentResponse = await paymentAPI.createPartialPaymentOrder({
+        bookingId: booking._id
+      });
+
+      if (!paymentResponse.data.success) {
+        throw new Error(paymentResponse.data.message || 'Failed to create payment order');
+      }
+
+      const paymentData = paymentResponse.data.data;
+      console.log('💳 PackageDetail: Payment order created:', paymentData.order.id);
+
+      // Step 3: Open Razorpay checkout (same as checkout flow)
+      const amountInPaise = paymentData.amount * 100;
+      
+      const options = {
+        key: 'rzp_test_RWpCivnUSkVbTS', // Use same Razorpay key as checkout
+        amount: amountInPaise,
+        currency: 'INR',
+        name: 'SnapFest',
+        description: `Partial payment for ${packageData.title}`,
+        order_id: paymentData.order.id,
+        handler: async (response) => {
+          console.log('💳 PackageDetail: Payment successful:', response);
+          
+          try {
+            // Step 4: Verify payment (same as checkout - this generates payment ID)
+            const verifyResponse = await paymentAPI.verifyPayment({
+              orderId: response.razorpay_order_id,
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature
+            });
+
+            if (verifyResponse.data.success) {
+              toast.success('Payment successful! Booking confirmed.');
+              // Redirect to payment success page (same as checkout)
+              navigate('/payment/success', { 
+                state: { 
+                  bookingId: booking._id,
+                  amount: paymentData.amount,
+                  remainingAmount: verifyResponse.data.data.remainingAmount
+                }
+              });
+            } else {
+              throw new Error('Payment verification failed');
+            }
+          } catch (verifyError) {
+            console.error('💳 PackageDetail: Payment verification error:', verifyError);
+            toast.error('Payment verification failed. Please contact support.');
+          }
+        },
+        prefill: {
+          name: user?.fullName || user?.firstName || '',
+          email: user?.primaryEmailAddress?.emailAddress || '',
+          contact: user?.phoneNumbers?.[0]?.phoneNumber || ''
+        },
+        theme: {
+          color: '#e91e63'
+        },
+        notes: {
+          source: 'snapfest_web'
+        },
+        retry: {
+          enabled: true,
+          max_count: 3
+        },
+        modal: {
+          ondismiss: () => {
+            console.log('💳 PackageDetail: Payment modal dismissed');
+          }
+        }
+      };
+
+      // Load Razorpay script if not already loaded
+      if (!window.Razorpay) {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.onload = () => {
+          const razorpay = new window.Razorpay(options);
+          razorpay.open();
+        };
+        document.body.appendChild(script);
+      } else {
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
+      }
+
+    } catch (err) {
+      console.error('Error in Book Now:', err);
+      
+      // Handle specific error types
+      if (err.response?.status === 400) {
+        toast.error(err.response?.data?.message || 'Invalid request. Please check your input.');
+      } else if (err.response?.status === 401) {
+        toast.error('Please login to book packages');
+        navigate('/sign-in');
+      } else if (err.response?.status === 404) {
+        toast.error('Package not found. Please try again.');
+      } else if (err.response?.status === 500) {
+        toast.error('Server error. Please try again later.');
+      } else {
+        toast.error(err.message || 'Failed to create booking. Please try again.');
+      }
+    }
   };
 
   const nextImage = () => {
@@ -515,7 +658,6 @@ const PackageDetail = () => {
                 </div>
               </div>
 
-
               {/* Customization Options */}
               {packageData.customizationOptions && packageData.customizationOptions.length > 0 && (
                 <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
@@ -784,6 +926,80 @@ const PackageDetail = () => {
                 </button>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Payment Percentage Modal */}
+      {showPaymentPercentageModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Select Payment Percentage</h3>
+              <button
+                onClick={() => setShowPaymentPercentageModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            {/* Content */}
+            <div className="p-6">
+              <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Initial Payment Percentage: <span className="text-pink-600 font-semibold">{paymentPercentage}%</span>
+                </label>
+                <input
+                  type="range"
+                  min="20"
+                  max="100"
+                  step="5"
+                  value={paymentPercentage}
+                  onChange={(e) => setPaymentPercentage(Number(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-pink-600"
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>20%</span>
+                  <span>100%</span>
+                </div>
+                <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                  <div className="text-sm text-blue-800">
+                    <div className="font-semibold mb-1">Payment Summary:</div>
+                    <div className="flex justify-between">
+                      <span>Initial Payment ({paymentPercentage}%):</span>
+                      <span className="font-semibold">
+                        {formatPrice((calculateTotal() * paymentPercentage) / 100)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span>Remaining ({100 - paymentPercentage}%):</span>
+                      <span className="font-semibold">
+                        {formatPrice((calculateTotal() * (100 - paymentPercentage)) / 100)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPaymentPercentageModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleConfirmBooking}
+                  className="flex-1 bg-pink-500 hover:bg-pink-600 text-white"
+                >
+                  Proceed to Payment
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}

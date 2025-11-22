@@ -1,4 +1,4 @@
-import { Booking, Package, User, AuditLog } from '../models/index.js';
+import { Booking, Package, BeatBloom, User, AuditLog } from '../models/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 
 // @desc    Get user bookings
@@ -31,6 +31,7 @@ export const getUserBookings = asyncHandler(async (req, res) => {
   const bookings = await Booking.find(query)
     .populate('userId', 'name email phone')
     .populate('packageId', 'title category basePrice')
+    .populate('beatBloomId', 'title category price')
     .populate('assignedVendorId', 'name email phone')
     .skip(skip)
     .limit(limit)
@@ -60,6 +61,7 @@ export const getBookingById = asyncHandler(async (req, res) => {
   const booking = await Booking.findById(req.params.id)
     .populate('userId', 'name email phone')
     .populate('packageId', 'title category basePrice description')
+    .populate('beatBloomId', 'title category price description')
     .populate('assignedVendorId', 'name email phone');
 
   if (!booking) {
@@ -94,42 +96,79 @@ export const getBookingById = asyncHandler(async (req, res) => {
 // @route   POST /api/bookings
 // @access  Private
 export const createBooking = asyncHandler(async (req, res) => {
-  const { packageId, eventDate, location, customization, paymentPercentage } = req.body;
+  const { packageId, beatBloomId, eventDate, location, customization, paymentPercentage } = req.body;
 
   console.log('📅 Booking Controller: Creating booking');
   console.log('📅 Booking Controller: Package ID:', packageId);
+  console.log('📅 Booking Controller: BeatBloom ID:', beatBloomId);
   console.log('📅 Booking Controller: User ID:', req.userId);
   console.log('📅 Booking Controller: Event Date:', eventDate);
   console.log('📅 Booking Controller: Location:', location);
   console.log('📅 Booking Controller: Payment Percentage:', paymentPercentage);
 
-  // Verify package exists
-  const packageData = await Package.findById(packageId);
-  console.log('📅 Booking Controller: Package data:', packageData);
-  
-  if (!packageData) {
-    console.log('📅 Booking Controller: Package not found');
-    return res.status(404).json({
+  // Validate that either packageId or beatBloomId is provided
+  if (!packageId && !beatBloomId) {
+    return res.status(400).json({
       success: false,
-      message: 'Package not found'
+      message: 'Either packageId or beatBloomId is required'
     });
+  }
+
+  if (packageId && beatBloomId) {
+    return res.status(400).json({
+      success: false,
+      message: 'Cannot provide both packageId and beatBloomId'
+    });
+  }
+
+  let itemData;
+  let totalAmount;
+  let bookingType;
+  let itemTitle;
+
+  if (packageId) {
+    // Handle package booking (existing functionality)
+    bookingType = 'package';
+    itemData = await Package.findById(packageId);
+    console.log('📅 Booking Controller: Package data:', itemData);
+    
+    if (!itemData) {
+      console.log('📅 Booking Controller: Package not found');
+      return res.status(404).json({
+        success: false,
+        message: 'Package not found'
+      });
+    }
+    totalAmount = itemData.basePrice;
+    itemTitle = itemData.title;
+  } else {
+    // Handle BeatBloom booking (new functionality)
+    bookingType = 'beatbloom';
+    itemData = await BeatBloom.findById(beatBloomId);
+    console.log('📅 Booking Controller: BeatBloom data:', itemData);
+    
+    if (!itemData) {
+      console.log('📅 Booking Controller: BeatBloom service not found');
+      return res.status(404).json({
+        success: false,
+        message: 'BeatBloom service not found'
+      });
+    }
+    totalAmount = itemData.price;
+    itemTitle = itemData.title;
   }
 
   // Validate payment percentage (20-100%)
   const validPaymentPercentage = Math.max(20, Math.min(100, paymentPercentage || 20));
-  
-  // Calculate total amount
-  const baseAmount = packageData.basePrice;
-  const totalAmount = baseAmount; // Add taxes, add-ons later
   const initialPayment = Math.round(totalAmount * (validPaymentPercentage / 100));
   const remainingAmount = totalAmount - initialPayment;
 
-  const booking = await Booking.create({
+  // Prepare booking data
+  const bookingData = {
     userId: req.userId,
-    packageId,
     eventDate: new Date(eventDate),
     location,
-    customization,
+    customization: customization || '',
     totalAmount,
     amountPaid: 0, // Will be updated when payment is made
     remainingAmount: remainingAmount,
@@ -138,12 +177,26 @@ export const createBooking = asyncHandler(async (req, res) => {
     remainingPercentage: 100 - validPaymentPercentage,
     paymentStatus: 'PENDING_PAYMENT',
     vendorStatus: null // Will be set when vendor is assigned
-  });
+  };
 
-  // Populate the booking
-  await booking.populate('packageId', 'title category basePrice');
+  // Add the appropriate ID based on booking type
+  if (packageId) {
+    bookingData.packageId = packageId;
+  } else {
+    bookingData.beatBloomId = beatBloomId;
+  }
+
+  const booking = await Booking.create(bookingData);
+
+  // Populate based on booking type
+  if (packageId) {
+    await booking.populate('packageId', 'title category basePrice');
+  } else {
+    await booking.populate('beatBloomId', 'title category price');
+  }
 
   console.log('📅 Booking Controller: Booking created successfully:', booking._id);
+  console.log('📅 Booking Controller: Booking type:', bookingType);
   console.log('📅 Booking Controller: Booking vendor status:', booking.vendorStatus);
   console.log('📅 Booking Controller: Booking remaining amount:', booking.remainingAmount);
 
@@ -152,7 +205,7 @@ export const createBooking = asyncHandler(async (req, res) => {
   //     actorId: req.userId,
   //     action: 'CREATE',
   //     targetId: booking._id,
-  //     description: `Booking created for package ${packageData.title}`
+  //     description: `Booking created for ${bookingType}: ${itemTitle}`
   //   });
 
   res.status(201).json({

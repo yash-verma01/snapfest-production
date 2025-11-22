@@ -152,12 +152,19 @@ const VendorDashboard = () => {
     // Filter by status
     if (bookingFilter !== 'all') {
       if (bookingFilter === 'assigned') {
-        filtered = filtered.filter(b => b.assignedVendorId);
-      } else {
-        filtered = filtered.filter(b => {
-          const status = b.vendorStatus || (b.assignedVendorId ? 'ASSIGNED' : null);
-          return status === bookingFilter.toUpperCase();
-        });
+        // Show bookings that have been accepted by vendor (IN_PROGRESS or COMPLETED)
+        filtered = filtered.filter(b => 
+          b.vendorStatus === 'IN_PROGRESS' || b.vendorStatus === 'COMPLETED'
+        );
+      } else if (bookingFilter === 'pending') {
+        // Show new bookings that haven't been accepted yet (ASSIGNED or null)
+        filtered = filtered.filter(b => 
+          b.vendorStatus === 'ASSIGNED' || b.vendorStatus === null
+        );
+      } else if (bookingFilter === 'in_progress') {
+        filtered = filtered.filter(b => b.vendorStatus === 'IN_PROGRESS');
+      } else if (bookingFilter === 'completed') {
+        filtered = filtered.filter(b => b.vendorStatus === 'COMPLETED');
       }
     }
     
@@ -166,9 +173,10 @@ const VendorDashboard = () => {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(b => 
         b.packageId?.title?.toLowerCase().includes(query) ||
+        b.beatBloomId?.title?.toLowerCase().includes(query) ||
         b.location?.toLowerCase().includes(query) ||
         b._id?.toLowerCase().includes(query) ||
-        b.customerId?.name?.toLowerCase().includes(query)
+        b.userId?.name?.toLowerCase().includes(query)
       );
     }
     
@@ -397,7 +405,7 @@ const VendorDashboard = () => {
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                     }`}
                   >
-                    Assigned ({bookings?.filter(b => b.assignedVendorId)?.length || 0})
+                    Assigned ({bookings?.filter(b => b.vendorStatus === 'IN_PROGRESS' || b.vendorStatus === 'COMPLETED')?.length || 0})
                   </button>
                   <button
                     onClick={() => setBookingFilter('pending')}
@@ -407,7 +415,7 @@ const VendorDashboard = () => {
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                     }`}
                   >
-                    Pending ({bookings?.filter(b => !b.vendorStatus || b.vendorStatus === 'PENDING')?.length || 0})
+                    Pending ({bookings?.filter(b => b.vendorStatus === 'ASSIGNED' || b.vendorStatus === null)?.length || 0})
                   </button>
                   <button
                     onClick={() => setBookingFilter('in_progress')}

@@ -1,20 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Star, Clock, MapPin, Heart, Share2, CheckCircle, ShoppingCart, Calendar, Phone, Mail, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Star, Clock, MapPin, Heart, Share2, CheckCircle, ShoppingCart, Calendar, Phone, Mail, ArrowRight, X } from 'lucide-react';
 import { Button, Card, Badge } from '../components/ui';
-import { publicAPI } from '../services/api';
-import { useAuth } from '@clerk/clerk-react';
+import { publicAPI, bookingAPI, paymentAPI } from '../services/api';
+import { useUser } from '@clerk/clerk-react';
+import { useCart } from '../hooks';
+import toast from 'react-hot-toast';
 
 const BeatBloomDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, user } = useUser();
   const [beatBloom, setBeatBloom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const [showPaymentPercentageModal, setShowPaymentPercentageModal] = useState(false);
+  const [eventDate, setEventDate] = useState('');
+  const [location, setLocation] = useState('');
+  const [eventTime, setEventTime] = useState('');
+  const [specialRequirements, setSpecialRequirements] = useState('');
+  const [paymentPercentage, setPaymentPercentage] = useState(20); // Default 20%
+  const { addToCart, loading: cartLoading } = useCart();
 
   useEffect(() => {
     loadBeatBloom();
@@ -72,21 +81,190 @@ const BeatBloomDetail = () => {
     }).format(price);
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!isSignedIn) {
+      toast.error('Please login to add items to cart');
       navigate('/login');
       return;
     }
-    // Implement add to cart functionality
-    console.log('Adding to cart:', { beatBloomId: id, quantity });
+
+    if (!eventDate) {
+      toast.error('Please select an event date');
+      return;
+    }
+
+    if (!location || location.trim().length < 5) {
+      toast.error('Please enter a valid event location (minimum 5 characters)');
+      return;
+    }
+
+    try {
+      await addToCart(beatBloom._id, {}, {
+        guests: 1,
+        eventDate,
+        location: location.trim()
+      }, 'beatbloom'); // Pass 'beatbloom' as itemType
+      toast.success('Service added to cart successfully!');
+    } catch (err) {
+      console.error('Error adding to cart:', err);
+      toast.error(err.response?.data?.message || 'Failed to add service to cart. Please try again.');
+    }
   };
 
   const handleBookNow = () => {
     if (!isSignedIn) {
+      toast.error('Please login to book services');
       navigate('/login');
       return;
     }
-    setShowBookingModal(true);
+    
+    if (!eventDate) {
+      toast.error('Please select an event date before booking');
+      return;
+    }
+    
+    if (!location || location.trim().length < 5) {
+      toast.error('Please enter a valid event location (minimum 5 characters)');
+      return;
+    }
+    
+    // Open payment percentage modal instead of booking modal
+    setShowPaymentPercentageModal(true);
+  };
+
+  const handleConfirmBooking = async () => {
+    // Close modal first
+    setShowPaymentPercentageModal(false);
+    
+    // Create booking directly (not add to cart)
+    try {
+      // Prepare customization data for backend
+      const customizationData = {
+        eventTime,
+        specialRequirements
+      };
+
+      // Step 1: Create booking directly
+      const bookingResponse = await bookingAPI.createBooking({
+        beatBloomId: id,
+        eventDate,
+        location: location.trim(),
+        guests: 1,
+        customization: JSON.stringify(customizationData),
+        paymentPercentage: paymentPercentage // Use selected percentage
+      });
+
+      if (!bookingResponse.data.success) {
+        throw new Error(bookingResponse.data.message || 'Failed to create booking');
+      }
+
+      const booking = bookingResponse.data.data.booking;
+      console.log('📅 BeatBloomDetail: Booking created:', booking._id);
+
+      // Step 2: Create partial payment order (same as checkout flow)
+      const paymentResponse = await paymentAPI.createPartialPaymentOrder({
+        bookingId: booking._id
+      });
+
+      if (!paymentResponse.data.success) {
+        throw new Error(paymentResponse.data.message || 'Failed to create payment order');
+      }
+
+      const paymentData = paymentResponse.data.data;
+      console.log('💳 BeatBloomDetail: Payment order created:', paymentData.order.id);
+
+      // Step 3: Open Razorpay checkout (same as checkout flow)
+      const amountInPaise = paymentData.amount * 100;
+      
+      const options = {
+        key: 'rzp_test_RWpCivnUSkVbTS', // Use same Razorpay key as checkout
+        amount: amountInPaise,
+        currency: 'INR',
+        name: 'SnapFest',
+        description: `Partial payment for ${beatBloom.title}`,
+        order_id: paymentData.order.id,
+        handler: async (response) => {
+          console.log('💳 BeatBloomDetail: Payment successful:', response);
+          
+          try {
+            // Step 4: Verify payment (same as checkout - this generates payment ID)
+            const verifyResponse = await paymentAPI.verifyPayment({
+              orderId: response.razorpay_order_id,
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature
+            });
+
+            if (verifyResponse.data.success) {
+              toast.success('Payment successful! Booking confirmed.');
+              // Redirect to payment success page (same as checkout)
+              navigate('/payment/success', { 
+                state: { 
+                  bookingId: booking._id,
+                  amount: paymentData.amount,
+                  remainingAmount: verifyResponse.data.data.remainingAmount
+                }
+              });
+            } else {
+              throw new Error('Payment verification failed');
+            }
+          } catch (verifyError) {
+            console.error('💳 BeatBloomDetail: Payment verification error:', verifyError);
+            toast.error('Payment verification failed. Please contact support.');
+          }
+        },
+        prefill: {
+          name: user?.fullName || user?.firstName || '',
+          email: user?.primaryEmailAddress?.emailAddress || '',
+          contact: user?.phoneNumbers?.[0]?.phoneNumber || ''
+        },
+        theme: {
+          color: '#e91e63'
+        },
+        notes: {
+          source: 'snapfest_web'
+        },
+        retry: {
+          enabled: true,
+          max_count: 3
+        },
+        modal: {
+          ondismiss: () => {
+            console.log('💳 BeatBloomDetail: Payment modal dismissed');
+          }
+        }
+      };
+
+      // Load Razorpay script if not already loaded
+      if (!window.Razorpay) {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.onload = () => {
+          const razorpay = new window.Razorpay(options);
+          razorpay.open();
+        };
+        document.body.appendChild(script);
+      } else {
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
+      }
+
+    } catch (err) {
+      console.error('Error in Book Now:', err);
+      
+      // Handle specific error types
+      if (err.response?.status === 400) {
+        toast.error(err.response?.data?.message || 'Invalid request. Please check your input.');
+      } else if (err.response?.status === 401) {
+        toast.error('Please login to book services');
+        navigate('/login');
+      } else if (err.response?.status === 404) {
+        toast.error('Service not found. Please try again.');
+      } else if (err.response?.status === 500) {
+        toast.error('Server error. Please try again later.');
+      } else {
+        toast.error(err.message || 'Failed to create booking. Please try again.');
+      }
+    }
   };
 
   if (loading) {
@@ -226,36 +404,73 @@ const BeatBloomDetail = () => {
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-8 p-6">
-              {/* Price */}
-              <div className="text-center mb-6">
-                <div className="text-4xl font-bold text-pink-600 mb-2">
-                  {formatPrice(beatBloom.price)}
+            <div className="sticky top-6 space-y-4">
+              {/* Pricing Card */}
+              <Card className="p-4">
+                <div className="text-center mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Service Pricing</h3>
+                  <div className="text-2xl font-bold text-pink-600">
+                    {formatPrice(beatBloom.price)}
+                  </div>
                 </div>
-                <p className="text-gray-600">Starting price</p>
-              </div>
+              </Card>
+
+              {/* Event Details Card */}
+              <Card className="p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Event Details</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Event Date *
+                    </label>
+                    <input
+                      type="date"
+                      value={eventDate}
+                      onChange={(e) => setEventDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-sm"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Event Location *
+                    </label>
+                    <input
+                      type="text"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      placeholder="Enter event location (e.g., Hotel Grand, Mumbai)"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-sm"
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Minimum 5 characters required</p>
+                  </div>
+                </div>
+              </Card>
 
               {/* Action Buttons */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <Button
                   onClick={handleAddToCart}
-                  className="w-full bg-pink-500 hover:bg-pink-600 text-white py-3 text-lg"
+                  disabled={cartLoading}
+                  className="w-full bg-pink-500 hover:bg-pink-600 text-white py-3 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
                 >
-                  <ShoppingCart className="w-5 h-5 mr-2" />
-                  Add to Cart
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  {cartLoading ? 'Adding...' : 'Add to Cart'}
                 </Button>
-                
                 <Button
                   onClick={handleBookNow}
-                  className="w-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white py-3 text-lg"
+                  className="w-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white py-3 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
                 >
-                  <Calendar className="w-5 h-5 mr-2" />
+                  <Calendar className="w-4 h-4 mr-2" />
                   Book Now
                 </Button>
               </div>
 
               {/* Contact Info */}
-              <div className="mt-6 pt-6 border-t border-gray-200">
+              <Card className="p-4">
                 <h3 className="font-semibold text-gray-900 mb-4">Need Help?</h3>
                 <div className="space-y-3">
                   <div className="flex items-center text-gray-600">
@@ -267,10 +482,10 @@ const BeatBloomDetail = () => {
                     <span>support@snapfest.com</span>
                   </div>
                 </div>
-              </div>
+              </Card>
 
               {/* Quick Actions */}
-              <div className="mt-6 pt-6 border-t border-gray-200">
+              <Card className="p-4">
                 <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
                 <div className="space-y-2">
                   <Link to="/beatbloom" className="block">
@@ -286,66 +501,81 @@ const BeatBloomDetail = () => {
                     </Button>
                   </Link>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Booking Modal */}
-      {showBookingModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Book This Service</h3>
-            <p className="text-gray-600 mb-6">
-              You are about to book <strong>{beatBloom.title}</strong> for <strong>{formatPrice(beatBloom.price)}</strong>
-            </p>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Event Date</label>
-                <input
-                  type="date"
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Event Time</label>
-                <input
-                  type="time"
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Special Requirements</label>
-                <textarea
-                  placeholder="Any special requirements or notes..."
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                  rows={3}
-                />
-              </div>
+      {/* Payment Percentage Modal */}
+      {showPaymentPercentageModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Select Payment Percentage</h3>
+              <button
+                onClick={() => setShowPaymentPercentageModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
             </div>
             
-            <div className="flex space-x-3 mt-6">
-              <Button
-                onClick={() => setShowBookingModal(false)}
-                variant="outline"
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  // Implement booking logic
-                  console.log('Booking service:', { beatBloomId: id, date: '', time: '' });
-                  setShowBookingModal(false);
-                }}
-                className="flex-1 bg-pink-500 hover:bg-pink-600 text-white"
-              >
-                Confirm Booking
-              </Button>
+            {/* Content */}
+            <div className="p-6">
+              <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Initial Payment Percentage: <span className="text-pink-600 font-semibold">{paymentPercentage}%</span>
+                </label>
+                <input
+                  type="range"
+                  min="20"
+                  max="100"
+                  step="5"
+                  value={paymentPercentage}
+                  onChange={(e) => setPaymentPercentage(Number(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-pink-600"
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>20%</span>
+                  <span>100%</span>
+                </div>
+                <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                  <div className="text-sm text-blue-800">
+                    <div className="font-semibold mb-1">Payment Summary:</div>
+                    <div className="flex justify-between">
+                      <span>Initial Payment ({paymentPercentage}%):</span>
+                      <span className="font-semibold">
+                        {formatPrice((beatBloom.price * paymentPercentage) / 100)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span>Remaining ({100 - paymentPercentage}%):</span>
+                      <span className="font-semibold">
+                        {formatPrice((beatBloom.price * (100 - paymentPercentage)) / 100)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPaymentPercentageModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleConfirmBooking}
+                  className="flex-1 bg-pink-500 hover:bg-pink-600 text-white"
+                >
+                  Proceed to Payment
+                </Button>
+              </div>
             </div>
           </div>
         </div>

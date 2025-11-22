@@ -53,7 +53,6 @@ import {
   getDashboard,
   getAuditLogs,
   getSystemStats,
-  getSystemHealth,
   
   // Settings Management
   getSettings,
@@ -126,7 +125,6 @@ router.get('/test', (req, res) => {
 // ==================== DASHBOARD ====================
 router.get('/dashboard', getDashboard);
 router.get('/stats', getSystemStats);
-router.get('/health', getSystemHealth);
 router.get('/audit-logs', validatePagination, getAuditLogs);
 
 // ==================== USER MANAGEMENT ====================
