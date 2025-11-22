@@ -22,6 +22,7 @@ import VendorStatsCard from '../components/vendor/VendorStatsCard';
 import OTPVerification from '../components/vendor/OTPVerification';
 import VendorBookingCard from '../components/vendor/VendorBookingCard';
 import ModalPortal from '../components/modals/ModalPortal';
+import NotificationBell from '../components/NotificationBell';
 import { Card, Button, Badge } from '../components/ui';
 
 const VendorDashboard = () => {
@@ -290,6 +291,7 @@ const VendorDashboard = () => {
               </p>
             </div>
             <div className="flex items-center space-x-4">
+              <NotificationBell userRole="vendor" />
               <Link to="/vendor/profile">
                 <Button variant="outline" size="sm">
                   <User className="w-4 h-4 mr-2" />
