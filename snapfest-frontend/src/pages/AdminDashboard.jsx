@@ -32,6 +32,7 @@ import EventManagement from '../components/admin/EventManagement';
 import VenueManagement from '../components/admin/VenueManagement';
 import BeatBloomManagement from '../components/admin/BeatBloomManagement';
 import EnquiryManagement from '../components/admin/EnquiryManagement';
+import NotificationBell from '../components/NotificationBell';
 
 const AdminDashboard = () => {
   // Use Clerk hooks instead of AuthContext (AdminApp uses ClerkProvider)
@@ -71,6 +72,14 @@ const AdminDashboard = () => {
       setActiveTab('dashboard');
       setNavigationHistory(['dashboard']);
     }
+  };
+
+  // Navigation handler for notifications
+  const handleNotificationNavigation = (tab, relatedId) => {
+    setActiveTab(tab);
+    setNavigationHistory(prev => [...prev, tab]);
+    // The relatedId can be used later if needed for highlighting
+    console.log(`Navigating to ${tab} tab with ID:`, relatedId);
   };
 
   // Load testimonials
@@ -280,6 +289,10 @@ const AdminDashboard = () => {
               </p>
             </div>
             <div className="flex items-center space-x-4">
+              <NotificationBell 
+                userRole="admin" 
+                onNavigate={handleNotificationNavigation}
+              />
               {activeTab !== 'dashboard' && (
                 <Button variant="outline" size="sm" onClick={handleBackNavigation}>
                   ← Back

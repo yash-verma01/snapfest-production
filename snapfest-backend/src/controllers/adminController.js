@@ -1,8 +1,9 @@
 import { asyncHandler } from '../middleware/errorHandler.js';
-import { User, Package, Booking, Payment, OTP, Review, Event, Venue, BeatBloom, AuditLog } from '../models/index.js';
+import { User, Package, Booking, Payment, OTP, Review, Event, Venue, BeatBloom, AuditLog, Notification } from '../models/index.js';
 import OTPService from '../services/otpService.js';
 import mongoose from 'mongoose';
 import RazorpayService from '../services/razorpayService.js';
+import notificationService from '../services/notificationService.js';
 
 // ==================== DASHBOARD & ANALYTICS ====================
 export const getDashboard = asyncHandler(async (req, res) => {
@@ -642,6 +643,22 @@ export const assignVendorToBooking = asyncHandler(async (req, res) => {
 
   // Populate the vendor before returning so frontend can display it immediately
   await booking.populate('assignedVendorId', 'businessName name email phone');
+
+  // Notify vendor about assignment
+  try {
+    await notificationService.notifyVendor(
+      vendorId,
+      'BOOKING_ASSIGNED_TO_VENDOR',
+      'New Booking Assigned',
+      `You have been assigned a new booking #${booking._id.toString().slice(-8)}`,
+      booking._id,
+      'Booking',
+      { bookingId: booking._id, eventDate: booking.eventDate, location: booking.location }
+    );
+  } catch (notifError) {
+    console.error('Error sending vendor notification:', notifError);
+    // Don't fail the assignment if notification fails
+  }
 
   res.status(200).json({
     success: true,
@@ -2143,5 +2160,75 @@ export const updateAdminProfile = asyncHandler(async (req, res) => {
       createdAt: admin.createdAt,
       lastLogin: admin.lastLogin
     }
+  });
+});
+
+// ==================== NOTIFICATION MANAGEMENT ====================
+
+// Get admin notifications
+export const getAdminNotifications = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+  const { unreadOnly } = req.query;
+
+  let query = { userId };
+  if (unreadOnly === 'true') {
+    query.isRead = false;
+  }
+
+  const notifications = await Notification.find(query)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const total = await Notification.countDocuments(query);
+  const unreadCount = await Notification.countDocuments({ userId, isRead: false });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      notifications,
+      unreadCount,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total
+      }
+    }
+  });
+});
+
+// Mark notification as read
+export const markNotificationRead = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.userId;
+
+  const notification = await notificationService.markAsRead(id, userId);
+  
+  if (!notification) {
+    return res.status(404).json({
+      success: false,
+      message: 'Notification not found'
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'Notification marked as read',
+    data: { notification }
+  });
+});
+
+// Mark all notifications as read
+export const markAllNotificationsRead = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+
+  await notificationService.markAllAsRead(userId);
+
+  res.status(200).json({
+    success: true,
+    message: 'All notifications marked as read'
   });
 });

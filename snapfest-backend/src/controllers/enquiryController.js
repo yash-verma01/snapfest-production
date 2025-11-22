@@ -2,6 +2,7 @@ import { Enquiry, User } from '../models/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 // Use lazy initialization - getEmailService is a function that returns the instance
 import getEmailService from '../services/emailService.js';
+import notificationService from '../services/notificationService.js';
 
 // @desc    Create new enquiry
 // @route   POST /api/enquiries
@@ -92,6 +93,21 @@ export const createEnquiry = asyncHandler(async (req, res) => {
     console.error('❌ Failed to send admin notification email:', emailError);
     console.error('❌ Admin email:', process.env.ADMIN_EMAIL || process.env.EMAIL_USER);
     // Don't fail the request if email fails
+  }
+  
+  // Notify admins about new enquiry via WebSocket
+  try {
+    await notificationService.notifyAdmins(
+      'NEW_ENQUIRY',
+      'New Enquiry Received',
+      `New enquiry from ${finalName}: ${subject}`,
+      enquiry._id,
+      'Enquiry',
+      { enquiryId: enquiry._id, email: finalEmail, enquiryType: enquiryType || 'general' }
+    );
+  } catch (notifError) {
+    console.error('Error sending notification:', notifError);
+    // Don't fail the request if notification fails
   }
   
   res.status(201).json({

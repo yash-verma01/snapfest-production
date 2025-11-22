@@ -52,6 +52,7 @@ import {
   // Notifications & Communication
   getVendorNotifications,
   markNotificationRead,
+  markAllNotificationsRead,
   getVendorMessages,
   sendMessageToAdmin,
   
@@ -129,6 +130,7 @@ router.put('/settings', updateVendorSettings);
 // ==================== NOTIFICATIONS & COMMUNICATION ====================
 router.get('/notifications', getVendorNotifications);
 router.put('/notifications/:id/read', markNotificationRead);
+router.put('/notifications/read-all', markAllNotificationsRead);
 router.get('/messages', getVendorMessages);
 router.post('/messages', sendMessageToAdmin);
 

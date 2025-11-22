@@ -65,7 +65,12 @@ import {
   getTestimonialStats,
   
   getAdminProfile,
-  updateAdminProfile
+  updateAdminProfile,
+  
+  // Notification Management
+  getAdminNotifications,
+  markNotificationRead,
+  markAllNotificationsRead
 } from '../controllers/adminController.js';
 import {
   // Beat & Bloom Management
@@ -219,6 +224,11 @@ router.put('/testimonials/:id/reject', rejectTestimonial);
 // ==================== ADMIN PROFILE MANAGEMENT ====================
 router.get('/profile', getAdminProfile);
 router.put('/profile', updateAdminProfile);
+
+// ==================== NOTIFICATION MANAGEMENT ====================
+router.get('/notifications', getAdminNotifications);
+router.put('/notifications/:id/read', markNotificationRead);
+router.put('/notifications/read-all', markAllNotificationsRead);
 
 export default router;
 

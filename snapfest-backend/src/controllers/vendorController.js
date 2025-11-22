@@ -1,7 +1,8 @@
 import { asyncHandler } from '../middleware/errorHandler.js';
-import { User, Booking, Payment, OTP, Review } from '../models/index.js';
+import { User, Booking, Payment, OTP, Review, Notification } from '../models/index.js';
 import AuthService from '../services/authService.js';
 import PasswordService from '../services/passwordService.js';
+import notificationService from '../services/notificationService.js';
 
 // ==================== VENDOR AUTHENTICATION & PROFILE ====================
 export const registerVendor = asyncHandler(async (req, res) => {
@@ -1434,18 +1435,67 @@ export const updateVendorSettings = asyncHandler(async (req, res) => {
 
 // ==================== NOTIFICATIONS & COMMUNICATION ====================
 export const getVendorNotifications = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+  const { unreadOnly } = req.query;
+
+  let query = { userId };
+  if (unreadOnly === 'true') {
+    query.isRead = false;
+  }
+
+  const notifications = await Notification.find(query)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const total = await Notification.countDocuments(query);
+  const unreadCount = await Notification.countDocuments({ userId, isRead: false });
+
   res.status(200).json({
     success: true,
-    message: 'Get vendor notifications endpoint - To be implemented',
-    data: { notifications: 'Coming soon' }
+    data: {
+      notifications,
+      unreadCount,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total
+      }
+    }
   });
 });
 
 export const markNotificationRead = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.userId;
+
+  const notification = await notificationService.markAsRead(id, userId);
+  
+  if (!notification) {
+    return res.status(404).json({
+      success: false,
+      message: 'Notification not found'
+    });
+  }
+
   res.status(200).json({
     success: true,
-    message: 'Mark notification read endpoint - To be implemented',
-    data: { notification: 'Coming soon' }
+    message: 'Notification marked as read',
+    data: { notification }
+  });
+});
+
+export const markAllNotificationsRead = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+
+  await notificationService.markAllAsRead(userId);
+
+  res.status(200).json({
+    success: true,
+    message: 'All notifications marked as read'
   });
 });
 

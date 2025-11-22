@@ -178,8 +178,9 @@ export const vendorAPI = {
   updateSettings: (data) => api.put('/vendors/settings', data),
   
   // Notifications & Communication
-  getNotifications: () => api.get('/vendors/notifications'),
+  getNotifications: (params) => api.get('/vendors/notifications', { params }),
   markNotificationRead: (id) => api.put(`/vendors/notifications/${id}/read`),
+  markAllNotificationsRead: () => api.put('/vendors/notifications/read-all'),
   getMessages: () => api.get('/vendors/messages'),
   sendMessageToAdmin: (data) => api.post('/vendors/messages', data),
   
@@ -305,6 +306,11 @@ export const adminAPI = {
   // Admin Profile Management
   getProfile: () => api.get('/admin/profile'),
   updateProfile: (data) => api.put('/admin/profile', data),
+  
+  // Notification Management
+  getNotifications: (params) => api.get('/admin/notifications', { params }),
+  markNotificationRead: (id) => api.put(`/admin/notifications/${id}/read`),
+  markAllNotificationsRead: () => api.put('/admin/notifications/read-all'),
   
   // Image Upload Management
   uploadPackageImages: (packageId, formData) => api.post(`/upload/package/${packageId}`, formData, {

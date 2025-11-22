@@ -1,5 +1,6 @@
 import { Booking, Package, BeatBloom, User, AuditLog } from '../models/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import notificationService from '../services/notificationService.js';
 
 // @desc    Get user bookings
 // @route   GET /api/bookings
@@ -199,6 +200,24 @@ export const createBooking = asyncHandler(async (req, res) => {
   console.log('📅 Booking Controller: Booking type:', bookingType);
   console.log('📅 Booking Controller: Booking vendor status:', booking.vendorStatus);
   console.log('📅 Booking Controller: Booking remaining amount:', booking.remainingAmount);
+
+  // Get user details for notification
+  const user = await User.findById(req.userId);
+
+  // Notify admins about new booking
+  try {
+    await notificationService.notifyAdmins(
+      'NEW_BOOKING',
+      'New Booking Created',
+      `New booking created by ${user?.name || user?.email || 'User'} for ${itemTitle}`,
+      booking._id,
+      'Booking',
+      { bookingId: booking._id, userId: req.userId, totalAmount: booking.totalAmount, bookingType }
+    );
+  } catch (notifError) {
+    console.error('Error sending notification:', notifError);
+    // Don't fail the booking creation if notification fails
+  }
 
   // Create audit log
   // DISABLED: await AuditLog.create({

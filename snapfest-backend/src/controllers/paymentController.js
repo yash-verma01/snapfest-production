@@ -4,6 +4,7 @@ import OTPService from '../services/otpService.js';
 import RazorpayService from '../services/razorpayService.js';
 // Use lazy initialization - getEmailService is a function that returns the instance
 import getEmailService from '../services/emailService.js';
+import notificationService from '../services/notificationService.js';
 
 // @desc    Get user payments
 // @route   GET /api/payments
@@ -545,6 +546,21 @@ export const verifyPayment = asyncHandler(async (req, res) => {
   //         targetId: booking._id,
   //         description: `Full payment of ₹${payment.amount} verified. OTP: ${otp.code}`
   //       });
+
+      // Notify admins about new payment
+      try {
+        await notificationService.notifyAdmins(
+          'NEW_PAYMENT',
+          'New Payment Received',
+          `Payment of ₹${payment.amount} received for booking #${booking._id.toString().slice(-8)}`,
+          payment._id,
+          'Payment',
+          { paymentId: payment._id, amount: payment.amount, bookingId: booking._id }
+        );
+      } catch (notifError) {
+        console.error('Error sending payment notification:', notifError);
+        // Don't fail the payment if notification fails
+      }
 
       console.log('💳 Payment Verification: FULL PAYMENT SUCCESS - Returning response with OTP');
       res.status(200).json({
