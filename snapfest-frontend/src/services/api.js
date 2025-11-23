@@ -1,5 +1,4 @@
 import axios from 'axios';
-import mockApi from './mockApi';
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -10,9 +9,6 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
-
-// Use mock API for development (set to false for backend integration)
-const USE_MOCK_API = false;
 
 /**
  * Request interceptor - cookie-based authentication

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Mail, 
   Search, 
@@ -12,11 +12,14 @@ import {
   Calendar,
   User,
   Phone,
-  FileText
+  FileText,
+  RefreshCw
 } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { Card, Button, Badge } from '../ui';
 import toast from 'react-hot-toast';
+import { useDebounce } from '../../hooks/useDebounce';
+import { useRealtimeUpdates } from '../../hooks/useRealtimeUpdates';
 
 const EnquiryManagement = () => {
   const [enquiries, setEnquiries] = useState([]);
@@ -30,19 +33,19 @@ const EnquiryManagement = () => {
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [responseText, setResponseText] = useState('');
   const [stats, setStats] = useState(null);
+  const [lastFetchTime, setLastFetchTime] = useState(null);
 
-  useEffect(() => {
-    loadEnquiries();
-    loadStats();
-  }, [currentPage, searchTerm, selectedStatus, selectedType]);
+  // Debounce search term to reduce API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  const loadEnquiries = async () => {
+  // Memoized load function
+  const loadEnquiries = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const params = {
         page: currentPage,
         limit: 20,
-        ...(searchTerm && { search: searchTerm }),
+        ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
         ...(selectedStatus && { status: selectedStatus }),
         ...(selectedType && { enquiryType: selectedType })
       };
@@ -50,22 +53,49 @@ const EnquiryManagement = () => {
       const response = await adminAPI.getEnquiries(params);
       setEnquiries(response.data.data.enquiries);
       setTotalPages(response.data.data.pagination.pages);
+      setLastFetchTime(Date.now());
     } catch (error) {
       console.error('Error loading enquiries:', error);
       toast.error('Failed to load enquiries');
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
-  };
+  }, [currentPage, debouncedSearchTerm, selectedStatus, selectedType]);
 
-  const loadStats = async () => {
+  // Load enquiries when dependencies change (using debounced search)
+  useEffect(() => {
+    loadEnquiries();
+  }, [currentPage, debouncedSearchTerm, selectedStatus, selectedType, loadEnquiries]);
+
+  // Load stats separately (less frequent, only on mount and when needed)
+  const loadStats = useCallback(async () => {
     try {
       const response = await adminAPI.getEnquiryStats();
       setStats(response.data.data);
     } catch (error) {
       console.error('Error loading stats:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  // Real-time updates handler
+  const handleNewEnquiry = useCallback((notificationData) => {
+    console.log('🔄 New enquiry notification received, refreshing...');
+    if (currentPage === 1) {
+      loadEnquiries(false); // Silent refresh
+      loadStats();
+      toast.success('New enquiry received!', { duration: 2000 });
+    } else {
+      // Show notification but don't auto-refresh if on other pages
+      toast.success('New enquiry received! Click refresh to view.', { duration: 3000 });
+    }
+  }, [currentPage, loadEnquiries, loadStats]);
+
+  // Use real-time updates hook
+  useRealtimeUpdates(null, handleNewEnquiry, null);
 
   const handleViewEnquiry = async (enquiryId) => {
     try {
@@ -85,16 +115,21 @@ const EnquiryManagement = () => {
   };
 
   const handleUpdateStatus = async (enquiryId, newStatus) => {
+    // Optimistic update
+    setEnquiries(prev => prev.map(e => 
+      e._id === enquiryId ? { ...e, status: newStatus } : e
+    ));
+
     try {
       await adminAPI.updateEnquiryStatus(enquiryId, newStatus);
       toast.success('Status updated successfully');
-      loadEnquiries();
-      loadStats();
+      loadStats(); // Refresh stats
       if (selectedEnquiry && selectedEnquiry._id === enquiryId) {
         setSelectedEnquiry({ ...selectedEnquiry, status: newStatus });
       }
     } catch (error) {
       console.error('Error updating status:', error);
+      loadEnquiries(false); // Revert on error
       toast.error('Failed to update status');
     }
   };
@@ -173,8 +208,24 @@ const EnquiryManagement = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Enquiry Management</h2>
-          <p className="text-gray-600 mt-1">Manage and respond to customer enquiries</p>
+          <p className="text-gray-600 mt-1">
+            {lastFetchTime 
+              ? `Last updated: ${new Date(lastFetchTime).toLocaleTimeString()}` 
+              : 'Manage and respond to customer enquiries'}
+          </p>
         </div>
+        <Button 
+          onClick={() => {
+            loadEnquiries();
+            loadStats();
+          }} 
+          variant="outline"
+          disabled={loading}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          {loading ? 'Refreshing...' : 'Refresh'}
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -244,6 +295,7 @@ const EnquiryManagement = () => {
               setSearchTerm('');
               setSelectedStatus('');
               setSelectedType('');
+              setCurrentPage(1);
             }}
             variant="outline"
             className="w-full"
@@ -539,5 +591,5 @@ const EnquiryManagement = () => {
   );
 };
 
-export default EnquiryManagement;
+export default React.memo(EnquiryManagement);
 

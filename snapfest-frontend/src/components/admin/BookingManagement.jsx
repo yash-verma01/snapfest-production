@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, Search, Filter, Eye, Edit, CheckCircle, XCircle, Clock, UserPlus, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Calendar, Search, Filter, Eye, Edit, CheckCircle, XCircle, Clock, UserPlus, ShieldCheck, RefreshCw } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { Card, Button, Badge } from '../ui';
 import VendorAssignmentModal from './VendorAssignmentModal';
+import { useDebounce } from '../../hooks/useDebounce';
+import { useRealtimeUpdates } from '../../hooks/useRealtimeUpdates';
+import toast from 'react-hot-toast';
 
-const BookingManagement = () => {
+const BookingManagement = ({ highlightBookingId, onBookingHighlighted }) => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -17,48 +20,102 @@ const BookingManagement = () => {
   const [showEditVendorModal, setShowEditVendorModal] = useState(false);
   const [editingBooking, setEditingBooking] = useState(null);
   const [generatingOTP, setGeneratingOTP] = useState(false);
+  const [lastFetchTime, setLastFetchTime] = useState(null);
+  const highlightedBookingRef = useRef(null);
 
-  useEffect(() => {
-    loadBookings();
-  }, [currentPage, searchQuery, selectedStatus]);
+  // Debounce search query to reduce API calls
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
-  const loadBookings = async () => {
+  // Memoized load function with useCallback
+  const loadBookings = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const params = {
         page: currentPage,
         limit: 10,
-        ...(searchQuery && { q: searchQuery }),
+        ...(debouncedSearchQuery && { q: debouncedSearchQuery }),
         ...(selectedStatus && { status: selectedStatus })
       };
       
       const response = await adminAPI.getBookings(params);
       setBookings(response.data.data.bookings);
       setTotalPages(response.data.data.pagination.pages);
+      setLastFetchTime(Date.now());
     } catch (error) {
       console.error('Error loading bookings:', error);
+      toast.error('Failed to load bookings');
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
-  };
+  }, [currentPage, debouncedSearchQuery, selectedStatus]);
 
+  // Load bookings when dependencies change (using debounced search)
+  useEffect(() => {
+    loadBookings();
+  }, [currentPage, debouncedSearchQuery, selectedStatus, loadBookings]);
+
+  // Real-time updates handler
+  const handleNewBooking = useCallback((notificationData) => {
+    console.log('🔄 New booking notification received, refreshing...');
+    // Only refresh if we're on the first page or if it's a new booking
+    if (currentPage === 1) {
+      loadBookings(false); // Silent refresh (no loading spinner)
+      toast.success('New booking received!', { duration: 2000 });
+    } else {
+      // Show notification but don't auto-refresh if on other pages
+      toast.success('New booking received! Click refresh to view.', { duration: 3000 });
+    }
+  }, [currentPage, loadBookings]);
+
+  // Use real-time updates hook
+  useRealtimeUpdates(handleNewBooking, null, null);
+
+  // Highlight booking when navigating from notification
+  useEffect(() => {
+    if (highlightBookingId && bookings.length > 0) {
+      const booking = bookings.find(b => b._id === highlightBookingId);
+      if (booking && highlightedBookingRef.current) {
+        highlightedBookingRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (onBookingHighlighted) {
+          setTimeout(() => { onBookingHighlighted(); }, 2000);
+        }
+      }
+    }
+  }, [highlightBookingId, bookings, onBookingHighlighted]);
+
+  // Optimistic update handlers
   const handleUpdateStatus = async (bookingId, newStatus) => {
+    // Optimistic update - update UI immediately
+    setBookings(prev => prev.map(b => 
+      b._id === bookingId ? { ...b, vendorStatus: newStatus } : b
+    ));
+
     try {
       await adminAPI.updateBooking(bookingId, { status: newStatus });
-      loadBookings(); // Reload bookings
+      toast.success('Status updated successfully');
     } catch (error) {
       console.error('Error updating booking status:', error);
+      // Revert on error
+      loadBookings(false);
+      toast.error('Failed to update status');
     }
   };
 
   const handleCancelBooking = async (bookingId) => {
-    if (window.confirm('Are you sure you want to cancel this booking?')) {
-      try {
-        await adminAPI.cancelBooking(bookingId, { reason: 'Cancelled by admin' });
-        loadBookings(); // Reload bookings
-      } catch (error) {
-        console.error('Error cancelling booking:', error);
-      }
+    if (!window.confirm('Are you sure you want to cancel this booking?')) return;
+    
+    // Optimistic update
+    setBookings(prev => prev.map(b => 
+      b._id === bookingId ? { ...b, vendorStatus: 'CANCELLED' } : b
+    ));
+
+    try {
+      await adminAPI.cancelBooking(bookingId, { reason: 'Cancelled by admin' });
+      toast.success('Booking cancelled successfully');
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      loadBookings(false);
+      toast.error('Failed to cancel booking');
     }
   };
 
@@ -71,12 +128,13 @@ const BookingManagement = () => {
     try {
       setAssigningVendor(true);
       await adminAPI.assignVendorToBooking(bookingId, { vendorId });
-      loadBookings(); // Reload bookings
+      toast.success('Vendor assigned successfully');
+      loadBookings(false); // Silent refresh
       setShowVendorModal(false);
       setSelectedBooking(null);
     } catch (error) {
       console.error('Error assigning vendor:', error);
-      alert('Failed to assign vendor. Please try again.');
+      toast.error('Failed to assign vendor');
     } finally {
       setAssigningVendor(false);
     }
@@ -96,13 +154,13 @@ const BookingManagement = () => {
     try {
       setAssigningVendor(true);
       await adminAPI.assignVendorToBooking(bookingId, { vendorId });
-      loadBookings(); // Reload bookings
+      toast.success('Vendor changed successfully!');
+      loadBookings(false); // Silent refresh
       setShowEditVendorModal(false);
       setEditingBooking(null);
-      alert('Vendor changed successfully!');
     } catch (error) {
       console.error('Error changing vendor:', error);
-      alert('Failed to change vendor. Please try again.');
+      toast.error('Failed to change vendor');
     } finally {
       setAssigningVendor(false);
     }
@@ -114,11 +172,11 @@ const BookingManagement = () => {
     try {
       setGeneratingOTP(true);
       const response = await adminAPI.generateBookingOTP(bookingId);
-      alert('OTP generated and sent to user successfully!');
-      loadBookings();
+      toast.success('OTP generated and sent to user successfully!');
+      loadBookings(false);
     } catch (error) {
       console.error('Error generating OTP:', error);
-      alert(error.response?.data?.message || 'Failed to generate OTP');
+      toast.error(error.response?.data?.message || 'Failed to generate OTP');
     } finally {
       setGeneratingOTP(false);
     }
@@ -155,8 +213,21 @@ const BookingManagement = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Booking Management</h2>
-          <p className="text-gray-600">Manage all bookings in the system</p>
+          <p className="text-gray-600">
+            {lastFetchTime 
+              ? `Last updated: ${new Date(lastFetchTime).toLocaleTimeString()}` 
+              : 'Manage all bookings in the system'}
+          </p>
         </div>
+        <Button 
+          onClick={() => loadBookings()} 
+          variant="outline"
+          disabled={loading}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          {loading ? 'Refreshing...' : 'Refresh'}
+        </Button>
       </div>
 
       {/* Filters */}
@@ -195,11 +266,15 @@ const BookingManagement = () => {
           <div className="flex items-end">
             <Button
               variant="outline"
-              onClick={loadBookings}
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedStatus('');
+                setCurrentPage(1);
+              }}
               className="w-full"
             >
               <Filter className="w-4 h-4 mr-2" />
-              Apply Filters
+              Clear Filters
             </Button>
           </div>
         </div>
@@ -229,7 +304,15 @@ const BookingManagement = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {bookings.map((booking) => (
-                  <tr key={booking._id} className="hover:bg-gray-50">
+                  <tr 
+                    key={booking._id} 
+                    ref={booking._id === highlightBookingId ? highlightedBookingRef : null}
+                    className={`hover:bg-gray-50 ${
+                      booking._id === highlightBookingId 
+                        ? 'bg-yellow-50 border-2 border-yellow-400' 
+                        : ''
+                    }`}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-2">
                         <div className="text-sm font-medium text-gray-900">
@@ -457,5 +540,5 @@ const BookingManagement = () => {
   );
 };
 
-export default BookingManagement;
+export default React.memo(BookingManagement);
 

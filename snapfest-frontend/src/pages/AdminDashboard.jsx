@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import { useUser, useClerk } from '@clerk/clerk-react';
 import { adminAPI } from '../services/api';
-import { dummyAdmin } from '../data';
 import { Card, Button, Badge } from '../components/ui';
 import UserManagement from '../components/admin/UserManagement';
 import BookingManagement from '../components/admin/BookingManagement';
@@ -47,17 +46,39 @@ const AdminDashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [navigationHistory, setNavigationHistory] = useState(['dashboard']);
+  // Restore active tab from localStorage on mount
+  const [activeTab, setActiveTab] = useState(() => {
+    const savedTab = localStorage.getItem('adminActiveTab');
+    return savedTab || 'dashboard';
+  });
+  // Restore navigation history from localStorage on mount
+  const [navigationHistory, setNavigationHistory] = useState(() => {
+    const savedHistory = localStorage.getItem('adminNavigationHistory');
+    try {
+      return savedHistory ? JSON.parse(savedHistory) : ['dashboard'];
+    } catch {
+      return ['dashboard'];
+    }
+  });
   const [testimonials, setTestimonials] = useState([]);
   const [testimonialStats, setTestimonialStats] = useState(null);
   const [testimonialLoading, setTestimonialLoading] = useState(false);
   const [showAllActivities, setShowAllActivities] = useState(false);
 
+  // Save tab state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('adminActiveTab', activeTab);
+    localStorage.setItem('adminNavigationHistory', JSON.stringify(navigationHistory));
+  }, [activeTab, navigationHistory]);
+
   // Navigation handler
   const handleNavigation = (tab) => {
     setActiveTab(tab);
-    setNavigationHistory(prev => [...prev, tab]);
+    setNavigationHistory(prev => {
+      const newHistory = [...prev, tab];
+      // Limit history to last 10 items to prevent localStorage bloat
+      return newHistory.slice(-10);
+    });
   };
 
   // Back navigation handler

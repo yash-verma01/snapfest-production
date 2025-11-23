@@ -27,8 +27,6 @@ import Profile from './pages/Profile';
 import Bookings from './pages/Bookings';
 import Payments from './pages/Payments';
 import Cart from './pages/Cart';
-import CartTest from './pages/CartTest';
-import CartFallback from './pages/CartFallback';
 import Checkout from './pages/Checkout';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PackageDetail from './pages/PackageDetail';

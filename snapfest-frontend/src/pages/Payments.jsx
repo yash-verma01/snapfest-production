@@ -25,7 +25,6 @@ import {
 } from 'lucide-react';
 import { Card, Button, Badge } from '../components/ui';
 import { userAPI, paymentAPI } from '../services/api';
-import { dummyBookings } from '../data';
 import { dateUtils } from '../utils';
 import BookingDetailsModal from '../components/modals/BookingDetailsModal';
 import { paymentService, loadRazorpayScript } from '../services/paymentService';
