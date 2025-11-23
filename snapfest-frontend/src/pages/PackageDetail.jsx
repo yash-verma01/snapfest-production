@@ -31,6 +31,7 @@ import { publicAPI, bookingAPI, paymentAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete';
 import LazyImage from '../components/LazyImage';
+import { GlassCard, ScrollReveal, ImageGallery, StepWizard, LoadingSkeleton } from '../components/enhanced';
 
 const PackageDetail = () => {
   const { id } = useParams();
@@ -312,10 +313,6 @@ const PackageDetail = () => {
     setShowImageModal(true);
   };
 
-  const closeImageModal = () => {
-    setShowImageModal(false);
-  };
-
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -446,9 +443,8 @@ const PackageDetail = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pearl-50 via-white to-primary-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading package details...</p>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <LoadingSkeleton type="card" count={3} />
         </div>
       </div>
     );
@@ -527,33 +523,37 @@ const PackageDetail = () => {
           {/* Left Column - Images */}
           <div className="lg:col-span-2">
             <div className="space-y-4">
-              {/* Main Image */}
-              <div className="relative group">
-                <LazyImage
-                  src={packageData.images[selectedImage] || packageData.primaryImage}
-                  alt={packageData.title}
-                  className="w-full h-80 object-cover rounded-xl shadow-lg cursor-pointer transition-all duration-200 group-hover:shadow-xl"
-                  onClick={() => openImageModal(selectedImage)}
-                />
-                
-                {/* Navigation Arrows */}
-                {packageData.images.length > 1 && (
-                  <>
-                    <button
-                      onClick={prevImage}
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={nextImage}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </>
-                )}
-              </div>
+              {/* Main Image with Enhanced Gallery */}
+              <ScrollReveal direction="right">
+                <GlassCard className="overflow-hidden">
+                  <div className="relative group">
+                    <LazyImage
+                      src={packageData.images[selectedImage] || packageData.primaryImage}
+                      alt={packageData.title}
+                      className="w-full h-80 object-cover cursor-pointer transition-all duration-300 group-hover:scale-105"
+                      onClick={() => setShowImageModal(true)}
+                    />
+                    
+                    {/* Navigation Arrows */}
+                    {packageData.images.length > 1 && (
+                      <>
+                        <button
+                          onClick={prevImage}
+                          className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100 z-10"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={nextImage}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100 z-10"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </GlassCard>
+              </ScrollReveal>
 
               {/* Thumbnail Images */}
               {packageData.images.length > 1 && (
@@ -580,10 +580,12 @@ const PackageDetail = () => {
               )}
 
               {/* Description Section */}
-              <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">About This Package</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{packageData.description}</p>
-              </div>
+              <ScrollReveal direction="up" delay={0.2}>
+                <GlassCard className="p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">About This Package</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">{packageData.description}</p>
+                </GlassCard>
+              </ScrollReveal>
             </div>
           </div>
 
@@ -591,7 +593,8 @@ const PackageDetail = () => {
           <div className="lg:col-span-1">
             <div className="sticky top-6 space-y-4">
               {/* Pricing Card */}
-              <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+              <ScrollReveal direction="left" delay={0.1}>
+                <GlassCard className="p-4">
                 <div className="text-center mb-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Package Pricing</h3>
                   <div className="text-2xl font-bold text-pink-600">
@@ -623,7 +626,8 @@ const PackageDetail = () => {
                     </div>
                   </div>
                 </div>
-              </div>
+              </GlassCard>
+              </ScrollReveal>
 
               {/* Event Date Selection */}
               <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
@@ -896,41 +900,14 @@ const PackageDetail = () => {
 
       </div>
 
-      {/* Image Modal */}
-      {showImageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="relative max-w-4xl max-h-full">
-            <button
-              onClick={closeImageModal}
-              className="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            
-            <img
-              src={packageData.images[selectedImage]}
-              alt={packageData.title}
-              className="max-w-full max-h-full object-contain rounded-lg"
-            />
-            
-            {packageData.images.length > 1 && (
-              <>
-                <button
-                  onClick={prevImage}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white rounded-full p-2"
-                >
-                  <ChevronLeft className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={nextImage}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white rounded-full p-2"
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </button>
-              </>
-            )}
-          </div>
-        </div>
+      {/* Enhanced Image Gallery Modal */}
+      {showImageModal && packageData && (
+        <ImageGallery
+          images={packageData.images || [packageData.primaryImage]}
+          currentIndex={selectedImage}
+          onClose={() => setShowImageModal(false)}
+          showThumbnails={true}
+        />
       )}
 
       {/* Payment Percentage Modal */}

@@ -25,6 +25,7 @@ import ModalPortal from '../components/modals/ModalPortal';
 import NotificationBell from '../components/NotificationBell';
 import VendorNotificationManagement from '../components/vendor/VendorNotificationManagement';
 import { Card, Button, Badge } from '../components/ui';
+import { GlassCard, ScrollReveal } from '../components/enhanced';
 
 const VendorDashboard = () => {
   const { user } = useUser();
@@ -286,19 +287,20 @@ const VendorDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Welcome back, {user?.name || 'Vendor'}!
-              </h1>
-              <p className="text-gray-600">
-                Manage your bookings and earnings
-              </p>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-red-50">
+      {/* Enhanced Header */}
+      <ScrollReveal direction="down">
+        <div className="bg-white/80 backdrop-blur-xl shadow-lg border-b border-pink-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">
+                  Welcome back, {user?.name || 'Vendor'}!
+                </h1>
+                <p className="text-gray-600 mt-1">
+                  Manage your bookings and earnings
+                </p>
+              </div>
             <div className="flex items-center space-x-4">
               <NotificationBell 
                 userRole="vendor" 
@@ -335,7 +337,8 @@ const VendorDashboard = () => {
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      </ScrollReveal>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Show Notifications Section if requested */}
@@ -376,7 +379,8 @@ const VendorDashboard = () => {
           <div className="lg:col-span-2 space-y-8">
             {/* Pending OTPs Alert */}
             {pendingOTPs && pendingOTPs.length > 0 && (
-              <Card className="p-6 border-yellow-200 bg-yellow-50">
+              <ScrollReveal direction="up" delay={0.1}>
+                <GlassCard className="p-6 border-yellow-200 bg-yellow-50/80 backdrop-blur-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <Shield className="w-6 h-6 text-yellow-600 mr-3" />
@@ -397,11 +401,13 @@ const VendorDashboard = () => {
                     Verify OTPs
                   </Button>
                 </div>
-              </Card>
+              </GlassCard>
+              </ScrollReveal>
             )}
 
             {/* Unified Bookings Section */}
-            <Card className="p-6">
+            <ScrollReveal direction="up" delay={0.2}>
+              <GlassCard className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900">All Bookings</h2>
@@ -564,13 +570,13 @@ const VendorDashboard = () => {
                   ))}
                 </div>
               )}
-            </Card>
-          </div>
+            </GlassCard>
+          </ScrollReveal>
 
           {/* Sidebar */}
           <div className="space-y-8">
             {/* Tips & Guidelines */}
-            <Card className="p-6">
+            <GlassCard className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Tips & Guidelines</h3>
               <div className="space-y-4">
                 <div className="p-4 bg-blue-50 rounded-lg">
@@ -594,11 +600,13 @@ const VendorDashboard = () => {
                   </p>
                 </div>
               </div>
-            </Card>
+            </GlassCard>
           </div>
+        </div>
         </div>
           </>
         )}
+      </div>
 
       {/* OTP Verification Modal */}
       {showOTPModal && (

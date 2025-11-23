@@ -33,6 +33,7 @@ import BeatBloomManagement from '../components/admin/BeatBloomManagement';
 import EnquiryManagement from '../components/admin/EnquiryManagement';
 import NotificationManagement from '../components/admin/NotificationManagement';
 import NotificationBell from '../components/NotificationBell';
+import { GlassCard, ScrollReveal } from '../components/enhanced';
 
 const AdminDashboard = () => {
   // Use Clerk hooks instead of AuthContext (AdminApp uses ClerkProvider)
@@ -297,19 +298,20 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Admin Dashboard
-              </h1>
-              <p className="text-gray-600">
-                System overview and management
-              </p>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-red-50">
+      {/* Enhanced Header */}
+      <ScrollReveal direction="down">
+        <div className="bg-white/80 backdrop-blur-xl shadow-lg border-b border-pink-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">
+                  Admin Dashboard
+                </h1>
+                <p className="text-gray-600 mt-1">
+                  System overview and management
+                </p>
+              </div>
             <div className="flex items-center space-x-4">
               <NotificationBell 
                 userRole="admin" 
@@ -327,55 +329,61 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      </ScrollReveal>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Conditional Content Based on Active Tab */}
         {activeTab === 'dashboard' && (
           <>
-            {/* Stats Grid */}
+            {/* Enhanced Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {stats.map((stat, index) => (
-                <Card key={index} className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
-                      <p className="text-2xl font-bold text-gray-900 mb-2">{stat.value}</p>
-                      <div className="flex items-center text-sm text-green-600">
-                        <span className="mr-1">↗</span>
-                        <span>{stat.change}</span>
+                <ScrollReveal key={index} direction="up" delay={index * 0.1}>
+                  <GlassCard className="p-6 hover:shadow-xl transition-all duration-300">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
+                        <p className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent mb-2">{stat.value}</p>
+                        <div className="flex items-center text-sm text-green-600">
+                          <span className="mr-1">↗</span>
+                          <span>{stat.change}</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">{stat.description}</p>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">{stat.description}</p>
-                    </div>
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 bg-primary-50 rounded-lg flex items-center justify-center">
-                        {stat.icon}
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 bg-gradient-to-br from-pink-100 to-red-100 rounded-xl flex items-center justify-center shadow-lg">
+                          {stat.icon}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
+                  </GlassCard>
+                </ScrollReveal>
               ))}
             </div>
 
             {/* Debug Information */}
             {error && (
-              <Card className="p-4 bg-red-50 border-red-200 mb-8">
-                <div className="flex items-center">
-                  <AlertTriangle className="w-5 h-5 text-red-600 mr-2" />
-                  <div>
-                    <h3 className="font-semibold text-red-900">API Error</h3>
-                    <p className="text-sm text-red-700">{error}</p>
-                    <p className="text-xs text-red-600 mt-1">
-                      Showing empty data. Check console for details.
-                    </p>
+              <ScrollReveal direction="down">
+                <GlassCard className="p-4 bg-red-50 border-red-200 mb-8">
+                  <div className="flex items-center">
+                    <AlertTriangle className="w-5 h-5 text-red-600 mr-2" />
+                    <div>
+                      <h3 className="font-semibold text-red-900">API Error</h3>
+                      <p className="text-sm text-red-700">{error}</p>
+                      <p className="text-xs text-red-600 mt-1">
+                        Showing empty data. Check console for details.
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </Card>
+                </GlassCard>
+              </ScrollReveal>
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Recent Activity */}
-              <Card className="p-6">
+              <ScrollReveal direction="right" delay={0.2}>
+                <GlassCard className="p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
                 <div className="space-y-4">
                   {(() => {
@@ -440,11 +448,13 @@ const AdminDashboard = () => {
                     );
                   })()}
                 </div>
-              </Card>
+              </GlassCard>
+              </ScrollReveal>
 
               {/* Navigation */}
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Navigation</h3>
+              <ScrollReveal direction="left" delay={0.3}>
+                <GlassCard className="p-6">
+                  <h3 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent mb-4">Navigation</h3>
                 <div className="space-y-2">
                   <Button 
                     className={`w-full justify-start ${activeTab === 'dashboard' ? 'bg-primary-600 text-white' : ''}`}
@@ -545,7 +555,8 @@ const AdminDashboard = () => {
                     Notifications
                   </Button>
                 </div>
-              </Card>
+              </GlassCard>
+              </ScrollReveal>
             </div>
           </>
         )}

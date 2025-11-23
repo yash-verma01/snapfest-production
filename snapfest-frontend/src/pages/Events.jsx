@@ -153,15 +153,15 @@ const EventsEnhanced = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-pink-50 to-red-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-pink-600"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-pink-50 to-red-100 flex items-center justify-center">
         <Card className="p-8 text-center max-w-md">
           <div className="text-red-600 mb-4">
             <Calendar className="w-12 h-12 mx-auto mb-2" />
@@ -177,15 +177,16 @@ const EventsEnhanced = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-pink-500 via-red-500 to-pink-600 text-white py-16">
-        <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-pink-50 to-red-100">
+      {/* Hero Section - More Pinkish */}
+      <section className="relative bg-gradient-to-br from-pink-300 via-pink-200 to-red-300 text-pink-900 py-16 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-400/50 via-pink-300/50 to-red-400/50"></div>
+        <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              Photography <span className="text-yellow-300">Events</span>
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-pink-900 drop-shadow-md">
+              Photography <span className="text-pink-600">Events</span>
             </h1>
-            <p className="text-xl md:text-2xl text-pink-100 mb-8">
+            <p className="text-xl md:text-2xl text-pink-800 mb-8 font-semibold">
               Join our photography workshops, exhibitions, and meetups
             </p>
             
@@ -216,7 +217,7 @@ const EventsEnhanced = () => {
 
       {/* Advanced Filters Section */}
       {showFilters && (
-        <section className="bg-white border-b">
+        <section className="bg-gradient-to-br from-pink-100 via-pink-50 to-red-100 border-b border-pink-300">
           <div className="container mx-auto px-4 py-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Event Type Filter */}
@@ -348,10 +349,10 @@ const EventsEnhanced = () => {
       )}
 
       {/* Results Section */}
-      <section className="py-12">
+      <section className="py-12 bg-gradient-to-br from-pink-100 via-pink-50 to-red-100">
         <div className="container mx-auto px-4">
           {/* Search and Filters */}
-          <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 mb-8 border-2 border-pink-100">
             <div className="flex flex-col lg:flex-row gap-4">
               {/* Search */}
               <form onSubmit={handleSearch} className="flex-1">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Phone, Mail, Clock, Send, MessageCircle, Users, Award } from 'lucide-react';
 import { Card, Button, Input } from '../components/ui';
+import { GlassCard, ScrollReveal } from '../components/enhanced';
 import toast from 'react-hot-toast';
 import { useAuth } from '@clerk/clerk-react';
 import { userAPI } from '../services/api';
@@ -56,30 +57,30 @@ const Contact = () => {
     {
       icon: MapPin,
       title: 'Visit Our Office',
-      details: ['123 Photography Street', 'Mumbai, Maharashtra 400001', 'India'],
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
+      details: ['Vikas Nagar, Lucknow'],
+      color: 'text-pink-600',
+      bgColor: 'bg-pink-100',
     },
     {
       icon: Phone,
       title: 'Call Us',
-      details: ['+91 98765 43210', '+91 98765 43211', 'Mon-Sat: 9AM-8PM'],
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
+      details: ['9129556955', 'Mon-Sat: 9AM-8PM'],
+      color: 'text-red-600',
+      bgColor: 'bg-red-100',
     },
     {
       icon: Mail,
       title: 'Email Us',
-      details: ['info@snapfest.com', 'support@snapfest.com', 'bookings@snapfest.com'],
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      details: ['snapfest10@gmail.com'],
+      color: 'text-pink-600',
+      bgColor: 'bg-pink-100',
     },
     {
       icon: Clock,
       title: 'Business Hours',
       details: ['Monday - Friday: 9AM - 8PM', 'Saturday: 10AM - 6PM', 'Sunday: 11AM - 4PM'],
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100',
+      color: 'text-red-600',
+      bgColor: 'bg-red-100',
     },
   ];
 
@@ -194,32 +195,32 @@ const Contact = () => {
   };
 
   const stats = [
-    { icon: Users, label: 'Happy Clients', value: '10,000+' },
-    { icon: MessageCircle, label: 'Messages Handled', value: '50,000+' },
+    { icon: Users, label: 'Happy Clients', value: '100+' },
+    { icon: MessageCircle, label: 'Message Handled', value: '100++' },
     { icon: Award, label: 'Response Time', value: '< 2 Hours' },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 text-white py-20">
-        <div className="absolute inset-0 bg-black/20"></div>
+    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-pink-50 to-red-100">
+      {/* Hero Section - More Pinkish */}
+      <section className="relative bg-gradient-to-br from-pink-300 via-pink-200 to-red-300 text-pink-900 py-20 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-400/50 via-pink-300/50 to-red-400/50"></div>
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">
-              Get in <span className="text-blue-400">Touch</span>
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 text-pink-900 drop-shadow-md">
+              Get in <span className="text-pink-600">Touch</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-200 mb-8 leading-relaxed">
+            <p className="text-xl md:text-2xl text-pink-800 mb-8 leading-relaxed font-semibold">
               Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
               {stats.map((stat, index) => {
                 const Icon = stat.icon;
                 return (
-                  <div key={index} className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-                    <Icon className="w-8 h-8 text-blue-400 mx-auto mb-3" />
-                    <div className="text-2xl font-bold mb-1">{stat.value}</div>
-                    <div className="text-sm text-gray-300">{stat.label}</div>
+                  <div key={index} className="bg-white/80 backdrop-blur-sm rounded-lg p-6 border-2 border-pink-200 shadow-lg">
+                    <Icon className="w-8 h-8 text-pink-600 mx-auto mb-3" />
+                    <div className="text-2xl font-bold mb-1 text-pink-900">{stat.value}</div>
+                    <div className="text-sm text-pink-700 font-semibold">{stat.label}</div>
                   </div>
                 );
               })}
@@ -228,14 +229,15 @@ const Contact = () => {
         </div>
       </section>
 
-      {/* Contact Info Section */}
-      <section className="py-16 bg-white">
+      {/* Contact Info Section - More Pinkish */}
+      <section className="py-16 bg-gradient-to-br from-pink-100 via-pink-50 to-red-100">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {contactInfo.map((info, index) => {
               const Icon = info.icon;
               return (
-                <Card key={index} className="p-6 text-center hover:shadow-lg transition-shadow">
+                <ScrollReveal key={index} direction="up" delay={index * 0.1}>
+                  <GlassCard className="p-6 text-center hover:shadow-xl transition-all duration-300">
                   <div className={`${info.bgColor} w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4`}>
                     <Icon className={`w-8 h-8 ${info.color}`} />
                   </div>
@@ -245,21 +247,23 @@ const Contact = () => {
                       <p key={idx} className="text-gray-600 text-sm">{detail}</p>
                     ))}
                   </div>
-                </Card>
+                </GlassCard>
+                </ScrollReveal>
               );
             })}
           </div>
         </div>
       </section>
 
-      {/* Contact Form & Map Section */}
-      <section className="py-20 bg-gray-50">
+      {/* Contact Form & Map Section - More Pinkish */}
+      <section className="py-20 bg-gradient-to-br from-pink-100 via-pink-50 to-red-100">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12">
             {/* Contact Form */}
-            <div>
-              <h2 className="text-3xl font-bold mb-8 text-gray-900">Send us a Message</h2>
-              <Card className="p-8">
+            <ScrollReveal direction="right" delay={0.1}>
+              <div>
+                <h2 className="text-3xl font-bold mb-8 bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">Send us a Message</h2>
+                <GlassCard className="p-8">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
@@ -316,7 +320,7 @@ const Contact = () => {
                         name="inquiryType"
                         value={formData.inquiryType}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                       >
                         {inquiryTypes.map((type) => (
                           <option key={type.value} value={type.value}>
@@ -353,14 +357,14 @@ const Contact = () => {
                       rows={6}
                       placeholder="Tell us more about your inquiry..."
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent resize-none"
                     />
                   </div>
 
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 flex items-center justify-center gap-2"
+                    className="w-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white py-3 flex items-center justify-center gap-2"
                   >
                     {isSubmitting ? (
                       <>
@@ -375,66 +379,71 @@ const Contact = () => {
                     )}
                   </Button>
                 </form>
-              </Card>
-            </div>
+              </GlassCard>
+              </div>
+            </ScrollReveal>
 
             {/* Map & Additional Info */}
-            <div>
-              <h2 className="text-3xl font-bold mb-8 text-gray-900">Find Us</h2>
-              
-              {/* Map Placeholder */}
-              <Card className="p-0 mb-8 overflow-hidden">
-                <div className="h-64 bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
+            <ScrollReveal direction="left" delay={0.2}>
+              <div>
+                <h2 className="text-3xl font-bold mb-8 bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">Find Us</h2>
+                
+                {/* Map Placeholder */}
+                <GlassCard className="p-0 mb-8 overflow-hidden">
+                <div className="h-64 bg-gradient-to-br from-pink-100 to-red-100 flex items-center justify-center">
                   <div className="text-center">
-                    <MapPin className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-                    <p className="text-gray-600">Interactive Map</p>
-                    <p className="text-sm text-gray-500">123 Photography Street, Mumbai</p>
+                    <MapPin className="w-12 h-12 text-pink-600 mx-auto mb-4" />
+                    <p className="text-pink-800 font-semibold">Interactive Map</p>
+                    <p className="text-sm text-pink-700">Vikas Nagar, Lucknow</p>
                   </div>
                 </div>
-              </Card>
+              </GlassCard>
 
               {/* Quick Contact */}
-              <Card className="p-6">
-                <h3 className="text-xl font-semibold mb-4 text-gray-900">Quick Contact</h3>
+              <GlassCard className="p-6">
+                <h3 className="text-xl font-semibold mb-4 text-pink-900">Quick Contact</h3>
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="bg-blue-100 p-2 rounded-lg">
-                      <Phone className="w-5 h-5 text-blue-600" />
+                    <div className="bg-pink-100 p-2 rounded-lg">
+                      <Phone className="w-5 h-5 text-pink-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">Call us directly</p>
-                      <p className="text-sm text-gray-600">+91 98765 43210</p>
+                      <p className="font-medium text-pink-900">Call us directly</p>
+                      <p className="text-sm text-pink-700">9129556955</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="bg-green-100 p-2 rounded-lg">
-                      <MessageCircle className="w-5 h-5 text-green-600" />
+                    <div className="bg-red-100 p-2 rounded-lg">
+                      <MessageCircle className="w-5 h-5 text-red-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">WhatsApp</p>
-                      <p className="text-sm text-gray-600">+91 98765 43210</p>
+                      <p className="font-medium text-pink-900">WhatsApp</p>
+                      <p className="text-sm text-pink-700">9129556955</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="bg-purple-100 p-2 rounded-lg">
-                      <Mail className="w-5 h-5 text-purple-600" />
+                    <div className="bg-pink-100 p-2 rounded-lg">
+                      <Mail className="w-5 h-5 text-pink-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">Email support</p>
-                      <p className="text-sm text-gray-600">support@snapfest.com</p>
+                      <p className="font-medium text-pink-900">Email support</p>
+                      <p className="text-sm text-pink-700">snapfest10@gmail.com</p>
                     </div>
                   </div>
                 </div>
-              </Card>
-            </div>
+              </GlassCard>
+              </div>
+            </ScrollReveal>
           </div>
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="py-20 bg-white">
+      {/* FAQ Section - More Pinkish */}
+      <section className="py-20 bg-gradient-to-br from-pink-100 via-pink-50 to-red-100">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">Frequently Asked Questions</h2>
+          <ScrollReveal direction="up">
+            <h2 className="text-3xl font-bold text-center mb-12 bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">Frequently Asked Questions</h2>
+          </ScrollReveal>
           <div className="max-w-3xl mx-auto space-y-6">
             {[
               {
@@ -447,17 +456,19 @@ const Contact = () => {
               },
               {
                 question: "What areas do you serve?",
-                answer: "We currently serve 25+ cities across India. Contact us to check if we cover your location."
+                answer: "We currently serve in Lucknow only. Contact us to check if we can cover your location."
               },
               {
                 question: "Can I cancel or reschedule my booking?",
                 answer: "Yes, you can cancel or reschedule your booking up to 48 hours before the event date. Cancellation policies vary by package."
               }
             ].map((faq, index) => (
-              <Card key={index} className="p-6">
-                <h3 className="text-lg font-semibold mb-3 text-gray-900">{faq.question}</h3>
-                <p className="text-gray-600">{faq.answer}</p>
-              </Card>
+              <ScrollReveal key={index} direction="up" delay={index * 0.1}>
+                <GlassCard className="p-6 hover:shadow-xl transition-all duration-300">
+                  <h3 className="text-lg font-semibold mb-3 text-gray-900">{faq.question}</h3>
+                  <p className="text-gray-600">{faq.answer}</p>
+                </GlassCard>
+              </ScrollReveal>
             ))}
           </div>
         </div>

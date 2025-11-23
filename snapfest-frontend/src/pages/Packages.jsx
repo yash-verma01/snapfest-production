@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Grid, List, SlidersHorizontal, Star, Crown, Sparkles, Award, Zap } from 'lucide-react';
 import { PackageCard } from '../components/cards';
 import { Button } from '../components/ui';
+import { GlassCard, ScrollReveal, LoadingSkeleton } from '../components/enhanced';
 import { usePackages } from '../hooks';
 // Auth handled by Clerk globally; no local auth hook needed
 
@@ -105,27 +106,26 @@ const Packages = () => {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pearl-50 via-white to-primary-50">
-      {/* Professional Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-pink-50 via-white to-red-50 py-16">
+    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-pink-50 to-red-100">
+      {/* Professional Hero Section - More Pinkish */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-pink-300 via-pink-200 to-red-300 py-16">
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-400/40 via-pink-300/40 to-red-400/40"></div>
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-20 left-20 w-32 h-32 bg-gradient-to-br from-pink-200/20 to-red-200/20 rounded-full blur-3xl"></div>
           <div className="absolute bottom-20 right-20 w-40 h-40 bg-gradient-to-br from-red-200/20 to-pink-200/20 rounded-full blur-3xl"></div>
         </div>
         
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-6">
             <div className="space-y-4">
               <div className="inline-flex items-center bg-gradient-to-r from-pink-500 to-red-500 text-white px-6 py-3 rounded-full text-sm font-semibold shadow-lg">
                 <Crown className="w-4 h-4 mr-2" />
                 Premium Event Packages
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900">
-                <span className="bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">
-                  Choose Your Perfect Package
-                </span>
+              <h1 className="text-4xl md:text-5xl font-bold text-pink-900 drop-shadow-md">
+                Choose Your Perfect Package
               </h1>
-              <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              <p className="text-lg text-pink-800 max-w-3xl mx-auto leading-relaxed font-semibold">
                 Discover our carefully curated event packages designed to make your special day unforgettable. 
                 From intimate gatherings to grand celebrations, we have the perfect package for you.
               </p>
@@ -160,7 +160,8 @@ const Packages = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search and Filters */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
+        <ScrollReveal direction="down">
+          <GlassCard className="p-6 mb-8">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
             <form onSubmit={handleSearch} className="flex-1">
@@ -336,7 +337,8 @@ const Packages = () => {
               </div>
             </div>
           )}
-        </div>
+        </GlassCard>
+        </ScrollReveal>
 
         {/* Main Content */}
         <div className="space-y-6">
@@ -366,13 +368,7 @@ const Packages = () => {
             {/* Loading State */}
             {loading && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, index) => (
-                  <div key={index} className="bg-white p-4 rounded-2xl shadow-lg border border-gray-100">
-                    <div className="loading-skeleton h-40 mb-4"></div>
-                    <div className="loading-skeleton h-3 mb-2"></div>
-                    <div className="loading-skeleton h-3 w-2/3"></div>
-                  </div>
-                ))}
+                <LoadingSkeleton type="card" count={6} />
               </div>
             )}
 
@@ -382,15 +378,16 @@ const Packages = () => {
                 ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' 
                 : 'space-y-6'
               }>
-                {packages.map((pkg) => (
-                  <PackageCard
-                    key={pkg._id}
-                    packageData={pkg}
-                    onViewDetails={(pkg) => {
-                      navigate(`/packages/${pkg._id}`);
-                    }}
-                    className={viewMode === 'list' ? 'flex flex-row' : ''}
-                  />
+                {packages.map((pkg, index) => (
+                  <ScrollReveal key={pkg._id} direction="up" delay={index * 0.1}>
+                    <PackageCard
+                      packageData={pkg}
+                      onViewDetails={(pkg) => {
+                        navigate(`/packages/${pkg._id}`);
+                      }}
+                      className={viewMode === 'list' ? 'flex flex-row' : ''}
+                    />
+                  </ScrollReveal>
                 ))}
               </div>
             )}
@@ -418,9 +415,9 @@ const Packages = () => {
                 </Button>
               </div>
             )}
+          </div>
         </div>
       </div>
-    </div>
   );
 };
 

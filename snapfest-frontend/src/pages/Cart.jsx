@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useCart } from '../hooks';
 import { Card, Button, Badge } from '../components/ui';
+import { GlassCard, ScrollReveal, LoadingSkeleton, StepWizard } from '../components/enhanced';
 import { priceCalculator } from '../utils';
 import { paymentAPI } from '../services/api';
 import { paymentService } from '../services/paymentService';
@@ -306,48 +307,52 @@ const Cart = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-red-50 flex items-center justify-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <LoadingSkeleton type="card" count={3} />
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="p-8 text-center max-w-md">
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-red-50 flex items-center justify-center">
+        <GlassCard className="p-8 text-center max-w-md">
           <div className="text-red-600 mb-4">
             <ShoppingCart className="w-12 h-12 mx-auto mb-2" />
             <h3 className="text-lg font-semibold">Error Loading Cart</h3>
             <p className="text-gray-600">{error}</p>
           </div>
-          <Button onClick={() => window.location.reload()}>
+          <Button onClick={() => window.location.reload()} className="bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600">
             Try Again
           </Button>
-        </Card>
+        </GlassCard>
       </div>
     );
   }
 
   if (!cart || cart.items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        {/* Debug components removed - cart is now working */}
-        
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-red-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center py-16">
-            <ShoppingCart className="w-24 h-24 text-gray-400 mx-auto mb-6" />
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Your Cart is Empty</h1>
-            <p className="text-xl text-gray-600 mb-8">
-              Add some photography packages to get started
-            </p>
-            <Link to="/packages">
-              <Button size="lg" className="px-8 py-4">
-                <Package className="w-5 h-5 mr-2" />
-                Browse Packages
-              </Button>
-            </Link>
-          </div>
+          <ScrollReveal direction="up">
+            <div className="text-center py-16">
+              <div className="w-32 h-32 bg-gradient-to-br from-pink-200 to-red-200 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+                <ShoppingCart className="w-16 h-16 text-pink-600" />
+              </div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent mb-4">Your Cart is Empty</h1>
+              <p className="text-xl text-gray-600 mb-8">
+                Add some photography packages to get started
+              </p>
+              <Link to="/packages">
+                <Button size="lg" className="px-8 py-4 bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
+                  <Package className="w-5 h-5 mr-2" />
+                  Browse Packages
+                </Button>
+              </Link>
+            </div>
+          </ScrollReveal>
         </div>
       </div>
     );
@@ -369,30 +374,30 @@ const Cart = () => {
   console.log('🛒 Cart: Total:', total);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Debug components removed - cart is now working */}
-
-      {/* Header */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Shopping Cart</h1>
-              <p className="text-gray-600">
-                {itemCount} {itemCount === 1 ? 'item' : 'items'} in your cart
-              </p>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-red-50">
+      {/* Enhanced Header */}
+      <ScrollReveal direction="down">
+        <div className="bg-white/80 backdrop-blur-xl shadow-lg border-b border-pink-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">Shopping Cart</h1>
+                <p className="text-gray-600 mt-1">
+                  {itemCount} {itemCount === 1 ? 'item' : 'items'} in your cart
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={clearCart}
+                className="text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50 transition-all duration-300 hover:scale-105"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Clear Cart
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              onClick={clearCart}
-              className="text-red-600 hover:text-red-700"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Clear Cart
-            </Button>
           </div>
         </div>
-      </div>
+      </ScrollReveal>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -436,8 +441,9 @@ const Cart = () => {
                 }
 
               return (
-                <Card key={item._id} className="p-6">
-                  <div className="flex flex-col md:flex-row gap-6">
+                <ScrollReveal key={item._id} direction="up" delay={0.1}>
+                  <GlassCard className="p-6">
+                    <div className="flex flex-col md:flex-row gap-6">
                     {/* Item Image */}
                     <div className="md:w-48 flex-shrink-0">
                       <img
@@ -551,17 +557,20 @@ const Cart = () => {
                       </div>
                     </div>
                   </div>
-                </Card>
+                </GlassCard>
+                </ScrollReveal>
               );
               } catch (error) {
                 console.error('🛒 Cart: Error rendering item:', error);
                 return (
-                  <Card key={item._id} className="p-6">
-                    <div className="text-center text-red-600">
-                      <p>Error loading cart item</p>
-                      <p className="text-sm">{error.message}</p>
-                    </div>
-                  </Card>
+                  <ScrollReveal key={item._id} direction="up" delay={0.1}>
+                    <GlassCard className="p-6">
+                      <div className="text-center text-red-600">
+                        <p>Error loading cart item</p>
+                        <p className="text-sm">{error.message}</p>
+                      </div>
+                    </GlassCard>
+                  </ScrollReveal>
                 );
               }
             })}
@@ -584,8 +593,9 @@ const Cart = () => {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <Card className="p-6 sticky top-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
+            <ScrollReveal direction="left" delay={0.2}>
+              <GlassCard className="p-6 sticky top-8">
+                <h3 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent mb-4">Order Summary</h3>
               
               {cart?.items?.length > 0 ? (
                 <div className="space-y-4 mb-6">
@@ -622,22 +632,22 @@ const Cart = () => {
                     </div>
                   </div>
 
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <div className="text-sm text-blue-800">
-                      <div className="font-semibold mb-1">Payment Summary:</div>
-                      <div className="flex justify-between">
-                        <span>Initial Payment ({paymentPercentage}%):</span>
-                        <span className="font-semibold">
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
+                    <div className="text-sm text-blue-900">
+                      <div className="font-bold mb-2 text-blue-800">Payment Summary:</div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium">Initial Payment ({paymentPercentage}%):</span>
+                        <span className="font-bold text-lg text-pink-600">
                           {formatPrice((cartTotal.total + cartTotal.tax) * (paymentPercentage / 100))}
                         </span>
                       </div>
-                      <div className="flex justify-between text-xs text-blue-600 mt-1">
+                      <div className="flex justify-between text-xs text-blue-700 mt-2 pt-2 border-t border-blue-200">
                         <span>Remaining ({100 - paymentPercentage}%):</span>
-                        <span>
+                        <span className="font-semibold">
                           {formatPrice((cartTotal.total + cartTotal.tax) * ((100 - paymentPercentage) / 100))}
                         </span>
                       </div>
-                      <div className="text-xs text-blue-600 mt-1">
+                      <div className="text-xs text-blue-600 mt-2 italic">
                         * Remaining amount to be paid later
                       </div>
                     </div>
@@ -695,7 +705,8 @@ const Cart = () => {
                   <p>Your payment information is secure and encrypted</p>
                 </div>
               </div>
-            </Card>
+            </GlassCard>
+            </ScrollReveal>
           </div>
         </div>
       </div>
