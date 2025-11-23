@@ -667,20 +667,20 @@ const PackageDetail = () => {
 
               {/* Customization Options */}
               {packageData.customizationOptions && packageData.customizationOptions.length > 0 && (
-                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 overflow-hidden">
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Add-ons</h3>
-                  <div className="space-y-3">
+                  <div className="space-y-3 overflow-y-auto max-h-96">
                     {packageData.customizationOptions.map((option) => (
-                      <div key={option._id} className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-all duration-200">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center">
+                      <div key={option._id} className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-all duration-200 overflow-hidden">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start space-x-2 flex-1 min-w-0">
+                            <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center flex-shrink-0">
                               {getCustomizationIcon(option.category)}
                             </div>
-                            <div className="flex-1">
-                              <h4 className="font-medium text-gray-900 text-sm">{option.name}</h4>
-                              <p className="text-xs text-gray-600">{option.description}</p>
-                              <div className="flex items-center space-x-1 mt-1">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-gray-900 text-sm break-words">{option.name}</h4>
+                              <p className="text-xs text-gray-600 break-words">{option.description}</p>
+                              <div className="flex items-center space-x-1 mt-1 flex-wrap">
                                 <Badge className="bg-gray-100 text-gray-700 text-xs px-2 py-0.5">
                                   {option.category}
                                 </Badge>
@@ -692,8 +692,8 @@ const PackageDetail = () => {
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-semibold text-gray-900 text-sm">
+                          <div className="flex items-center space-x-2 flex-shrink-0">
+                            <span className="font-semibold text-gray-900 text-sm whitespace-nowrap">
                               {formatPrice(option.price)}
                             </span>
                             {selectedCustomizations[option._id] ? (
@@ -785,7 +785,7 @@ const PackageDetail = () => {
 
         {/* Package Features Section */}
         {packageData.includedFeatures && packageData.includedFeatures.length > 0 && (
-          <div className="mt-8">
+          <div className="mt-4">
             <h2 className="text-xl font-bold text-gray-900 mb-4">What's Included</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {packageData.includedFeatures.map((feature, index) => (

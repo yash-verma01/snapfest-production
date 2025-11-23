@@ -468,19 +468,6 @@ const Cart = () => {
                           <p className="text-sm text-gray-600 mb-2">
                             {itemDescription}
                           </p>
-                          {/* Only show guest info for packages */}
-                          {itemType === 'package' && (
-                            <div className="flex items-center space-x-4 text-sm text-gray-500">
-                              <div className="flex items-center">
-                                <Users className="w-4 h-4 mr-1" />
-                                Max {itemData.maxGuests || 50} guests
-                              </div>
-                              <div className="flex items-center">
-                                <Clock className="w-4 h-4 mr-1" />
-                                {itemData.features?.[0] || 'Professional service'}
-                              </div>
-                            </div>
-                          )}
                         </div>
                         <Button
                           variant="ghost"
@@ -493,16 +480,7 @@ const Cart = () => {
                       </div>
 
                       {/* Item Details Display */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        {itemType === 'package' && (
-                          <div className="flex items-center space-x-2">
-                            <Users className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm text-gray-600">
-                              <strong>Guests:</strong> {item.guests || 1}
-                            </span>
-                          </div>
-                        )}
-
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div className="flex items-center space-x-2">
                           <Calendar className="w-4 h-4 text-gray-400" />
                           <span className="text-sm text-gray-600">
@@ -548,11 +526,6 @@ const Cart = () => {
                           <div className="text-lg font-semibold text-primary-600">
                             {formatPrice(itemPrice)}
                           </div>
-                          {itemType === 'package' && (
-                            <div className="text-sm text-gray-500">
-                              Total for {item.guests || 1} guests
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -675,7 +648,7 @@ const Cart = () => {
                     ) : (
                       <>
                         <CreditCard className="w-5 h-5 mr-2" />
-                        Pay {paymentPercentage}% (₹{formatPrice((cartTotal.total + cartTotal.tax) * (paymentPercentage / 100))})
+                        Pay {paymentPercentage}% ({formatPrice((cartTotal.total + cartTotal.tax) * (paymentPercentage / 100))})
                       </>
                     )}
                   </Button>

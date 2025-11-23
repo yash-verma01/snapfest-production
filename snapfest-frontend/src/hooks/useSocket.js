@@ -19,6 +19,12 @@ export const useSocket = () => {
       return;
     }
 
+    // Check if getToken is available
+    if (!getToken) {
+      console.warn('getToken is not available yet');
+      return;
+    }
+
     const connectSocket = async () => {
       try {
         const token = await getToken();

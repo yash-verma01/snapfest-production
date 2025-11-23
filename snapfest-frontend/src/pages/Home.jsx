@@ -45,8 +45,8 @@ const Home = () => {
           if (testimonials.length > 0) {
             const transformedTestimonials = testimonials.map(testimonial => ({
               id: testimonial._id,
-              name: testimonial.userId?.name || 'Anonymous',
-              avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
+              name: testimonial.userId?.name || testimonial.userId?.email?.split('@')[0] || 'Customer',
+              avatar: null, // Remove avatar
               rating: testimonial.rating,
               review: testimonial.feedback,
               event: 'Testimonial',
@@ -132,9 +132,34 @@ const Home = () => {
   ];
 
   // Floating Elements Component
-  const FloatingElements = ({ count = 8, section = 'hero' }) => {
+  const FloatingElements = ({ count = 8, section = 'hero', backgroundType = 'pink' }) => {
     const flowers = Math.floor(count * 0.4);
     const stars = Math.floor(count * 0.6);
+    
+    // Determine colors based on background type
+    const getFlowerColor = (i) => {
+      if (backgroundType === 'pink') {
+        // White colors for pink backgrounds
+        const colors = ['text-white', 'text-gray-100', 'text-gray-50'];
+        return colors[i % colors.length];
+      } else {
+        // Pinkish colors for white backgrounds
+        const colors = ['text-pink-200', 'text-pink-300', 'text-pink-100'];
+        return colors[i % colors.length];
+      }
+    };
+
+    const getStarColor = (i) => {
+      if (backgroundType === 'pink') {
+        // White colors for pink backgrounds
+        const colors = ['text-white', 'text-gray-100', 'text-gray-50'];
+        return colors[i % colors.length];
+      } else {
+        // Pinkish colors for white backgrounds
+        const colors = ['text-pink-200', 'text-pink-300', 'text-pink-100'];
+        return colors[i % colors.length];
+      }
+    };
     
     // Fixed positions based on index for consistency
     const getFlowerPosition = (i) => {
@@ -173,12 +198,13 @@ const Home = () => {
     
     return (
       <>
-        {/* Floating Flowers */}
+        {/* Floating Flowers - Light colors with blinking and floating */}
         {[...Array(flowers)].map((_, i) => {
           const pos = getFlowerPosition(i);
           const size = 12 + (i % 4) * 4; // 12, 16, 20, 24
           const delay = (i % 5) * 0.5;
-          const duration = 6 + (i % 4) * 1; // 6, 7, 8, 9
+          const floatDuration = 6 + (i % 4) * 1; // 6, 7, 8, 9
+          const blinkDuration = 2 + (i % 3) * 0.5; // 2, 2.5, 3
           const xOffset = (i % 3) * 5 - 5; // -5, 0, 5
           
           return (
@@ -191,30 +217,59 @@ const Home = () => {
                 height: `${size}px`,
               }}
               animate={{
+                // Floating animation
                 y: [0, -30, 0],
                 x: [0, xOffset, 0],
                 rotate: [0, 360],
                 scale: [1, 1.2, 1],
-                opacity: [0.3, 0.6, 0.3],
+                // Blinking animation (separate timing)
+                opacity: [0.2, 0.5, 0.2],
               }}
               transition={{
-                duration,
-                delay,
-                repeat: Infinity,
-                ease: 'easeInOut'
+                y: {
+                  duration: floatDuration,
+                  delay,
+                  repeat: Infinity,
+                  ease: 'easeInOut'
+                },
+                x: {
+                  duration: floatDuration,
+                  delay,
+                  repeat: Infinity,
+                  ease: 'easeInOut'
+                },
+                rotate: {
+                  duration: floatDuration * 2,
+                  delay,
+                  repeat: Infinity,
+                  ease: 'linear'
+                },
+                scale: {
+                  duration: floatDuration,
+                  delay,
+                  repeat: Infinity,
+                  ease: 'easeInOut'
+                },
+                opacity: {
+                  duration: blinkDuration,
+                  delay: delay * 0.5,
+                  repeat: Infinity,
+                  ease: 'easeInOut'
+                }
               }}
             >
-              <Heart className={`w-full h-full ${i % 2 === 0 ? 'text-pink-400' : 'text-red-400'}`} />
+              <Heart className={`w-full h-full ${getFlowerColor(i)}`} />
             </motion.div>
           );
         })}
 
-        {/* Floating Stars */}
+        {/* Floating Stars - Light colors with blinking and floating */}
         {[...Array(stars)].map((_, i) => {
           const pos = getStarPosition(i);
           const size = 8 + (i % 3) * 2; // 8, 10, 12
           const delay = (i % 4) * 0.3;
-          const duration = 4 + (i % 3) * 1; // 4, 5, 6
+          const floatDuration = 4 + (i % 3) * 1; // 4, 5, 6
+          const blinkDuration = 1.5 + (i % 3) * 0.4; // 1.5, 1.9, 2.3
           const xOffset = (i % 3) * 3 - 3; // -3, 0, 3
           
           return (
@@ -227,20 +282,48 @@ const Home = () => {
                 height: `${size}px`,
               }}
               animate={{
+                // Floating animation
                 y: [0, -20, 0],
                 x: [0, xOffset, 0],
                 rotate: [0, 180, 360],
                 scale: [1, 1.3, 1],
-                opacity: [0.4, 0.8, 0.4],
+                // Blinking animation (separate timing)
+                opacity: [0.25, 0.6, 0.25],
               }}
               transition={{
-                duration,
-                delay,
-                repeat: Infinity,
-                ease: 'easeInOut'
+                y: {
+                  duration: floatDuration,
+                  delay,
+                  repeat: Infinity,
+                  ease: 'easeInOut'
+                },
+                x: {
+                  duration: floatDuration,
+                  delay,
+                  repeat: Infinity,
+                  ease: 'easeInOut'
+                },
+                rotate: {
+                  duration: floatDuration * 1.5,
+                  delay,
+                  repeat: Infinity,
+                  ease: 'linear'
+                },
+                scale: {
+                  duration: floatDuration,
+                  delay,
+                  repeat: Infinity,
+                  ease: 'easeInOut'
+                },
+                opacity: {
+                  duration: blinkDuration,
+                  delay: delay * 0.5,
+                  repeat: Infinity,
+                  ease: 'easeInOut'
+                }
               }}
             >
-              <Star className={`w-full h-full ${i % 3 === 0 ? 'text-pink-500' : i % 3 === 1 ? 'text-red-500' : 'text-pink-300'} fill-current`} />
+              <Star className={`w-full h-full ${getStarColor(i)} fill-current`} />
             </motion.div>
           );
         })}
@@ -250,10 +333,10 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
-      {/* Enhanced Hero Section - Darker Pink/Red */}
-      <section className="relative overflow-hidden min-h-screen flex items-center bg-gradient-to-br from-pink-400 via-pink-300 to-red-400">
-        {/* Darker Background Base */}
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-500/60 via-pink-400/60 to-red-500/60"></div>
+      {/* Enhanced Hero Section - More Pinkish Background */}
+      <section className="relative overflow-hidden min-h-screen flex items-center bg-gradient-to-br from-pink-300 via-pink-200 to-pink-300">
+        {/* More Pinkish Background Base */}
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-400/50 via-pink-300/50 to-pink-400/50"></div>
         
         {/* Subtle Background Decorations */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -284,8 +367,8 @@ const Home = () => {
           />
         </div>
 
-        {/* Floating Stars and Flowers */}
-        <FloatingElements count={12} section="hero" />
+        {/* Floating Stars and Flowers - White on pink background */}
+        <FloatingElements count={20} section="hero" backgroundType="pink" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-20">
           <div className="text-center space-y-12">
@@ -383,15 +466,15 @@ const Home = () => {
         </div>
       </section>
 
-      {/* How It Works Section - Lighter White/Pink */}
-      <section className="relative py-24 bg-gradient-to-br from-white via-pink-50 to-white overflow-hidden">
-        {/* Light Background Base */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white via-pink-50/50 to-white"></div>
+      {/* How It Works Section - Elegant Pink/Red */}
+      <section className="relative py-24 bg-gradient-to-br from-pink-200 via-pink-200 to-red-200 overflow-hidden">
+        {/* Elegant blend background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-300/60 via-pink-200/60 to-red-300/60"></div>
         
-        {/* Floating Elements - Light Pink/Red Blur */}
+        {/* Floating Elements - Vibrant Pink/Red Blur */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <motion.div
-            className="absolute top-10 right-10 w-48 h-48 bg-red-100 rounded-full opacity-20 blur-2xl"
+            className="absolute top-10 right-10 w-48 h-48 bg-red-300 rounded-full opacity-30 blur-2xl"
             animate={{
               scale: [1, 1.15, 1],
               x: [0, 25, 0],
@@ -400,7 +483,7 @@ const Home = () => {
             transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
           />
           <motion.div
-            className="absolute bottom-10 left-10 w-56 h-56 bg-pink-100 rounded-full opacity-20 blur-2xl"
+            className="absolute bottom-10 left-10 w-56 h-56 bg-pink-300 rounded-full opacity-30 blur-2xl"
             animate={{
               scale: [1, 1.2, 1],
               x: [0, -25, 0],
@@ -409,7 +492,7 @@ const Home = () => {
             transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
           />
           <motion.div
-            className="absolute top-1/3 right-1/3 w-40 h-40 bg-red-100 rounded-full opacity-15 blur-xl"
+            className="absolute top-1/3 right-1/3 w-40 h-40 bg-red-300 rounded-full opacity-25 blur-xl"
             animate={{
               scale: [1, 1.25, 1],
               rotate: [0, 180, 360]
@@ -417,7 +500,7 @@ const Home = () => {
             transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
           />
           <motion.div
-            className="absolute bottom-1/3 left-1/4 w-44 h-44 bg-pink-100 rounded-full opacity-15 blur-xl"
+            className="absolute bottom-1/3 left-1/4 w-44 h-44 bg-pink-300 rounded-full opacity-25 blur-xl"
             animate={{
               scale: [1, 1.2, 1],
               rotate: [360, 180, 0]
@@ -426,18 +509,18 @@ const Home = () => {
           />
         </div>
 
-        {/* Floating Stars and Flowers */}
-        <FloatingElements count={6} section="howItWorks" />
+        {/* Floating Stars and Flowers - White on pink background */}
+        <FloatingElements count={18} section="howItWorks" backgroundType="pink" />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal direction="up">
             <div className="text-center mb-16">
               <Badge className="bg-gradient-to-r from-pink-500 to-red-500 text-white px-6 py-2 text-lg font-bold mb-6">
                 Simple Process
               </Badge>
-              <h2 className="text-5xl md:text-6xl font-black text-pink-800 mb-6">
+              <h2 className="text-5xl md:text-6xl font-black text-white mb-6 drop-shadow-lg">
                 How It Works
               </h2>
-              <p className="text-xl text-pink-700 max-w-3xl mx-auto">
+              <p className="text-xl text-white/95 max-w-3xl mx-auto drop-shadow-md">
                 Four simple steps to create your perfect event
               </p>
             </div>
@@ -467,10 +550,10 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Why Choose Us Section - Darker Pink/Red */}
-      <section className="relative py-24 bg-gradient-to-br from-pink-400 via-red-400 to-pink-400 overflow-hidden">
-        {/* Darker Background Base */}
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-500/70 via-red-500/70 to-pink-500/70"></div>
+      {/* Why Choose Us Section - Vibrant Pink/Red */}
+      <section className="relative py-24 bg-gradient-to-br from-pink-300 via-red-300 to-pink-400 overflow-hidden">
+        {/* Vibrant blend background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-400/70 via-red-400/70 to-pink-500/70"></div>
         
         {/* Animated Blur Elements - Darker */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -514,8 +597,8 @@ const Home = () => {
           />
         </div>
 
-        {/* Floating Stars and Flowers */}
-        <FloatingElements count={6} section="whyChooseUs" />
+        {/* Floating Stars and Flowers - White on pink background */}
+        <FloatingElements count={20} section="whyChooseUs" backgroundType="pink" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal direction="up">
             <div className="text-center mb-16">
@@ -542,12 +625,12 @@ const Home = () => {
             ].map((feature, index) => (
               <ScrollReveal key={index} direction="up" delay={index * 0.1}>
                 <motion.div whileHover={{ y: -10 }}>
-                  <GlassCard className="p-8 border-2 border-pink-100 hover:border-pink-300 transition-all duration-300">
+                  <GlassCard className="p-8 border-2 border-white/30 hover:border-white/50 transition-all duration-300 bg-white/10 backdrop-blur-sm">
                     <div className={`w-20 h-20 ${feature.color === 'pink' ? 'bg-gradient-to-br from-pink-400 to-red-400' : 'bg-gradient-to-br from-red-400 to-pink-400'} rounded-3xl flex items-center justify-center mb-6 shadow-xl`}>
                       <feature.icon className="w-10 h-10 text-white" />
                     </div>
-                    <h3 className="text-2xl font-bold text-pink-800 mb-4">{feature.title}</h3>
-                    <ul className="space-y-3 text-pink-700">
+                    <h3 className="text-2xl font-bold text-white mb-4 drop-shadow-md">{feature.title}</h3>
+                    <ul className="space-y-3 text-white/90">
                       {[1, 2, 3].map((i) => (
                         <li key={i} className="flex items-center">
                           <CheckCircle className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
@@ -564,15 +647,15 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Curated Packages Section - Lighter White/Pink */}
-      <section className="relative py-24 bg-gradient-to-br from-pink-50 via-white to-red-50 overflow-hidden">
-        {/* Light Background Base */}
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-50/80 via-white to-red-50/80"></div>
+      {/* Curated Packages Section - Elegant Pink/Red */}
+      <section className="relative py-24 bg-gradient-to-br from-red-200 via-pink-200 to-pink-300 overflow-hidden">
+        {/* Elegant blend background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-red-300/60 via-pink-300/60 to-pink-400/60"></div>
         
-        {/* Rotating Elements - Light */}
+        {/* Rotating Elements - Vibrant */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <motion.div
-            className="absolute top-20 left-20 w-40 h-40 bg-red-200 rounded-full opacity-20 blur-xl"
+            className="absolute top-20 left-20 w-40 h-40 bg-red-300 rounded-full opacity-30 blur-xl"
             animate={{
               x: [0, 20, 0],
               y: [0, -20, 0],
@@ -582,7 +665,7 @@ const Home = () => {
             transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
           />
           <motion.div
-            className="absolute bottom-20 right-20 w-36 h-36 bg-pink-200 rounded-full opacity-20 blur-xl"
+            className="absolute bottom-20 right-20 w-36 h-36 bg-pink-300 rounded-full opacity-30 blur-xl"
             animate={{
               x: [0, -20, 0],
               y: [0, 20, 0],
@@ -592,7 +675,7 @@ const Home = () => {
             transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }}
           />
           <motion.div
-            className="absolute top-1/3 right-1/3 w-32 h-32 bg-red-100 rounded-full opacity-15 blur-xl"
+            className="absolute top-1/3 right-1/3 w-32 h-32 bg-red-300 rounded-full opacity-25 blur-xl"
             animate={{
               scale: [1, 1.2, 1],
               rotate: [0, 360]
@@ -600,7 +683,7 @@ const Home = () => {
             transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
           />
           <motion.div
-            className="absolute bottom-1/4 left-1/4 w-44 h-44 bg-pink-100 rounded-full opacity-15 blur-xl"
+            className="absolute bottom-1/4 left-1/4 w-44 h-44 bg-pink-300 rounded-full opacity-25 blur-xl"
             animate={{
               scale: [1, 1.15, 1],
               rotate: [360, 0]
@@ -609,8 +692,8 @@ const Home = () => {
           />
         </div>
 
-        {/* Floating Stars and Flowers */}
-        <FloatingElements count={6} section="packages" />
+        {/* Floating Stars and Flowers - White on pink background */}
+        <FloatingElements count={18} section="packages" backgroundType="pink" />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal direction="up">
             <div className="text-center mb-16">
@@ -618,10 +701,10 @@ const Home = () => {
                 <Crown className="w-5 h-5 inline mr-2" />
                 Curated Packages
               </Badge>
-              <h2 className="text-5xl md:text-6xl font-black text-pink-900 mb-6 drop-shadow-md">
+              <h2 className="text-5xl md:text-6xl font-black text-white mb-6 drop-shadow-lg">
                 Ready-to-Go Event Solutions
               </h2>
-              <p className="text-xl text-pink-800 max-w-4xl mx-auto leading-relaxed font-semibold">
+              <p className="text-xl text-white/95 max-w-4xl mx-auto leading-relaxed font-semibold drop-shadow-md">
                 Handpicked packages designed by experts to make your celebration perfect.
               </p>
             </div>
@@ -669,10 +752,10 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Beat & Bloom Section - Darker Pink/Red */}
-      <section className="relative py-24 bg-gradient-to-br from-pink-400 via-red-400 to-pink-400 overflow-hidden">
-        {/* Darker Background Base */}
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-500/70 via-red-500/70 to-pink-500/70"></div>
+      {/* Beat & Bloom Section - Vibrant Pink/Red */}
+      <section className="relative py-24 bg-gradient-to-br from-pink-300 via-red-300 to-pink-400 overflow-hidden">
+        {/* Vibrant blend background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-400/70 via-red-400/70 to-pink-500/70"></div>
         
         {/* Floating Circles */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -718,12 +801,12 @@ const Home = () => {
           })}
         </div>
 
-        {/* Floating Stars and Flowers */}
-        <FloatingElements count={6} section="beatBloom" />
+        {/* Floating Stars and Flowers - White on pink background */}
+        <FloatingElements count={20} section="beatBloom" backgroundType="pink" />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal direction="up">
             <div className="text-center mb-16 relative z-20">
-              <Badge className="bg-gradient-to-r from-pink-500 to-red-500 text-white px-6 py-2 text-lg font-bold mb-6 relative z-20">
+              <Badge className="bg-white/20 backdrop-blur-sm border-2 border-white/30 text-white px-6 py-2 text-lg font-bold mb-6 relative z-20">
                 <Heart className="w-5 h-5 inline mr-2" />
                 Beat & Bloom
               </Badge>
@@ -806,15 +889,15 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Testimonials Section - Lighter White/Pink */}
-      <section className="relative py-24 bg-gradient-to-br from-white via-pink-50 to-red-50 overflow-hidden">
-        {/* Light Background Base */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white via-pink-50/60 to-red-50/60"></div>
+      {/* Testimonials Section - Elegant Pink/Red */}
+      <section className="relative py-24 bg-gradient-to-br from-red-200 via-pink-200 to-pink-300 overflow-hidden">
+        {/* Elegant blend background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-red-300/60 via-pink-300/60 to-pink-400/60"></div>
         
-        {/* Rotating Blurs - Light */}
+        {/* Rotating Blurs - Vibrant */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <motion.div
-            className="absolute top-1/4 left-1/4 w-44 h-44 bg-pink-200 rounded-full opacity-20 blur-xl"
+            className="absolute top-1/4 left-1/4 w-44 h-44 bg-pink-300 rounded-full opacity-30 blur-xl"
             animate={{
               scale: [1, 1.15, 1],
               rotate: [0, 180, 360]
@@ -822,7 +905,7 @@ const Home = () => {
             transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
           />
           <motion.div
-            className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-red-200 rounded-full opacity-20 blur-xl"
+            className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-red-300 rounded-full opacity-30 blur-xl"
             animate={{
               scale: [1, 1.15, 1],
               rotate: [360, 180, 0]
@@ -830,7 +913,7 @@ const Home = () => {
             transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
           />
           <motion.div
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-pink-100 rounded-full opacity-15 blur-xl"
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-pink-300 rounded-full opacity-25 blur-xl"
             animate={{
               scale: [1, 1.2, 1],
               rotate: [0, 360]
@@ -838,7 +921,7 @@ const Home = () => {
             transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
           />
           <motion.div
-            className="absolute top-1/3 right-1/3 w-36 h-36 bg-red-100 rounded-full opacity-15 blur-xl"
+            className="absolute top-1/3 right-1/3 w-36 h-36 bg-red-300 rounded-full opacity-25 blur-xl"
             animate={{
               scale: [1, 1.18, 1],
               rotate: [360, 0]
@@ -847,15 +930,15 @@ const Home = () => {
           />
         </div>
 
-        {/* Floating Stars and Flowers */}
-        <FloatingElements count={6} section="testimonials" />
+        {/* Floating Stars and Flowers - White on pink background */}
+        <FloatingElements count={18} section="testimonials" backgroundType="pink" />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal direction="up">
             <div className="text-center mb-16 relative z-20">
-              <h2 className="text-5xl md:text-6xl font-black text-pink-900 mb-6 drop-shadow-md">
+              <h2 className="text-5xl md:text-6xl font-black text-white mb-6 drop-shadow-lg">
                 What Our Clients Say
               </h2>
-              <p className="text-xl text-pink-800 max-w-4xl mx-auto leading-relaxed font-semibold">
+              <p className="text-xl text-white/95 max-w-4xl mx-auto leading-relaxed font-semibold drop-shadow-md">
                 Real experiences from real people who trusted us with their special moments.
               </p>
             </div>
@@ -871,7 +954,7 @@ const Home = () => {
               {testimonials.slice(0, 6).map((testimonial, index) => (
                 <ScrollReveal key={testimonial.id || index} direction="up" delay={index * 0.1}>
                   <motion.div whileHover={{ y: -5 }}>
-                    <GlassCard className="p-6 border-2 border-pink-100 hover:border-pink-300 transition-all duration-300">
+                    <GlassCard className="p-6 border-2 border-white/30 hover:border-white/50 transition-all duration-300 bg-white/10 backdrop-blur-sm">
                       <TestimonialCard testimonial={testimonial} />
                     </GlassCard>
                   </motion.div>
@@ -882,10 +965,10 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Premium CTA Section */}
-      <section className="relative py-24 bg-gradient-to-br from-pink-500 via-red-500 to-pink-600 overflow-hidden">
-        {/* Darker Background Base */}
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-500/90 via-red-500/90 to-pink-600/90"></div>
+      {/* Premium CTA Section - Elegant Pink/Red */}
+      <section className="relative py-24 bg-gradient-to-br from-pink-400 via-red-400 to-pink-500 overflow-hidden">
+        {/* Elegant blend background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-500/80 via-red-500/80 to-pink-600/80"></div>
         
         {/* White Blur Overlays */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -924,8 +1007,8 @@ const Home = () => {
           />
         </div>
 
-        {/* Floating Stars and Flowers */}
-        <FloatingElements count={8} section="cta" />
+        {/* Floating Stars and Flowers - White on pink background */}
+        <FloatingElements count={22} section="cta" backgroundType="pink" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div

@@ -12,9 +12,12 @@ const BeatBloom = () => {
   const [filters, setFilters] = useState({
     category: '',
     minPrice: '',
-    maxPrice: '',
-    sortBy: 'createdAt',
-    sortOrder: 'desc'
+    maxPrice: ''
+  });
+  const [appliedFilters, setAppliedFilters] = useState({
+    category: '',
+    minPrice: '',
+    maxPrice: ''
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('grid');
@@ -37,7 +40,7 @@ const BeatBloom = () => {
 
   useEffect(() => {
     loadBeatBlooms();
-  }, [filters, pagination.current]);
+  }, [appliedFilters, pagination.current, searchQuery]);
 
   const loadBeatBlooms = async () => {
     try {
@@ -45,7 +48,8 @@ const BeatBloom = () => {
       const params = {
         page: pagination.current,
         limit: 12,
-        ...filters
+        ...appliedFilters,
+        ...(searchQuery && { search: searchQuery })
       };
 
       const response = await publicAPI.getBeatBlooms(params);
@@ -99,14 +103,21 @@ const BeatBloom = () => {
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    setAppliedFilters(filters);
     setPagination(prev => ({ ...prev, current: 1 }));
   };
 
   const handleSearch = (e) => {
     e.preventDefault();
-    // Implement search functionality
+    setPagination(prev => ({ ...prev, current: 1 }));
     loadBeatBlooms();
   };
+
+  // Check if filters have changed
+  const filtersChanged = JSON.stringify(filters) !== JSON.stringify(appliedFilters);
 
   const handlePageChange = (page) => {
     setPagination(prev => ({ ...prev, current: page }));
@@ -223,19 +234,15 @@ const BeatBloom = () => {
                   />
                 </div>
 
-                {/* Sort By */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-                  <select
-                    value={filters.sortBy}
-                    onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                {/* Apply Button */}
+                <div className="flex items-end">
+                  <Button
+                    onClick={handleApplyFilters}
+                    disabled={!filtersChanged}
+                    className={`w-full ${filtersChanged ? 'bg-pink-500 hover:bg-pink-600' : 'bg-gray-300 cursor-not-allowed'}`}
                   >
-                    <option value="createdAt">Newest First</option>
-                    <option value="price">Price</option>
-                    <option value="title">Name</option>
-                    <option value="rating">Rating</option>
-                  </select>
+                    Apply Filters
+                  </Button>
                 </div>
               </div>
             </div>

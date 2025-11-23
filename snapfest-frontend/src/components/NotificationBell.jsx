@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Bell, X, CheckCheck } from 'lucide-react';
 import { Badge } from './ui';
 import { adminAPI, vendorAPI } from '../services/api';
@@ -10,23 +11,31 @@ const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef(null);
+  const buttonRef = useRef(null);
 
   const API = userRole === 'admin' ? adminAPI : vendorAPI;
 
   useEffect(() => {
+    setMounted(true);
     fetchNotifications();
   }, [userRole]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (isOpen && 
+          buttonRef.current && 
+          !buttonRef.current.contains(event.target) &&
+          !event.target.closest('.notification-dropdown')) {
         setIsOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [isOpen]);
 
   // Listen for real-time notifications via WebSocket
   useEffect(() => {
@@ -156,16 +165,30 @@ const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
     }
   }, []);
 
+  // Calculate dropdown position
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
+
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 8,
+        right: window.innerWidth - rect.right
+      });
+    }
+  }, [isOpen]);
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
         title="Notifications"
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[18px] flex items-center justify-center">
+          <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[18px] flex items-center justify-center z-[10000]">
             {unreadCount > 9 ? '9+' : unreadCount}
           </Badge>
         )}
@@ -174,8 +197,14 @@ const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
         )}
       </button>
 
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-hidden flex flex-col">
+      {isOpen && mounted && createPortal(
+        <div 
+          className="notification-dropdown fixed w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-[99999] max-h-96 overflow-hidden flex flex-col"
+          style={{
+            top: `${dropdownPosition.top}px`,
+            right: `${dropdownPosition.right}px`
+          }}
+        >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <h3 className="font-semibold text-gray-900">Notifications</h3>
@@ -265,7 +294,8 @@ const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
               </button>
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

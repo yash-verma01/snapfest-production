@@ -11,6 +11,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 // Components
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
 
 // Admin Pages only - Lazy loaded
 import { SignIn, SignUp } from '@clerk/clerk-react';
@@ -98,6 +99,7 @@ function AdminApp() {
   return (
     <ErrorBoundary>
         <Router>
+          <ScrollToTop />
           <PortGuard>
             <div className="min-h-screen bg-gray-50">
               <Navbar />

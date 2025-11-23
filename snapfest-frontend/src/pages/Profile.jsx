@@ -43,7 +43,6 @@ const Profile = () => {
       pincode: '',
       country: 'India'
     },
-    dateOfBirth: ''
   });
 
   // Fetch backend profile on mount and when user changes
@@ -102,7 +101,6 @@ const Profile = () => {
             pincode: '',
             country: 'India'
           },
-          dateOfBirth: prev.dateOfBirth || ''
         }));
       } catch (error) {
         console.error('Error loading backend profile:', error);
@@ -119,7 +117,6 @@ const Profile = () => {
               pincode: '',
               country: 'India'
             },
-            dateOfBirth: ''
           });
         }
       }
@@ -239,8 +236,7 @@ const Profile = () => {
         state: '',
         pincode: '',
         country: 'India'
-      },
-      dateOfBirth: ''
+      }
     });
     setIsEditing(false);
   };
@@ -325,18 +321,6 @@ const Profile = () => {
                         type="tel"
                         name="phone"
                         value={formData.phone}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Date of Birth
-                      </label>
-                      <input
-                        type="date"
-                        name="dateOfBirth"
-                        value={formData.dateOfBirth}
                         onChange={handleInputChange}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       />
@@ -524,7 +508,7 @@ const Profile = () => {
                       <Package className="w-5 h-5 text-primary-600" />
                       <span className="text-gray-600">Total Bookings</span>
                     </div>
-                    <span className="font-semibold text-gray-900">{userStats.totalBookings || 0}</span>
+                    <span className="font-semibold text-gray-900">{userStats.bookings?.total || 0}</span>
                   </div>
                   
                   <div className="flex items-center justify-between">
@@ -532,17 +516,7 @@ const Profile = () => {
                       <Star className="w-5 h-5 text-yellow-500" />
                       <span className="text-gray-600">Reviews Given</span>
                     </div>
-                    <span className="font-semibold text-gray-900">{userStats.totalReviews || 0}</span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <CreditCard className="w-5 h-5 text-green-600" />
-                      <span className="text-gray-600">Total Spent</span>
-                    </div>
-                    <span className="font-semibold text-gray-900">
-                      ₹{userStats.totalSpent || 0}
-                    </span>
+                    <span className="font-semibold text-gray-900">{userStats.reviews?.total || 0}</span>
                   </div>
                 </div>
               </Card>

@@ -1362,8 +1362,14 @@ export const getAllPayments = asyncHandler(async (req, res) => {
   if (method) filter.method = method;
 
   const payments = await Payment.find(filter)
-    .populate('bookingId', 'userId packageId eventDate location status')
-    .populate('bookingId.userId', 'name email')
+    .populate({
+      path: 'bookingId',
+      select: 'userId packageId eventDate location status',
+      populate: {
+        path: 'userId',
+        select: 'name email _id'
+      }
+    })
     .populate('bookingId.packageId', 'title category basePrice')
     .sort({ createdAt: -1 })
     .skip(skip)
@@ -1863,6 +1869,36 @@ export const generateBookingVerificationOTP = asyncHandler(async (req, res) => {
     });
   }
 
+  // Validate userId is populated
+  if (!booking.userId) {
+    console.error('❌ Booking userId is null or not populated');
+    console.error('❌ Booking ID:', booking._id);
+    return res.status(400).json({
+      success: false,
+      message: 'User information not found for this booking. The user may have been deleted.',
+      data: {
+        bookingId: booking._id
+      }
+    });
+  }
+
+  // Validate email exists
+  if (!booking.userId.email || booking.userId.email.trim() === '') {
+    console.error('❌ User email is missing or empty');
+    console.error('❌ Booking ID:', booking._id);
+    console.error('❌ User ID:', booking.userId._id);
+    console.error('❌ User name:', booking.userId.name);
+    return res.status(400).json({
+      success: false,
+      message: 'User email is not available. Cannot send OTP email.',
+      data: {
+        bookingId: booking._id,
+        userId: booking.userId._id,
+        userName: booking.userId.name
+      }
+    });
+  }
+
   // Check if booking is COMPLETED (vendor has marked it complete)
   if (booking.vendorStatus !== 'COMPLETED') {
     return res.status(400).json({
@@ -1894,16 +1930,31 @@ export const generateBookingVerificationOTP = asyncHandler(async (req, res) => {
   await booking.save();
 
   // Send OTP to user via Email
+  const userEmail = booking.userId.email.trim();
+  console.log('📧 Preparing to send OTP email...');
+  console.log('📧 Booking ID:', booking._id);
+  console.log('📧 User ID:', booking.userId._id);
+  console.log('📧 User Name:', booking.userId.name);
+  console.log('📧 User Email:', userEmail);
+  console.log('📧 OTP Code:', otpData.code);
+  
   try {
-    const EmailService = (await import('../services/emailService.js')).default;
-    const emailService = new EmailService();
+    const getEmailService = (await import('../services/emailService.js')).default;
+    const emailService = getEmailService();
+    
+    // Check if email service is initialized
+    if (!emailService || !emailService.initialized) {
+      console.error('❌ Email service is not initialized');
+      console.error('❌ SENDGRID_API_KEY exists:', !!process.env.SENDGRID_API_KEY);
+      throw new Error('Email service is not configured. Please check SENDGRID_API_KEY in .env file');
+    }
     
     const emailSubject = 'Your Booking Verification OTP';
     const emailContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #e91e63;">Booking Verification OTP</h2>
-        <p>Hi ${booking.userId.name},</p>
-        <p>Your verification OTP for booking #${booking._id.slice(-8)} is:</p>
+        <p>Hi ${booking.userId.name || 'User'},</p>
+        <p>Your verification OTP for booking #${booking._id.toString().slice(-8)} is:</p>
         <div style="background: #f0f0f0; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; margin: 20px 0;">
           ${otpData.code}
         </div>
@@ -1912,10 +1963,35 @@ export const generateBookingVerificationOTP = asyncHandler(async (req, res) => {
       </div>
     `;
     
-    await emailService.sendEmail(booking.userId.email, emailSubject, emailContent);
+    console.log('📧 Calling emailService.sendEmail...');
+    const emailResult = await emailService.sendEmail(userEmail, emailSubject, emailContent);
+    console.log('✅ OTP email sent successfully!');
+    console.log('✅ Email result:', JSON.stringify(emailResult, null, 2));
   } catch (emailError) {
-    console.error('❌ Failed to send OTP email:', emailError);
-    // Continue even if email fails
+    console.error('❌ ========== OTP EMAIL ERROR ==========');
+    console.error('❌ Error type:', emailError.constructor.name);
+    console.error('❌ Error message:', emailError.message);
+    console.error('❌ Error stack:', emailError.stack);
+    console.error('❌ User email:', userEmail);
+    console.error('❌ Booking ID:', booking._id);
+    console.error('❌ ======================================');
+    
+    // Return error response instead of silently continuing
+    return res.status(500).json({
+      success: false,
+      message: 'OTP generated but failed to send email. Please try again or contact support.',
+      error: emailError.message,
+      data: {
+        bookingId: booking._id,
+        otp: otpData.code,
+        expiresAt: otpData.expiresAt,
+        emailError: true,
+        sentTo: {
+          email: userEmail,
+          phone: booking.userId.phone || 'Not available'
+        }
+      }
+    });
   }
 
   // Send OTP to user via SMS (if phone number exists)
@@ -1942,7 +2018,7 @@ export const generateBookingVerificationOTP = asyncHandler(async (req, res) => {
       otp: otpData.code,
       expiresAt: otpData.expiresAt,
       sentTo: {
-        email: booking.userId.email,
+        email: userEmail,
         phone: booking.userId.phone || 'Not available'
       }
     }

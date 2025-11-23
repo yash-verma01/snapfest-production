@@ -53,15 +53,8 @@ const TestimonialCard = memo(({
         </div>
       )}
 
-      {/* User Info */}
+      {/* User Info - No avatar */}
       <div className="flex items-center">
-        <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
-          <img
-            src={avatar || '/api/placeholder/40/40'}
-            alt={name}
-            className="w-full h-full object-cover"
-          />
-        </div>
         <div>
           <div className="font-semibold text-gray-900">{name}</div>
           {date && (

@@ -167,14 +167,156 @@ const BookingDetailsModal = ({ isOpen, onClose, bookingId }) => {
               </div>
 
               {/* Customization */}
-              {bookingDetails.booking.customization && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Customization</h3>
-                  <p className="text-gray-700 bg-gray-50 p-4 rounded-lg">
-                    {bookingDetails.booking.customization}
-                  </p>
-                </div>
-              )}
+              {bookingDetails.booking.customization && (() => {
+                console.log('🔍 Customization exists:', bookingDetails.booking.customization);
+                console.log('🔍 Customization type:', typeof bookingDetails.booking.customization);
+
+                let customizationData = null;
+                
+                // Parse customization JSON
+                try {
+                  const customStr = typeof bookingDetails.booking.customization === 'string' 
+                    ? bookingDetails.booking.customization 
+                    : JSON.stringify(bookingDetails.booking.customization);
+                  
+                  console.log('🔍 Customization string:', customStr);
+                  
+                  if (customStr && customStr.trim() !== '') {
+                    customizationData = JSON.parse(customStr);
+                    console.log('✅ Parsed customization data:', customizationData);
+                  } else {
+                    console.warn('⚠️ Customization string is empty');
+                    return null;
+                  }
+                } catch (e) {
+                  console.error('❌ Error parsing customization:', e);
+                  console.error('❌ Customization value:', bookingDetails.booking.customization);
+                  // If parsing fails, show fallback
+                  return (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Customization</h3>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <p className="text-gray-700 text-sm">
+                          {typeof bookingDetails.booking.customization === 'string' 
+                            ? bookingDetails.booking.customization.substring(0, 100) + (bookingDetails.booking.customization.length > 100 ? '...' : '')
+                            : 'Customization data available but could not be parsed'}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (!customizationData) {
+                  console.warn('⚠️ Customization data is null after parsing');
+                  return null;
+                }
+
+                const selectedCustomizations = customizationData.selectedCustomizations || {};
+                const removedFeatures = customizationData.removedFeatures || [];
+                const hasCustomizations = Object.keys(selectedCustomizations).length > 0;
+                const hasRemovedFeatures = Array.isArray(removedFeatures) && removedFeatures.length > 0;
+
+                console.log('🔍 Customization check:', {
+                  hasCustomizations,
+                  hasRemovedFeatures,
+                  selectedCustomizationsCount: Object.keys(selectedCustomizations).length,
+                  removedFeaturesCount: removedFeatures.length,
+                  selectedCustomizations: selectedCustomizations,
+                  removedFeatures: removedFeatures
+                });
+
+                if (!hasCustomizations && !hasRemovedFeatures) {
+                  console.warn('⚠️ No customizations or removed features found');
+                  return null;
+                }
+
+                return (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Customization Details</h3>
+                    
+                    {/* Selected Add-ons */}
+                    {hasCustomizations && (
+                      <div className="mb-4">
+                        <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                          <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                          Selected Add-ons
+                        </h4>
+                        <div className="space-y-2">
+                          {Object.values(selectedCustomizations).map((item, index) => (
+                            <div 
+                              key={index}
+                              className="bg-gradient-to-r from-pink-50 to-red-50 border border-pink-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2 mb-1">
+                                    <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center">
+                                      <span className="text-pink-600 font-bold text-sm">+</span>
+                                    </div>
+                                    <div>
+                                      <p className="font-semibold text-gray-900">{item.name || 'Add-on'}</p>
+                                      {item.quantity > 1 && (
+                                        <p className="text-xs text-gray-600">Quantity: {item.quantity}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-sm text-gray-600">
+                                    {item.quantity > 1 ? `${item.quantity} × ${formatPrice(item.price)}` : formatPrice(item.price)}
+                                  </p>
+                                  <p className="font-bold text-pink-600">
+                                    {formatPrice((item.price || 0) * (item.quantity || 1))}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Removed Features */}
+                    {hasRemovedFeatures && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                          <span className="w-2 h-2 bg-orange-500 rounded-full mr-2"></span>
+                          Removed Features
+                        </h4>
+                        <div className="space-y-2">
+                          {removedFeatures.map((feature, index) => (
+                            <div 
+                              key={index}
+                              className="bg-gray-50 border border-gray-200 rounded-lg p-4 opacity-75"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                    <span className="text-gray-500 font-bold text-sm">−</span>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-gray-600 line-through">{feature.name || 'Feature'}</p>
+                                    {feature.price > 0 && (
+                                      <p className="text-xs text-gray-500">Saved: {formatPrice(feature.price)}</p>
+                                    )}
+                                  </div>
+                                </div>
+                                {feature.price > 0 && (
+                                  <div className="text-right">
+                                    <p className="text-sm font-semibold text-green-600">
+                                      -{formatPrice(feature.price)}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Payment Summary */}
               <div>

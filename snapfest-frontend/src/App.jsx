@@ -10,6 +10,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 // Components
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
 
 // Lazy load all pages for code splitting
 const Home = lazy(() => import('./pages/Home'));
@@ -76,6 +77,7 @@ function App() {
   return (
     <ErrorBoundary>
       <Router>
+        <ScrollToTop />
         <div className="min-h-screen bg-gray-50">
           <Navbar />
           

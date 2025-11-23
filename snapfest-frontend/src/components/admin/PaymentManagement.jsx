@@ -221,6 +221,9 @@ const PaymentManagement = () => {
                   Customer
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Booking
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Amount
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -246,8 +249,13 @@ const PaymentManagement = () => {
                         {payment.bookingId?.userId?.name || 'N/A'}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {payment.bookingId?.userId?.email || 'N/A'}
+                        ID: {payment.bookingId?.userId?._id?.toString().slice(-8) || 'N/A'}
                       </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {payment.bookingId?._id?.toString().slice(-8) || 'N/A'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

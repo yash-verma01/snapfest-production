@@ -17,7 +17,8 @@ import {
   Star,
   Mail,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Clock
 } from 'lucide-react';
 import { useUser, useClerk } from '@clerk/clerk-react';
 import { adminAPI } from '../services/api';
@@ -197,7 +198,7 @@ const AdminDashboard = () => {
       title: 'Total Vendors',
       value: dashboardData?.overview?.totalVendors || 0,
       icon: <Shield className="w-6 h-6 text-green-600" />,
-      change: 'Active photographers',
+      change: 'Active vendors',
       changeType: 'positive',
       description: 'Total active vendors',
       trend: 'up'
