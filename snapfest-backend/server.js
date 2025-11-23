@@ -18,11 +18,13 @@ const envResult = dotenv.config({ path: join(__dirname, '.env') });
 // Now import everything else (after .env is loaded)
 // ============================================
 import express from 'express';
+import { createServer } from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import connectDB from './src/config/database.js';
+import { initializeSocket } from './src/socket/socketServer.js';
 import userRoutes from './src/routes/userRoutes.js';
 import vendorRoutes from './src/routes/vendorRoutes.js';
 import adminRoutes from './src/routes/adminRoutes.js';
@@ -74,7 +76,11 @@ console.log('✅ Single Clerk application configured');
 console.log(`   Publishable Key: ${process.env.CLERK_PUBLISHABLE_KEY.substring(0, 30)}...`);
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = process.env.PORT || 5001;
+
+// Initialize Socket.io BEFORE connecting to database
+initializeSocket(httpServer);
 
 // Connect Database
 connectDB();
@@ -357,17 +363,19 @@ app.use(errorLogger);
 // Error handler
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, () => {
+// Start server with HTTP server (for Socket.io)
+httpServer.listen(PORT, () => {
   logInfo('SnapFest Backend Server started successfully', {
     port: PORT,
     healthCheck: `http://localhost:${PORT}/api/health`,
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    websocket: 'enabled'
   });
   
   console.log(`🚀 SnapFest Backend Server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
   console.log(`📊 Health check: http://localhost:${PORT}`);
+  console.log(`🔌 WebSocket enabled on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
   console.log(`📝 Logs are being written to: ./logs/`);
 });

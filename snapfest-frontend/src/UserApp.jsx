@@ -176,7 +176,6 @@ function UserApp() {
               },
             }}
           />
-        </div>
         </Router>
       </AuthProvider>
     </ErrorBoundary>

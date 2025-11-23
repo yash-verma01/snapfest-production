@@ -4,6 +4,7 @@ import Button from '../ui/Button';
 import Card from '../ui/Card';
 import ModalPortal from './ModalPortal';
 import { toast } from 'react-hot-toast';
+import GooglePlacesAutocomplete from '../GooglePlacesAutocomplete';
 
 const BookingModal = ({ 
   isOpen, 
@@ -173,14 +174,13 @@ const BookingModal = ({
                 <MapPin className="w-4 h-4 inline mr-1" />
                 Event Location
               </label>
-              <input
-                type="text"
+              <GooglePlacesAutocomplete
                 value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="Enter event location"
-                className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
-                  errors.location ? 'border-red-500' : 'border-gray-300'
-                }`}
+                onChange={setLocation}
+                placeholder="Enter event location in Lucknow, UP"
+                className="w-full p-3"
+                error={!!errors.location}
+                required
               />
               {errors.location && (
                 <p className="text-red-500 text-sm mt-1">{errors.location}</p>

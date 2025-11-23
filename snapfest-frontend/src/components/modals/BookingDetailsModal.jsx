@@ -309,3 +309,5 @@ const BookingDetailsModal = ({ isOpen, onClose, bookingId }) => {
 
 export default BookingDetailsModal;
 
+
+

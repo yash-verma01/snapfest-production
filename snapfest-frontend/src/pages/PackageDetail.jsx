@@ -29,6 +29,7 @@ import { useUser } from '@clerk/clerk-react';
 import { useCart } from '../hooks';
 import { publicAPI, bookingAPI, paymentAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete';
 
 const PackageDetail = () => {
   const { id } = useParams();
@@ -645,15 +646,16 @@ const PackageDetail = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Event Location *
                     </label>
-                    <input
-                      type="text"
+                    <GooglePlacesAutocomplete
                       value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      placeholder="Enter event location (e.g., Hotel Grand, Mumbai)"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-sm"
+                      onChange={setLocation}
+                      placeholder="Enter event location in Lucknow, UP"
+                      className="w-full px-3 py-2"
                       required
                     />
-                    <p className="text-xs text-gray-500 mt-1">Minimum 5 characters required</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Start typing to see location suggestions
+                    </p>
                   </div>
                 </div>
               </div>

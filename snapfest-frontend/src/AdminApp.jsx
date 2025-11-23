@@ -146,7 +146,6 @@ function AdminApp() {
               },
             }}
           />
-        </div>
         </Router>
     </ErrorBoundary>
   );
