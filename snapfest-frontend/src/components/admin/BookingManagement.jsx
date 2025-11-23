@@ -182,6 +182,26 @@ const BookingManagement = ({ highlightBookingId, onBookingHighlighted }) => {
     }
   };
 
+  const handleProcessRefund = async (bookingId) => {
+    if (!window.confirm('Are you sure you want to process refund for this booking? This will refund all payments made by the user.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await adminAPI.processBookingRefund(bookingId, {
+        reason: 'Refund for cancelled booking'
+      });
+      toast.success('Refund processed successfully!');
+      loadBookings(false); // Silent refresh
+    } catch (error) {
+      console.error('Error processing refund:', error);
+      toast.error(error.response?.data?.message || 'Failed to process refund');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCloseVendorModal = () => {
     setShowVendorModal(false);
     setSelectedBooking(null);
@@ -377,6 +397,20 @@ const BookingManagement = ({ highlightBookingId, onBookingHighlighted }) => {
                             </span>
                           </Badge>
                         )}
+                        {/* Refund Status Badge */}
+                        {booking.refundStatus && booking.refundStatus !== 'NONE' && (
+                          <Badge className={
+                            booking.refundStatus === 'PROCESSED' ? 'bg-green-100 text-green-800' :
+                            booking.refundStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                            booking.refundStatus === 'FAILED' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }>
+                            <span className="text-xs">
+                              Refund: {booking.refundStatus}
+                              {booking.refundAmount > 0 && ` (₹${booking.refundAmount.toLocaleString()})`}
+                            </span>
+                          </Badge>
+                        )}
                         {/* Verification Status Badge */}
                         {booking.vendorStatus === 'COMPLETED' && booking.otpVerified && (
                           <Badge className="bg-green-100 text-green-800 text-xs flex items-center">
@@ -470,6 +504,19 @@ const BookingManagement = ({ highlightBookingId, onBookingHighlighted }) => {
                             className="text-red-600 hover:text-red-700"
                           >
                             <XCircle className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {/* Refund button - only show for cancelled bookings that haven't been refunded */}
+                        {booking.vendorStatus === 'CANCELLED' && 
+                         booking.refundStatus !== 'PROCESSED' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleProcessRefund(booking._id)}
+                            className="text-green-600 hover:text-green-700"
+                            title="Process Refund"
+                          >
+                            💰 Refund
                           </Button>
                         )}
                       </div>

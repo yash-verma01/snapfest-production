@@ -35,6 +35,7 @@ import {
   updateBookingStatus,
   cancelBooking,
   getBookingStats,
+  processBookingRefund,
   
   // Payment Management
   getAllPayments,
@@ -166,6 +167,7 @@ router.get('/bookings/stats', getBookingStats);
 router.get('/bookings/:id', getBookingById);
 router.put('/bookings/:id/status', updateBookingStatus);
 router.put('/bookings/:id/cancel', cancelBooking);
+router.post('/bookings/:id/refund', processBookingRefund);
 router.post('/bookings/:id/assign-vendor', assignVendorToBooking);
 router.post('/bookings/:id/generate-otp', generateBookingVerificationOTP);
 

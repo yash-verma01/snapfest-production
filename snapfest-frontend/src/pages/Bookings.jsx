@@ -21,6 +21,7 @@ import { userAPI, bookingAPI } from '../services/api';
 import { dateUtils } from '../utils';
 import BookingDetailsModal from '../components/modals/BookingDetailsModal';
 import SupportModal from '../components/modals/SupportModal';
+import toast from 'react-hot-toast';
 
 const Bookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -60,6 +61,24 @@ const Bookings = () => {
     } catch (error) {
       console.error('Error loading bookings:', error);
       setError(error.response?.data?.message || error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelBooking = async (bookingId) => {
+    if (!window.confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await bookingAPI.cancelBooking(bookingId);
+      toast.success('Booking cancelled successfully');
+      loadBookings(); // Reload bookings
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      toast.error(error.response?.data?.message || 'Failed to cancel booking');
     } finally {
       setLoading(false);
     }
@@ -265,6 +284,18 @@ const Bookings = () => {
 
                   {/* Actions */}
                   <div className="flex flex-col sm:flex-row gap-2 mt-4 lg:mt-0 lg:ml-6">
+                    {booking.vendorStatus !== 'CANCELLED' && 
+                     booking.vendorStatus !== 'COMPLETED' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCancelBooking(booking._id)}
+                        className="flex items-center space-x-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        <span>Cancel Booking</span>
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"

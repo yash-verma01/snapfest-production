@@ -235,6 +235,7 @@ export const adminAPI = {
   updateBooking: (id, data) => api.put(`/admin/bookings/${id}`, data),
   assignVendor: (id, data) => api.put(`/admin/bookings/${id}/assign-vendor`, data),
   cancelBooking: (id, data) => api.put(`/admin/bookings/${id}/cancel`, data),
+  processBookingRefund: (id, data) => api.post(`/admin/bookings/${id}/refund`, data),
   generateBookingOTP: (bookingId) => api.post(`/admin/bookings/${bookingId}/generate-otp`),
   
   // Payment Management

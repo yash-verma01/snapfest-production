@@ -1465,6 +1465,199 @@ export const processRefund = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Process refund for cancelled booking (Admin only)
+// @route   POST /api/admin/bookings/:id/refund
+// @access  Private/Admin
+export const processBookingRefund = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+  const adminId = req.userId;
+
+  // Find booking
+  const booking = await Booking.findById(id)
+    .populate('userId', 'name email phone');
+
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      message: 'Booking not found'
+    });
+  }
+
+  // Check if booking is cancelled
+  if (booking.vendorStatus !== 'CANCELLED') {
+    return res.status(400).json({
+      success: false,
+      message: 'Refund can only be processed for cancelled bookings'
+    });
+  }
+
+  // Check if refund already processed
+  if (booking.refundStatus === 'PROCESSED') {
+    return res.status(400).json({
+      success: false,
+      message: 'Refund has already been processed for this booking'
+    });
+  }
+
+  // Get all successful payments for this booking
+  const payments = await Payment.find({
+    bookingId: booking._id,
+    status: 'SUCCESS'
+  });
+
+  if (payments.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'No successful payments found for this booking'
+    });
+  }
+
+  // Calculate total refund amount (sum of all successful payments)
+  const totalRefundAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
+
+  // Update booking refund status to PENDING
+  booking.refundStatus = 'PENDING';
+  booking.refundAmount = totalRefundAmount;
+  await booking.save();
+
+  // Process refunds for each payment
+  const refundResults = [];
+  let allRefundsSuccessful = true;
+
+  for (const payment of payments) {
+    // Only process refunds for online payments (Razorpay)
+    if (payment.method === 'online' && payment.razorpayPaymentId) {
+      try {
+        const refundResult = await RazorpayService.processRefund(
+          payment.razorpayPaymentId,
+          payment.amount,
+          reason || `Refund for cancelled booking #${booking._id.toString().slice(-8)}`
+        );
+
+        if (refundResult.success) {
+          // Update payment record
+          payment.status = 'REFUNDED';
+          payment.refundId = refundResult.refund.id;
+          payment.refundAmount = payment.amount;
+          await payment.save();
+
+          refundResults.push({
+            paymentId: payment._id,
+            amount: payment.amount,
+            refundId: refundResult.refund.id,
+            status: 'SUCCESS'
+          });
+        } else {
+          allRefundsSuccessful = false;
+          refundResults.push({
+            paymentId: payment._id,
+            amount: payment.amount,
+            status: 'FAILED',
+            error: refundResult.error
+          });
+        }
+      } catch (error) {
+        allRefundsSuccessful = false;
+        refundResults.push({
+          paymentId: payment._id,
+          amount: payment.amount,
+          status: 'FAILED',
+          error: error.message
+        });
+      }
+    } else if (payment.method === 'cash') {
+      // For cash payments, mark as refunded but don't process through Razorpay
+      payment.status = 'REFUNDED';
+      payment.refundAmount = payment.amount;
+      await payment.save();
+
+      refundResults.push({
+        paymentId: payment._id,
+        amount: payment.amount,
+        status: 'SUCCESS',
+        note: 'Cash payment - refund marked as processed'
+      });
+    }
+  }
+
+  // Update booking refund status
+  if (allRefundsSuccessful) {
+    booking.refundStatus = 'PROCESSED';
+    booking.refundProcessedAt = new Date();
+    booking.refundProcessedBy = adminId;
+    if (refundResults.length > 0 && refundResults[0].refundId) {
+      booking.refundId = refundResults[0].refundId;
+    }
+  } else {
+    booking.refundStatus = 'FAILED';
+  }
+  await booking.save();
+
+  // Update booking payment status
+  booking.amountPaid = 0;
+  booking.paymentStatus = 'PENDING_PAYMENT';
+  booking.paymentPercentagePaid = 0;
+  booking.remainingPercentage = 100;
+  booking.remainingAmount = booking.totalAmount;
+  await booking.save();
+
+  // Send notification to user
+  try {
+    await notificationService.createNotification(
+      booking.userId._id,
+      'REFUND_PROCESSED',
+      'Refund Processed',
+      `Your refund of ₹${totalRefundAmount} has been processed for cancelled booking #${booking._id.toString().slice(-8)}`,
+      booking._id,
+      'Booking',
+      { bookingId: booking._id, refundAmount: totalRefundAmount }
+    );
+  } catch (notifError) {
+    console.error('Error sending refund notification:', notifError);
+  }
+
+  // Send email to user
+  try {
+    const getEmailService = (await import('../services/emailService.js')).default;
+    const emailService = getEmailService();
+    
+    await emailService.sendEmail(
+      booking.userId.email,
+      'SnapFest - Refund Processed',
+      `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #e91e63;">Refund Processed</h2>
+          <p>Dear ${booking.userId.name},</p>
+          <p>Your refund for cancelled booking #${booking._id.toString().slice(-8)} has been processed successfully.</p>
+          <div style="background: #f0f0f0; padding: 20px; margin: 20px 0; border-radius: 5px;">
+            <p><strong>Refund Amount:</strong> ₹${totalRefundAmount}</p>
+            <p><strong>Booking ID:</strong> #${booking._id.toString().slice(-8)}</p>
+            <p><strong>Processed At:</strong> ${new Date().toLocaleString()}</p>
+          </div>
+          <p>The refund will be credited to your original payment method within 5-7 business days.</p>
+          <p>Thank you for choosing SnapFest!</p>
+        </div>
+      `
+    );
+  } catch (emailError) {
+    console.error('Failed to send refund email:', emailError);
+  }
+
+  res.status(200).json({
+    success: allRefundsSuccessful,
+    message: allRefundsSuccessful 
+      ? 'Refund processed successfully' 
+      : 'Refund processed with some errors',
+    data: {
+      booking,
+      refundAmount: totalRefundAmount,
+      refundResults,
+      refundStatus: booking.refundStatus
+    }
+  });
+});
+
 export const getPaymentStats = asyncHandler(async (req, res) => {
   const totalPayments = await Payment.countDocuments();
   const successfulPayments = await Payment.countDocuments({ status: 'SUCCESS' });

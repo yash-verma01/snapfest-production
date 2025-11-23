@@ -118,6 +118,29 @@ const bookingSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     default: null
+  },
+  // Refund tracking fields
+  refundStatus: {
+    type: String,
+    enum: ['NONE', 'PENDING', 'PROCESSED', 'FAILED'],
+    default: 'NONE'
+  },
+  refundAmount: {
+    type: Number,
+    default: 0
+  },
+  refundProcessedAt: {
+    type: Date,
+    default: null
+  },
+  refundProcessedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  refundId: {
+    type: String,
+    default: null
   }
 }, {
   timestamps: true
