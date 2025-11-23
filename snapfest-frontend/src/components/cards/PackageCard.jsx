@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, ArrowRight, ShoppingCart } from 'lucide-react';
 import Card from '../ui/Card';
@@ -9,7 +9,7 @@ import { useCart } from '../../hooks';
 import { useUser } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 
-const PackageCard = ({
+const PackageCard = memo(({
   packageData: pkg,
   onBookNow,
   onViewDetails,
@@ -218,6 +218,16 @@ const PackageCard = ({
       />
     </Card>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison function for better memoization
+  return (
+    prevProps.packageData?._id === nextProps.packageData?._id &&
+    prevProps.showBookNow === nextProps.showBookNow &&
+    prevProps.showViewDetails === nextProps.showViewDetails &&
+    prevProps.className === nextProps.className
+  );
+});
+
+PackageCard.displayName = 'PackageCard';
 
 export default PackageCard;

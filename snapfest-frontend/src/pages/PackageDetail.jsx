@@ -30,6 +30,7 @@ import { useCart } from '../hooks';
 import { publicAPI, bookingAPI, paymentAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete';
+import LazyImage from '../components/LazyImage';
 
 const PackageDetail = () => {
   const { id } = useParams();
@@ -528,7 +529,7 @@ const PackageDetail = () => {
             <div className="space-y-4">
               {/* Main Image */}
               <div className="relative group">
-                <img
+                <LazyImage
                   src={packageData.images[selectedImage] || packageData.primaryImage}
                   alt={packageData.title}
                   className="w-full h-80 object-cover rounded-xl shadow-lg cursor-pointer transition-all duration-200 group-hover:shadow-xl"
@@ -558,7 +559,7 @@ const PackageDetail = () => {
               {packageData.images.length > 1 && (
                 <div className="grid grid-cols-4 gap-2">
                   {packageData.images.slice(0, 4).map((image, index) => (
-                    <img
+                    <LazyImage
                       key={index}
                       src={image}
                       alt={`${packageData.title} ${index + 1}`}

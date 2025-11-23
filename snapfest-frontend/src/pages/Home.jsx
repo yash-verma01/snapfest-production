@@ -18,43 +18,40 @@ const Home = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load featured packages (premium packages)
-        console.log('🏠 Home: Loading featured packages...');
-        const packagesResponse = await publicAPI.getFeaturedPackages();
-        console.log('🏠 Home: Featured packages response:', packagesResponse.data);
+        setLoading(true);
         
-        // Parse backend response correctly
+        // Parallel API calls for better performance
+        console.log('🏠 Home: Loading all data in parallel...');
+        const [packagesResponse, beatBloomResponse, testimonialsResponse] = await Promise.all([
+          publicAPI.getFeaturedPackages(),
+          publicAPI.getBeatBlooms({ limit: 6 }),
+          publicAPI.getTestimonials({ limit: 8 })
+        ]);
+        
+        console.log('🏠 Home: All API responses received');
+        
+        // Parse featured packages response
         if (packagesResponse.data.success && packagesResponse.data.data) {
           const featured = packagesResponse.data.data.packages || [];
-          console.log('🏠 Home: Parsed featured packages:', featured);
-          console.log('🏠 Home: Featured packages count:', featured.length);
+          console.log('🏠 Home: Parsed featured packages:', featured.length);
           setFeaturedPackages(Array.isArray(featured) ? featured.slice(0, 6) : []);
         } else {
-          console.error('🏠 Home: Invalid response format:', packagesResponse.data);
+          console.error('🏠 Home: Invalid packages response format');
           throw new Error('Invalid response format from backend');
         }
 
-        // Load Beat & Bloom packages
-        console.log('🏠 Home: Loading Beat & Bloom packages...');
-        const beatBloomResponse = await publicAPI.getBeatBlooms({ limit: 6 });
-        console.log('🏠 Home: Beat & Bloom response:', beatBloomResponse.data);
-        
+        // Parse Beat & Bloom response
         if (beatBloomResponse.data.success && beatBloomResponse.data.data) {
           const beatBloom = beatBloomResponse.data.data.items || [];
-          console.log('🏠 Home: Parsed Beat & Bloom packages:', beatBloom);
+          console.log('🏠 Home: Parsed Beat & Bloom packages:', beatBloom.length);
           setBeatBloomPackages(Array.isArray(beatBloom) ? beatBloom : []);
         } else {
           throw new Error('Invalid Beat & Bloom response format from backend');
         }
 
-        // Load testimonials from database
-        console.log('🏠 Home: Loading testimonials...');
-        const testimonialsResponse = await publicAPI.getTestimonials({ limit: 8 });
-        console.log('🏠 Home: Testimonials response:', testimonialsResponse.data);
-        
+        // Parse testimonials response
         if (testimonialsResponse.data.success && testimonialsResponse.data.data) {
           const testimonials = testimonialsResponse.data.data.testimonials || [];
-          console.log('🏠 Home: Parsed testimonials:', testimonials);
           console.log('🏠 Home: Number of testimonials found:', testimonials.length);
           
           if (testimonials.length > 0) {
@@ -73,7 +70,7 @@ const Home = () => {
               location: 'India'
             }));
             
-            console.log('🏠 Home: Transformed testimonials:', transformedTestimonials);
+            console.log('🏠 Home: Transformed testimonials:', transformedTestimonials.length);
             setTestimonials(transformedTestimonials);
           } else {
             console.log('🏠 Home: No approved testimonials found, using dummy data');

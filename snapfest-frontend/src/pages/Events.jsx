@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Calendar, 
@@ -78,35 +78,41 @@ const EventsEnhanced = () => {
     loadEvents();
   }, [selectedType, selectedLocation, selectedDateRange, sortBy]);
 
-  const filteredEvents = events.filter(event => {
-    const matchesSearch = !searchQuery || 
-      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesType = !selectedType || event.type === selectedType;
-    const matchesLocation = !selectedLocation || 
-      (typeof event.location === 'string' 
-        ? event.location.toLowerCase().includes(selectedLocation.toLowerCase())
-        : (event.location?.name || event.location?.fullAddress || '').toLowerCase().includes(selectedLocation.toLowerCase())
-      );
-    
-    return matchesSearch && matchesType && matchesLocation;
-  });
+  // Memoize filtered events to avoid recalculating on every render
+  const filteredEvents = useMemo(() => {
+    return events.filter(event => {
+      const matchesSearch = !searchQuery || 
+        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.description.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesType = !selectedType || event.type === selectedType;
+      const matchesLocation = !selectedLocation || 
+        (typeof event.location === 'string' 
+          ? event.location.toLowerCase().includes(selectedLocation.toLowerCase())
+          : (event.location?.name || event.location?.fullAddress || '').toLowerCase().includes(selectedLocation.toLowerCase())
+        );
+      
+      return matchesSearch && matchesType && matchesLocation;
+    });
+  }, [events, searchQuery, selectedType, selectedLocation]);
 
-  const sortedEvents = [...filteredEvents].sort((a, b) => {
-    switch (sortBy) {
-      case 'date':
-        return new Date(a.date) - new Date(b.date);
-      case 'title':
-        return a.title.localeCompare(b.title);
-      case 'price':
-        return a.price - b.price;
-      case 'popularity':
-        return b.attendees - a.attendees;
-      default:
-        return 0;
-    }
-  });
+  // Memoize sorted events to avoid recalculating on every render
+  const sortedEvents = useMemo(() => {
+    return [...filteredEvents].sort((a, b) => {
+      switch (sortBy) {
+        case 'date':
+          return new Date(a.date) - new Date(b.date);
+        case 'title':
+          return a.title.localeCompare(b.title);
+        case 'price':
+          return a.price - b.price;
+        case 'popularity':
+          return b.attendees - a.attendees;
+        default:
+          return 0;
+      }
+    });
+  }, [filteredEvents, sortBy]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-IN', {

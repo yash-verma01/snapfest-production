@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Calculator, Plus, Minus, DollarSign, Info } from 'lucide-react';
 import { Card, Button, Badge } from './ui';
 
@@ -13,19 +13,37 @@ const PriceCalculator = ({
   const [travelFee, setTravelFee] = useState(0);
   const [taxRate] = useState(0.18); // 18% GST
 
-  // Calculate pricing
+  // Memoize pricing calculations to avoid recalculating on every render
   const basePrice = packageData?.basePrice || 0;
   const perGuestPrice = packageData?.perGuestPrice || 0;
-  const subtotal = (basePrice + (perGuestPrice * guests));
   
-  const addOnsTotal = selectedAddOns.reduce((total, addOn) => {
-    const addOnData = addOns.find(a => a._id === addOn.id);
-    return total + (addOnData?.price || 0) * addOn.quantity;
-  }, 0);
+  const subtotal = useMemo(() => 
+    basePrice + (perGuestPrice * guests),
+    [basePrice, perGuestPrice, guests]
+  );
   
-  const beforeTax = subtotal + addOnsTotal + travelFee;
-  const tax = beforeTax * taxRate;
-  const total = beforeTax + tax;
+  const addOnsTotal = useMemo(() => 
+    selectedAddOns.reduce((total, addOn) => {
+      const addOnData = addOns.find(a => a._id === addOn.id);
+      return total + (addOnData?.price || 0) * addOn.quantity;
+    }, 0),
+    [selectedAddOns, addOns]
+  );
+  
+  const beforeTax = useMemo(() => 
+    subtotal + addOnsTotal + travelFee,
+    [subtotal, addOnsTotal, travelFee]
+  );
+  
+  const tax = useMemo(() => 
+    beforeTax * taxRate,
+    [beforeTax, taxRate]
+  );
+  
+  const total = useMemo(() => 
+    beforeTax + tax,
+    [beforeTax, tax]
+  );
 
   // Notify parent component of price changes
   useEffect(() => {

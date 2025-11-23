@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Star, Quote } from 'lucide-react';
 import Card from '../ui/Card';
 
-const TestimonialCard = ({
+const TestimonialCard = memo(({
   testimonial,
   className = ''
 }) => {
@@ -71,7 +71,15 @@ const TestimonialCard = ({
       </div>
     </Card>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison function for better memoization
+  return (
+    prevProps.testimonial?.id === nextProps.testimonial?.id &&
+    prevProps.className === nextProps.className
+  );
+});
+
+TestimonialCard.displayName = 'TestimonialCard';
 
 export default TestimonialCard;
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   MapPin, 
@@ -56,16 +56,17 @@ const Venues = () => {
     loadVenues();
   }, [selectedLocation, selectedCapacity, selectedPriceRange, sortBy]);
 
-
-
-  const filteredVenues = venues.filter(venue => {
-    const matchesSearch = venue.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         venue.location.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesLocation = !selectedLocation || venue.location.includes(selectedLocation);
-    const matchesCapacity = !selectedCapacity || venue.capacity.includes(selectedCapacity);
-    
-    return matchesSearch && matchesLocation && matchesCapacity;
-  });
+  // Memoize filtered venues to avoid recalculating on every render
+  const filteredVenues = useMemo(() => {
+    return venues.filter(venue => {
+      const matchesSearch = venue.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           venue.location.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesLocation = !selectedLocation || venue.location.includes(selectedLocation);
+      const matchesCapacity = !selectedCapacity || venue.capacity.includes(selectedCapacity);
+      
+      return matchesSearch && matchesLocation && matchesCapacity;
+    });
+  }, [venues, searchQuery, selectedLocation, selectedCapacity]);
 
   const locations = ['Mumbai', 'Delhi', 'Bangalore', 'Goa', 'Chennai', 'Pune'];
   const capacities = ['100-200', '200-500', '500-1000', '1000+'];

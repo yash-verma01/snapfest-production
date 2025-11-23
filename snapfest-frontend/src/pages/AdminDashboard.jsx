@@ -31,6 +31,7 @@ import EventManagement from '../components/admin/EventManagement';
 import VenueManagement from '../components/admin/VenueManagement';
 import BeatBloomManagement from '../components/admin/BeatBloomManagement';
 import EnquiryManagement from '../components/admin/EnquiryManagement';
+import NotificationManagement from '../components/admin/NotificationManagement';
 import NotificationBell from '../components/NotificationBell';
 
 const AdminDashboard = () => {
@@ -535,6 +536,14 @@ const AdminDashboard = () => {
                     <MessageSquare className="w-4 h-4 mr-2" />
                     Manage Testimonials
                   </Button>
+                  <Button 
+                    variant="outline" 
+                    className={`w-full justify-start ${activeTab === 'notifications' ? 'bg-primary-50 text-primary-600' : ''}`}
+                    onClick={() => handleNavigation('notifications')}
+                  >
+                    <Bell className="w-4 h-4 mr-2" />
+                    Notifications
+                  </Button>
                 </div>
               </Card>
             </div>
@@ -550,6 +559,7 @@ const AdminDashboard = () => {
         {activeTab === 'enquiries' && <EnquiryManagement />}
         {activeTab === 'vendors' && <VendorManagement />}
         {activeTab === 'payments' && <PaymentManagement />}
+        {activeTab === 'notifications' && <NotificationManagement />}
         {activeTab === 'testimonials' && (
           <div className="space-y-6">
             {/* Testimonial Stats */}

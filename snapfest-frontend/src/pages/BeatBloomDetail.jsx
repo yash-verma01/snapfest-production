@@ -7,6 +7,7 @@ import { useUser } from '@clerk/clerk-react';
 import { useCart } from '../hooks';
 import toast from 'react-hot-toast';
 import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete';
+import LazyImage from '../components/LazyImage';
 
 const BeatBloomDetail = () => {
   const { id } = useParams();
@@ -330,7 +331,7 @@ const BeatBloomDetail = () => {
             {/* Image Gallery */}
             <div className="mb-8">
               <div className="relative">
-                <img
+                <LazyImage
                   src={beatBloom.images?.[selectedImage] || 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop'}
                   alt={beatBloom.title}
                   className="w-full h-96 object-cover rounded-2xl shadow-xl"
@@ -353,7 +354,7 @@ const BeatBloomDetail = () => {
                         selectedImage === index ? 'border-pink-500' : 'border-gray-200'
                       }`}
                     >
-                      <img
+                      <LazyImage
                         src={image}
                         alt={`${beatBloom.title} ${index + 1}`}
                         className="w-full h-full object-cover"

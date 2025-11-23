@@ -249,7 +249,16 @@ const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
           {notifications.length > 0 && (
             <div className="p-3 border-t border-gray-200 text-center">
               <button
-                onClick={() => window.location.href = userRole === 'admin' ? '/admin/notifications' : '/vendor/notifications'}
+                onClick={() => {
+                  setIsOpen(false);
+                  // Use onNavigate callback if provided (for Admin/Vendor Dashboard)
+                  if (onNavigate) {
+                    onNavigate('notifications');
+                  } else {
+                    // Fallback for other cases - navigate to dashboard with notifications tab
+                    window.location.href = userRole === 'admin' ? '/admin/dashboard?tab=notifications' : '/vendor/dashboard?tab=notifications';
+                  }
+                }}
                 className="text-sm text-blue-600 hover:text-blue-700"
               >
                 View all notifications

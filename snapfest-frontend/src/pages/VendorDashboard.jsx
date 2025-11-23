@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Calendar, 
@@ -23,6 +23,7 @@ import OTPVerification from '../components/vendor/OTPVerification';
 import VendorBookingCard from '../components/vendor/VendorBookingCard';
 import ModalPortal from '../components/modals/ModalPortal';
 import NotificationBell from '../components/NotificationBell';
+import VendorNotificationManagement from '../components/vendor/VendorNotificationManagement';
 import { Card, Button, Badge } from '../components/ui';
 
 const VendorDashboard = () => {
@@ -50,6 +51,14 @@ const VendorDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showBookingDetails, setShowBookingDetails] = useState(false);
   const [selectedBookingDetails, setSelectedBookingDetails] = useState(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  // Navigation handler for notifications
+  const handleNotificationNavigation = (tab) => {
+    if (tab === 'notifications') {
+      setShowNotifications(true);
+    }
+  };
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -146,8 +155,8 @@ const VendorDashboard = () => {
     window.location.reload();
   };
   
-  // Filter bookings function
-  const getFilteredBookings = () => {
+  // Memoize filtered bookings to avoid recalculating on every render
+  const filteredBookings = useMemo(() => {
     let filtered = bookings || [];
     
     // Filter by status
@@ -182,7 +191,7 @@ const VendorDashboard = () => {
     }
     
     return filtered;
-  };
+  }, [bookings, bookingFilter, searchQuery]);
   
   // View booking details handler
   const handleViewDetails = (booking) => {
@@ -291,7 +300,10 @@ const VendorDashboard = () => {
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <NotificationBell userRole="vendor" />
+              <NotificationBell 
+                userRole="vendor" 
+                onNavigate={handleNotificationNavigation}
+              />
               <Link to="/vendor/profile">
                 <Button variant="outline" size="sm">
                   <User className="w-4 h-4 mr-2" />
@@ -326,21 +338,38 @@ const VendorDashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <VendorStatsCard
-              key={index}
-              title={stat.title}
-              value={stat.value}
-              icon={stat.icon}
-              change={stat.change}
-              changeType={stat.changeType}
-              description={stat.description}
-              trend={stat.trend}
-            />
-          ))}
-        </div>
+        {/* Show Notifications Section if requested */}
+        {showNotifications ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">Notifications</h2>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowNotifications(false)}
+              >
+                ← Back to Dashboard
+              </Button>
+            </div>
+            <VendorNotificationManagement />
+          </div>
+        ) : (
+          <>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {stats.map((stat, index) => (
+                <VendorStatsCard
+                  key={index}
+                  title={stat.title}
+                  value={stat.value}
+                  icon={stat.icon}
+                  change={stat.change}
+                  changeType={stat.changeType}
+                  description={stat.description}
+                  trend={stat.trend}
+                />
+              ))}
+            </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -473,7 +502,7 @@ const VendorDashboard = () => {
                   <p className="text-gray-600 mb-2">No bookings yet</p>
                   <p className="text-sm text-gray-500">Your bookings will appear here</p>
                 </div>
-              ) : getFilteredBookings().length === 0 ? (
+              ) : filteredBookings.length === 0 ? (
                 <div className="text-center py-8">
                   <Filter className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600 mb-2">No bookings match your filters</p>
@@ -483,7 +512,7 @@ const VendorDashboard = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {getFilteredBookings().map((booking) => (
+                  {filteredBookings.map((booking) => (
                     <div key={booking._id} className="relative">
                       {/* Assigned Badge */}
                       {booking.assignedVendorId && (
@@ -568,7 +597,8 @@ const VendorDashboard = () => {
             </Card>
           </div>
         </div>
-      </div>
+          </>
+        )}
 
       {/* OTP Verification Modal */}
       {showOTPModal && (

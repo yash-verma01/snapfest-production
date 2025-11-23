@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 // Auth handled by Clerk
@@ -6,16 +6,17 @@ import { SignedIn, SignedOut, RedirectToSignIn, useUser, useAuth } from '@clerk/
 import { userAPI } from './services/api';
 import ErrorBoundary from './components/ErrorBoundary';
 import PortGuard from './components/PortGuard';
+import LoadingSpinner from './components/LoadingSpinner';
 
 // Components
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
-// Admin Pages only
+// Admin Pages only - Lazy loaded
 import { SignIn, SignUp } from '@clerk/clerk-react';
-import AdminDashboard from './pages/AdminDashboard';
-import AdminProfile from './pages/AdminProfile';
-import NotFound from './pages/NotFound';
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const AdminProfile = lazy(() => import('./pages/AdminProfile'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 // Protected Route Component
 import ProtectedRoute from './components/ProtectedRoute';
@@ -102,19 +103,21 @@ function AdminApp() {
               <Navbar />
               
               <main className="min-h-screen">
-              <Routes>
-              {/* Root redirect for admins */}
-              <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="/sign-in/*" element={<SignIn />} />
-              <Route path="/sign-up/*" element={<SignUp />} />
-              
-              {/* Protected Routes - Admin Only */}
-              <Route path="/admin/dashboard" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
-              <Route path="/admin/profile" element={<AdminGuard><AdminProfile /></AdminGuard>} />
-              
-              {/* 404 Route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+              <Suspense fallback={<LoadingSpinner />}>
+                <Routes>
+                  {/* Root redirect for admins */}
+                  <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+                  <Route path="/sign-in/*" element={<SignIn />} />
+                  <Route path="/sign-up/*" element={<SignUp />} />
+                  
+                  {/* Protected Routes - Admin Only */}
+                  <Route path="/admin/dashboard" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
+                  <Route path="/admin/profile" element={<AdminGuard><AdminProfile /></AdminGuard>} />
+                  
+                  {/* 404 Route */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
           </main>
           
           <Footer />

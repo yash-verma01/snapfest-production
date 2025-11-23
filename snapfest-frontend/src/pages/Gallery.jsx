@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Camera, 
@@ -68,17 +68,20 @@ const Gallery = () => {
     loadEvents();
   }, []);
 
-  const filteredImages = allImages.filter(image => {
-    const matchesSearch = !searchQuery || 
-      image.eventTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      image.eventType.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesType = !selectedType || image.eventType === selectedType;
-    const matchesLocation = !selectedLocation || 
-      image.eventLocation.toLowerCase().includes(selectedLocation.toLowerCase());
-    
-    return matchesSearch && matchesType && matchesLocation;
-  });
+  // Memoize filtered images to avoid recalculating on every render
+  const filteredImages = useMemo(() => {
+    return allImages.filter(image => {
+      const matchesSearch = !searchQuery || 
+        image.eventTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        image.eventType.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesType = !selectedType || image.eventType === selectedType;
+      const matchesLocation = !selectedLocation || 
+        image.eventLocation.toLowerCase().includes(selectedLocation.toLowerCase());
+      
+      return matchesSearch && matchesType && matchesLocation;
+    });
+  }, [allImages, searchQuery, selectedType, selectedLocation]);
 
   if (loading) {
     return (

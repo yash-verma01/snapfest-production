@@ -1,4 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+
+// Debounce utility
+const debounce = (func, wait) => {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+};
 
 const MasonryGrid = ({ 
   children, 
@@ -9,50 +22,78 @@ const MasonryGrid = ({
   const [columnHeights, setColumnHeights] = useState([]);
   const [items, setItems] = useState([]);
   const gridRef = useRef(null);
+  const itemRefs = useRef([]);
 
+  // Memoize items to avoid unnecessary recalculations
   useEffect(() => {
     if (children && children.length > 0) {
       setItems(Array.isArray(children) ? children : [children]);
     }
   }, [children]);
 
-  useEffect(() => {
-    const calculateLayout = () => {
-      if (!gridRef.current || items.length === 0) return;
+  // Optimized layout calculation with actual height measurement
+  const calculateLayout = useCallback(() => {
+    if (!gridRef.current || items.length === 0) return;
 
-      const gridWidth = gridRef.current.offsetWidth;
-      const columnWidth = (gridWidth - (gap * (columns - 1))) / columns;
-      const newColumnHeights = new Array(columns).fill(0);
-      const newItems = [];
+    const gridWidth = gridRef.current.offsetWidth;
+    if (gridWidth === 0) return; // Skip if not visible
 
-      items.forEach((item, index) => {
-        // Find the shortest column
-        const shortestColumn = newColumnHeights.indexOf(Math.min(...newColumnHeights));
-        
-        newItems.push({
-          ...item,
-          column: shortestColumn,
-          top: newColumnHeights[shortestColumn],
-          left: shortestColumn * (columnWidth + gap)
-        });
+    const columnWidth = (gridWidth - (gap * (columns - 1))) / columns;
+    const newColumnHeights = new Array(columns).fill(0);
+    const newItems = [];
 
-        // Estimate item height (you might want to make this more sophisticated)
-        const estimatedHeight = 300 + Math.random() * 200; // Random height for demo
-        newColumnHeights[shortestColumn] += estimatedHeight + gap;
+    items.forEach((item, index) => {
+      // Find the shortest column
+      const shortestColumn = newColumnHeights.indexOf(Math.min(...newColumnHeights));
+      
+      // Try to get actual height from ref, otherwise estimate
+      let itemHeight = 300; // Default estimate
+      if (itemRefs.current[index]?.offsetHeight) {
+        itemHeight = itemRefs.current[index].offsetHeight;
+      }
+      
+      newItems.push({
+        ...item,
+        column: shortestColumn,
+        top: newColumnHeights[shortestColumn],
+        left: shortestColumn * (columnWidth + gap),
+        width: columnWidth
       });
 
-      setColumnHeights(newColumnHeights);
-    };
+      newColumnHeights[shortestColumn] += itemHeight + gap;
+    });
 
+    setColumnHeights(newColumnHeights);
+  }, [items, columns, gap]);
+
+  // Debounced resize handler
+  const debouncedCalculateLayout = useMemo(
+    () => debounce(calculateLayout, 150),
+    [calculateLayout]
+  );
+
+  useEffect(() => {
+    // Initial calculation
     calculateLayout();
     
-    const handleResize = () => {
-      setTimeout(calculateLayout, 100);
-    };
-
+    // Use ResizeObserver for better performance than window resize
+    let resizeObserver;
+    if (gridRef.current && window.ResizeObserver) {
+      resizeObserver = new ResizeObserver(debouncedCalculateLayout);
+      resizeObserver.observe(gridRef.current);
+    }
+    
+    // Fallback to window resize if ResizeObserver not available
+    const handleResize = debouncedCalculateLayout;
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [items, columns, gap]);
+    
+    return () => {
+      if (resizeObserver && gridRef.current) {
+        resizeObserver.unobserve(gridRef.current);
+      }
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [calculateLayout, debouncedCalculateLayout]);
 
   return (
     <div 
@@ -63,9 +104,10 @@ const MasonryGrid = ({
       {items.map((item, index) => (
         <div
           key={index}
+          ref={(el) => { itemRefs.current[index] = el; }}
           className="absolute transition-all duration-300 ease-in-out"
           style={{
-            width: `${(100 / columns) - (gap / gridRef.current?.offsetWidth * 100)}%`,
+            width: item.width ? `${item.width}px` : `${(100 / columns) - (gap / (gridRef.current?.offsetWidth || 1) * 100)}%`,
             left: `${item.left}px`,
             top: `${item.top}px`
           }}
