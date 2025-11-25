@@ -1,7 +1,7 @@
 import React, { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { SignIn, SignUp, RedirectToSignIn, SignedIn, SignedOut, useAuth } from '@clerk/clerk-react';
+import { SignIn, SignUp, RedirectToSignIn, SignedIn, SignedOut, useAuth, useUser } from '@clerk/clerk-react';
 import RoleBasedAuth from './components/auth/RoleBasedAuth';
 import { userAPI } from './services/api';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -51,10 +51,21 @@ function App() {
   // NOTE: Switched to cookie-based sessions - no JWT tokens needed
   // The browser automatically sends session cookies with requests (withCredentials: true in api.js)
   const { isSignedIn } = useAuth();
+  const { user } = useUser();
   
   useEffect(() => {
     const sync = async () => {
       if (!isSignedIn) return;
+      
+      // Skip sync for vendors and admins - let VendorApp/AdminApp handle their sync
+      // This prevents race conditions where user is created with wrong role
+      const userRole = user?.publicMetadata?.role;
+      if (userRole === 'vendor' || userRole === 'admin') {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`⏭️ App.jsx: Skipping sync for ${userRole} - let ${userRole === 'vendor' ? 'VendorApp' : 'AdminApp'} handle it`);
+        }
+        return;
+      }
       
       try {
         // Simply call sync endpoint - cookies are sent automatically by axios
@@ -73,7 +84,7 @@ function App() {
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [isSignedIn]);
+  }, [isSignedIn, user]);
   return (
     <ErrorBoundary>
       <Router>

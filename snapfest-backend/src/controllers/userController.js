@@ -1809,96 +1809,183 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
     const adminEmails = adminEmailsEnv ? adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()) : [];
     const normalizedEmail = finalEmail.toLowerCase().trim();
     
-    // Check if user should be admin based on metadata or email
-    const isAdmin = publicMetadata?.role === 'admin' ||
+    // CRITICAL FIX: Check targetRole FIRST (from query parameter), then metadata/email
+    // This ensures role from frontend takes priority over metadata that might not be set yet
+    // Check if user should be admin based on targetRole OR metadata or email
+    const isAdmin = targetRole === 'admin' ||
+                   publicMetadata?.role === 'admin' ||
                    normalizedEmail === adminEmail.toLowerCase() ||
                    adminEmails.includes(normalizedEmail);
     
-    // Check if user is vendor (based on metadata only, not ports)
-    if (publicMetadata?.role === 'vendor') {
+    // CRITICAL FIX: Check targetRole FIRST for vendor (from query parameter), then metadata
+    // This ensures role from frontend takes priority over metadata that might not be set yet
+    const isVendor = targetRole === 'vendor' || publicMetadata?.role === 'vendor';
+    
+    // Check if user is vendor (based on targetRole OR metadata)
+    if (isVendor) {
       
-      // If vendor role is set, create/find vendor user
-      if (publicMetadata?.role === 'vendor') {
-        // Find or create user with vendor role
-        let vendor = await User.findOne({ clerkId: clerkAuth.userId, role: 'vendor' });
+      // If vendor role is set (via targetRole or metadata), create/find vendor user
+      // Find or create user with vendor role
+      let vendor = await User.findOne({ clerkId: clerkAuth.userId, role: 'vendor' });
         
-        if (!vendor) {
-          // Check if user exists with different role - update to vendor
-          const existingUser = await User.findOne({ clerkId: clerkAuth.userId });
-          if (existingUser) {
-            existingUser.role = 'vendor';
-            if (!existingUser.businessName) {
-              existingUser.businessName = `${finalName || finalEmail.split('@')[0]}'s Business`;
-              existingUser.servicesOffered = [];
-              existingUser.experience = 0;
-              existingUser.availability = 'AVAILABLE';
-              existingUser.profileComplete = false;
-              existingUser.earningsSummary = {
-                totalEarnings: 0,
-                thisMonthEarnings: 0,
-                totalBookings: 0
-              };
-            }
-            vendor = await existingUser.save();
-          } else {
-            vendor = await User.create({
-              clerkId: clerkAuth.userId,
-              name: finalName || finalEmail.split('@')[0],
-              email: finalEmail.toLowerCase().trim(),
-              role: 'vendor',
-              isActive: true,
-              businessName: `${finalName || finalEmail.split('@')[0]}'s Business`,
-              servicesOffered: [],
-              experience: 0,
-              availability: 'AVAILABLE',
-              profileComplete: false,
-              earningsSummary: {
-                totalEarnings: 0,
-                thisMonthEarnings: 0,
-                totalBookings: 0
-              }
-            });
+      if (!vendor) {
+        // Check if user exists with different role - update to vendor
+        const existingUser = await User.findOne({ clerkId: clerkAuth.userId });
+        if (existingUser) {
+          const oldRole = existingUser.role;
+          existingUser.role = 'vendor';
+          if (!existingUser.businessName) {
+            existingUser.businessName = `${finalName || finalEmail.split('@')[0]}'s Business`;
+            existingUser.servicesOffered = [];
+            existingUser.experience = 0;
+            existingUser.availability = 'AVAILABLE';
+            existingUser.profileComplete = false;
+            existingUser.earningsSummary = {
+              totalEarnings: 0,
+              thisMonthEarnings: 0,
+              totalBookings: 0
+            };
           }
+          vendor = await existingUser.save();
           
           if (process.env.NODE_ENV === 'development') {
-            console.log('✅ syncClerkUser: Created/updated vendor user:', { vendorId: vendor._id, email: vendor.email });
+            console.log(`✅ syncClerkUser: Updated existing user from '${oldRole}' to 'vendor'`);
+          }
+        } else {
+          vendor = await User.create({
+            clerkId: clerkAuth.userId,
+            name: finalName || finalEmail.split('@')[0],
+            email: finalEmail.toLowerCase().trim(),
+            role: 'vendor',
+            isActive: true,
+            businessName: `${finalName || finalEmail.split('@')[0]}'s Business`,
+            servicesOffered: [],
+            experience: 0,
+            availability: 'AVAILABLE',
+            profileComplete: false,
+            earningsSummary: {
+              totalEarnings: 0,
+              thisMonthEarnings: 0,
+              totalBookings: 0
+            }
+          });
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ syncClerkUser: Created new vendor user:', { vendorId: vendor._id, email: vendor.email });
           }
         }
-        
-        // Return vendor data, not user data
-        return res.status(200).json({
-          success: true,
-          message: 'Vendor synced (via user sync endpoint from port 3001)',
-          data: {
-            vendor: {
-              id: vendor._id,
-              clerkId: vendor.clerkId,
-              name: vendor.name,
-              email: vendor.email,
-              phone: vendor.phone,
-              businessName: vendor.businessName,
-              availability: vendor.availability,
-              profileComplete: vendor.profileComplete,
-              earningsSummary: vendor.earningsSummary,
-              createdAt: vendor.createdAt,
-              updatedAt: vendor.updatedAt,
-            }
-          }
-        });
       }
-    }
-    
-    // Auto-set role based on port if not already set (for non-vendor ports)
-    // If vendor role detected, redirect to vendor sync endpoint
-    if (publicMetadata?.role === 'vendor') {
+      
+      // Ensure Clerk metadata is set to vendor if not already set
+      if (publicMetadata?.role !== 'vendor') {
+        try {
+          const clerkClient = getClerkClient();
+          await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
+            publicMetadata: { 
+              ...publicMetadata,
+              role: 'vendor' 
+            }
+          });
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ syncClerkUser: Set vendor role in Clerk publicMetadata');
+          }
+        } catch (updateError) {
+          console.error('❌ syncClerkUser: Failed to update Clerk metadata for vendor:', updateError.message);
+        }
+      }
+      
+      // Return vendor data, not user data
       return res.status(200).json({
         success: true,
-        message: 'User is a vendor. Please use /api/vendors/sync endpoint.',
+        message: 'Vendor synced',
+        data: {
+          vendor: {
+            id: vendor._id,
+            clerkId: vendor.clerkId,
+            name: vendor.name,
+            email: vendor.email,
+            phone: vendor.phone,
+            businessName: vendor.businessName,
+            availability: vendor.availability,
+            profileComplete: vendor.profileComplete,
+            earningsSummary: vendor.earningsSummary,
+            createdAt: vendor.createdAt,
+            updatedAt: vendor.updatedAt,
+          }
+        }
+      });
+    }
+    
+    // CRITICAL FIX: Add admin-specific handling (similar to vendor)
+    // Check if user is admin (based on targetRole OR metadata OR email)
+    if (isAdmin) {
+      // Find or create user with admin role
+      let adminUser = await User.findOne({ clerkId: clerkAuth.userId, role: 'admin' });
+      
+      if (!adminUser) {
+        // Check if user exists with different role - update to admin
+        const existingUser = await User.findOne({ clerkId: clerkAuth.userId });
+        if (existingUser) {
+          const oldRole = existingUser.role;
+          existingUser.role = 'admin';
+          adminUser = await existingUser.save();
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`✅ syncClerkUser: Updated existing user from '${oldRole}' to 'admin'`);
+          }
+        } else {
+          adminUser = await User.create({
+            clerkId: clerkAuth.userId,
+            name: finalName || finalEmail.split('@')[0],
+            email: finalEmail.toLowerCase().trim(),
+            role: 'admin',
+            isActive: true,
+          });
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ syncClerkUser: Created new admin user:', { adminId: adminUser._id, email: adminUser.email });
+          }
+        }
+      }
+      
+      // Ensure Clerk metadata is set to admin if not already set
+      if (publicMetadata?.role !== 'admin') {
+        try {
+          const clerkClient = getClerkClient();
+          await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
+            publicMetadata: { 
+              ...publicMetadata,
+              role: 'admin' 
+            }
+          });
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ syncClerkUser: Set admin role in Clerk publicMetadata');
+          }
+        } catch (updateError) {
+          console.error('❌ syncClerkUser: Failed to update Clerk metadata for admin:', updateError.message);
+        }
+      }
+      
+      // Return admin data
+      return res.status(200).json({
+        success: true,
+        message: 'Admin synced',
         data: {
           user: {
-            clerkId: clerkAuth.userId,
-            email: finalEmail.toLowerCase().trim(),
-            role: 'vendor'
+            id: adminUser._id,
+            clerkId: adminUser.clerkId,
+            name: adminUser.name,
+            email: adminUser.email,
+            phone: adminUser.phone,
+            role: adminUser.role,
+            profileImage: adminUser.profileImage,
+            address: adminUser.address,
+            isActive: adminUser.isActive,
+            lastLogin: adminUser.lastLogin,
+            createdAt: adminUser.createdAt,
+            updatedAt: adminUser.updatedAt,
           }
         }
       });

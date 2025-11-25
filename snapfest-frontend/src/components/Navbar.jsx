@@ -14,7 +14,48 @@ const Navbar = () => {
 
   // Fetch user role from backend if not in Clerk metadata
   useEffect(() => {
-    if (isLoaded && user && !user.publicMetadata?.role) {
+    if (isLoaded && user) {
+      // CRITICAL FIX: Check sessionStorage first (during signup)
+      // This ensures correct menu is shown immediately during registration
+      const selectedRole = sessionStorage.getItem('selectedRole');
+      
+      // If we have a selected role in sessionStorage, use it immediately
+      if (selectedRole && ['user', 'vendor', 'admin'].includes(selectedRole)) {
+        setUserRole(selectedRole);
+        
+        // Also sync with backend using the role parameter to ensure consistency
+        const syncWithRole = async () => {
+          try {
+            const response = await fetch(`http://localhost:5001/api/users/sync?role=${selectedRole}`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              const role = data.data?.user?.role || data.data?.vendor?.role || selectedRole;
+              setUserRole(role);
+            }
+          } catch (error) {
+            console.error('Error syncing user role:', error);
+            // Keep the selectedRole as fallback - don't change to 'user'
+          }
+        };
+        
+        syncWithRole();
+        return; // Don't proceed with default sync
+      }
+      
+      // If Clerk metadata has role, use it
+      if (user.publicMetadata?.role) {
+        setUserRole(user.publicMetadata.role);
+        return;
+      }
+      
+      // Otherwise, fetch from backend (but don't default to 'user' immediately)
       const fetchUserRole = async () => {
         try {
           const response = await fetch('http://localhost:5001/api/users/sync', {
@@ -27,21 +68,33 @@ const Navbar = () => {
           
           if (response.ok) {
             const data = await response.json();
-            const role = data.data?.user?.role || data.data?.vendor?.role || 'user';
-            setUserRole(role);
+            const role = data.data?.user?.role || data.data?.vendor?.role;
+            if (role) {
+              setUserRole(role);
+            }
+            // Don't default to 'user' - let it stay null until we know for sure
           }
         } catch (error) {
           console.error('Error fetching user role:', error);
-          setUserRole('user'); // Default to user
+          // Don't default to 'user' - let it stay null
         }
       };
       
       fetchUserRole();
-    } else if (user?.publicMetadata?.role) {
-      // Use Clerk metadata if available
-      setUserRole(user.publicMetadata.role);
     }
   }, [user, isLoaded]);
+
+  // CRITICAL FIX: Add another useEffect to watch for Clerk metadata changes
+  // This ensures Navbar updates immediately when Clerk metadata is updated
+  useEffect(() => {
+    if (user?.publicMetadata?.role) {
+      setUserRole(user.publicMetadata.role);
+      // Clear sessionStorage if metadata is now set (signup complete)
+      if (sessionStorage.getItem('selectedRole')) {
+        sessionStorage.removeItem('selectedRole');
+      }
+    }
+  }, [user?.publicMetadata?.role]);
 
   // Fetch backend profile name to display in navbar
   useEffect(() => {
@@ -78,8 +131,10 @@ const Navbar = () => {
     setIsProfileOpen(false);
   };
 
-  // Get role from Clerk metadata or backend (fallback)
-  const currentRole = user?.publicMetadata?.role || userRole || 'user';
+  // Get role from sessionStorage (during signup) > Clerk metadata > backend > default
+  // CRITICAL FIX: Check sessionStorage first to show correct menu immediately during signup
+  const selectedRoleFromStorage = sessionStorage.getItem('selectedRole');
+  const currentRole = selectedRoleFromStorage || user?.publicMetadata?.role || userRole || 'user';
 
   const getDashboardLink = () => {
     switch (currentRole) {

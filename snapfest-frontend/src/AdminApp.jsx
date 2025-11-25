@@ -79,8 +79,9 @@ function AdminApp() {
       if (!isSignedIn) return;
       
       try {
-        // Sync user with backend - cookies are sent automatically by axios
-        await userAPI.sync();
+        // Sync user with backend - pass admin role to ensure correct role assignment
+        // Cookies are sent automatically by axios
+        await userAPI.sync('admin');
         console.log('✅ Admin user synced with backend via cookie session');
       } catch (e) {
         // Non-blocking - log error but don't prevent app from loading

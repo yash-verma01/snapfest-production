@@ -114,7 +114,11 @@ export const userAPI = {
   getUserStats: () => api.get('/users/stats'),
   // Sync Clerk user to backend DB (uses cookie-based authentication)
   // No config needed - cookies are sent automatically
-  sync: () => api.post('/users/sync'),
+  // role: optional role parameter ('user', 'vendor', 'admin')
+  sync: (role) => {
+    const url = role ? `/users/sync?role=${role}` : '/users/sync';
+    return api.post(url);
+  },
 };
 
 export const vendorAPI = {

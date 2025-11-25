@@ -2,7 +2,7 @@ import React, { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { useAuth as useClerkAuth } from '@clerk/clerk-react';
+import { useAuth as useClerkAuth, useUser } from '@clerk/clerk-react';
 import { userAPI } from './services/api';
 import ErrorBoundary from './components/ErrorBoundary';
 import PortGuard from './components/PortGuard';
@@ -57,10 +57,21 @@ function UserApp() {
   // Sync Clerk user to backend on sign-in
   // This ensures the backend knows about the user and creates them in MongoDB
   const { isSignedIn } = useClerkAuth();
+  const { user } = useUser();
   
   useEffect(() => {
     const sync = async () => {
       if (!isSignedIn) return;
+      
+      // Skip sync for vendors and admins - let VendorApp/AdminApp handle their sync
+      // This prevents race conditions where user is created with wrong role
+      const userRole = user?.publicMetadata?.role;
+      if (userRole === 'vendor' || userRole === 'admin') {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`⏭️ UserApp.jsx: Skipping sync for ${userRole} - let ${userRole === 'vendor' ? 'VendorApp' : 'AdminApp'} handle it`);
+        }
+        return;
+      }
       
       try {
         // Sync user with backend - cookies are sent automatically by axios
@@ -79,7 +90,7 @@ function UserApp() {
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [isSignedIn]);
+  }, [isSignedIn, user]);
 
   return (
     <ErrorBoundary>
