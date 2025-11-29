@@ -14,16 +14,19 @@ const usePackages = (initialFilters = {}) => {
     totalPages: 0
   });
 
-  const fetchPackages = useCallback(async (page = 1, newFilters = filters) => {
+  const fetchPackages = useCallback(async (page = 1, newFilters = null) => {
     setLoading(true);
     setError(null);
 
     try {
+      // Use newFilters if provided, otherwise use current filters state
+      const filtersToUse = newFilters !== null ? newFilters : filters;
+      
       // Build params, omitting empty strings/undefined/null
       const rawParams = {
         page,
         limit: 12,
-        ...newFilters,
+        ...filtersToUse,
       };
       const params = Object.fromEntries(
         Object.entries(rawParams).filter(([_, v]) => v !== '' && v !== undefined && v !== null)
@@ -67,22 +70,35 @@ const usePackages = (initialFilters = {}) => {
   const updateFilters = useCallback((newFilters) => {
     setFilters(newFilters);
     setPagination(prev => ({ ...prev, page: 1 }));
-    fetchPackages(1, newFilters);
-  }, [fetchPackages]);
+  }, []);
 
   const loadMore = useCallback(() => {
     if (pagination.page < pagination.totalPages && !loading) {
-      fetchPackages(pagination.page + 1);
+      fetchPackages(pagination.page + 1, filters);
     }
-  }, [pagination.page, pagination.totalPages, loading, fetchPackages]);
+  }, [pagination.page, pagination.totalPages, loading, fetchPackages, filters]);
+
+  const goToPage = useCallback((page) => {
+    // Allow fetching on initial load (when totalPages is 0) or if page is valid
+    if (page >= 1 && !loading) {
+      // On initial load, allow fetching page 1 even if totalPages is 0
+      if (pagination.totalPages === 0 && page === 1) {
+        fetchPackages(page, filters);
+        return;
+      }
+      // For subsequent loads, check if page is valid and different from current
+      if (page <= pagination.totalPages && page !== pagination.page) {
+        fetchPackages(page, filters);
+      }
+    }
+  }, [pagination.page, pagination.totalPages, loading, fetchPackages, filters]);
 
   const refresh = useCallback(() => {
-    fetchPackages(1);
-  }, [fetchPackages]);
+    fetchPackages(1, filters);
+  }, [fetchPackages, filters]);
 
-  useEffect(() => {
-    fetchPackages();
-  }, []);
+  // Remove the initial fetch - let the component handle it via goToPage
+  // This prevents duplicate fetches and race conditions
 
   return {
     packages,
@@ -92,6 +108,7 @@ const usePackages = (initialFilters = {}) => {
     pagination,
     updateFilters,
     loadMore,
+    goToPage,
     refresh,
     hasMore: pagination.page < pagination.totalPages
   };

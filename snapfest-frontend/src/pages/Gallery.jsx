@@ -510,38 +510,67 @@ const Gallery = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                whileHover={{ y: -8 }}
+                whileHover={{ y: -12, scale: 1.02 }}
+                className="h-full"
               >
                 <Card 
-                  className="group overflow-hidden hover:shadow-2xl transition-all duration-300 bg-white border-0 shadow-lg"
+                  className="group overflow-hidden hover:shadow-2xl transition-all duration-500 bg-white border-2 border-gray-100 shadow-xl rounded-2xl h-full flex flex-col"
                 >
                   <div 
-                    className="relative aspect-square overflow-hidden cursor-pointer bg-gray-100"
+                    className="relative aspect-square overflow-hidden cursor-pointer bg-gradient-to-br from-gray-100 to-gray-200"
                     onClick={() => handleImageClick(image, index)}
                   >
+                    {/* Decorative corner accent */}
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-pink-500/20 to-red-500/20 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10"></div>
+                    
                     <img
                       src={image.url}
                       alt={image.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      className="w-full h-full object-cover group-hover:scale-115 transition-transform duration-700"
                       onError={(e) => {
                         e.target.src = 'https://via.placeholder.com/400?text=Image+Not+Found';
                       }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                        <p className="font-bold text-sm line-clamp-1 mb-2">{image.title}</p>
+                    
+                    {/* Enhanced overlay with gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                      <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
+                        <div className="mb-3">
+                          <p className="font-bold text-base line-clamp-2 mb-3 drop-shadow-lg">{image.title}</p>
+                        </div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <Badge className="bg-pink-600/95 text-white text-xs font-semibold">
+                          <Badge className="bg-gradient-to-r from-pink-500 to-red-500 text-white text-xs font-bold px-3 py-1 shadow-lg border-0">
                             {image.category}
                           </Badge>
-                          <Badge className="bg-white/20 backdrop-blur-sm text-white text-xs font-semibold border border-white/30">
+                          <Badge className="bg-white/25 backdrop-blur-md text-white text-xs font-bold border border-white/40 px-3 py-1 shadow-lg">
                             {formatTypeName(image.type)}
                           </Badge>
-                          {image.location && (
-                            <span className="text-xs text-white/90">{image.location}</span>
-                          )}
                         </div>
+                        {image.location && (
+                          <div className="mt-3 flex items-center gap-1">
+                            <span className="text-xs text-white/90 font-medium">{image.location}</span>
+                          </div>
+                        )}
                       </div>
+                    </div>
+                    
+                    {/* Click indicator */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                      <div className="bg-white/20 backdrop-blur-sm rounded-full p-4 border-2 border-white/40">
+                        <Camera className="w-8 h-8 text-white" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Card footer with info (always visible) */}
+                  <div className="p-4 bg-gradient-to-br from-white to-gray-50 border-t border-gray-100">
+                    <p className="font-semibold text-sm text-gray-900 line-clamp-1 mb-2">{image.title}</p>
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-pink-100 text-pink-700 text-xs font-semibold border-0">
+                        {image.category}
+                      </Badge>
+                      <span className="text-xs text-gray-500">•</span>
+                      <span className="text-xs text-gray-600 font-medium">{formatTypeName(image.type)}</span>
                     </div>
                   </div>
                 </Card>
@@ -549,44 +578,63 @@ const Gallery = () => {
             ))}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-5">
             {filteredImages.map((image, index) => (
               <motion.div
                 key={image.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.03 }}
-                whileHover={{ x: 4 }}
+                whileHover={{ x: 6, scale: 1.01 }}
               >
-                <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 bg-white border-0 shadow-md">
+                <Card className="overflow-hidden hover:shadow-2xl transition-all duration-500 bg-white border-2 border-gray-100 shadow-lg rounded-2xl group">
                   <div className="flex">
                     <div 
-                      className="relative w-48 h-48 flex-shrink-0 overflow-hidden cursor-pointer bg-gray-100"
+                      className="relative w-56 h-56 flex-shrink-0 overflow-hidden cursor-pointer bg-gradient-to-br from-gray-100 to-gray-200 group-hover:shadow-inner transition-all duration-500"
                       onClick={() => handleImageClick(image, index)}
                     >
                       <img
                         src={image.url}
                         alt={image.title}
-                        className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover:scale-125 transition-transform duration-700"
                         onError={(e) => {
                           e.target.src = 'https://via.placeholder.com/400?text=Image+Not+Found';
                         }}
                       />
+                      <div className="absolute inset-0 bg-gradient-to-r from-pink-500/0 to-red-500/0 group-hover:from-pink-500/10 group-hover:to-red-500/10 transition-all duration-500"></div>
+                      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg">
+                          <Camera className="w-5 h-5 text-pink-600" />
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1 p-6">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        {image.title}
-                      </h3>
-                      <div className="flex items-center gap-3 text-sm mb-3">
-                        <Badge className="bg-gradient-to-r from-pink-500 to-red-500 text-white capitalize font-semibold">
+                    <div className="flex-1 p-6 bg-gradient-to-br from-white to-gray-50">
+                      <div className="flex items-start justify-between mb-3">
+                        <h3 className="text-xl font-bold text-gray-900 group-hover:text-pink-600 transition-colors duration-300 pr-4">
+                          {image.title}
+                        </h3>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm mb-4 flex-wrap">
+                        <Badge className="bg-gradient-to-r from-pink-500 to-red-500 text-white capitalize font-bold px-3 py-1 shadow-md border-0">
                           {image.category}
                         </Badge>
-                        <Badge variant="outline" className="capitalize font-semibold border-2">
+                        <Badge variant="outline" className="capitalize font-bold border-2 border-gray-300 px-3 py-1 bg-white">
                           {formatTypeName(image.type)}
                         </Badge>
                         {image.location && (
-                          <span className="text-gray-600 font-medium">{image.location}</span>
+                          <span className="text-gray-600 font-semibold flex items-center gap-1">
+                            <span className="text-gray-400">📍</span>
+                            {image.location}
+                          </span>
                         )}
+                      </div>
+                      <div className="pt-4 border-t border-gray-200">
+                        <Button
+                          onClick={() => handleImageClick(image, index)}
+                          className="bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300"
+                        >
+                          View Full Size
+                        </Button>
                       </div>
                     </div>
                   </div>

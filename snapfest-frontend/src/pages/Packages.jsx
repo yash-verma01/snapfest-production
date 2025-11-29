@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, Grid, List, SlidersHorizontal, Star, Crown, Sparkles, Award, Zap } from 'lucide-react';
 import { PackageCard } from '../components/cards';
@@ -80,17 +80,35 @@ const Packages = () => {
     }
   };
 
-  // Reset to page 1 when filters change and fetch packages
+  // Track initial mount to prevent filter reset on first render
+  const isInitialMount = useRef(true);
+  const prevFilters = useRef({ category: selectedCategory, min: priceRange.min, max: priceRange.max, sortBy });
+
+  // Reset to page 1 when filters change (but not on initial mount or page navigation)
   useEffect(() => {
-    // Only trigger on filter changes, not on initial mount
-    const hasFilters = selectedCategory || priceRange.min || priceRange.max || sortBy;
-    if (hasFilters && currentPage !== 1) {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      prevFilters.current = { category: selectedCategory, min: priceRange.min, max: priceRange.max, sortBy };
+      return;
+    }
+
+    // Check if filters actually changed
+    const filtersChanged = 
+      prevFilters.current.category !== selectedCategory ||
+      prevFilters.current.min !== priceRange.min ||
+      prevFilters.current.max !== priceRange.max ||
+      prevFilters.current.sortBy !== sortBy;
+
+    if (filtersChanged && currentPage !== 1) {
       setSearchParams(prev => {
         const newParams = new URLSearchParams(prev);
         newParams.set('page', '1');
         return newParams;
       });
     }
+
+    // Update previous filters
+    prevFilters.current = { category: selectedCategory, min: priceRange.min, max: priceRange.max, sortBy };
   }, [selectedCategory, priceRange.min, priceRange.max, sortBy, currentPage, setSearchParams]);
 
 
@@ -433,14 +451,23 @@ const Packages = () => {
         {/* Main Content */}
         <div className="space-y-6">
             {/* Results Header */}
-            <div className="flex justify-between items-center mb-6">
-              <p className="text-gray-600">
-                Showing {filteredPackages.length} {filteredPackages.length === 1 ? 'package' : 'packages'}
-                {searchQuery && ` for "${searchQuery}"`}
-                {selectedCategory && ` in ${selectedCategory}`}
-                {priceRange.min && priceRange.max && ` • ₹${priceRange.min} - ₹${priceRange.max}`}
-              </p>
-            </div>
+            {loading && pagination.totalPages === 0 ? (
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-2 text-gray-600">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-pink-600"></div>
+                  <span>Loading packages...</span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-between items-center mb-6">
+                <p className="text-gray-600">
+                  Showing {filteredPackages.length} {filteredPackages.length === 1 ? 'package' : 'packages'}
+                  {searchQuery && ` for "${searchQuery}"`}
+                  {selectedCategory && ` in ${selectedCategory}`}
+                  {priceRange.min && priceRange.max && ` • ₹${priceRange.min} - ₹${priceRange.max}`}
+                </p>
+              </div>
+            )}
 
             {/* Error State */}
             {error && (
@@ -520,95 +547,23 @@ const Packages = () => {
                     Previous
                   </Button>
                   
-                  {/* Page Numbers */}
-                  {(() => {
-                    const pages = [];
-                    const totalPages = pagination.totalPages;
-                    const current = pagination.page;
-                    
-                    // Show max 5 page numbers
-                    let startPage = Math.max(1, current - 2);
-                    let endPage = Math.min(totalPages, current + 2);
-                    
-                    // Adjust if we're near the start
-                    if (current <= 3) {
-                      startPage = 1;
-                      endPage = Math.min(5, totalPages);
-                    }
-                    
-                    // Adjust if we're near the end
-                    if (current >= totalPages - 2) {
-                      startPage = Math.max(1, totalPages - 4);
-                      endPage = totalPages;
-                    }
-                    
-                    // First page and ellipsis
-                    if (startPage > 1) {
-                      pages.push(
-                        <Button
-                          key={1}
-                          onClick={() => handlePageChange(1)}
-                          className={`px-4 py-2 ${
-                            current === 1
-                              ? 'bg-gradient-to-r from-pink-500 to-red-500 text-white'
-                              : 'bg-white text-gray-700 hover:bg-pink-50'
-                          }`}
-                        >
-                          1
-                        </Button>
-                      );
-                      if (startPage > 2) {
-                        pages.push(
-                          <span key="ellipsis-start" className="px-2 text-gray-400">
-                            ...
-                          </span>
-                        );
-                      }
-                    }
-                    
-                    // Page number buttons
-                    for (let i = startPage; i <= endPage; i++) {
-                      pages.push(
-                        <Button
-                          key={i}
-                          onClick={() => handlePageChange(i)}
-                          className={`px-4 py-2 ${
-                            current === i
-                              ? 'bg-gradient-to-r from-pink-500 to-red-500 text-white'
-                              : 'bg-white text-gray-700 hover:bg-pink-50'
-                          }`}
-                        >
-                          {i}
-                        </Button>
-                      );
-                    }
-                    
-                    // Last page and ellipsis
-                    if (endPage < totalPages) {
-                      if (endPage < totalPages - 1) {
-                        pages.push(
-                          <span key="ellipsis-end" className="px-2 text-gray-400">
-                            ...
-                          </span>
-                        );
-                      }
-                      pages.push(
-                        <Button
-                          key={totalPages}
-                          onClick={() => handlePageChange(totalPages)}
-                          className={`px-4 py-2 ${
-                            current === totalPages
-                              ? 'bg-gradient-to-r from-pink-500 to-red-500 text-white'
-                              : 'bg-white text-gray-700 hover:bg-pink-50'
-                          }`}
-                        >
-                          {totalPages}
-                        </Button>
-                      );
-                    }
-                    
-                    return pages;
-                  })()}
+                  {/* Page Numbers - Show All Pages */}
+                  {Array.from({ length: pagination.totalPages }, (_, i) => {
+                    const pageNum = i + 1;
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                          pagination.page === pageNum
+                            ? 'bg-gradient-to-r from-pink-500 to-red-500 text-white shadow-md'
+                            : 'bg-white text-gray-700 border-2 border-gray-300 hover:bg-pink-50 hover:border-pink-500'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
                   
                   {/* Next Button */}
                   <Button

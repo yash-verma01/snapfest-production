@@ -184,10 +184,14 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo - Professional Style */}
           <Link to="/" className="flex items-center space-x-3 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-red-500 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-105">
-              <Camera className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">SnapFest</span>
+            <img 
+              src="/heroImages/snapfest logo.png" 
+              alt="SnapFest Logo" 
+              className="h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+            />
+            <span className="text-xl font-bold bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent group-hover:from-pink-700 group-hover:to-red-700 transition-all duration-300">
+              SnapFest
+            </span>
           </Link>
 
           {/* Desktop Navigation - Professional Style */}

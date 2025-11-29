@@ -1,7 +1,7 @@
 import React, { Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Button from '../ui/Button';
 
 const Modal = ({
@@ -31,7 +31,7 @@ const Modal = ({
         static
       >
         <div className="min-h-screen px-4 text-center">
-          {/* Overlay */}
+          {/* Overlay - Using a div instead of Dialog.Overlay for v2 compatibility */}
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
@@ -41,7 +41,7 @@ const Modal = ({
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm" />
+            <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm" />
           </Transition.Child>
 
           {/* This element is to trick the browser into centering the modal contents. */}

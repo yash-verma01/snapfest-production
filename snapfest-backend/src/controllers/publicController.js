@@ -983,3 +983,83 @@ export const getAllGalleryImages = asyncHandler(async (req, res) => {
     }
   });
 });
+
+// ==================== HERO IMAGES ====================
+
+// @desc    Get all hero images from PUBLIC/heroImages folder
+// @route   GET /api/public/hero-images
+// @access  Public
+export const getHeroImages = asyncHandler(async (req, res) => {
+  const fs = require('fs').promises;
+  const path = require('path');
+  
+  try {
+    const heroImagesDir = path.join(process.cwd(), 'PUBLIC', 'heroImages');
+    console.log('📁 Hero images directory:', heroImagesDir);
+    
+    // Check if directory exists
+    try {
+      await fs.access(heroImagesDir);
+      console.log('✅ Hero images directory exists');
+    } catch {
+      console.error('❌ Hero images directory does not exist:', heroImagesDir);
+      return res.status(200).json({
+        success: true,
+        data: {
+          images: [],
+          count: 0
+        }
+      });
+    }
+    
+    // Read directory
+    const files = await fs.readdir(heroImagesDir);
+    console.log('📂 Files in directory:', files);
+    
+    // Filter only image files
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.JPG', '.JPEG', '.PNG', '.WEBP', '.GIF'];
+    const imageFiles = files.filter(file => {
+      const ext = path.extname(file).toLowerCase();
+      const isImage = imageExtensions.includes(ext);
+      if (!isImage) {
+        console.log('⏭️ Skipping non-image file:', file, 'ext:', ext);
+      }
+      return isImage;
+    });
+    
+    console.log('🖼️ Image files found:', imageFiles);
+    
+    // Sort files by name for consistent order
+    imageFiles.sort();
+    
+    // Create full URLs (using backend's PUBLIC route)
+    const baseUrl = process.env.BACKEND_URL || 'http://localhost:5001';
+    const imageUrls = imageFiles.map(file => {
+      // URL encode the filename to handle spaces and special characters
+      const encodedFile = encodeURIComponent(file);
+      const fullUrl = `${baseUrl}/PUBLIC/heroImages/${encodedFile}`;
+      console.log('🔗 Image URL:', fullUrl);
+      return fullUrl;
+    });
+    
+    console.log('✅ Returning', imageUrls.length, 'hero images');
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        images: imageUrls,
+        count: imageUrls.length
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error reading hero images directory:', error);
+    console.error('❌ Error stack:', error.stack);
+    res.status(200).json({
+      success: true,
+      data: {
+        images: [],
+        count: 0
+      }
+    });
+  }
+});

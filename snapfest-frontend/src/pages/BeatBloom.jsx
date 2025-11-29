@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Filter, Star, Clock, MapPin, Heart, ArrowRight, Grid, List, SlidersHorizontal } from 'lucide-react';
+import { Star, Clock, MapPin, Heart, ArrowRight, Grid, List, SlidersHorizontal } from 'lucide-react';
 import { Button, Card, Badge } from '../components/ui';
 import { publicAPI } from '../services/api';
 
@@ -19,7 +19,6 @@ const BeatBloom = () => {
     minPrice: '',
     maxPrice: ''
   });
-  const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [pagination, setPagination] = useState({
@@ -40,7 +39,7 @@ const BeatBloom = () => {
 
   useEffect(() => {
     loadBeatBlooms();
-  }, [appliedFilters, pagination.current, searchQuery]);
+  }, [appliedFilters, pagination.current]);
 
   const loadBeatBlooms = async () => {
     try {
@@ -48,8 +47,7 @@ const BeatBloom = () => {
       const params = {
         page: pagination.current,
         limit: 12,
-        ...appliedFilters,
-        ...(searchQuery && { search: searchQuery })
+        ...appliedFilters
       };
 
       const response = await publicAPI.getBeatBlooms(params);
@@ -110,11 +108,6 @@ const BeatBloom = () => {
     setPagination(prev => ({ ...prev, current: 1 }));
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setPagination(prev => ({ ...prev, current: 1 }));
-    loadBeatBlooms();
-  };
 
   // Check if filters have changed
   const filtersChanged = JSON.stringify(filters) !== JSON.stringify(appliedFilters);
@@ -133,14 +126,18 @@ const BeatBloom = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-red-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-pink-600 to-red-600 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Header with Background Image */}
+      <div 
+        className="relative text-white py-16 overflow-hidden bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url('/heroImages/WhatsApp Image 2025-11-28 at 10.55.37.jpeg')` }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white drop-shadow-2xl">
               Beat & Bloom Services
             </h1>
-            <p className="text-xl text-pink-100 max-w-3xl mx-auto">
+            <p className="text-xl text-white/95 max-w-3xl mx-auto drop-shadow-lg">
               Individual service packages to make your event perfect. Choose from our curated selection of entertainment, décor, catering, and photography services.
             </p>
           </div>
@@ -148,23 +145,9 @@ const BeatBloom = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Search and Filters */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search */}
-            <form onSubmit={handleSearch} className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search Beat & Bloom services..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                />
-              </div>
-            </form>
-
+        {/* Filters Section */}
+        <div className="mb-8">
+          <div className="flex flex-col lg:flex-row gap-4 justify-end mb-4">
             {/* Filter Toggle */}
             <Button
               onClick={() => setShowFilters(!showFilters)}
@@ -194,8 +177,8 @@ const BeatBloom = () => {
 
           {/* Filters Panel */}
           {showFilters && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Category Filter */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
@@ -212,34 +195,57 @@ const BeatBloom = () => {
 
                 {/* Min Price */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Min Price</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Min Price (₹)</label>
                   <input
                     type="number"
                     placeholder="₹0"
                     value={filters.minPrice}
                     onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+                    min="0"
+                    step="100"
                     className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                   />
                 </div>
 
                 {/* Max Price */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Max Price</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Max Price (₹)</label>
                   <input
                     type="number"
                     placeholder="₹100000"
                     value={filters.maxPrice}
                     onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                    min="0"
+                    step="100"
                     className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                   />
                 </div>
+              </div>
 
-                {/* Apply Button */}
-                <div className="flex items-end">
+              {/* Filter Actions */}
+              <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
+                <Button
+                  onClick={() => {
+                    setFilters({ category: '', minPrice: '', maxPrice: '' });
+                    setAppliedFilters({ category: '', minPrice: '', maxPrice: '' });
+                  }}
+                  variant="outline"
+                  className="text-gray-600 border-gray-300 hover:bg-gray-50"
+                >
+                  Clear All Filters
+                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setShowFilters(false)}
+                    variant="outline"
+                    className="text-gray-600 border-gray-300 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </Button>
                   <Button
                     onClick={handleApplyFilters}
                     disabled={!filtersChanged}
-                    className={`w-full ${filtersChanged ? 'bg-pink-500 hover:bg-pink-600' : 'bg-gray-300 cursor-not-allowed'}`}
+                    className={`${filtersChanged ? 'bg-pink-500 hover:bg-pink-600 text-white' : 'bg-gray-300 cursor-not-allowed text-gray-500'}`}
                   >
                     Apply Filters
                   </Button>
@@ -268,8 +274,8 @@ const BeatBloom = () => {
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No services found</h3>
             <p className="text-gray-600 mb-4">Try adjusting your filters or search terms</p>
             <Button onClick={() => {
-              setFilters({ category: '', minPrice: '', maxPrice: '', sortBy: 'createdAt', sortOrder: 'desc' });
-              setSearchQuery('');
+              setFilters({ category: '', minPrice: '', maxPrice: '' });
+              setAppliedFilters({ category: '', minPrice: '', maxPrice: '' });
             }}>Clear Filters</Button>
           </div>
         ) : (

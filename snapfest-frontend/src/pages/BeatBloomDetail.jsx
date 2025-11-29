@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Star, Clock, MapPin, Heart, Share2, CheckCircle, ShoppingCart, Calendar, Phone, Mail, ArrowRight, X } from 'lucide-react';
+import { ArrowLeft, Star, Clock, MapPin, CheckCircle, ShoppingCart, Calendar, Phone, Mail, ArrowRight, X } from 'lucide-react';
 import { Button, Card, Badge } from '../components/ui';
 import { publicAPI, bookingAPI, paymentAPI } from '../services/api';
 import { useUser } from '@clerk/clerk-react';
@@ -310,16 +310,6 @@ const BeatBloomDetail = () => {
               Back to Services
             </Button>
             
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm">
-                <Share2 className="w-4 h-4 mr-2" />
-                Share
-              </Button>
-              <Button variant="outline" size="sm">
-                <Heart className="w-4 h-4 mr-2" />
-                Save
-              </Button>
-            </div>
           </div>
         </div>
       </div>
@@ -478,11 +468,15 @@ const BeatBloomDetail = () => {
                 <div className="space-y-3">
                   <div className="flex items-center text-gray-600">
                     <Phone className="w-4 h-4 mr-3" />
-                    <span>+91 98765 43210</span>
+                    <a href="tel:9129556955" className="hover:text-pink-600 transition-colors">
+                      912 955 6955
+                    </a>
                   </div>
                   <div className="flex items-center text-gray-600">
                     <Mail className="w-4 h-4 mr-3" />
-                    <span>support@snapfest.com</span>
+                    <a href="mailto:snapfest10@gmail.com" className="hover:text-pink-600 transition-colors">
+                      snapfest10@gmail.com
+                    </a>
                   </div>
                 </div>
               </Card>
