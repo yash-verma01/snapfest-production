@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Phone, Mail, Clock, Send, MessageCircle, Users, Award } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, Send, MessageCircle, Users, Award, Sparkles } from 'lucide-react';
 import { Card, Button, Input } from '../components/ui';
 import { GlassCard, ScrollReveal } from '../components/enhanced';
 import toast from 'react-hot-toast';
 import { useAuth } from '@clerk/clerk-react';
 import { userAPI } from '../services/api';
+import { motion } from 'framer-motion';
 
 const Contact = () => {
   const { user, isSignedIn, getToken } = useAuth();
@@ -64,7 +65,7 @@ const Contact = () => {
     {
       icon: Phone,
       title: 'Call Us',
-      details: ['9129556955', 'Mon-Sat: 9AM-8PM'],
+      details: ['912 955 6955', '735 525 8150', 'Mon-Sat: 9AM-8PM'],
       color: 'text-red-600',
       bgColor: 'bg-red-100',
     },
@@ -201,27 +202,40 @@ const Contact = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-pink-50 to-red-100">
-      {/* Hero Section - More Pinkish */}
-      <section className="relative bg-gradient-to-br from-pink-300 via-pink-200 to-red-300 text-pink-900 py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-400/50 via-pink-300/50 to-red-400/50"></div>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-red-50">
+      {/* Hero Section with Background Image */}
+      <section 
+        className="relative text-white py-20 overflow-hidden bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url('/heroImages/WhatsApp Image 2025-11-28 at 10.48.48.jpeg')` }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30"></div>
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 text-pink-900 drop-shadow-md">
-              Get in <span className="text-pink-600">Touch</span>
+            <div className="inline-flex items-center bg-white/20 backdrop-blur-md text-white px-6 py-3 rounded-full text-sm font-semibold shadow-lg border border-white/30 mb-6">
+              <MessageCircle className="w-4 h-4 mr-2" />
+              We're Here to Help
+            </div>
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white drop-shadow-2xl">
+              Get in <span className="text-pink-200">Touch</span>
             </h1>
-            <p className="text-xl md:text-2xl text-pink-800 mb-8 leading-relaxed font-semibold">
+            <p className="text-xl md:text-2xl text-white/95 mb-8 leading-relaxed font-medium drop-shadow-lg">
               Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12">
               {stats.map((stat, index) => {
                 const Icon = stat.icon;
                 return (
-                  <div key={index} className="bg-white/80 backdrop-blur-sm rounded-lg p-6 border-2 border-pink-200 shadow-lg">
-                    <Icon className="w-8 h-8 text-pink-600 mx-auto mb-3" />
-                    <div className="text-2xl font-bold mb-1 text-pink-900">{stat.value}</div>
-                    <div className="text-sm text-pink-700 font-semibold">{stat.label}</div>
-                  </div>
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-4 border border-white/30"
+                  >
+                    <Icon className="w-6 h-6 mx-auto mb-2 text-white" />
+                    <div className="text-2xl font-bold text-white mb-1">{stat.value}</div>
+                    <div className="text-xs text-white/90 font-medium">{stat.label}</div>
+                  </motion.div>
                 );
               })}
             </div>
@@ -229,25 +243,59 @@ const Contact = () => {
         </div>
       </section>
 
-      {/* Contact Info Section - More Pinkish */}
-      <section className="py-16 bg-gradient-to-br from-pink-100 via-pink-50 to-red-100">
+      {/* Contact Info Section - Redesigned */}
+      <section className="py-16 bg-gradient-to-br from-pink-50 via-white to-red-50">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <ScrollReveal direction="up">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 px-6 py-3 rounded-full text-sm font-semibold shadow-md mb-6">
+                <Phone className="w-4 h-4 mr-2" />
+                Contact Information
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">
+                How to Reach Us
+              </h2>
+            </div>
+          </ScrollReveal>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
             {contactInfo.map((info, index) => {
               const Icon = info.icon;
               return (
                 <ScrollReveal key={index} direction="up" delay={index * 0.1}>
-                  <GlassCard className="p-6 text-center hover:shadow-xl transition-all duration-300">
-                  <div className={`${info.bgColor} w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4`}>
-                    <Icon className={`w-8 h-8 ${info.color}`} />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-3 text-gray-900">{info.title}</h3>
-                  <div className="space-y-1">
-                    {info.details.map((detail, idx) => (
-                      <p key={idx} className="text-gray-600 text-sm">{detail}</p>
-                    ))}
-                  </div>
-                </GlassCard>
+                  <motion.div
+                    whileHover={{ y: -8, scale: 1.02 }}
+                    transition={{ duration: 0.3 }}
+                    className="h-full"
+                  >
+                    <Card className="p-8 text-center hover:shadow-2xl transition-all duration-500 bg-white border-2 border-gray-100 rounded-2xl h-full flex flex-col group min-h-[280px]">
+                      <div className={`bg-gradient-to-br from-pink-100 to-red-100 w-24 h-24 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                        <Icon className={`w-12 h-12 ${info.color}`} />
+                      </div>
+                      <h3 className="text-xl font-bold mb-5 text-gray-900 group-hover:text-pink-600 transition-colors duration-300">
+                        {info.title}
+                      </h3>
+                      <div className="space-y-2.5 flex-1 flex flex-col justify-center">
+                        {info.details.map((detail, idx) => {
+                          // Make phone numbers clickable
+                          const isPhoneNumber = /^\d{3}\s\d{3}\s\d{4}$/.test(detail.trim());
+                          return (
+                            <p key={idx} className="text-gray-700 text-sm font-medium">
+                              {isPhoneNumber ? (
+                                <a 
+                                  href={`tel:${detail.replace(/\s/g, '')}`}
+                                  className="hover:text-pink-600 transition-colors duration-200"
+                                >
+                                  {detail}
+                                </a>
+                              ) : (
+                                detail
+                              )}
+                            </p>
+                          );
+                        })}
+                      </div>
+                    </Card>
+                  </motion.div>
                 </ScrollReveal>
               );
             })}
@@ -255,15 +303,26 @@ const Contact = () => {
         </div>
       </section>
 
-      {/* Contact Form & Map Section - More Pinkish */}
-      <section className="py-20 bg-gradient-to-br from-pink-100 via-pink-50 to-red-100">
+      {/* Contact Form & Map Section - Redesigned */}
+      <section className="py-20 bg-gradient-to-br from-pink-50 via-white to-red-50">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12">
             {/* Contact Form */}
             <ScrollReveal direction="right" delay={0.1}>
               <div>
-                <h2 className="text-3xl font-bold mb-8 bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">Send us a Message</h2>
-                <GlassCard className="p-8">
+                <div className="mb-6">
+                  <div className="inline-flex items-center bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 px-4 py-2 rounded-full text-xs font-semibold shadow-md mb-4">
+                    <Send className="w-3 h-3 mr-2" />
+                    Send Inquiry
+                  </div>
+                  <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">
+                    Send us a Message
+                  </h2>
+                  <p className="text-gray-600">
+                    Fill out the form below and we'll get back to you within 2 hours
+                  </p>
+                </div>
+                <Card className="p-8 shadow-xl border-0 bg-white/90 backdrop-blur-sm">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
@@ -364,87 +423,118 @@ const Contact = () => {
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white py-3 flex items-center justify-center gap-2"
+                    className="w-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white py-4 flex items-center justify-center gap-2 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
                   >
                     {isSubmitting ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                         Sending...
                       </>
                     ) : (
                       <>
-                        <Send className="w-4 h-4" />
+                        <Send className="w-5 h-5" />
                         Send Message
                       </>
                     )}
                   </Button>
                 </form>
-              </GlassCard>
+              </Card>
               </div>
             </ScrollReveal>
 
             {/* Map & Additional Info */}
             <ScrollReveal direction="left" delay={0.2}>
               <div>
-                <h2 className="text-3xl font-bold mb-8 bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">Find Us</h2>
+                <div className="mb-6">
+                  <div className="inline-flex items-center bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 px-4 py-2 rounded-full text-xs font-semibold shadow-md mb-4">
+                    <MapPin className="w-3 h-3 mr-2" />
+                    Our Location
+                  </div>
+                  <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">
+                    Find Us
+                  </h2>
+                </div>
                 
                 {/* Map Placeholder */}
-                <GlassCard className="p-0 mb-8 overflow-hidden">
-                <div className="h-64 bg-gradient-to-br from-pink-100 to-red-100 flex items-center justify-center">
-                  <div className="text-center">
-                    <MapPin className="w-12 h-12 text-pink-600 mx-auto mb-4" />
-                    <p className="text-pink-800 font-semibold">Interactive Map</p>
-                    <p className="text-sm text-pink-700">Vikas Nagar, Lucknow</p>
+                <Card className="p-0 mb-8 overflow-hidden shadow-xl border-0 rounded-2xl">
+                <div className="relative h-80 bg-gradient-to-br from-pink-100 to-red-100 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: `url('/heroImages/WhatsApp Image 2025-11-28 at 10.55.36.jpeg')` }}></div>
+                  <div className="text-center relative z-10">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-xl">
+                      <MapPin className="w-10 h-10 text-pink-600" />
+                    </div>
+                    <p className="text-pink-800 font-bold text-lg mb-2">Interactive Map</p>
+                    <p className="text-sm text-pink-700 font-medium">Vikas Nagar, Lucknow</p>
                   </div>
                 </div>
-              </GlassCard>
+              </Card>
 
               {/* Quick Contact */}
-              <GlassCard className="p-6">
-                <h3 className="text-xl font-semibold mb-4 text-pink-900">Quick Contact</h3>
+              <Card className="p-6 shadow-xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl">
+                <h3 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-pink-600" />
+                  Quick Contact
+                </h3>
                 <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-pink-100 p-2 rounded-lg">
-                      <Phone className="w-5 h-5 text-pink-600" />
+                  <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-pink-50 to-red-50 rounded-xl hover:shadow-md transition-all duration-300 group">
+                    <div className="bg-gradient-to-br from-pink-100 to-red-100 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                      <Phone className="w-6 h-6 text-pink-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-pink-900">Call us directly</p>
-                      <p className="text-sm text-pink-700">9129556955</p>
+                      <p className="font-semibold text-gray-900">Call us directly</p>
+                      <a href="tel:9129556955" className="text-sm text-pink-600 hover:text-pink-700 font-medium">
+                        9129556955
+                      </a>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="bg-red-100 p-2 rounded-lg">
-                      <MessageCircle className="w-5 h-5 text-red-600" />
+                  <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-pink-50 to-red-50 rounded-xl hover:shadow-md transition-all duration-300 group">
+                    <div className="bg-gradient-to-br from-pink-100 to-red-100 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                      <MessageCircle className="w-6 h-6 text-red-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-pink-900">WhatsApp</p>
-                      <p className="text-sm text-pink-700">9129556955</p>
+                      <p className="font-semibold text-gray-900">WhatsApp</p>
+                      <a href="https://wa.me/9129556955" target="_blank" rel="noopener noreferrer" className="text-sm text-pink-600 hover:text-pink-700 font-medium">
+                        9129556955
+                      </a>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="bg-pink-100 p-2 rounded-lg">
-                      <Mail className="w-5 h-5 text-pink-600" />
+                  <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-pink-50 to-red-50 rounded-xl hover:shadow-md transition-all duration-300 group">
+                    <div className="bg-gradient-to-br from-pink-100 to-red-100 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                      <Mail className="w-6 h-6 text-pink-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-pink-900">Email support</p>
-                      <p className="text-sm text-pink-700">snapfest10@gmail.com</p>
+                      <p className="font-semibold text-gray-900">Email support</p>
+                      <a href="mailto:snapfest10@gmail.com" className="text-sm text-pink-600 hover:text-pink-700 font-medium">
+                        snapfest10@gmail.com
+                      </a>
                     </div>
                   </div>
                 </div>
-              </GlassCard>
+              </Card>
               </div>
             </ScrollReveal>
           </div>
         </div>
       </section>
 
-      {/* FAQ Section - More Pinkish */}
-      <section className="py-20 bg-gradient-to-br from-pink-100 via-pink-50 to-red-100">
+      {/* FAQ Section - Redesigned */}
+      <section className="py-20 bg-gradient-to-br from-pink-50 via-white to-red-50">
         <div className="container mx-auto px-4">
           <ScrollReveal direction="up">
-            <h2 className="text-3xl font-bold text-center mb-12 bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">Frequently Asked Questions</h2>
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 px-6 py-3 rounded-full text-sm font-semibold shadow-md mb-6">
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Common Questions
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">
+                Frequently Asked Questions
+              </h2>
+              <p className="text-gray-600 max-w-2xl mx-auto">
+                Find answers to the most common questions about our services
+              </p>
+            </div>
           </ScrollReveal>
-          <div className="max-w-3xl mx-auto space-y-6">
+          <div className="max-w-3xl mx-auto space-y-4">
             {[
               {
                 question: "How quickly do you respond to inquiries?",
@@ -464,10 +554,18 @@ const Contact = () => {
               }
             ].map((faq, index) => (
               <ScrollReveal key={index} direction="up" delay={index * 0.1}>
-                <GlassCard className="p-6 hover:shadow-xl transition-all duration-300">
-                  <h3 className="text-lg font-semibold mb-3 text-gray-900">{faq.question}</h3>
-                  <p className="text-gray-600">{faq.answer}</p>
-                </GlassCard>
+                <motion.div
+                  whileHover={{ y: -4, scale: 1.01 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card className="p-6 hover:shadow-xl transition-all duration-300 bg-white border-2 border-gray-100 rounded-xl">
+                    <h3 className="text-lg font-bold mb-3 text-gray-900 flex items-start gap-2">
+                      <span className="text-pink-600 font-bold">Q{index + 1}.</span>
+                      {faq.question}
+                    </h3>
+                    <p className="text-gray-600 leading-relaxed pl-6">{faq.answer}</p>
+                  </Card>
+                </motion.div>
               </ScrollReveal>
             ))}
           </div>

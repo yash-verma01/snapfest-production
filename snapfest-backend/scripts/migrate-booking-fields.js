@@ -87,3 +87,10 @@ const migrateBookingFields = async () => {
 // Run migration
 migrateBookingFields();
 
+
+
+
+
+
+
+
