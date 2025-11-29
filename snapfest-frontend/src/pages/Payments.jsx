@@ -45,19 +45,12 @@ const Payments = () => {
     const loadPayments = async () => {
       try {
         setLoading(true);
-        console.log('💳 Loading payment details...');
         const response = await userAPI.getPayments();
-        console.log('💳 Payment details response:', response.data);
-        console.log('💳 Payment details structure:', JSON.stringify(response.data, null, 2));
         const paymentDetails = response.data.data?.paymentDetails || [];
-        console.log('💳 Payment details received:', paymentDetails.length, 'bookings');
         setPaymentDetails(paymentDetails);
       } catch (err) {
-        console.error('💳 Error loading payments:', err);
-        console.error('💳 Error response:', err.response?.data);
-        console.error('💳 Error status:', err.response?.status);
+        console.error('Error loading payments');
         setError(err.message);
-        // Don't use dummy data, show empty state instead
         setPaymentDetails([]);
       } finally {
         setLoading(false);
@@ -174,10 +167,12 @@ const Payments = () => {
 
   const handleDownloadInvoice = (paymentId) => {
     // TODO: Implement invoice download
-    console.log('Download invoice for payment:', paymentId);
   };
 
   const handleViewDetails = (bookingId) => {
+    if (!bookingId) {
+      return;
+    }
     setSelectedBooking(bookingId);
     setShowBookingDetails(true);
   };

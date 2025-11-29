@@ -188,14 +188,28 @@ const Profile = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      const response = await userAPI.addTestimonial(testimonialForm);
-      setTestimonials(prev => [response.data.data.testimonial, ...prev]);
-      setTestimonialForm({ rating: 5, feedback: '' });
-      setShowTestimonialForm(false);
-      alert('Testimonial submitted successfully! It will be reviewed before being published.');
+      // Create review (without bookingId) - this will also create a testimonial entry for admin approval
+      const response = await userAPI.createReview({
+        rating: testimonialForm.rating,
+        feedback: testimonialForm.feedback
+        // No bookingId - this is a general review from profile
+      });
+      
+      if (response.data.success) {
+        alert('Review submitted successfully! It will be visible in the Reviews section immediately. If approved by admin, it will also appear in the Testimonials section.');
+        setTestimonialForm({ rating: 5, feedback: '' });
+        setShowTestimonialForm(false);
+        
+        // Reload testimonials to show the new one
+        const testimonialsResponse = await userAPI.getTestimonials();
+        if (testimonialsResponse.data.success) {
+          setTestimonials(testimonialsResponse.data.data.testimonials || []);
+        }
+      }
     } catch (error) {
-      console.error('Error submitting testimonial:', error);
-      alert('Error submitting testimonial. Please try again.');
+      console.error('Error submitting review:', error);
+      const errorMessage = error.response?.data?.message || 'Error submitting review. Please try again.';
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -522,15 +536,15 @@ const Profile = () => {
               </Card>
             )}
 
-            {/* Testimonials Section */}
+            {/* Reviews Section */}
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Your Testimonials</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Your Reviews</h3>
                 <Button
                   onClick={() => setShowTestimonialForm(!showTestimonialForm)}
                   className="bg-primary-600 hover:bg-primary-700 text-white"
                 >
-                  Add Testimonial
+                  Add Review
                 </Button>
               </div>
 
@@ -574,7 +588,7 @@ const Profile = () => {
                         disabled={loading}
                         className="bg-primary-600 hover:bg-primary-700 text-white"
                       >
-                        {loading ? 'Submitting...' : 'Submit Testimonial'}
+                        {loading ? 'Submitting...' : 'Submit Review'}
                       </Button>
                       <Button
                         type="button"
@@ -590,7 +604,7 @@ const Profile = () => {
 
               <div className="space-y-4">
                 {testimonials.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">No testimonials yet. Share your experience!</p>
+                  <p className="text-gray-500 text-center py-4">No reviews yet. Share your experience!</p>
                 ) : (
                   testimonials.map((testimonial) => (
                     <div key={testimonial._id} className="border border-gray-200 rounded-lg p-4">
@@ -605,15 +619,11 @@ const Profile = () => {
                             />
                           ))}
                         </div>
-                        <Badge
-                          className={
-                            testimonial.isApproved
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                          }
-                        >
-                          {testimonial.isApproved ? 'Published' : 'Pending Review'}
-                        </Badge>
+                        {testimonial.isApproved && (
+                          <Badge className="bg-green-100 text-green-800">
+                            Published in Testimonials
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-gray-700">{testimonial.feedback}</p>
                       <p className="text-sm text-gray-500 mt-2">

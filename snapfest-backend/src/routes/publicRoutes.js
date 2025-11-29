@@ -10,7 +10,9 @@ import {
   searchAll,
   getTrendingPackages,
   getPopularPackages,
-  getApprovedTestimonials
+  getApprovedTestimonials,
+  getAllReviews,
+  getAllGalleryImages
 } from '../controllers/publicController.js';
 import { getAllEvents, getEventById, getRecentEvents, getEventsByCategory, searchEvents } from '../controllers/eventController.js';
 import { getAllVenues, getVenueById } from '../controllers/venueController.js';
@@ -53,5 +55,11 @@ router.get('/search', validateSearch, searchAll);
 
 // ==================== TESTIMONIALS ====================
 router.get('/testimonials', getApprovedTestimonials);
+
+// ==================== REVIEWS ====================
+router.get('/reviews', getAllReviews);
+
+// ==================== GALLERY ====================
+router.get('/gallery', getAllGalleryImages);
 
 export default router;

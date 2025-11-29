@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { X, Calendar, MapPin, Package, DollarSign, CreditCard, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Calendar, MapPin, Package, DollarSign, CreditCard, Loader2 } from 'lucide-react';
 import { Card, Button, Badge } from '../ui';
-import ModalPortal from './ModalPortal';
+import Modal from './Modal';
 import { userAPI, paymentAPI } from '../../services/api';
 import { paymentService } from '../../services/paymentService';
 import { dateUtils } from '../../utils';
+import { motion } from 'framer-motion';
 
 const BookingDetailsModal = ({ isOpen, onClose, bookingId }) => {
   const [bookingDetails, setBookingDetails] = useState(null);
@@ -12,25 +13,44 @@ const BookingDetailsModal = ({ isOpen, onClose, bookingId }) => {
   const [error, setError] = useState(null);
   const [processingPayment, setProcessingPayment] = useState(false);
 
-  useEffect(() => {
-    if (isOpen && bookingId) {
-      loadBookingDetails();
+  const loadBookingDetails = useCallback(async () => {
+    if (!bookingId) {
+      setError('Booking ID is missing');
+      setLoading(false);
+      return;
     }
-  }, [isOpen, bookingId]);
 
-  const loadBookingDetails = async () => {
     try {
       setLoading(true);
       setError(null);
       const response = await userAPI.getBookingDetails(bookingId);
-      setBookingDetails(response.data.data);
+      
+      if (response.data.success && response.data.data) {
+        setBookingDetails(response.data.data);
+      } else {
+        throw new Error(response.data.message || 'Invalid response from server');
+      }
     } catch (err) {
-      console.error('Error loading booking details:', err);
-      setError(err.response?.data?.message || 'Failed to load booking details');
+      console.error('Error loading booking details');
+      setError(err.response?.data?.message || err.message || 'Failed to load booking details');
     } finally {
       setLoading(false);
     }
-  };
+  }, [bookingId]);
+
+  useEffect(() => {
+    if (isOpen && bookingId) {
+      // Reset state when modal opens with a new booking
+      setBookingDetails(null);
+      setError(null);
+      loadBookingDetails();
+    } else if (!isOpen) {
+      // Reset state when modal closes
+      setBookingDetails(null);
+      setError(null);
+    }
+  }, [isOpen, bookingId, loadBookingDetails]);
+
 
   const handlePayRemaining = async () => {
     if (!bookingDetails) return;
@@ -97,38 +117,41 @@ const BookingDetailsModal = ({ isOpen, onClose, bookingId }) => {
     }).format(amount);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <ModalPortal isOpen={isOpen}>
-      <Card className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Booking Details</h2>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onClose}
-              className="p-2"
-            >
-              <X className="w-5 h-5" />
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Booking Details"
+      size="xl"
+      className="max-h-[90vh] overflow-hidden"
+    >
+      <div className="overflow-y-auto" style={{ maxHeight: 'calc(90vh - 150px)' }}>
+        {loading ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center justify-center py-12"
+          >
+            <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+          </motion.div>
+        ) : error ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-12"
+          >
+            <p className="text-red-600">{error}</p>
+            <Button onClick={loadBookingDetails} className="mt-4">
+              Retry
             </Button>
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
-            </div>
-          ) : error ? (
-            <div className="text-center py-12">
-              <p className="text-red-600">{error}</p>
-              <Button onClick={loadBookingDetails} className="mt-4">
-                Retry
-              </Button>
-            </div>
-          ) : bookingDetails ? (
-            <div className="space-y-6">
+          </motion.div>
+        ) : bookingDetails ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-6"
+          >
               {/* Package Information */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Package Information</h3>
@@ -168,9 +191,6 @@ const BookingDetailsModal = ({ isOpen, onClose, bookingId }) => {
 
               {/* Customization */}
               {bookingDetails.booking.customization && (() => {
-                console.log('🔍 Customization exists:', bookingDetails.booking.customization);
-                console.log('🔍 Customization type:', typeof bookingDetails.booking.customization);
-
                 let customizationData = null;
                 
                 // Parse customization JSON
@@ -179,18 +199,12 @@ const BookingDetailsModal = ({ isOpen, onClose, bookingId }) => {
                     ? bookingDetails.booking.customization 
                     : JSON.stringify(bookingDetails.booking.customization);
                   
-                  console.log('🔍 Customization string:', customStr);
-                  
                   if (customStr && customStr.trim() !== '') {
                     customizationData = JSON.parse(customStr);
-                    console.log('✅ Parsed customization data:', customizationData);
                   } else {
-                    console.warn('⚠️ Customization string is empty');
                     return null;
                   }
                 } catch (e) {
-                  console.error('❌ Error parsing customization:', e);
-                  console.error('❌ Customization value:', bookingDetails.booking.customization);
                   // If parsing fails, show fallback
                   return (
                     <div>
@@ -207,7 +221,6 @@ const BookingDetailsModal = ({ isOpen, onClose, bookingId }) => {
                 }
 
                 if (!customizationData) {
-                  console.warn('⚠️ Customization data is null after parsing');
                   return null;
                 }
 
@@ -216,17 +229,7 @@ const BookingDetailsModal = ({ isOpen, onClose, bookingId }) => {
                 const hasCustomizations = Object.keys(selectedCustomizations).length > 0;
                 const hasRemovedFeatures = Array.isArray(removedFeatures) && removedFeatures.length > 0;
 
-                console.log('🔍 Customization check:', {
-                  hasCustomizations,
-                  hasRemovedFeatures,
-                  selectedCustomizationsCount: Object.keys(selectedCustomizations).length,
-                  removedFeaturesCount: removedFeatures.length,
-                  selectedCustomizations: selectedCustomizations,
-                  removedFeatures: removedFeatures
-                });
-
                 if (!hasCustomizations && !hasRemovedFeatures) {
-                  console.warn('⚠️ No customizations or removed features found');
                   return null;
                 }
 
@@ -441,11 +444,21 @@ const BookingDetailsModal = ({ isOpen, onClose, bookingId }) => {
                   </Button>
                 </div>
               )}
-            </div>
-          ) : null}
-        </div>
-      </Card>
-    </ModalPortal>
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-12"
+          >
+            <p className="text-gray-600 mb-4">No booking details available</p>
+            <Button onClick={loadBookingDetails}>
+              Reload
+            </Button>
+          </motion.div>
+        )}
+      </div>
+    </Modal>
   );
 };
 

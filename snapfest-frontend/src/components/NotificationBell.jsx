@@ -1,41 +1,22 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useEffect } from 'react';
+import { Popover, Transition } from '@headlessui/react';
 import { Bell, X, CheckCheck } from 'lucide-react';
 import { Badge } from './ui';
 import { adminAPI, vendorAPI } from '../services/api';
 import { useSocket } from '../hooks/useSocket';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
   const { socket, isConnected } = useSocket();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const dropdownRef = useRef(null);
-  const buttonRef = useRef(null);
 
   const API = userRole === 'admin' ? adminAPI : vendorAPI;
 
   useEffect(() => {
-    setMounted(true);
     fetchNotifications();
   }, [userRole]);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (isOpen && 
-          buttonRef.current && 
-          !buttonRef.current.contains(event.target) &&
-          !event.target.closest('.notification-dropdown')) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
 
   // Listen for real-time notifications via WebSocket
   useEffect(() => {
@@ -114,12 +95,12 @@ const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
     }
   };
 
-  const handleNotificationClick = (notification) => {
+  const handleNotificationClick = (notification, close) => {
     if (!notification.isRead) {
       handleMarkAsRead(notification._id);
     }
     
-    setIsOpen(false);
+    close();
     
     // Navigate based on notification type
     if (notification.relatedId && notification.relatedType) {
@@ -165,139 +146,148 @@ const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
     }
   }, []);
 
-  // Calculate dropdown position
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
-
-  useEffect(() => {
-    if (isOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + window.scrollY + 8,
-        right: window.innerWidth - rect.right
-      });
-    }
-  }, [isOpen]);
-
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        ref={buttonRef}
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-        title="Notifications"
-      >
-        <Bell className="w-5 h-5" />
-        {unreadCount > 0 && (
-          <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[18px] flex items-center justify-center z-[10000]">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </Badge>
-        )}
-        {!isConnected && (
-          <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-gray-400 rounded-full"></div>
-        )}
-      </button>
-
-      {isOpen && mounted && createPortal(
-        <div 
-          className="notification-dropdown fixed w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-[99999] max-h-96 overflow-hidden flex flex-col"
-          style={{
-            top: `${dropdownPosition.top}px`,
-            right: `${dropdownPosition.right}px`
-          }}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <h3 className="font-semibold text-gray-900">Notifications</h3>
-            <div className="flex items-center space-x-2">
-              {unreadCount > 0 && (
-                <button
-                  onClick={handleMarkAllAsRead}
-                  className="text-xs text-blue-600 hover:text-blue-700 p-1"
-                  title="Mark all as read"
-                >
-                  <CheckCheck className="w-4 h-4" />
-                </button>
-              )}
-              <button
-                onClick={() => setIsOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Notifications List */}
-          <div className="overflow-y-auto flex-1">
-            {loading ? (
-              <div className="p-8 text-center text-gray-500">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
-              </div>
-            ) : notifications.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                <Bell className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                <p>No notifications</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {notifications.map((notification) => (
-                  <div
-                    key={notification._id}
-                    onClick={() => handleNotificationClick(notification)}
-                    className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                      !notification.isRead ? 'bg-blue-50' : ''
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <p className={`text-sm font-medium ${
-                          !notification.isRead ? 'text-gray-900' : 'text-gray-700'
-                        }`}>
-                          {notification.title}
-                        </p>
-                        <p className="text-xs text-gray-600 mt-1">
-                          {notification.message}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {getTimeAgo(notification.createdAt)}
-                        </p>
-                      </div>
-                      {!notification.isRead && (
-                        <div className="ml-2">
-                          <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+    <Popover className="relative">
+      {({ open, close }) => (
+        <>
+          <Popover.Button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2">
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[18px] flex items-center justify-center z-[10000]">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </Badge>
             )}
-          </div>
+            {!isConnected && (
+              <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-gray-400 rounded-full"></div>
+            )}
+          </Popover.Button>
 
-          {/* Footer */}
-          {notifications.length > 0 && (
-            <div className="p-3 border-t border-gray-200 text-center">
-              <button
-                onClick={() => {
-                  setIsOpen(false);
-                  // Use onNavigate callback if provided (for Admin/Vendor Dashboard)
-                  if (onNavigate) {
-                    onNavigate('notifications');
-                  } else {
-                    // Fallback for other cases - navigate to dashboard with notifications tab
-                    window.location.href = userRole === 'admin' ? '/admin/dashboard?tab=notifications' : '/vendor/dashboard?tab=notifications';
-                  }
-                }}
-                className="text-sm text-blue-600 hover:text-blue-700"
+          <Transition
+            show={open}
+            as={React.Fragment}
+            enter="transition ease-out duration-200"
+            enterFrom="opacity-0 translate-y-1"
+            enterTo="opacity-100 translate-y-0"
+            leave="transition ease-in duration-150"
+            leaveFrom="opacity-100 translate-y-0"
+            leaveTo="opacity-0 translate-y-1"
+          >
+            <Popover.Panel
+              static
+              className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-[99999] max-h-96 overflow-hidden flex flex-col focus:outline-none"
+            >
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex flex-col h-full"
               >
-                View all notifications
-              </button>
-            </div>
-          )}
-        </div>,
-        document.body
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                  <h3 className="font-semibold text-gray-900">Notifications</h3>
+                  <div className="flex items-center space-x-2">
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={handleMarkAllAsRead}
+                        className="text-xs text-blue-600 hover:text-blue-700 p-1 transition-colors"
+                        title="Mark all as read"
+                      >
+                        <CheckCheck className="w-4 h-4" />
+                      </button>
+                    )}
+                    <Popover.Button className="text-gray-400 hover:text-gray-600 transition-colors">
+                      <X className="w-4 h-4" />
+                    </Popover.Button>
+                  </div>
+                </div>
+
+                {/* Notifications List */}
+                <div className="overflow-y-auto flex-1">
+                  {loading ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="p-8 text-center text-gray-500"
+                    >
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+                    </motion.div>
+                  ) : notifications.length === 0 ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="p-8 text-center text-gray-500"
+                    >
+                      <Bell className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                      <p>No notifications</p>
+                    </motion.div>
+                  ) : (
+                    <div className="divide-y divide-gray-100">
+                      <AnimatePresence>
+                        {notifications.map((notification, index) => (
+                          <motion.div
+                            key={notification._id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            transition={{ delay: index * 0.05 }}
+                            onClick={() => handleNotificationClick(notification, close)}
+                            className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+                              !notification.isRead ? 'bg-blue-50' : ''
+                            }`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <p className={`text-sm font-medium ${
+                                  !notification.isRead ? 'text-gray-900' : 'text-gray-700'
+                                }`}>
+                                  {notification.title}
+                                </p>
+                                <p className="text-xs text-gray-600 mt-1">
+                                  {notification.message}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-1">
+                                  {getTimeAgo(notification.createdAt)}
+                                </p>
+                              </div>
+                              {!notification.isRead && (
+                                <div className="ml-2">
+                                  <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                {notifications.length > 0 && (
+                  <div className="p-3 border-t border-gray-200 text-center">
+                    <button
+                      onClick={() => {
+                        close();
+                        // Use onNavigate callback if provided (for Admin/Vendor Dashboard)
+                        if (onNavigate) {
+                          onNavigate('notifications');
+                        } else {
+                          // Fallback for other cases - navigate to dashboard with notifications tab
+                          window.location.href = userRole === 'admin' ? '/admin/dashboard?tab=notifications' : '/vendor/dashboard?tab=notifications';
+                        }
+                      }}
+                      className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                    >
+                      View all notifications
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            </Popover.Panel>
+          </Transition>
+        </>
       )}
-    </div>
+    </Popover>
   );
 };
 

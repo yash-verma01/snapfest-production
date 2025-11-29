@@ -937,59 +937,130 @@ export const getUserReviews = asyncHandler(async (req, res) => {
 // @route   POST /api/users/reviews
 // @access  Private
 export const createUserReview = asyncHandler(async (req, res) => {
-  const { bookingId, rating, comment } = req.body;
+  const { bookingId, rating, comment, feedback } = req.body;
   const userId = req.userId;
 
-  // Check if booking exists and belongs to user
-  const booking = await Booking.findOne({ _id: bookingId, userId });
-  if (!booking) {
-    return res.status(404).json({
-      success: false,
-      message: 'Booking not found or does not belong to you'
-    });
-  }
+  // Use feedback if provided, otherwise use comment (for backward compatibility)
+  const reviewText = feedback || comment;
 
-  // Check if booking is completed
-  if (booking.status !== 'COMPLETED') {
+  if (!rating) {
     return res.status(400).json({
       success: false,
-      message: 'Can only review completed bookings'
+      message: 'Rating is required'
     });
   }
 
-  // Check if review already exists
-  const existingReview = await Review.findOne({ bookingId, userId });
-  if (existingReview) {
+  if (!reviewText || reviewText.trim().length === 0) {
     return res.status(400).json({
       success: false,
-      message: 'Review already exists for this booking'
+      message: 'Feedback is required'
     });
   }
 
-  // Create review
-  const review = await Review.create({
-    userId,
-    bookingId,
-    rating,
-    comment
-  });
+  if (rating < 1 || rating > 5) {
+    return res.status(400).json({
+      success: false,
+      message: 'Rating must be between 1 and 5'
+    });
+  }
 
-  // Populate review data
-  await review.populate('bookingId', 'packageId eventDate');
+  if (reviewText.trim().length < 10) {
+    return res.status(400).json({
+      success: false,
+      message: 'Feedback must be at least 10 characters long'
+    });
+  }
 
-  // Create audit log
-  // DISABLED: await AuditLog.create({
-  //     actorId: userId,
-  //     action: 'CREATE',
-  //     targetId: review._id,
-  //     description: 'User created review'
-  //   });
+  if (reviewText.trim().length > 1000) {
+    return res.status(400).json({
+      success: false,
+      message: 'Feedback must be less than 1000 characters'
+    });
+  }
 
-  res.status(201).json({
-    success: true,
-    message: 'Review created successfully',
-    data: { review }
-  });
+  // If bookingId is provided, validate it's a booking review
+  if (bookingId) {
+    // Check if booking exists and belongs to user
+    const booking = await Booking.findOne({ _id: bookingId, userId });
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found or does not belong to you'
+      });
+    }
+
+    // Check if booking is completed
+    if (booking.status !== 'COMPLETED') {
+      return res.status(400).json({
+        success: false,
+        message: 'Can only review completed bookings'
+      });
+    }
+
+    // Check if review already exists
+    const existingReview = await Review.findOne({ bookingId, userId });
+    if (existingReview) {
+      return res.status(400).json({
+        success: false,
+        message: 'Review already exists for this booking'
+      });
+    }
+
+    // Create booking review
+    const review = await Review.create({
+      userId,
+      bookingId,
+      rating,
+      feedback: reviewText,
+      type: 'BOOKING_REVIEW',
+      isApproved: true // Booking reviews are auto-approved and visible immediately
+    });
+
+    // Populate review data
+    await review.populate('bookingId', 'packageId eventDate');
+
+    res.status(201).json({
+      success: true,
+      message: 'Review created successfully',
+      data: { review }
+    });
+  } else {
+    // No bookingId - this is a general review from profile
+    // Create review (visible in Reviews section immediately)
+    const review = await Review.create({
+      userId,
+      rating,
+      feedback: reviewText,
+      type: 'BOOKING_REVIEW', // Use BOOKING_REVIEW type for general reviews too
+      isApproved: true // Reviews are visible immediately in Reviews section
+    });
+
+    // Also create a testimonial entry for admin approval
+    // This allows admin to approve it for the Testimonials section (homepage)
+    const testimonial = await Review.create({
+      userId,
+      rating,
+      feedback: reviewText,
+      type: 'TESTIMONIAL',
+      isApproved: false // Needs admin approval to show in Testimonials section
+    });
+
+    // Populate user data
+    await review.populate('userId', 'name');
+    await testimonial.populate('userId', 'name');
+
+    res.status(201).json({
+      success: true,
+      message: 'Review created successfully. It will be visible in the Reviews section. If approved by admin, it will also appear in the Testimonials section.',
+      data: { 
+        review,
+        testimonial: {
+          id: testimonial._id,
+          status: 'pending_approval'
+        }
+      }
+    });
+  }
 });
 
 // @desc    Get user notifications

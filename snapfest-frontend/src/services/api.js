@@ -36,12 +36,17 @@ api.interceptors.request.use(
 // Response interceptor to handle errors
 api.interceptors.response.use(
   (response) => {
-    console.log('🔗 API: Response received:', response.status, response.config.url);
+    // Only log in development mode, and only status/URL (no sensitive data)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('API Response:', response.status, response.config.url);
+    }
     return response;
   },
   (error) => {
-    console.error('🔗 API: Request failed:', error.response?.status, error.config?.url);
-    console.error('🔗 API: Error details:', error.response?.data);
+    // Only log error status/URL, not sensitive error data
+    if (process.env.NODE_ENV === 'development') {
+      console.error('API Request failed:', error.response?.status, error.config?.url);
+    }
     // Do not force redirect; Clerk handles auth UI and ProtectedRoute gates access
     return Promise.reject(error);
   }
@@ -292,8 +297,6 @@ export const adminAPI = {
   getBookingStats: () => api.get('/admin/bookings/stats'),
   getPaymentStats: () => api.get('/admin/payments/stats'),
   assignVendorToBooking: (id, data) => {
-    console.log('🔍 API Debug - assignVendorToBooking called with:', { id, data });
-    console.log('🔍 API Debug - URL will be:', `/admin/bookings/${id}/assign-vendor`);
     return api.post(`/admin/bookings/${id}/assign-vendor`, data);
   },
   
@@ -383,6 +386,15 @@ export const publicAPI = {
   
   // Testimonials
   getTestimonials: (params) => api.get('/testimonials', { params }),
+  
+  // Reviews
+  getReviews: (params) => api.get('/reviews', { params }),
+  
+  // Gallery
+  getGalleryImages: (params) => api.get('/gallery', { params }),
+  
+  // Hero Images
+  getHeroImages: () => api.get('/hero-images'),
 };
 
 export const bookingAPI = {

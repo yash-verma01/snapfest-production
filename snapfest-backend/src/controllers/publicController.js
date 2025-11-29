@@ -805,3 +805,181 @@ export const getApprovedTestimonials = asyncHandler(async (req, res) => {
     }
   });
 });
+
+// ==================== REVIEWS ====================
+
+// @desc    Get all public reviews (for Reviews page)
+// @route   GET /api/reviews
+// @access  Public
+export const getAllReviews = asyncHandler(async (req, res) => {
+  const { limit = 100, page = 1 } = req.query;
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+
+  // Only get BOOKING_REVIEW type, not TESTIMONIAL (to avoid duplicates)
+  // Testimonials are shown separately in the Testimonials section
+  const reviews = await Review.find({ 
+    type: 'BOOKING_REVIEW'  // Only show reviews, not testimonials
+  })
+    .populate('userId', 'name email')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(parseInt(limit));
+
+  const total = await Review.countDocuments({ type: 'BOOKING_REVIEW' });
+
+  res.status(200).json({
+    success: true,
+    data: {
+      reviews,
+      pagination: {
+        current: parseInt(page),
+        pages: Math.ceil(total / parseInt(limit)),
+        total
+      }
+    }
+  });
+});
+
+// ==================== GALLERY ====================
+
+// @desc    Get all gallery images from packages, events, and venues
+// @route   GET /api/gallery
+// @access  Public
+export const getAllGalleryImages = asyncHandler(async (req, res) => {
+  const { category, limit = 200 } = req.query; // category: 'events', 'venues', 'packages', or 'all'
+  
+  const images = [];
+  
+  // Get Events images
+  if (!category || category === 'all' || category === 'events') {
+    const events = await Event.find({ isActive: { $ne: false } })
+      .select('title type location images image')
+      .limit(100);
+    
+    events.forEach(event => {
+      // Add primary image
+      if (event.image) {
+        images.push({
+          id: `event-${event._id}-primary`,
+          url: event.image,
+          title: event.title,
+          category: 'events',
+          type: event.type,
+          location: event.location?.name || event.location?.city || '',
+          entityId: event._id,
+          entityType: 'event'
+        });
+      }
+      // Add gallery images
+      if (event.images && event.images.length > 0) {
+        event.images.forEach((imageUrl, index) => {
+          images.push({
+            id: `event-${event._id}-${index}`,
+            url: imageUrl,
+            title: event.title,
+            category: 'events',
+            type: event.type,
+            location: event.location?.name || event.location?.city || '',
+            entityId: event._id,
+            entityType: 'event'
+          });
+        });
+      }
+    });
+  }
+  
+  // Get Venues images
+  if (!category || category === 'all' || category === 'venues') {
+    const { Venue } = await import('../models/index.js');
+    const venues = await Venue.find({ isActive: { $ne: false } })
+      .select('name location images primaryImage type address')
+      .limit(100);
+    
+    venues.forEach(venue => {
+      // Add primary image
+      if (venue.primaryImage) {
+        images.push({
+          id: `venue-${venue._id}-primary`,
+          url: venue.primaryImage,
+          title: venue.name,
+          category: 'venues',
+          type: venue.type || 'VENUE',
+          location: venue.location || venue.address?.city || '',
+          entityId: venue._id,
+          entityType: 'venue'
+        });
+      }
+      // Add gallery images
+      if (venue.images && venue.images.length > 0) {
+        venue.images.forEach((imageUrl, index) => {
+          images.push({
+            id: `venue-${venue._id}-${index}`,
+            url: imageUrl,
+            title: venue.name,
+            category: 'venues',
+            type: venue.type || 'VENUE',
+            location: venue.location || venue.address?.city || '',
+            entityId: venue._id,
+            entityType: 'venue'
+          });
+        });
+      }
+    });
+  }
+  
+  // Get Packages images
+  if (!category || category === 'all' || category === 'packages') {
+    const { Package } = await import('../models/index.js');
+    const packages = await Package.find({ isActive: { $ne: false } })
+      .select('title category images primaryImage')
+      .limit(100);
+    
+    packages.forEach(pkg => {
+      // Add primary image
+      if (pkg.primaryImage) {
+        images.push({
+          id: `package-${pkg._id}-primary`,
+          url: pkg.primaryImage,
+          title: pkg.title,
+          category: 'packages',
+          type: pkg.category,
+          location: '',
+          entityId: pkg._id,
+          entityType: 'package'
+        });
+      }
+      // Add gallery images
+      if (pkg.images && pkg.images.length > 0) {
+        pkg.images.forEach((imageUrl, index) => {
+          images.push({
+            id: `package-${pkg._id}-${index}`,
+            url: imageUrl,
+            title: pkg.title,
+            category: 'packages',
+            type: pkg.category,
+            location: '',
+            entityId: pkg._id,
+            entityType: 'package'
+          });
+        });
+      }
+    });
+  }
+  
+  // Shuffle and limit
+  const shuffled = images.sort(() => 0.5 - Math.random());
+  const limited = shuffled.slice(0, parseInt(limit));
+  
+  res.status(200).json({
+    success: true,
+    data: {
+      images: limited,
+      total: images.length,
+      categories: {
+        events: images.filter(img => img.category === 'events').length,
+        venues: images.filter(img => img.category === 'venues').length,
+        packages: images.filter(img => img.category === 'packages').length
+      }
+    }
+  });
+});

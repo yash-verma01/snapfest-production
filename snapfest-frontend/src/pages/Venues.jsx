@@ -73,15 +73,18 @@ const Venues = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-pink-50 to-red-100">
-      {/* Hero Section - More Pinkish */}
-      <section className="relative bg-gradient-to-br from-pink-300 via-pink-200 to-red-300 text-pink-900 py-16 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-400/50 via-pink-300/50 to-red-400/50"></div>
+      {/* Hero Section with Background Image */}
+      <section 
+        className="relative text-white py-16 overflow-hidden bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url('/heroImages/WhatsApp Image 2025-11-28 at 10.55.36.jpeg')` }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30"></div>
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-pink-900 drop-shadow-md">
-              Find Your Perfect <span className="text-pink-600">Venue</span>
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-white drop-shadow-lg">
+              Find Your Perfect <span className="text-pink-200">Venue</span>
             </h1>
-            <p className="text-xl md:text-2xl text-pink-800 mb-8 font-semibold">
+            <p className="text-xl md:text-2xl text-white/95 mb-8 font-semibold drop-shadow-md">
               Discover beautiful venues for your special events
             </p>
             
@@ -90,23 +93,24 @@ const Venues = () => {
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 z-10" />
                     <input
                       type="text"
                       placeholder="Search venues or locations..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border-0 text-gray-900 focus:ring-2 focus:ring-yellow-300"
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border-0 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-pink-500 focus:outline-none shadow-lg"
                     />
                   </div>
                 </div>
-                <Button
+                <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className="bg-white text-pink-600 hover:bg-pink-50 px-6 py-3 flex items-center gap-2"
+                  className="bg-white text-pink-600 hover:bg-pink-50 px-6 py-3 rounded-lg flex items-center gap-2 shadow-lg font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
+                  style={{ backgroundColor: 'white', color: '#db2777' }}
                 >
                   <SlidersHorizontal className="w-5 h-5" />
                   Filters
-                </Button>
+                </button>
               </div>
             </div>
           </div>

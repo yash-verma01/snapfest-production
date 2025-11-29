@@ -47,7 +47,6 @@ const Bookings = () => {
   const loadBookings = async () => {
     try {
       setLoading(true);
-      console.log('📅 Frontend: Loading bookings...');
       
       // Use bookingAPI which handles Clerk cookie authentication properly
       const response = await bookingAPI.getBookings({
@@ -55,11 +54,9 @@ const Bookings = () => {
         limit: 50
       });
       
-      console.log('📅 Frontend: Bookings response:', response.data);
-      
       setBookings(response.data.data?.bookings || []);
     } catch (error) {
-      console.error('Error loading bookings:', error);
+      console.error('Error loading bookings');
       setError(error.response?.data?.message || error.message);
     } finally {
       setLoading(false);

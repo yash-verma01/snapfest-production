@@ -81,9 +81,22 @@ const EventsEnhanced = () => {
   // Memoize filtered events to avoid recalculating on every render
   const filteredEvents = useMemo(() => {
     return events.filter(event => {
-      const matchesSearch = !searchQuery || 
-        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.description.toLowerCase().includes(searchQuery.toLowerCase());
+      // Enhanced search - checks title, description, type, and location
+      const matchesSearch = !searchQuery || (() => {
+        const query = searchQuery.toLowerCase();
+        const searchableFields = [
+          event.title || '',
+          event.description || '',
+          event.type || '',
+          typeof event.location === 'string' 
+            ? event.location 
+            : (event.location?.name || event.location?.fullAddress || event.location?.city || '')
+        ];
+        
+        return searchableFields.some(field => 
+          field.toLowerCase().includes(query)
+        );
+      })();
       
       const matchesType = !selectedType || event.type === selectedType;
       const matchesLocation = !selectedLocation || 
@@ -92,9 +105,23 @@ const EventsEnhanced = () => {
           : (event.location?.name || event.location?.fullAddress || '').toLowerCase().includes(selectedLocation.toLowerCase())
         );
       
-      return matchesSearch && matchesType && matchesLocation;
+      // Apply rating filter
+      const matchesRating = !selectedRating || (() => {
+        const minRating = parseFloat(selectedRating);
+        const eventRating = event.rating || event.averageRating || 0;
+        return eventRating >= minRating;
+      })();
+      
+      // Apply date filter
+      const matchesDate = !selectedDate || (() => {
+        if (!event.date) return false;
+        const eventDate = new Date(event.date).toISOString().split('T')[0];
+        return eventDate === selectedDate;
+      })();
+      
+      return matchesSearch && matchesType && matchesLocation && matchesRating && matchesDate;
     });
-  }, [events, searchQuery, selectedType, selectedLocation]);
+  }, [events, searchQuery, selectedType, selectedLocation, selectedRating, selectedDate]);
 
   // Memoize sorted events to avoid recalculating on every render
   const sortedEvents = useMemo(() => {
@@ -178,15 +205,16 @@ const EventsEnhanced = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-pink-50 to-red-100">
-      {/* Hero Section - More Pinkish */}
-      <section className="relative bg-gradient-to-br from-pink-300 via-pink-200 to-red-300 text-pink-900 py-16 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-400/50 via-pink-300/50 to-red-400/50"></div>
-        <div className="container mx-auto px-4 relative z-10">
+      {/* Hero Section with Background Image */}
+      <section className="relative overflow-hidden min-h-[400px] flex items-center bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url('/heroImages/WhatsApp Image 2025-11-28 at 10.55.36.jpeg')` }}>
+        {/* Overlay for text readability - subtle dark overlay only */}
+        <div className="absolute inset-0 bg-black/30"></div>
+        <div className="container mx-auto px-4 relative z-10 w-full">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-pink-900 drop-shadow-md">
-              Photography <span className="text-pink-600">Events</span>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-white drop-shadow-2xl">
+              Photography <span className="text-pink-200">Events</span>
             </h1>
-            <p className="text-xl md:text-2xl text-pink-800 mb-8 font-semibold">
+            <p className="text-xl md:text-2xl text-white/95 mb-8 font-semibold drop-shadow-lg">
               Join our photography workshops, exhibitions, and meetups
             </p>
             
@@ -200,7 +228,7 @@ const EventsEnhanced = () => {
                     placeholder="Search for events, workshops, or photography sessions..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 text-base border border-pink-200 rounded-xl focus:ring-2 focus:ring-pink-200 focus:border-pink-500 transition-all duration-300 bg-white/80 backdrop-blur-sm shadow-lg"
+                    className="w-full pl-12 pr-4 py-3 text-base border border-white/30 rounded-xl focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-300 bg-white/80 backdrop-blur-sm shadow-lg text-gray-900 placeholder-gray-500"
                   />
                   <Button
                     type="submit"
@@ -215,159 +243,12 @@ const EventsEnhanced = () => {
         </div>
       </section>
 
-      {/* Advanced Filters Section */}
-      {showFilters && (
-        <section className="bg-gradient-to-br from-pink-100 via-pink-50 to-red-100 border-b border-pink-300">
-          <div className="container mx-auto px-4 py-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Event Type Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Event Type</label>
-                <select
-                  value={selectedType}
-                  onChange={(e) => handleTypeFilter(e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                >
-                  <option value="">All Event Types</option>
-                  {eventTypes.map(type => (
-                    <option key={type.value} value={type.value}>{type.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Min Price */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Min Price</label>
-                <input
-                  type="number"
-                  placeholder="₹0"
-                  value={priceRange.min}
-                  onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
-                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Max Price */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Max Price</label>
-                <input
-                  type="number"
-                  placeholder="₹1000000"
-                  value={priceRange.max}
-                  onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
-                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Sort By */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => handleSortChange(e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                >
-                  <option value="date">Date</option>
-                  <option value="title">Title</option>
-                  <option value="price">Price</option>
-                  <option value="popularity">Popularity</option>
-                  <option value="rating">Rating</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Additional Filters Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-              {/* Location Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                <select
-                  value={selectedLocation}
-                  onChange={(e) => setSelectedLocation(e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                >
-                  <option value="">All Locations</option>
-                  <option value="mumbai">Mumbai</option>
-                  <option value="delhi">Delhi</option>
-                  <option value="bangalore">Bangalore</option>
-                  <option value="chennai">Chennai</option>
-                  <option value="kolkata">Kolkata</option>
-                  <option value="online">Online</option>
-                </select>
-              </div>
-
-              {/* Rating Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Rating</label>
-                <select
-                  value={selectedRating}
-                  onChange={(e) => setSelectedRating(e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                >
-                  <option value="">Any Rating</option>
-                  <option value="5">5 Stars</option>
-                  <option value="4">4+ Stars</option>
-                  <option value="3">3+ Stars</option>
-                  <option value="2">2+ Stars</option>
-                  <option value="1">1+ Stars</option>
-                </select>
-              </div>
-
-              {/* Date Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Event Date</label>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            {/* Filter Actions */}
-            <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
-              <Button
-                onClick={clearFilters}
-                variant="outline"
-                className="text-gray-600 border-gray-300 hover:bg-gray-50"
-              >
-                Clear All Filters
-              </Button>
-              <Button
-                onClick={() => {
-                  handlePriceFilter(priceRange.min, priceRange.max);
-                  setShowFilters(false);
-                }}
-                className="bg-pink-500 hover:bg-pink-600 text-white"
-              >
-                Apply Filters
-              </Button>
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* Results Section */}
       <section className="py-12 bg-gradient-to-br from-pink-100 via-pink-50 to-red-100">
         <div className="container mx-auto px-4">
-          {/* Search and Filters */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 mb-8 border-2 border-pink-100">
-            <div className="flex flex-col lg:flex-row gap-4">
-              {/* Search */}
-              <form onSubmit={handleSearch} className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Search events, workshops, or photography sessions..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                  />
-                </div>
-              </form>
-
+          {/* Filters */}
+          <div className="mb-8">
+            <div className="flex flex-col lg:flex-row gap-4 justify-end mb-4">
               {/* Filter Toggle */}
               <Button
                 onClick={() => setShowFilters(!showFilters)}
@@ -397,8 +278,8 @@ const EventsEnhanced = () => {
 
             {/* Filters Panel */}
             {showFilters && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 border-2 border-pink-100">
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                   {/* Event Type Filter */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Event Type</label>
@@ -413,68 +294,10 @@ const EventsEnhanced = () => {
                       ))}
                     </select>
                   </div>
-
-                  {/* Min Price */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Min Price</label>
-                    <input
-                      type="number"
-                      placeholder="₹0"
-                      value={priceRange.min}
-                      onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
-                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  {/* Max Price */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Max Price</label>
-                    <input
-                      type="number"
-                      placeholder="₹1000000"
-                      value={priceRange.max}
-                      onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
-                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  {/* Sort By */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-                    <select
-                      value={sortBy}
-                      onChange={(e) => handleSortChange(e.target.value)}
-                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                    >
-                      <option value="date">Date</option>
-                      <option value="title">Title</option>
-                      <option value="price">Price</option>
-                      <option value="popularity">Popularity</option>
-                      <option value="rating">Rating</option>
-                    </select>
-                  </div>
                 </div>
 
                 {/* Additional Filters Row */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                  {/* Location Filter */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                    <select
-                      value={selectedLocation}
-                      onChange={(e) => setSelectedLocation(e.target.value)}
-                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                    >
-                      <option value="">All Locations</option>
-                      <option value="mumbai">Mumbai</option>
-                      <option value="delhi">Delhi</option>
-                      <option value="bangalore">Bangalore</option>
-                      <option value="chennai">Chennai</option>
-                      <option value="kolkata">Kolkata</option>
-                      <option value="online">Online</option>
-                    </select>
-                  </div>
-
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   {/* Rating Filter */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Rating</label>
@@ -513,15 +336,24 @@ const EventsEnhanced = () => {
                   >
                     Clear All Filters
                   </Button>
-                  <Button
-                    onClick={() => {
-                      handlePriceFilter(priceRange.min, priceRange.max);
-                      setShowFilters(false);
-                    }}
-                    className="bg-pink-500 hover:bg-pink-600 text-white"
-                  >
-                    Apply Filters
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setShowFilters(false)}
+                      variant="outline"
+                      className="text-gray-600 border-gray-300 hover:bg-gray-50"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        handlePriceFilter(priceRange.min, priceRange.max);
+                        setShowFilters(false);
+                      }}
+                      className="bg-pink-500 hover:bg-pink-600 text-white"
+                    >
+                      Apply Filters
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
@@ -534,22 +366,7 @@ const EventsEnhanced = () => {
               <p className="text-gray-600">
                 Showing {filteredEvents.length} events
                 {selectedType && ` in ${selectedType}`}
-                {priceRange.min && priceRange.max && ` • ₹${priceRange.min} - ₹${priceRange.max}`}
               </p>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Sort by:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => handleSortChange(e.target.value)}
-                  className="text-sm border border-gray-200 rounded-lg px-3 py-1"
-                >
-                  <option value="date">Date</option>
-                  <option value="title">Title</option>
-                  <option value="price">Price</option>
-                  <option value="popularity">Popularity</option>
-                  <option value="rating">Rating</option>
-                </select>
-              </div>
             </div>
 
             {/* Events Grid */}

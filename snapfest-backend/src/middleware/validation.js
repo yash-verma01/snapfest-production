@@ -611,8 +611,7 @@ export const validateCartItem = [
 // Review validation
 export const validateReview = [
   body('bookingId')
-    .notEmpty()
-    .withMessage('Booking ID is required')
+    .optional()
     .isMongoId()
     .withMessage('Invalid booking ID'),
   
@@ -627,6 +626,12 @@ export const validateReview = [
     .trim()
     .isLength({ max: 500 })
     .withMessage('Comment must be less than 500 characters'),
+  
+  body('feedback')
+    .optional()
+    .trim()
+    .isLength({ min: 10, max: 1000 })
+    .withMessage('Feedback must be between 10 and 1000 characters'),
   
   handleValidationErrors
 ];

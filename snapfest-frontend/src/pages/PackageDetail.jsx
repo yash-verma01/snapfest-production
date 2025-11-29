@@ -522,7 +522,7 @@ const PackageDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Images */}
           <div className="lg:col-span-2">
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Main Image with Enhanced Gallery */}
               <ScrollReveal direction="right">
                 <GlassCard className="overflow-hidden">
@@ -586,6 +586,108 @@ const PackageDetail = () => {
                   <p className="text-gray-600 text-sm leading-relaxed">{packageData.description}</p>
                 </GlassCard>
               </ScrollReveal>
+
+              {/* Package Features Section */}
+              {packageData.includedFeatures && packageData.includedFeatures.length > 0 && (
+                <ScrollReveal direction="up" delay={0.3}>
+                  <GlassCard className="p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">What's Included</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {packageData.includedFeatures.map((feature, index) => (
+                        <div key={index} className={`bg-white rounded-lg p-3 border transition-all duration-200 ${
+                          removedFeatures[feature.name] 
+                            ? 'bg-gray-50 border-gray-200 opacity-60' 
+                            : 'border-gray-200 hover:shadow-sm'
+                        }`}>
+                          <div className="flex items-start space-x-2">
+                            <div className="flex-shrink-0">
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                                removedFeatures[feature.name] 
+                                  ? 'bg-gray-200' 
+                                  : 'bg-pink-100'
+                              }`}>
+                                {removedFeatures[feature.name] ? (
+                                  <X className="w-3 h-3 text-gray-500" />
+                                ) : (
+                                  <Check className="w-3 h-3 text-pink-600" />
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-1">
+                                <h3 className={`font-medium text-sm ${
+                                  removedFeatures[feature.name] 
+                                    ? 'text-gray-500 line-through' 
+                                    : 'text-gray-900'
+                                }`}>
+                                  {feature.name}
+                                </h3>
+                                {feature.price > 0 && (
+                                  <span className={`text-xs font-semibold ${
+                                    removedFeatures[feature.name] 
+                                      ? 'text-gray-500' 
+                                      : 'text-pink-600'
+                                  }`}>
+                                    {formatPrice(feature.price)}
+                                  </span>
+                                )}
+                              </div>
+                              <p className={`text-xs ${
+                                removedFeatures[feature.name] 
+                                  ? 'text-gray-400' 
+                                  : 'text-gray-600'
+                              }`}>
+                                {feature.description}
+                              </p>
+                              {feature.isRemovable && (
+                                <div className="mt-2">
+                                  <Button
+                                    onClick={() => handleFeatureToggle(feature)}
+                                    variant={removedFeatures[feature.name] ? "outline" : "ghost"}
+                                    size="sm"
+                                    className={`text-xs px-2 py-1 ${
+                                      removedFeatures[feature.name]
+                                        ? 'text-green-600 border-green-300 hover:bg-green-50'
+                                        : 'text-red-600 hover:bg-red-50'
+                                    }`}
+                                  >
+                                    {removedFeatures[feature.name] ? 'Add Back' : 'Remove'}
+                                  </Button>
+                                </div>
+                              )}
+                              {!feature.isRemovable && (
+                                <div className="mt-1">
+                                  <Badge className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5">
+                                    Required
+                                  </Badge>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {calculateRemovedFeaturesTotal() > 0 && (
+                      <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+                              <Check className="w-3 h-3 text-green-600" />
+                            </div>
+                            <span className="text-green-800 font-medium text-sm">You're saving money!</span>
+                          </div>
+                          <span className="text-green-600 font-bold">
+                            -{formatPrice(calculateRemovedFeaturesTotal())}
+                          </span>
+                        </div>
+                        <p className="text-green-700 text-xs mt-1">
+                          Removed optional features to reduce package cost
+                        </p>
+                      </div>
+                    )}
+                  </GlassCard>
+                </ScrollReveal>
+              )}
             </div>
           </div>
 
@@ -782,107 +884,6 @@ const PackageDetail = () => {
             </div>
           </div>
         </div>
-
-        {/* Package Features Section */}
-        {packageData.includedFeatures && packageData.includedFeatures.length > 0 && (
-          <div className="mt-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">What's Included</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {packageData.includedFeatures.map((feature, index) => (
-                <div key={index} className={`bg-white rounded-lg p-3 border transition-all duration-200 ${
-                  removedFeatures[feature.name] 
-                    ? 'bg-gray-50 border-gray-200 opacity-60' 
-                    : 'border-gray-200 hover:shadow-sm'
-                }`}>
-                  <div className="flex items-start space-x-2">
-                    <div className="flex-shrink-0">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                        removedFeatures[feature.name] 
-                          ? 'bg-gray-200' 
-                          : 'bg-pink-100'
-                      }`}>
-                        {removedFeatures[feature.name] ? (
-                          <X className="w-3 h-3 text-gray-500" />
-                        ) : (
-                          <Check className="w-3 h-3 text-pink-600" />
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className={`font-medium text-sm ${
-                          removedFeatures[feature.name] 
-                            ? 'text-gray-500 line-through' 
-                            : 'text-gray-900'
-                        }`}>
-                          {feature.name}
-                        </h3>
-                        {feature.price > 0 && (
-                          <span className={`text-xs font-semibold ${
-                            removedFeatures[feature.name] 
-                              ? 'text-gray-500' 
-                              : 'text-pink-600'
-                          }`}>
-                            {formatPrice(feature.price)}
-                          </span>
-                        )}
-                      </div>
-                      <p className={`text-xs ${
-                        removedFeatures[feature.name] 
-                          ? 'text-gray-400' 
-                          : 'text-gray-600'
-                      }`}>
-                        {feature.description}
-                      </p>
-                      {feature.isRemovable && (
-                        <div className="mt-2">
-                          <Button
-                            onClick={() => handleFeatureToggle(feature)}
-                            variant={removedFeatures[feature.name] ? "outline" : "ghost"}
-                            size="sm"
-                            className={`text-xs px-2 py-1 ${
-                              removedFeatures[feature.name]
-                                ? 'text-green-600 border-green-300 hover:bg-green-50'
-                                : 'text-red-600 hover:bg-red-50'
-                            }`}
-                          >
-                            {removedFeatures[feature.name] ? 'Add Back' : 'Remove'}
-                          </Button>
-                        </div>
-                      )}
-                      {!feature.isRemovable && (
-                        <div className="mt-1">
-                          <Badge className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5">
-                            Required
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            {calculateRemovedFeaturesTotal() > 0 && (
-              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
-                      <Check className="w-3 h-3 text-green-600" />
-                    </div>
-                    <span className="text-green-800 font-medium text-sm">You're saving money!</span>
-                  </div>
-                  <span className="text-green-600 font-bold">
-                    -{formatPrice(calculateRemovedFeaturesTotal())}
-                  </span>
-                </div>
-                <p className="text-green-700 text-xs mt-1">
-                  Removed optional features to reduce package cost
-                </p>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Package Highlights */}
         {packageData.highlights && packageData.highlights.length > 0 && (

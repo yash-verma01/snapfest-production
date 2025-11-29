@@ -19,6 +19,7 @@ const Packages = lazy(() => import('./pages/Packages'));
 const Events = lazy(() => import('./pages/Events'));
 const EventDetail = lazy(() => import('./pages/EventDetail'));
 const Gallery = lazy(() => import('./pages/Gallery'));
+const Reviews = lazy(() => import('./pages/Reviews'));
 const About = lazy(() => import('./pages/About'));
 const Contact = lazy(() => import('./pages/Contact'));
 const Venues = lazy(() => import('./pages/Venues'));
@@ -116,6 +117,7 @@ function UserApp() {
                   <Route path="/events" element={<Events />} />
                   <Route path="/events/:id" element={<EventDetail />} />
                   <Route path="/gallery" element={<Gallery />} />
+                  <Route path="/reviews" element={<Reviews />} />
                   <Route path="/venues" element={<Venues />} />
                   <Route path="/venues/:id" element={<VenueDetail />} />
                   <Route path="/about" element={<About />} />

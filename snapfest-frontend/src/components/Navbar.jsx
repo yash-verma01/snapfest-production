@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser, useClerk, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
-import { Menu, X, User, LogOut, Settings, Package, Calendar, Home, Camera, Heart, ShoppingCart } from 'lucide-react';
+import { Menu as MenuIcon, X, User, LogOut, Settings, Package, Calendar, Home, Camera, Heart, ShoppingCart, Star } from 'lucide-react';
+import { Menu, Transition } from '@headlessui/react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [userRole, setUserRole] = useState(null);
   const [backendUserName, setBackendUserName] = useState(null);
   const { user, isLoaded } = useUser();
@@ -128,7 +129,6 @@ const Navbar = () => {
   const handleLogout = async () => {
     await signOut();
     navigate('/');
-    setIsProfileOpen(false);
   };
 
   // Get role from sessionStorage (during signup) > Clerk metadata > backend > default
@@ -214,6 +214,18 @@ const Navbar = () => {
                   Events
                 </Link>
                 <Link
+                  to="/gallery"
+                  className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300 hover:scale-105"
+                >
+                  Gallery
+                </Link>
+                <Link
+                  to="/reviews"
+                  className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300 hover:scale-105"
+                >
+                  Reviews
+                </Link>
+                <Link
                   to="/venues"
                   className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300 hover:scale-105"
                 >
@@ -247,90 +259,144 @@ const Navbar = () => {
           {/* Desktop Auth Section - Professional Style */}
           <div className="hidden md:flex items-center space-x-3">
             {user ? (
-              <div className="relative">
-                <button
-                  onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className="flex items-center space-x-2 text-gray-700 hover:text-pink-600 transition-all duration-300 hover:scale-105 bg-white/50 backdrop-blur-sm px-3 py-2 rounded-lg border border-pink-100"
-                >
-                  <div className="w-7 h-7 bg-gradient-to-br from-pink-400 to-red-400 rounded-full flex items-center justify-center">
-                    <User className="w-3 h-3 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-semibold text-xs">
-                      {(() => {
-                        // Extract first name from backend name if it exists
-                        if (backendUserName) {
-                          return backendUserName.split(' ')[0];
-                        }
-                        // Use Clerk firstName if available
-                        if (user?.firstName) {
-                          return user.firstName;
-                        }
-                        // Extract first name from fullName if available
-                        if (user?.fullName) {
-                          return user.fullName.split(' ')[0];
-                        }
-                        return 'User';
-                      })()}
-                    </div>
-                    <div className="text-xs text-pink-600 font-medium">
-                      {getRoleDisplayName()}
-                    </div>
-                  </div>
-                </button>
+              <Menu as="div" className="relative">
+                {({ open }) => (
+                  <>
+                    <Menu.Button className="flex items-center space-x-2 text-gray-700 hover:text-pink-600 transition-all duration-300 hover:scale-105 bg-white/50 backdrop-blur-sm px-3 py-2 rounded-lg border border-pink-100 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2">
+                      <div className="w-7 h-7 bg-gradient-to-br from-pink-400 to-red-400 rounded-full flex items-center justify-center">
+                        <User className="w-3 h-3 text-white" />
+                      </div>
+                      <div className="text-left">
+                        <div className="font-semibold text-xs">
+                          {(() => {
+                            // Extract first name from backend name if it exists
+                            if (backendUserName) {
+                              return backendUserName.split(' ')[0];
+                            }
+                            // Use Clerk firstName if available
+                            if (user?.firstName) {
+                              return user.firstName;
+                            }
+                            // Extract first name from fullName if available
+                            if (user?.fullName) {
+                              return user.fullName.split(' ')[0];
+                            }
+                            return 'User';
+                          })()}
+                        </div>
+                        <div className="text-xs text-pink-600 font-medium">
+                          {getRoleDisplayName()}
+                        </div>
+                      </div>
+                    </Menu.Button>
 
-                {/* Profile Dropdown */}
-                {isProfileOpen && (
-                  <div className="absolute right-0 mt-3 w-56 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-primary-100 py-2 z-50">
-                    {(currentRole === 'admin' || currentRole === 'vendor') && (
-                      <Link
-                        to={getDashboardLink()}
-                        className="flex items-center px-4 py-3 text-sm text-neutral-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300"
-                        onClick={() => setIsProfileOpen(false)}
+                    <Transition
+                      show={open}
+                      as={React.Fragment}
+                      enter="transition ease-out duration-200"
+                      enterFrom="opacity-0 scale-95 translate-y-[-10px]"
+                      enterTo="opacity-100 scale-100 translate-y-0"
+                      leave="transition ease-in duration-150"
+                      leaveFrom="opacity-100 scale-100 translate-y-0"
+                      leaveTo="opacity-0 scale-95 translate-y-[-10px]"
+                    >
+                      <Menu.Items
+                        static
+                        className="absolute right-0 mt-3 w-56 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-primary-100 py-2 z-50 focus:outline-none overflow-hidden"
                       >
-                        <Home className="w-4 h-4 mr-3 text-primary-500" />
-                        Dashboard
-                      </Link>
-                    )}
-                    <Link
-                      to={getProfileLink()}
-                      className="flex items-center px-4 py-3 text-sm text-neutral-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300"
-                      onClick={() => setIsProfileOpen(false)}
-                    >
-                      <Settings className="w-4 h-4 mr-3 text-primary-500" />
-                      Profile
-                    </Link>
-                    {currentRole === 'user' && (
-                      <>
-                        <Link
-                          to="/user/bookings"
-                          className="flex items-center px-4 py-3 text-sm text-neutral-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300"
-                          onClick={() => setIsProfileOpen(false)}
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.2 }}
                         >
-                          <Calendar className="w-4 h-4 mr-3 text-primary-500" />
-                          Bookings
-                        </Link>
-                        <Link
-                          to="/user/payments"
-                          className="flex items-center px-4 py-3 text-sm text-neutral-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300"
-                          onClick={() => setIsProfileOpen(false)}
-                        >
-                          <Package className="w-4 h-4 mr-3 text-primary-500" />
-                          Payments
-                        </Link>
-                      </>
-                    )}
-                    <div className="border-t border-primary-100 my-2"></div>
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center w-full px-4 py-3 text-sm text-secondary-600 hover:bg-gradient-to-r hover:from-secondary-50 hover:to-red-50 transition-all duration-300"
-                    >
-                      <LogOut className="w-4 h-4 mr-3" />
-                      Logout
-                    </button>
-                  </div>
+                          {(currentRole === 'admin' || currentRole === 'vendor') && (
+                            <Menu.Item>
+                              {({ active }) => (
+                                <Link
+                                  to={getDashboardLink()}
+                                  className={`flex items-center px-4 py-3 text-sm transition-all duration-200 ${
+                                    active
+                                      ? 'bg-gradient-to-r from-primary-50 to-accent-50 text-primary-700'
+                                      : 'text-neutral-700'
+                                  }`}
+                                >
+                                  <Home className="w-4 h-4 mr-3 text-primary-500" />
+                                  Dashboard
+                                </Link>
+                              )}
+                            </Menu.Item>
+                          )}
+                          <Menu.Item>
+                            {({ active }) => (
+                              <Link
+                                to={getProfileLink()}
+                                className={`flex items-center px-4 py-3 text-sm transition-all duration-200 ${
+                                  active
+                                    ? 'bg-gradient-to-r from-primary-50 to-accent-50 text-primary-700'
+                                    : 'text-neutral-700'
+                                }`}
+                              >
+                                <Settings className="w-4 h-4 mr-3 text-primary-500" />
+                                Profile
+                              </Link>
+                            )}
+                          </Menu.Item>
+                          {currentRole === 'user' && (
+                            <>
+                              <Menu.Item>
+                                {({ active }) => (
+                                  <Link
+                                    to="/user/bookings"
+                                    className={`flex items-center px-4 py-3 text-sm transition-all duration-200 ${
+                                      active
+                                        ? 'bg-gradient-to-r from-primary-50 to-accent-50 text-primary-700'
+                                        : 'text-neutral-700'
+                                    }`}
+                                  >
+                                    <Calendar className="w-4 h-4 mr-3 text-primary-500" />
+                                    Bookings
+                                  </Link>
+                                )}
+                              </Menu.Item>
+                              <Menu.Item>
+                                {({ active }) => (
+                                  <Link
+                                    to="/user/payments"
+                                    className={`flex items-center px-4 py-3 text-sm transition-all duration-200 ${
+                                      active
+                                        ? 'bg-gradient-to-r from-primary-50 to-accent-50 text-primary-700'
+                                        : 'text-neutral-700'
+                                    }`}
+                                  >
+                                    <Package className="w-4 h-4 mr-3 text-primary-500" />
+                                    Payments
+                                  </Link>
+                                )}
+                              </Menu.Item>
+                            </>
+                          )}
+                          <div className="border-t border-primary-100 my-2"></div>
+                          <Menu.Item>
+                            {({ active }) => (
+                              <button
+                                onClick={handleLogout}
+                                className={`flex items-center w-full px-4 py-3 text-sm transition-all duration-200 ${
+                                  active
+                                    ? 'bg-gradient-to-r from-secondary-50 to-red-50 text-red-600'
+                                    : 'text-secondary-600'
+                                }`}
+                              >
+                                <LogOut className="w-4 h-4 mr-3" />
+                                Logout
+                              </button>
+                            )}
+                          </Menu.Item>
+                        </motion.div>
+                      </Menu.Items>
+                    </Transition>
+                  </>
                 )}
-              </div>
+              </Menu>
             ) : (
               <div className="flex items-center space-x-3">
                 <Link
@@ -355,15 +421,28 @@ const Navbar = () => {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="text-neutral-700 hover:text-primary-600 transition-all duration-300 hover:scale-105 p-2 rounded-xl hover:bg-primary-50"
             >
-              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isMenuOpen ? <X className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
             </button>
           </div>
         </div>
 
         {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden">
-            <div className="px-4 pt-4 pb-6 space-y-2 bg-gradient-to-br from-white to-pearl-50 rounded-2xl mx-2 mb-4 shadow-xl border border-primary-100">
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="md:hidden overflow-hidden"
+            >
+              <motion.div
+                initial={{ y: -20 }}
+                animate={{ y: 0 }}
+                exit={{ y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="px-4 pt-4 pb-6 space-y-2 bg-gradient-to-br from-white to-pearl-50 rounded-2xl mx-2 mb-4 shadow-xl border border-primary-100"
+              >
               <Link
                 to="/"
                 className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
@@ -390,6 +469,22 @@ const Navbar = () => {
                   >
                     <Calendar className="w-5 h-5 mr-3 text-primary-500" />
                     Events
+                  </Link>
+                  <Link
+                    to="/gallery"
+                    className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Camera className="w-5 h-5 mr-3 text-primary-500" />
+                    Gallery
+                  </Link>
+                  <Link
+                    to="/reviews"
+                    className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Star className="w-5 h-5 mr-3 text-primary-500" />
+                    Reviews
                   </Link>
                   <Link
                     to="/venues"
@@ -498,9 +593,10 @@ const Navbar = () => {
                   </Link>
                 </>
               )}
-            </div>
-          </div>
-        )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </nav>
   );
