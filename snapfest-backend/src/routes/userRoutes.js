@@ -26,8 +26,9 @@ import {
   addTestimonial,
   getUserTestimonials,
   sendEmailVerification,
-  verifyEmail
-  , syncClerkUser
+  verifyEmail,
+  syncClerkUser,
+  checkAdminLimit
 } from '../controllers/userController.js';
 import { authenticate, optionalAuth, authRateLimit } from '../middleware/auth.js';
 import {
@@ -45,6 +46,7 @@ import {
 const router = express.Router();
 
 // Public routes
+router.get('/check-admin-limit', checkAdminLimit);
 router.post('/register', authRateLimit, validateUserRegistration, register);
 router.post('/login', authRateLimit, validateUserLogin, login);
 router.post('/forgot-password', authRateLimit, validateForgotPassword, forgotPassword);

@@ -1,23 +1,36 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { cartAPI } from '../services/api';
 import priceCalculator from '../utils/priceCalculator';
+
+// Global request deduplication - prevents multiple simultaneous requests
+let cartFetchPromise = null;
+let lastFetchTime = 0;
+const FETCH_DEBOUNCE_MS = 300; // Reduced from 1000ms to 300ms for faster response
+
+// Simple cache for cart data
+const cartCache = {
+  data: null,
+  timestamp: 0,
+  TTL: 30000 // 30 seconds cache
+};
 
 const useCart = () => {
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { user, isLoaded } = useUser(); // Add isLoaded to wait for Clerk data
+  const isFetchingRef = useRef(false); // Track if we're currently fetching
+  const hasFetchedRef = useRef(false); // Track if we've fetched at least once
   
   // Skip cart functionality for admin users (temporary fix)
   // IMPORTANT: Only set isAdmin when user is loaded to avoid false negatives
   const isAdmin = isLoaded && user?.publicMetadata?.role === 'admin';
+  const userId = user?.id; // Use stable user ID instead of user object
 
   const fetchCart = useCallback(async () => {
-    // Skip cart fetching for admin users (temporary fix)
-    // Check only if user is loaded to avoid false negatives
+    // Skip cart fetching for admin users
     if (isLoaded && user?.publicMetadata?.role === 'admin') {
-      console.log('🛒 useCart: Admin user detected, skipping cart fetch');
       setCart({ items: [], totalAmount: 0, itemCount: 0 });
       setLoading(false);
       return;
@@ -25,53 +38,87 @@ const useCart = () => {
     
     // Don't proceed if user data isn't loaded yet
     if (!isLoaded) {
-      console.log('🛒 useCart: Waiting for user data to load...');
       return;
     }
     
-    console.log('🛒 useCart: Starting fetchCart...');
+    // Check cache first
+    const now = Date.now();
+    if (cartCache.data && (now - cartCache.timestamp) < cartCache.TTL) {
+      setCart(cartCache.data);
+      setLoading(false);
+      return;
+    }
+    
+    // Prevent concurrent requests
+    if (isFetchingRef.current) {
+      return;
+    }
+    
+    // Debounce rapid requests (only for non-initial loads)
+    if (hasFetchedRef.current && now - lastFetchTime < FETCH_DEBOUNCE_MS && cartFetchPromise) {
+      try {
+        const response = await cartFetchPromise;
+        const dataNode = response?.data?.data ?? {};
+        const cartItems = dataNode.cartItems ?? dataNode.items ?? [];
+        const validCartItems = cartItems.filter(item => {
+          const itemType = item.itemType || 'package';
+          if (itemType === 'package') {
+            return item.packageId && 
+                   item.packageId.title && 
+                   item.packageId.basePrice !== null && 
+                   item.packageId.basePrice !== undefined;
+          } else if (itemType === 'beatbloom') {
+            return item.beatBloomId && 
+                   item.beatBloomId.title && 
+                   item.beatBloomId.price !== null && 
+                   item.beatBloomId.price !== undefined;
+          }
+          return false;
+        });
+        const normalized = {
+          items: validCartItems,
+          totalAmount: dataNode.totalAmount ?? 0,
+          itemCount: validCartItems.length,
+        };
+        cartCache.data = normalized;
+        cartCache.timestamp = now;
+        setCart(normalized);
+        return;
+      } catch (err) {
+        // If the shared promise failed, continue with new request
+      }
+    }
+    
+    isFetchingRef.current = true;
+    lastFetchTime = now;
     setLoading(true);
     setError(null);
 
     try {
-      console.log('🛒 useCart: Calling cartAPI.getCart()...');
-      const response = await cartAPI.getCart();
-      console.log('🛒 useCart: Raw API response:', response);
-      console.log('🛒 useCart: Response data:', response.data);
+      cartFetchPromise = cartAPI.getCart();
+      const response = await cartFetchPromise;
       
       const dataNode = response?.data?.data ?? {};
-      console.log('🛒 useCart: Data node:', dataNode);
-      console.log('🛒 useCart: Cart items:', dataNode.cartItems);
-      console.log('🛒 useCart: Total amount:', dataNode.totalAmount);
-      console.log('🛒 useCart: Item count:', dataNode.itemCount);
-      
-      // Normalize to { items, totalAmount, itemCount }
       const cartItems = dataNode.cartItems ?? dataNode.items ?? [];
-      console.log('🛒 useCart: Raw cart items:', cartItems);
       
       // Filter out items with invalid data - handle both types
       const validCartItems = cartItems.filter(item => {
-        // Determine item type (backward compatible: default to 'package')
         const itemType = item.itemType || 'package';
         
         if (itemType === 'package') {
-          // Validate package items
           return item.packageId && 
                  item.packageId.title && 
                  item.packageId.basePrice !== null && 
                  item.packageId.basePrice !== undefined;
         } else if (itemType === 'beatbloom') {
-          // Validate BeatBloom items
           return item.beatBloomId && 
                  item.beatBloomId.title && 
                  item.beatBloomId.price !== null && 
                  item.beatBloomId.price !== undefined;
         }
         
-        return false; // Unknown item type
+        return false;
       });
-      
-      console.log('🛒 useCart: Valid cart items:', validCartItems);
       
       const normalized = {
         items: validCartItems,
@@ -79,16 +126,25 @@ const useCart = () => {
         itemCount: validCartItems.length,
       };
       
-      console.log('🛒 useCart: Filtered cart items:', validCartItems.length, 'valid out of', cartItems.length, 'total');
-      console.log('🛒 useCart: Normalized cart:', normalized);
-      setCart(normalized);
-    } catch (err) {
-      console.error('🛒 useCart: Error fetching cart:', err);
-      console.error('🛒 useCart: Error response:', err.response?.data);
-      console.error('🛒 useCart: Error status:', err.response?.status);
+      // Update cache
+      cartCache.data = normalized;
+      cartCache.timestamp = now;
       
-      // Handle different error types
-      if (err.response?.status === 429) {
+      setCart(normalized);
+      hasFetchedRef.current = true;
+    } catch (err) {
+      // Only log critical errors
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching cart:', err);
+      }
+      
+      // Handle timeout specifically
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        setError('Request timed out. Please check your connection.');
+        if (!hasFetchedRef.current) {
+          setCart({ items: [], totalAmount: 0, itemCount: 0 });
+        }
+      } else if (err.response?.status === 429) {
         setError('Too many requests. Please wait a moment and try again.');
         setCart({ items: [], totalAmount: 0, itemCount: 0 });
       } else if (err.response?.status === 401) {
@@ -96,25 +152,18 @@ const useCart = () => {
         setCart({ items: [], totalAmount: 0, itemCount: 0 });
       } else {
         setError(err.response?.data?.message || 'Failed to fetch cart');
-        setCart({ items: [], totalAmount: 0, itemCount: 0 });
+        if (!hasFetchedRef.current) {
+          setCart({ items: [], totalAmount: 0, itemCount: 0 });
+        }
       }
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
+      cartFetchPromise = null;
     }
-  }, [isLoaded, user]); // Update dependencies to include isLoaded and user
+  }, [isLoaded, userId, isAdmin]);
 
   const addToCart = useCallback(async (itemId, customization = {}, extra = {}, itemType = 'package') => {
-    console.log('🛒 useCart: Starting addToCart...');
-    console.log('🛒 useCart: itemId:', itemId);
-    console.log('🛒 useCart: itemType:', itemType);
-    console.log('🛒 useCart: customization:', customization);
-    console.log('🛒 useCart: extra:', extra);
-    
-    // Check if user is authenticated
-    const token = localStorage.getItem('token');
-    console.log('🛒 useCart: Token exists:', !!token);
-    console.log('🛒 useCart: Token preview:', token ? token.substring(0, 20) + '...' : 'null');
-    
     setLoading(true);
     setError(null);
 
@@ -129,17 +178,15 @@ const useCart = () => {
         customization: Object.keys(customization).length ? JSON.stringify(customization) : ''
       };
       
-      console.log('🛒 useCart: Final request data:', requestData);
-      
-      console.log('🛒 useCart: Sending request to cartAPI.addToCart:', requestData);
       const response = await cartAPI.addToCart(requestData);
-      console.log('🛒 useCart: API response:', response.data);
       
       if (response.data.success) {
-        console.log('🛒 useCart: Add to cart successful, refreshing cart...');
+        // Invalidate cache and refresh cart
+        cartCache.data = null;
+        cartCache.timestamp = 0;
+        
         // After add, fetch cart to ensure consistency
         try {
-          console.log('🛒 useCart: Refreshing cart...');
           const refreshed = await cartAPI.getCart();
           const node = refreshed?.data?.data ?? {};
           const normalized = {
@@ -147,12 +194,17 @@ const useCart = () => {
             totalAmount: node.totalAmount ?? 0,
             itemCount: node.itemCount ?? (node.cartItems ? node.cartItems.length : 0),
           };
-          console.log('🛒 useCart: Normalized cart:', normalized);
+          
+          // Update cache
+          cartCache.data = normalized;
+          cartCache.timestamp = Date.now();
+          
           setCart(normalized);
           return normalized;
         } catch (refreshErr) {
-          console.error('🛒 useCart: Error refreshing cart after add:', refreshErr);
-          // Fallback to minimal state if refresh fails
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Error refreshing cart after add:', refreshErr);
+          }
           setCart((prev) => prev || { items: [], totalAmount: 0, itemCount: 0 });
           return null;
         }
@@ -160,10 +212,9 @@ const useCart = () => {
         throw new Error(response.data.message || 'Failed to add to cart');
       }
     } catch (err) {
-      console.error('🛒 useCart: Error adding to cart:', err);
-      console.error('🛒 useCart: Error response:', err.response?.data);
-      console.error('🛒 useCart: Error status:', err.response?.status);
-      console.error('🛒 useCart: Error message:', err.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error adding to cart:', err);
+      }
       
       // Handle specific error types
       if (err.response?.status === 401) {
@@ -191,6 +242,11 @@ const useCart = () => {
     try {
       const response = await cartAPI.updateCartItem(itemId, updates);
       const updatedCart = response.data.data.cart;
+      
+      // Invalidate cache
+      cartCache.data = null;
+      cartCache.timestamp = 0;
+      
       setCart(updatedCart);
       return updatedCart;
     } catch (err) {
@@ -207,11 +263,13 @@ const useCart = () => {
 
     try {
       const response = await cartAPI.removeFromCart(itemId);
-      console.log('🛒 useCart: Remove response:', response.data);
       
       if (response.data.success) {
+        // Invalidate cache
+        cartCache.data = null;
+        cartCache.timestamp = 0;
+        
         // After successful deletion, fetch the updated cart
-        console.log('🛒 useCart: Item deleted successfully, fetching updated cart...');
         const updatedCartResponse = await cartAPI.getCart();
         const dataNode = updatedCartResponse?.data?.data ?? {};
         const normalized = {
@@ -219,14 +277,20 @@ const useCart = () => {
           totalAmount: dataNode.totalAmount ?? 0,
           itemCount: dataNode.itemCount ?? (dataNode.cartItems ? dataNode.cartItems.length : 0),
         };
-        console.log('🛒 useCart: Updated cart:', normalized);
+        
+        // Update cache
+        cartCache.data = normalized;
+        cartCache.timestamp = Date.now();
+        
         setCart(normalized);
         return normalized;
       } else {
         throw new Error(response.data.message || 'Failed to remove from cart');
       }
     } catch (err) {
-      console.error('🛒 useCart: Error removing from cart:', err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error removing from cart:', err);
+      }
       setError(err.response?.data?.message || 'Failed to remove from cart');
       throw err;
     } finally {
@@ -240,6 +304,11 @@ const useCart = () => {
 
     try {
       await cartAPI.clearCart();
+      
+      // Invalidate cache
+      cartCache.data = null;
+      cartCache.timestamp = 0;
+      
       setCart(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to clear cart');
@@ -266,7 +335,6 @@ const useCart = () => {
         
         // Skip items with invalid package data
         if (!packageData || !packageData.title || packageData.basePrice === null || packageData.basePrice === undefined) {
-          console.warn('🛒 useCart: Skipping item with invalid package data:', item._id);
           return;
         }
         
@@ -332,50 +400,40 @@ const useCart = () => {
   useEffect(() => {
     // Wait for Clerk user data to load first
     if (!isLoaded) {
-      console.log('🛒 useCart: Waiting for Clerk user data to load...');
       return;
     }
     
-    // Skip cart fetching for admin users (temporary fix to prevent 401 errors)
+    // Skip cart fetching for admin users
     if (isAdmin) {
-      console.log('🛒 useCart: Admin user detected, skipping cart fetch (not applicable for admin UI)');
       setCart({ items: [], totalAmount: 0, itemCount: 0 });
       setLoading(false);
       return;
     }
     
     // Check authentication and fetch cart using Clerk authentication
-    // Don't check localStorage - rely on Clerk authentication instead
-    if (user) {
-      console.log('🛒 useCart: User authenticated via Clerk, fetching cart...');
+    if (userId) {
       fetchCart();
     } else {
-      console.log('🛒 useCart: User not authenticated, setting empty cart');
       setCart({ items: [], totalAmount: 0, itemCount: 0 });
       setLoading(false);
     }
-    
-    // Note: Clerk handles auth state changes automatically via useUser hook
-    // No need for localStorage listeners - Clerk manages authentication state
-  }, [fetchCart, isAdmin, isLoaded, user]); // Add dependencies
+  }, [fetchCart, isAdmin, isLoaded, userId]);
 
   const refreshCart = useCallback(() => {
-    console.log('🛒 useCart: Manual cart refresh requested...');
+    // Invalidate cache on manual refresh
+    cartCache.data = null;
+    cartCache.timestamp = 0;
     
-    // Use Clerk authentication instead of localStorage
-    if (isLoaded && user && user?.publicMetadata?.role !== 'admin') {
-      console.log('🛒 useCart: Refreshing cart with Clerk authentication...');
+    if (isLoaded && userId && user?.publicMetadata?.role !== 'admin') {
       fetchCart();
     } else if (isLoaded && user?.publicMetadata?.role === 'admin') {
-      console.log('🛒 useCart: Admin user detected, skipping cart refresh');
       setCart({ items: [], totalAmount: 0, itemCount: 0 });
       setLoading(false);
     } else {
-      console.log('🛒 useCart: No authentication or user not loaded, cannot refresh cart');
       setCart({ items: [], totalAmount: 0, itemCount: 0 });
       setLoading(false);
     }
-  }, [fetchCart, isLoaded, user]); // Update dependencies
+  }, [fetchCart, isLoaded, userId, user?.publicMetadata?.role]);
 
   return {
     cart,

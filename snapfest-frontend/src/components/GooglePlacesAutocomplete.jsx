@@ -135,12 +135,14 @@ const GooglePlacesAutocomplete = ({
     if (autocompleteServiceRef.current && scriptLoaded) {
       setIsLoading(true);
       
-      // Bias results to Lucknow, Uttar Pradesh, India
+      // Bias results to Lucknow, Uttar Pradesh, India (using new API - no deprecation)
       const request = {
         input: newValue,
         componentRestrictions: { country: 'in' }, // Restrict to India
-        location: new window.google.maps.LatLng(26.8467, 80.9462), // Lucknow coordinates
-        radius: 50000, // 50km radius from Lucknow
+        locationBias: {
+          center: { lat: 26.8467, lng: 80.9462 }, // Lucknow coordinates
+          radius: 50000 // 50km radius from Lucknow
+        },
         types: ['establishment', 'geocode'] // Get both places and addresses
       };
 
@@ -152,11 +154,21 @@ const GooglePlacesAutocomplete = ({
           setShowPredictions(true);
         } else {
           console.warn('⚠️  Places API returned status:', status);
+          if (status === 'REQUEST_DENIED') {
+            console.error('❌ REQUEST_DENIED - Possible causes:');
+            console.error('   1. Billing not enabled for this project');
+            console.error('   2. Places API not enabled');
+            console.error('   3. API key restrictions blocking the request');
+            console.error('   4. Invalid API key');
+            console.error('   5. Billing account not linked to the project');
+            console.error('💡 Check: https://console.cloud.google.com/billing?project=YOUR_PROJECT_ID');
+            console.error('💡 Enable billing: https://console.cloud.google.com/project/_/billing/enable');
+          }
           console.warn('Status meaning:', {
             'OK': 'Request was successful',
             'ZERO_RESULTS': 'No results found',
             'OVER_QUERY_LIMIT': 'Quota exceeded',
-            'REQUEST_DENIED': 'Request denied (check API key and restrictions)',
+            'REQUEST_DENIED': 'Request denied (check API key, billing, and restrictions)',
             'INVALID_REQUEST': 'Invalid request parameters'
           }[status] || 'Unknown status');
           setPredictions([]);

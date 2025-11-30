@@ -31,17 +31,6 @@ const Cart = () => {
   const [paymentError, setPaymentError] = useState(null);
   const [paymentPercentage, setPaymentPercentage] = useState(20); // Default 20%, can be 20-100%
 
-  // Debug cart data
-  useEffect(() => {
-    console.log('🛒 Cart: Component mounted');
-    console.log('🛒 Cart: Cart data:', cart);
-    console.log('🛒 Cart: Cart items:', cart?.items);
-    console.log('🛒 Cart: Cart total amount:', cart?.totalAmount);
-    console.log('🛒 Cart: Cart item count:', cart?.itemCount);
-    console.log('🛒 Cart: Loading:', loading);
-    console.log('🛒 Cart: Error:', error);
-  }, [cart, loading, error]);
-
   // Cart component ready
 
 
@@ -324,7 +313,10 @@ const Cart = () => {
             <h3 className="text-lg font-semibold">Error Loading Cart</h3>
             <p className="text-gray-600">{error}</p>
           </div>
-          <Button onClick={() => window.location.reload()} className="bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600">
+          <Button onClick={() => {
+            setError(null);
+            refreshCart();
+          }} className="bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600">
             Try Again
           </Button>
         </GlassCard>
@@ -368,10 +360,6 @@ const Cart = () => {
     tax: (cart?.totalAmount || 0) * 0.18,
   };
   const { itemCount, total } = cartTotal;
-  
-  console.log('🛒 Cart: Cart total calculation:', cartTotal);
-  console.log('🛒 Cart: Item count:', itemCount);
-  console.log('🛒 Cart: Total:', total);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-red-50">

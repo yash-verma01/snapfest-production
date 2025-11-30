@@ -395,6 +395,9 @@ export const publicAPI = {
   
   // Hero Images
   getHeroImages: () => api.get('/hero-images'),
+  
+  // Admin limit check
+  checkAdminLimit: () => api.get('/users/check-admin-limit'),
 };
 
 export const bookingAPI = {

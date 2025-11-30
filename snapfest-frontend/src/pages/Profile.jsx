@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { Card, Button, Badge } from '../components/ui';
 import { userAPI } from '../services/api';
+import { showErrorToast, showValidationErrors } from '../utils/errorMessageHandler';
+import toast from 'react-hot-toast';
 
 const Profile = () => {
   const { user } = useUser();
@@ -186,6 +188,40 @@ const Profile = () => {
 
   const handleTestimonialSubmit = async (e) => {
     e.preventDefault();
+    
+    // Client-side validation with clear error messages
+    const validationErrors = [];
+    
+    if (!testimonialForm.rating || testimonialForm.rating < 1 || testimonialForm.rating > 5) {
+      validationErrors.push({
+        field: 'rating',
+        message: 'Please select a rating between 1 and 5 stars'
+      });
+    }
+    
+    if (!testimonialForm.feedback || testimonialForm.feedback.trim().length === 0) {
+      validationErrors.push({
+        field: 'feedback',
+        message: 'Please provide your feedback. This field is required.'
+      });
+    } else if (testimonialForm.feedback.trim().length < 10) {
+      validationErrors.push({
+        field: 'feedback',
+        message: 'Your feedback must be at least 10 characters long. Please provide more details about your experience.'
+      });
+    } else if (testimonialForm.feedback.trim().length > 1000) {
+      validationErrors.push({
+        field: 'feedback',
+        message: 'Your feedback is too long. Please keep it under 1000 characters.'
+      });
+    }
+    
+    // Show client-side validation errors
+    if (validationErrors.length > 0) {
+      showValidationErrors(validationErrors);
+      return;
+    }
+    
     try {
       setLoading(true);
       // Create review (without bookingId) - this will also create a testimonial entry for admin approval
@@ -196,7 +232,16 @@ const Profile = () => {
       });
       
       if (response.data.success) {
-        alert('Review submitted successfully! It will be visible in the Reviews section immediately. If approved by admin, it will also appear in the Testimonials section.');
+        toast.success('Review submitted successfully! It will be visible in the Reviews section immediately.', {
+          duration: 4000,
+          style: {
+            background: '#d1fae5',
+            color: '#065f46',
+            padding: '16px',
+            borderRadius: '8px',
+            borderLeft: '4px solid #10b981'
+          }
+        });
         setTestimonialForm({ rating: 5, feedback: '' });
         setShowTestimonialForm(false);
         
@@ -208,8 +253,8 @@ const Profile = () => {
       }
     } catch (error) {
       console.error('Error submitting review:', error);
-      const errorMessage = error.response?.data?.message || 'Error submitting review. Please try again.';
-      alert(errorMessage);
+      // Use the new error handler
+      showErrorToast(error);
     } finally {
       setLoading(false);
     }

@@ -10,25 +10,26 @@ const Reviews = () => {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all'); // 'all', '5', '4', '3', '2', '1'
 
-  useEffect(() => {
-    const loadReviews = async () => {
-      try {
-        setLoading(true);
-        // Use the new reviews endpoint to get all reviews (not just approved testimonials)
-        const response = await publicAPI.getReviews({ limit: 100 });
-        
-        if (response.data.success && response.data.data) {
-          const reviewsData = response.data.data.reviews || [];
-          setReviews(reviewsData);
-        }
-      } catch (err) {
-        console.error('Error loading reviews:', err);
-        setError(err.message || 'Failed to load reviews');
-      } finally {
-        setLoading(false);
+  const loadReviews = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      // Use the new reviews endpoint to get all reviews (not just approved testimonials)
+      const response = await publicAPI.getReviews({ limit: 100 });
+      
+      if (response.data.success && response.data.data) {
+        const reviewsData = response.data.data.reviews || [];
+        setReviews(reviewsData);
       }
-    };
+    } catch (err) {
+      console.error('Error loading reviews:', err);
+      setError(err.message || 'Failed to load reviews');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadReviews();
   }, []);
 
@@ -98,7 +99,7 @@ const Reviews = () => {
             <p className="text-gray-600">{error}</p>
           </div>
           <Button
-            onClick={() => window.location.reload()}
+            onClick={() => loadReviews()}
             className="bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white"
           >
             Try Again

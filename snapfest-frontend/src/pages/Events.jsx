@@ -42,39 +42,37 @@ const EventsEnhanced = () => {
   const [selectedEventForGallery, setSelectedEventForGallery] = useState(null);
   const [showGalleryModal, setShowGalleryModal] = useState(false);
 
-  useEffect(() => {
-    const loadEvents = async () => {
-      try {
-        setLoading(true);
-        console.log('🔍 Events: Fetching events with filters:', { selectedType, selectedLocation, selectedDateRange, sortBy });
-        const response = await publicAPI.getEvents({ 
-          page: 1, 
-          limit: 20,
-          type: selectedType,
-          location: selectedLocation,
-          dateRange: selectedDateRange,
-          sortBy: sortBy
-        });
-        console.log('📅 Events: API response:', response.data);
-        
-        // Parse backend response correctly
-        if (response.data.success && response.data.data) {
-          const events = response.data.data.items || response.data.data.events || [];
-          console.log('📅 Events: Parsed events:', events);
-          setEvents(events);
-        } else {
-          throw new Error('Invalid response format from backend');
-        }
-      } catch (err) {
-        console.error('Error loading events:', err);
-        setError(err.message);
-        // Fallback to dummy data
-        setEvents(dummyEvents);
-      } finally {
-        setLoading(false);
+  const loadEvents = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await publicAPI.getEvents({ 
+        page: 1, 
+        limit: 20,
+        type: selectedType,
+        location: selectedLocation,
+        dateRange: selectedDateRange,
+        sortBy: sortBy
+      });
+      
+      // Parse backend response correctly
+      if (response.data.success && response.data.data) {
+        const events = response.data.data.items || response.data.data.events || [];
+        setEvents(events);
+      } else {
+        throw new Error('Invalid response format from backend');
       }
-    };
+    } catch (err) {
+      console.error('Error loading events:', err);
+      setError(err.message);
+      // Fallback to dummy data
+      setEvents(dummyEvents);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadEvents();
   }, [selectedType, selectedLocation, selectedDateRange, sortBy]);
 
@@ -195,7 +193,7 @@ const EventsEnhanced = () => {
             <h3 className="text-lg font-semibold">Error Loading Events</h3>
             <p className="text-gray-600">{error}</p>
           </div>
-          <Button onClick={() => window.location.reload()}>
+          <Button onClick={() => loadEvents()}>
             Try Again
           </Button>
         </Card>
@@ -225,16 +223,17 @@ const EventsEnhanced = () => {
                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search for events, workshops, or photography sessions..."
+                    placeholder="Search events..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 text-base border border-white/30 rounded-xl focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-300 bg-white/80 backdrop-blur-sm shadow-lg text-gray-900 placeholder-gray-500"
+                    className="w-full pl-12 pr-20 md:pr-24 py-3 text-sm md:text-base border border-white/30 rounded-xl focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-300 bg-white/80 backdrop-blur-sm shadow-lg text-gray-900 placeholder-gray-500"
                   />
                   <Button
                     type="submit"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white px-6 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-300"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white px-4 md:px-6 py-2 rounded-lg text-sm md:text-base font-semibold shadow-md hover:shadow-lg transition-all duration-300"
                   >
-                    Search
+                    <span className="hidden md:inline">Search</span>
+                    <Search className="w-4 h-4 md:hidden" />
                   </Button>
                 </div>
               </form>
@@ -259,8 +258,8 @@ const EventsEnhanced = () => {
                 Filters
               </Button>
 
-              {/* View Mode Toggle */}
-              <div className="flex border border-gray-200 rounded-xl overflow-hidden">
+              {/* View Mode Toggle - Hidden on mobile */}
+              <div className="hidden md:flex border border-gray-200 rounded-xl overflow-hidden">
                 <button
                   onClick={() => setViewMode('masonry')}
                   className={`p-3 ${viewMode === 'masonry' ? 'bg-pink-500 text-white' : 'bg-white text-gray-600'}`}

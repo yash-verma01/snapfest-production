@@ -946,35 +946,55 @@ export const createUserReview = asyncHandler(async (req, res) => {
   if (!rating) {
     return res.status(400).json({
       success: false,
-      message: 'Rating is required'
+      message: 'Rating is required. Please select a rating from 1 to 5 stars.',
+      errors: [{
+        field: 'rating',
+        message: 'Rating is required. Please select a rating from 1 to 5 stars.'
+      }]
     });
   }
 
   if (!reviewText || reviewText.trim().length === 0) {
     return res.status(400).json({
       success: false,
-      message: 'Feedback is required'
+      message: 'Feedback is required. Please share your experience with at least 10 characters.',
+      errors: [{
+        field: 'feedback',
+        message: 'Feedback is required. Please share your experience with at least 10 characters.'
+      }]
     });
   }
 
   if (rating < 1 || rating > 5) {
     return res.status(400).json({
       success: false,
-      message: 'Rating must be between 1 and 5'
+      message: 'Rating must be between 1 and 5 stars. Please select a valid rating.',
+      errors: [{
+        field: 'rating',
+        message: 'Rating must be between 1 and 5 stars. Please select a valid rating.'
+      }]
     });
   }
 
   if (reviewText.trim().length < 10) {
     return res.status(400).json({
       success: false,
-      message: 'Feedback must be at least 10 characters long'
+      message: 'Your feedback must be at least 10 characters long. Please provide more details about your experience.',
+      errors: [{
+        field: 'feedback',
+        message: 'Your feedback must be at least 10 characters long. Please provide more details about your experience.'
+      }]
     });
   }
 
   if (reviewText.trim().length > 1000) {
     return res.status(400).json({
       success: false,
-      message: 'Feedback must be less than 1000 characters'
+      message: 'Your feedback is too long. Please keep it under 1000 characters.',
+      errors: [{
+        field: 'feedback',
+        message: 'Your feedback is too long. Please keep it under 1000 characters.'
+      }]
     });
   }
 
@@ -985,7 +1005,11 @@ export const createUserReview = asyncHandler(async (req, res) => {
     if (!booking) {
       return res.status(404).json({
         success: false,
-        message: 'Booking not found or does not belong to you'
+        message: 'Booking not found or does not belong to you. Please select a valid booking.',
+        errors: [{
+          field: 'bookingId',
+          message: 'Booking not found or does not belong to you. Please select a valid booking.'
+        }]
       });
     }
 
@@ -993,7 +1017,11 @@ export const createUserReview = asyncHandler(async (req, res) => {
     if (booking.status !== 'COMPLETED') {
       return res.status(400).json({
         success: false,
-        message: 'Can only review completed bookings'
+        message: 'You can only review completed bookings. Please wait until your booking is completed.',
+        errors: [{
+          field: 'bookingId',
+          message: 'You can only review completed bookings. Please wait until your booking is completed.'
+        }]
       });
     }
 
@@ -1002,7 +1030,11 @@ export const createUserReview = asyncHandler(async (req, res) => {
     if (existingReview) {
       return res.status(400).json({
         success: false,
-        message: 'Review already exists for this booking'
+        message: 'You have already submitted a review for this booking. Each booking can only be reviewed once.',
+        errors: [{
+          field: 'bookingId',
+          message: 'You have already submitted a review for this booking. Each booking can only be reviewed once.'
+        }]
       });
     }
 
@@ -1644,6 +1676,27 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Check if admin registration is allowed
+// @route   GET /api/users/check-admin-limit
+// @access  Public
+export const checkAdminLimit = asyncHandler(async (req, res) => {
+  const adminCount = await User.countDocuments({ role: 'admin' });
+  const maxAdmins = 2;
+  const isAllowed = adminCount < maxAdmins;
+  
+  res.status(200).json({
+    success: true,
+    data: {
+      adminCount,
+      maxAdmins,
+      isAllowed,
+      message: isAllowed 
+        ? 'Admin registration is available' 
+        : 'Admin registration limit reached. Maximum 2 admins allowed.'
+    }
+  });
+});
+
 // @desc    Sync Clerk user to local DB (idempotent)
 // @route   POST /api/users/sync
 // @access  Private (Clerk cookie session) - uses optionalAuth to handle session edge cases
@@ -1655,12 +1708,40 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
   // Get role from query parameter (set by frontend when selecting role)
   const requestedRole = req.query.role || null;
   
+  // Check admin limit if user is trying to become admin
+  if (requestedRole === 'admin') {
+    const adminCount = await User.countDocuments({ role: 'admin' });
+    const maxAdmins = 2;
+    
+    if (adminCount >= maxAdmins) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not authorized for this. Maximum admin limit (2) has been reached.',
+        code: 'ADMIN_LIMIT_REACHED'
+      });
+    }
+  }
+  
   // If req.user already exists (from optionalAuth middleware), update role if needed
   if (req.user && req.userId) {
     const user = await User.findById(req.userId);
     if (user) {
       // Update role if requested and different from current role
       if (requestedRole && ['user', 'vendor', 'admin'].includes(requestedRole) && user.role !== requestedRole) {
+        // Check admin limit if trying to become admin
+        if (requestedRole === 'admin') {
+          const adminCount = await User.countDocuments({ role: 'admin' });
+          const maxAdmins = 2;
+          
+          if (adminCount >= maxAdmins) {
+            return res.status(403).json({
+              success: false,
+              message: 'You are not authorized for this. Maximum admin limit (2) has been reached.',
+              code: 'ADMIN_LIMIT_REACHED'
+            });
+          }
+        }
+        
         user.role = requestedRole;
         
         // Initialize vendor-specific fields if role changed to vendor
@@ -1883,10 +1964,38 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
     // CRITICAL FIX: Check targetRole FIRST (from query parameter), then metadata/email
     // This ensures role from frontend takes priority over metadata that might not be set yet
     // Check if user should be admin based on targetRole OR metadata or email
-    const isAdmin = targetRole === 'admin' ||
+    // BUT FIRST check admin limit - if limit reached, force to user role
+    let isAdmin = targetRole === 'admin' ||
                    publicMetadata?.role === 'admin' ||
                    normalizedEmail === adminEmail.toLowerCase() ||
                    adminEmails.includes(normalizedEmail);
+    
+    // If trying to become admin, check limit first
+    if (isAdmin) {
+      const adminCount = await User.countDocuments({ role: 'admin' });
+      const maxAdmins = 2;
+      
+      // If limit reached, check if this user is already an admin
+      if (adminCount >= maxAdmins) {
+        const existingAdmin = await User.findOne({ clerkId: clerkAuth.userId, role: 'admin' });
+        if (!existingAdmin) {
+          // Not an existing admin, so reject admin role
+          isAdmin = false;
+          // Force role to user if they were trying to become admin
+          if (targetRole === 'admin') {
+            targetRole = 'user';
+          }
+          if (publicMetadata?.role === 'admin') {
+            publicMetadata.role = 'user';
+          }
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`❌ syncClerkUser: Admin role rejected - Maximum admin limit (2) reached`);
+          }
+        }
+        // If user is already admin, allow them to continue (isAdmin stays true)
+      }
+    }
     
     // CRITICAL FIX: Check targetRole FIRST for vendor (from query parameter), then metadata
     // This ensures role from frontend takes priority over metadata that might not be set yet
@@ -1991,6 +2100,25 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
     // CRITICAL FIX: Add admin-specific handling (similar to vendor)
     // Check if user is admin (based on targetRole OR metadata OR email)
     if (isAdmin) {
+      // Check admin limit before creating/updating admin user
+      const adminCount = await User.countDocuments({ role: 'admin' });
+      const maxAdmins = 2;
+      
+      // If limit reached and user is not already an admin, reject
+      if (adminCount >= maxAdmins) {
+        // Check if this user is already an admin
+        const existingAdmin = await User.findOne({ clerkId: clerkAuth.userId, role: 'admin' });
+        if (!existingAdmin) {
+          // User is trying to become admin but limit is reached
+          return res.status(403).json({
+            success: false,
+            message: 'You are not authorized for this. Maximum admin limit (2) has been reached.',
+            code: 'ADMIN_LIMIT_REACHED'
+          });
+        }
+        // If user is already admin, allow them to continue (they're not a new admin)
+      }
+      
       // Find or create user with admin role
       let adminUser = await User.findOne({ clerkId: clerkAuth.userId, role: 'admin' });
       

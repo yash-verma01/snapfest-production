@@ -48,17 +48,17 @@ const Gallery = () => {
     return typeMap[type] || type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  useEffect(() => {
-    const loadGalleryImages = async () => {
-      try {
-        setLoading(true);
-        
-        // Load all images from events, venues, and packages
-        const [eventsRes, venuesRes, packagesRes] = await Promise.all([
-          publicAPI.getEvents({ page: 1, limit: 100 }),
-          publicAPI.getVenues({ page: 1, limit: 100 }),
-          publicAPI.getPackages({ page: 1, limit: 100 })
-        ]);
+  const loadGalleryImages = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Load all images from events, venues, and packages
+      const [eventsRes, venuesRes, packagesRes] = await Promise.all([
+        publicAPI.getEvents({ page: 1, limit: 100 }),
+        publicAPI.getVenues({ page: 1, limit: 100 }),
+        publicAPI.getPackages({ page: 1, limit: 100 })
+      ]);
         
         const images = [];
         let eventCount = 0, venueCount = 0, packageCount = 0;
@@ -176,8 +176,9 @@ const Gallery = () => {
       } finally {
         setLoading(false);
       }
-    };
+  };
 
+  useEffect(() => {
     loadGalleryImages();
   }, []);
 
@@ -319,7 +320,7 @@ const Gallery = () => {
             <p className="text-gray-600">{error}</p>
           </div>
           <Button 
-            onClick={() => window.location.reload()}
+            onClick={() => loadGalleryImages()}
             className="bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white"
           >
             Try Again
@@ -357,16 +358,17 @@ const Gallery = () => {
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
               <Button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-md text-white border border-white/30 shadow-lg"
+                className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-md text-white border border-white/30 shadow-lg text-sm md:text-base"
               >
                 <Filter className="w-4 h-4" />
-                Filters
+                <span className="hidden sm:inline">Filters</span>
               </Button>
               
-              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-md rounded-xl p-1 border border-white/30 shadow-lg">
+              {/* View Mode Toggle - Hidden on mobile */}
+              <div className="hidden md:flex items-center gap-2 bg-white/20 backdrop-blur-md rounded-xl p-1 border border-white/30 shadow-lg">
                 <Button
                   onClick={() => setViewMode('grid')}
                   className={`p-2 rounded-lg transition-all ${

@@ -193,7 +193,8 @@ const Venues = () => {
               </p>
             </div>
             
-            <div className="flex items-center gap-4 mt-4 md:mt-0">
+            {/* View Mode Toggle - Hidden on mobile */}
+            <div className="hidden md:flex items-center gap-4 mt-4 md:mt-0">
               <div className="flex items-center gap-2">
                 <Button
                   onClick={() => setViewMode('grid')}

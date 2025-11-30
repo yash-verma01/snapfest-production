@@ -331,8 +331,8 @@ const Packages = () => {
               Filters
             </Button>
 
-            {/* View Mode Toggle */}
-            <div className="flex border border-gray-200 rounded-xl overflow-hidden">
+            {/* View Mode Toggle - Hidden on mobile */}
+            <div className="hidden md:flex border border-gray-200 rounded-xl overflow-hidden">
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-3 ${viewMode === 'grid' ? 'bg-pink-500 text-white' : 'bg-white text-gray-600'}`}
@@ -477,7 +477,9 @@ const Packages = () => {
                 </div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">Error Loading Packages</h3>
                 <p className="text-gray-600 mb-4 text-sm">{error}</p>
-                <Button onClick={() => window.location.reload()} className="bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white py-2 px-4 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-300 text-sm">
+                <Button onClick={() => {
+                  goToPage(1);
+                }} className="bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white py-2 px-4 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-300 text-sm">
                   Try Again
                 </Button>
               </div>

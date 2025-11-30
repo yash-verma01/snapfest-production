@@ -41,22 +41,23 @@ const Payments = () => {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showBookingDetails, setShowBookingDetails] = useState(false);
 
-  useEffect(() => {
-    const loadPayments = async () => {
-      try {
-        setLoading(true);
-        const response = await userAPI.getPayments();
-        const paymentDetails = response.data.data?.paymentDetails || [];
-        setPaymentDetails(paymentDetails);
-      } catch (err) {
-        console.error('Error loading payments');
-        setError(err.message);
-        setPaymentDetails([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const loadPayments = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await userAPI.getPayments();
+      const paymentDetails = response.data.data?.paymentDetails || [];
+      setPaymentDetails(paymentDetails);
+    } catch (err) {
+      console.error('Error loading payments');
+      setError(err.message);
+      setPaymentDetails([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadPayments();
   }, []);
 
@@ -272,7 +273,11 @@ const Payments = () => {
             <h3 className="text-lg font-semibold">Error Loading Payments</h3>
             <p className="text-gray-600">{error}</p>
           </div>
-          <Button onClick={() => window.location.reload()}>
+          <Button onClick={() => {
+            setError(null);
+            setLoading(true);
+            loadPayments();
+          }}>
             Try Again
           </Button>
         </Card>
@@ -498,7 +503,8 @@ const Payments = () => {
                         )}
                       </Button>
                     )}
-                    <Button
+                    {/* Invoice button - Hidden for now, will be implemented later */}
+                    {/* <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleDownloadInvoice(booking._id)}
@@ -506,7 +512,7 @@ const Payments = () => {
                     >
                       <Download className="w-4 h-4 mr-1" />
                       Invoice
-                    </Button>
+                    </Button> */}
                   </div>
                 </Card>
               );

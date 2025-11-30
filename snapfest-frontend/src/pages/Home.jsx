@@ -22,6 +22,7 @@ const Home = () => {
   const [showFinalBackground, setShowFinalBackground] = useState(false);
   const [animationCycle, setAnimationCycle] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [heroImagesLoaded, setHeroImagesLoaded] = useState(false);
   
   // Hero section images from public/heroImages folder
   const heroImagePool = [
@@ -31,6 +32,31 @@ const Home = () => {
     '/heroImages/WhatsApp Image 2025-11-28 at 10.55.36.jpeg',
   ];
 
+  // Preload hero images to prevent lag - optimized
+  useEffect(() => {
+    let loadedCount = 0;
+    const totalImages = heroImagePool.length;
+    
+    const preloadImages = () => {
+      heroImagePool.forEach((src) => {
+        const img = new Image();
+        img.onload = () => {
+          loadedCount++;
+          if (loadedCount === totalImages) {
+            setHeroImagesLoaded(true);
+          }
+        };
+        img.onerror = () => {
+          loadedCount++;
+          if (loadedCount === totalImages) {
+            setHeroImagesLoaded(true);
+          }
+        };
+        img.src = src;
+      });
+    };
+    preloadImages();
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -110,34 +136,55 @@ const Home = () => {
   }, [currentImageIndex]);
 
   // Continuous loop animation: Grid (3.5s) -> Full Image (5s) -> Rotate Images -> Repeat
+  // Optimized to prevent unnecessary re-renders
   useEffect(() => {
-    let timeoutId;
+    let timeoutId1;
+    let timeoutId2;
+    let isMounted = true;
     
     const cycleAnimation = () => {
-      // Show grid first
+      if (!isMounted) return;
+      
+      // Show grid first with smooth transition
       setShowFinalBackground(false);
       setAnimationCycle(prev => prev + 1);
       
-      // After 3.5 seconds, show full image
-      timeoutId = setTimeout(() => {
+      // After 3.5 seconds, smoothly transition to full image (start fade-in immediately)
+      timeoutId1 = setTimeout(() => {
+        if (!isMounted) return;
+        // Start full image fade-in immediately (will crossfade with grid fade-out)
         setShowFinalBackground(true);
         
-        // After 5 more seconds, rotate to next images and cycle back to grid
-        timeoutId = setTimeout(() => {
-          // Rotate to next set of images (sliding window)
+        // After 5 more seconds, smoothly rotate to next images and cycle back to grid
+        timeoutId2 = setTimeout(() => {
+          if (!isMounted) return;
+          // First, fade out the full image smoothly
+          // Then rotate to next set of images (sliding window) - this will trigger smooth transition
           setCurrentImageIndex(prev => (prev + 1) % heroImagePool.length);
-          cycleAnimation(); // Restart the cycle with new images
+          // Small delay to allow smooth crossfade before showing grid again
+          setTimeout(() => {
+            if (isMounted) {
+              cycleAnimation(); // Restart the cycle with new images
+            }
+          }, 150); // Reduced delay for faster transition
         }, 5000);
       }, 3500);
     };
     
-    // Start the cycle
-    cycleAnimation();
+    // Wait for images to be preloaded before starting animation
+    const startDelay = setTimeout(() => {
+      if (isMounted) {
+        cycleAnimation();
+      }
+    }, heroImagesLoaded ? 100 : 500);
     
     return () => {
-      if (timeoutId) clearTimeout(timeoutId);
+      isMounted = false;
+      if (timeoutId1) clearTimeout(timeoutId1);
+      if (timeoutId2) clearTimeout(timeoutId2);
+      clearTimeout(startDelay);
     };
-  }, []);
+  }, [heroImagesLoaded]);
 
 
   const features = [
@@ -206,10 +253,13 @@ const Home = () => {
     'http://localhost:5001/PUBLIC/uploads/events/birthday-1-1762974084698-58616251.jpg'
   ], []);
 
-  // Floating Elements Component - Optimized with memoization
+  // Floating Elements Component - Optimized with memoization and reduced count for performance
   const FloatingElements = React.memo(({ count = 8, section = 'hero', backgroundType = 'pink' }) => {
-    const flowers = Math.floor(count * 0.4);
-    const stars = Math.floor(count * 0.6);
+    // Allow higher counts for packages and beatBloom sections, cap others for performance
+    const maxCount = (section === 'packages' || section === 'beatBloom') ? 20 : 12;
+    const optimizedCount = Math.min(count, maxCount);
+    const flowers = Math.floor(optimizedCount * 0.4);
+    const stars = Math.floor(optimizedCount * 0.6);
     
     // Memoized color functions
     const getFlowerColor = useCallback((i) => {
@@ -280,27 +330,20 @@ const Home = () => {
                 ...pos,
                 width: `${size}px`,
                 height: `${size}px`,
-                willChange: 'transform, opacity',
+                willChange: 'transform',
+                transform: 'translateZ(0)', // Force GPU acceleration
               }}
               animate={{
-                y: [0, -30, 0],
-                x: [0, xOffset, 0],
+                y: [0, -20, 0],
                 rotate: [0, 360],
-                scale: [1, 1.2, 1],
-                opacity: [0.2, 0.5, 0.2],
+                opacity: [0.2, 0.4, 0.2],
               }}
               transition={{
                 y: {
                   duration: floatDuration,
                   delay,
                   repeat: Infinity,
-                  ease: [0.4, 0, 0.6, 1]
-                },
-                x: {
-                  duration: floatDuration,
-                  delay,
-                  repeat: Infinity,
-                  ease: [0.4, 0, 0.6, 1]
+                  ease: 'easeInOut'
                 },
                 rotate: {
                   duration: floatDuration * 2,
@@ -308,17 +351,11 @@ const Home = () => {
                   repeat: Infinity,
                   ease: 'linear'
                 },
-                scale: {
-                  duration: floatDuration,
-                  delay,
-                  repeat: Infinity,
-                  ease: [0.4, 0, 0.6, 1]
-                },
                 opacity: {
                   duration: blinkDuration,
                   delay: delay * 0.5,
                   repeat: Infinity,
-                  ease: [0.4, 0, 0.6, 1]
+                  ease: 'easeInOut'
                 }
               }}
             >
@@ -344,27 +381,20 @@ const Home = () => {
                 ...pos,
                 width: `${size}px`,
                 height: `${size}px`,
-                willChange: 'transform, opacity',
+                willChange: 'transform',
+                transform: 'translateZ(0)', // Force GPU acceleration
               }}
               animate={{
-                y: [0, -20, 0],
-                x: [0, xOffset, 0],
+                y: [0, -15, 0],
                 rotate: [0, 180, 360],
-                scale: [1, 1.3, 1],
-                opacity: [0.25, 0.6, 0.25],
+                opacity: [0.25, 0.5, 0.25],
               }}
               transition={{
                 y: {
                   duration: floatDuration,
                   delay,
                   repeat: Infinity,
-                  ease: [0.4, 0, 0.6, 1]
-                },
-                x: {
-                  duration: floatDuration,
-                  delay,
-                  repeat: Infinity,
-                  ease: [0.4, 0, 0.6, 1]
+                  ease: 'easeInOut'
                 },
                 rotate: {
                   duration: floatDuration * 1.5,
@@ -372,17 +402,11 @@ const Home = () => {
                   repeat: Infinity,
                   ease: 'linear'
                 },
-                scale: {
-                  duration: floatDuration,
-                  delay,
-                  repeat: Infinity,
-                  ease: [0.4, 0, 0.6, 1]
-                },
                 opacity: {
                   duration: blinkDuration,
                   delay: delay * 0.5,
                   repeat: Infinity,
-                  ease: [0.4, 0, 0.6, 1]
+                  ease: 'easeInOut'
                 }
               }}
             >
@@ -398,36 +422,39 @@ const Home = () => {
     <div className="min-h-screen bg-white overflow-x-hidden">
       {/* Professional Hero Section - Clean & Elegant Design */}
       <section className="relative overflow-hidden min-h-screen flex items-center bg-gradient-to-br from-pink-50 via-white to-pink-100">
-        {/* Animated Background - 4 Grid Images then 5th Image */}
+        {/* Animated Background - 4 Grid Images then 5th Image with Smooth Transitions */}
         <div className="absolute inset-0 overflow-hidden">
-          <AnimatePresence mode="wait">
-            {!showFinalBackground ? (
-              // 4-image grid layout (2x2) - Re-animates on each cycle
+          <AnimatePresence mode="sync">
+            {/* 4-image grid layout (2x2) - Fast smooth fade-in */}
+            {!showFinalBackground && (
               <motion.div
                 key={`grid-background-${animationCycle}`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.5 }}
-                className="absolute inset-0 grid grid-cols-2 grid-rows-2"
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                className="absolute inset-0 grid grid-cols-2 grid-rows-2 z-10"
               >
                 {getCurrentGridImages.map((imageUrl, index) => (
                   <motion.div
                     key={`grid-${index}-${animationCycle}`}
                     className="relative overflow-hidden"
-                    style={{ willChange: 'transform, opacity' }}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                    style={{ willChange: 'opacity' }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                     transition={{ 
-                      duration: 0.6, 
-                      delay: index * 0.1,
-                      ease: [0.25, 0.1, 0.25, 1]
+                      duration: 0.5, 
+                      delay: index * 0.03,
+                      ease: [0.4, 0, 0.2, 1]
                     }}
                   >
                     <img
                       src={imageUrl}
                       alt={`Background ${index + 1}`}
                       className="w-full h-full object-cover"
+                      loading="eager"
+                      decoding="async"
                       onError={(e) => {
                         e.target.src = heroImagePool[0] || '';
                       }}
@@ -437,20 +464,25 @@ const Home = () => {
                   </motion.div>
                 ))}
               </motion.div>
-            ) : (
-              // Final 5th image - Full background
+            )}
+            
+            {/* Final 5th image - Full background - Fast smooth crossfade */}
+            {showFinalBackground && (
               <motion.div
-                key="final-background"
+                key={`final-background-${currentImageIndex}`}
                 style={{ willChange: 'opacity' }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 1.2, ease: [0.25, 0.1, 0.25, 1] }}
-                className="absolute inset-0"
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+                className="absolute inset-0 z-20"
               >
                 <img
                   src={getCurrentFullImage}
                   alt="Hero background"
                   className="w-full h-full object-cover"
+                  loading="eager"
+                  decoding="async"
                   onError={(e) => {
                     e.target.src = heroImagePool[0] || '/heroImages/WhatsApp Image 2025-11-28 at 10.55.37.jpeg';
                   }}
@@ -632,7 +664,8 @@ const Home = () => {
         </div>
 
         {/* Floating Stars and Flowers */}
-        <FloatingElements count={15} section="howItWorks" backgroundType="white" />
+        {/* Floating Elements - Reduced count for better performance */}
+        <FloatingElements count={8} section="howItWorks" backgroundType="white" />
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header Section - Concise About SnapFest */}
@@ -806,8 +839,8 @@ const Home = () => {
           }} />
         </div>
 
-        {/* Floating Elements - Pinkish on pink background */}
-        <FloatingElements count={25} section="packages" backgroundType="pink" />
+        {/* Floating Elements - More elements for visual appeal */}
+        <FloatingElements count={18} section="packages" backgroundType="pink" />
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
@@ -1083,8 +1116,8 @@ const Home = () => {
           }} />
         </div>
 
-        {/* Floating Elements - Pinkish on pink background */}
-        <FloatingElements count={25} section="beatBloom" backgroundType="pink" />
+        {/* Floating Elements - More elements for visual appeal */}
+        <FloatingElements count={18} section="beatBloom" backgroundType="pink" />
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
@@ -1360,8 +1393,8 @@ const Home = () => {
           />
         </div>
 
-        {/* Floating Elements */}
-        <FloatingElements count={20} section="testimonials" backgroundType="pink" />
+        {/* Floating Elements - Reduced count for better performance */}
+        <FloatingElements count={10} section="testimonials" backgroundType="pink" />
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
@@ -1537,8 +1570,8 @@ const Home = () => {
           />
         </div>
 
-        {/* Floating Stars and Flowers - White on pink background */}
-        <FloatingElements count={22} section="cta" backgroundType="pink" />
+        {/* Floating Stars and Flowers - Reduced count for better performance */}
+        <FloatingElements count={10} section="cta" backgroundType="pink" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div

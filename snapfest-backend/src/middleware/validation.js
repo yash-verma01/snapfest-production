@@ -6,14 +6,71 @@ export const handleValidationErrors = (req, res, next) => {
   
   if (!errors.isEmpty()) {
     console.log('🔍 Validation errors:', errors.array());
+    
+    // Field labels for user-friendly messages
+    const fieldLabels = {
+      'rating': 'Rating',
+      'comment': 'Feedback',
+      'feedback': 'Feedback',
+      'bookingId': 'Booking',
+      'name': 'Name',
+      'email': 'Email',
+      'phone': 'Phone Number',
+      'password': 'Password',
+      'eventDate': 'Event Date',
+      'location': 'Location',
+      'guests': 'Number of Guests'
+    };
+    
+    // Format errors into user-friendly messages
+    const formattedErrors = errors.array().map(error => {
+      const fieldLabel = fieldLabels[error.path] || error.path;
+      let message = error.msg;
+      
+      // Enhance common messages
+      if (message.includes('required')) {
+        message = `${fieldLabel} is required. Please fill in this field.`;
+      } else if (message.includes('at least')) {
+        const match = message.match(/at least (\d+)/);
+        if (match) {
+          message = `${fieldLabel} must be at least ${match[1]} characters long. Please make it longer.`;
+        } else {
+          message = `${fieldLabel}: ${error.msg}. Please make it longer.`;
+        }
+      } else if (message.includes('less than') || message.includes('maximum')) {
+        message = `${fieldLabel} is too long. ${error.msg}. Please shorten it.`;
+      } else if (message.includes('between')) {
+        const match = message.match(/between (\d+) and (\d+)/);
+        if (match) {
+          message = `${fieldLabel} must be between ${match[1]} and ${match[2]}. Please adjust the value.`;
+        } else {
+          message = `${fieldLabel}: ${error.msg}. Please adjust the value.`;
+        }
+      } else if (message.includes('valid')) {
+        message = `${fieldLabel} format is invalid. ${error.msg}. Please check the format.`;
+      } else {
+        message = `${fieldLabel}: ${error.msg}`;
+      }
+      
+      return {
+        field: error.path,
+        message: message,
+        value: error.value
+      };
+    });
+    
+    // Create user-friendly main message
+    let mainMessage;
+    if (formattedErrors.length === 1) {
+      mainMessage = formattedErrors[0].message;
+    } else {
+      mainMessage = `Please fix the following ${formattedErrors.length} errors:\n${formattedErrors.map((err, i) => `${i + 1}. ${err.message}`).join('\n')}`;
+    }
+    
     return res.status(400).json({
       success: false,
-      message: 'Validation failed',
-      errors: errors.array().map(error => ({
-        field: error.path,
-        message: error.msg,
-        value: error.value
-      }))
+      message: mainMessage,
+      errors: formattedErrors
     });
   }
   
@@ -613,25 +670,25 @@ export const validateReview = [
   body('bookingId')
     .optional()
     .isMongoId()
-    .withMessage('Invalid booking ID'),
+    .withMessage('Invalid booking ID format. Please select a valid booking.'),
   
   body('rating')
     .notEmpty()
-    .withMessage('Rating is required')
+    .withMessage('Rating is required. Please select a rating from 1 to 5 stars.')
     .isInt({ min: 1, max: 5 })
-    .withMessage('Rating must be between 1 and 5'),
+    .withMessage('Rating must be between 1 and 5 stars. Please select a valid rating.'),
   
   body('comment')
     .optional()
     .trim()
     .isLength({ max: 500 })
-    .withMessage('Comment must be less than 500 characters'),
+    .withMessage('Comment must be less than 500 characters. Please shorten your comment.'),
   
   body('feedback')
     .optional()
     .trim()
     .isLength({ min: 10, max: 1000 })
-    .withMessage('Feedback must be between 10 and 1000 characters'),
+    .withMessage('Feedback must be between 10 and 1000 characters. Please provide more details (at least 10 characters) and keep it under 1000 characters.'),
   
   handleValidationErrors
 ];
