@@ -147,10 +147,10 @@ const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
   }, []);
 
   return (
-    <Popover className="relative">
+    <Popover className="relative z-50">
       {({ open, close }) => (
         <>
-          <Popover.Button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2">
+          <Popover.Button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 z-50">
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
               <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[18px] flex items-center justify-center z-[10000]">
@@ -174,7 +174,8 @@ const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
           >
             <Popover.Panel
               static
-              className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-[99999] max-h-96 overflow-hidden flex flex-col focus:outline-none"
+              className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 max-h-96 overflow-hidden flex flex-col focus:outline-none"
+              style={{ position: 'absolute', zIndex: 99999 }}
             >
               <motion.div
                 initial={{ opacity: 0, y: -10 }}

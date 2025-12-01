@@ -487,3 +487,29 @@ html {
   font-style: italic;
   font-weight: normal;
 }
+
+/* Fix Clerk Modal Centering - CSS only, no functionality changes */
+.cl-rootBox {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+.cl-card {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+}
+
+.cl-form {
+  width: 100% !important;
+}
+
+.cl-formField {
+  width: 100% !important;
+}
+
+.cl-formFieldInput {
+  width: 100% !important;
+}

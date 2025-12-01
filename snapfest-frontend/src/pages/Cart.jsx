@@ -46,11 +46,13 @@ const Cart = () => {
   const handleRemoveItem = async (itemId) => {
     try {
       await removeFromCart(itemId);
-      // Show success message
-      alert('Item removed from cart successfully!');
+      toast.success('Item removed from cart', {
+        icon: '🗑️',
+        duration: 2000
+      });
     } catch (error) {
       console.error('🛒 Cart: Error removing item:', error);
-      alert('Failed to remove item. Please try again.');
+      toast.error('Failed to remove item. Please try again.');
     }
   };
 

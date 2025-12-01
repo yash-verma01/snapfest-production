@@ -121,7 +121,7 @@ const VendorBookings = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
@@ -137,31 +137,35 @@ const VendorBookings = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Bookings</h1>
-              <p className="text-gray-600 mt-2">Manage your bookings and events</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Bookings</h1>
+              <p className="text-gray-600 mt-2 text-sm sm:text-base">Manage your bookings and events</p>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center flex-wrap gap-2 sm:gap-4">
               <Button
                 onClick={() => setShowFilters(!showFilters)}
                 variant="outline"
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 text-xs sm:text-sm"
+                size="sm"
               >
                 <Filter className="w-4 h-4" />
-                <span>Filters</span>
+                <span className="hidden sm:inline">Filters</span>
+                <span className="sm:hidden">Filter</span>
               </Button>
               <Button
                 onClick={loadBookings}
                 variant="outline"
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 text-xs sm:text-sm"
+                size="sm"
               >
                 <RefreshCw className="w-4 h-4" />
-                <span>Refresh</span>
+                <span className="hidden sm:inline">Refresh</span>
+                <span className="sm:hidden">Refresh</span>
               </Button>
             </div>
           </div>
@@ -169,16 +173,16 @@ const VendorBookings = () => {
 
         {/* Filters */}
         {showFilters && (
-          <Card className="mb-6 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="mb-4 sm:mb-6 p-4 sm:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                   Status
                 </label>
                 <select
                   value={filters.status}
                   onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded-md"
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
                 >
                   <option value="">All Status</option>
                   <option value="PENDING">Pending</option>
@@ -190,7 +194,7 @@ const VendorBookings = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                   Search
                 </label>
                 <div className="relative">
@@ -200,18 +204,18 @@ const VendorBookings = () => {
                     value={filters.search}
                     onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                     placeholder="Search bookings..."
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                   Sort By
                 </label>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md"
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
                 >
                   <option value="createdAt">Date Created</option>
                   <option value="eventDate">Event Date</option>
@@ -220,13 +224,13 @@ const VendorBookings = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                   Order
                 </label>
                 <select
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md"
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
                 >
                   <option value="desc">Descending</option>
                   <option value="asc">Ascending</option>
@@ -237,65 +241,66 @@ const VendorBookings = () => {
         )}
 
         {/* Bookings List */}
-        <div className="grid gap-6">
+        <div className="grid gap-4 sm:gap-6">
           {filteredBookings.length === 0 ? (
-            <Card className="p-12 text-center">
-              <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No bookings found</h3>
-              <p className="text-gray-600">You don't have any bookings yet.</p>
+            <Card className="p-8 sm:p-12 text-center">
+              <Calendar className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No bookings found</h3>
+              <p className="text-sm sm:text-base text-gray-600">You don't have any bookings yet.</p>
             </Card>
           ) : (
             filteredBookings.map((booking) => (
-              <Card key={booking._id} className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-4 mb-4">
-                      <Badge className={`${getStatusColor(booking.vendorStatus || 'ASSIGNED')} flex items-center space-x-2`}>
+              <Card key={booking._id} className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                  <div className="flex-1 w-full">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-4">
+                      <Badge className={`${getStatusColor(booking.vendorStatus || 'ASSIGNED')} flex items-center space-x-2 text-xs`}>
                         {getStatusIcon(booking.vendorStatus || 'ASSIGNED')}
-                        <span>{booking.vendorStatus || 'ASSIGNED'}</span>
+                        <span className="hidden sm:inline">{booking.vendorStatus || 'ASSIGNED'}</span>
+                        <span className="sm:hidden">{(booking.vendorStatus || 'ASSIGNED').split('_')[0]}</span>
                       </Badge>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-xs sm:text-sm text-gray-500">
                         #{booking._id.slice(-8)}
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                       {/* Customer Info */}
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Customer</h4>
+                        <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">Customer</h4>
                         <div className="space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <User className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm">{booking.userId?.name || 'N/A'}</span>
+                          <div className="flex items-center space-x-2 min-w-0">
+                            <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-xs sm:text-sm truncate">{booking.userId?.name || 'N/A'}</span>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Mail className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm">{booking.userId?.email || 'N/A'}</span>
+                          <div className="flex items-center space-x-2 min-w-0">
+                            <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-xs sm:text-sm truncate">{booking.userId?.email || 'N/A'}</span>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Phone className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm">{booking.userId?.phone || 'N/A'}</span>
+                          <div className="flex items-center space-x-2 min-w-0">
+                            <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-xs sm:text-sm truncate">{booking.userId?.phone || 'N/A'}</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Event Details */}
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Event Details</h4>
+                        <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">Event Details</h4>
                         <div className="space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <Calendar className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm">
+                          <div className="flex items-center space-x-2 min-w-0">
+                            <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-xs sm:text-sm">
                               {new Date(booking.eventDate).toLocaleDateString()}
                             </span>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <MapPin className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm">{booking.location || 'N/A'}</span>
+                          <div className="flex items-center space-x-2 min-w-0">
+                            <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-xs sm:text-sm truncate">{booking.location || 'N/A'}</span>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <DollarSign className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm font-medium">
+                          <div className="flex items-center space-x-2 min-w-0">
+                            <DollarSign className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-xs sm:text-sm font-medium">
                               ₹{booking.totalAmount?.toLocaleString() || '0'}
                             </span>
                           </div>
@@ -303,17 +308,17 @@ const VendorBookings = () => {
                       </div>
 
                       {/* Package Info */}
-                      <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Package</h4>
+                      <div className="sm:col-span-2 lg:col-span-1">
+                        <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">Package</h4>
                         <div className="space-y-2">
-                          <p className="text-sm font-medium">{booking.packageId?.title || 'N/A'}</p>
-                          <p className="text-sm text-gray-600">{booking.packageId?.category || 'N/A'}</p>
+                          <p className="text-xs sm:text-sm font-medium break-words">{booking.packageId?.title || 'N/A'}</p>
+                          <p className="text-xs sm:text-sm text-gray-600">{booking.packageId?.category || 'N/A'}</p>
                           {booking.customizations && (
-                            <div className="text-sm text-gray-600">
+                            <div className="text-xs sm:text-sm text-gray-600">
                               <span className="font-medium">Customizations:</span>
                               <ul className="list-disc list-inside ml-2">
                                 {booking.customizations.map((custom, index) => (
-                                  <li key={index}>{custom}</li>
+                                  <li key={index} className="break-words">{custom}</li>
                                 ))}
                               </ul>
                             </div>
@@ -323,28 +328,32 @@ const VendorBookings = () => {
                     </div>
 
                     {/* Actions */}
-                    <div className="mt-6 flex items-center space-x-4">
+                    <div className="mt-4 sm:mt-6 flex flex-wrap items-center gap-2 sm:gap-4">
                       <Button
                         onClick={() => setSelectedBooking(booking)}
                         variant="outline"
-                        className="flex items-center space-x-2"
+                        className="flex items-center space-x-2 text-xs sm:text-sm"
+                        size="sm"
                       >
                         <Eye className="w-4 h-4" />
-                        <span>View Details</span>
+                        <span className="hidden sm:inline">View Details</span>
+                        <span className="sm:hidden">View</span>
                       </Button>
 
                       {(booking.vendorStatus === 'ASSIGNED' || booking.vendorStatus === null) && (
                         <>
                           <Button
                             onClick={() => handleBookingAction(booking._id, 'accept')}
-                            className="bg-green-600 hover:bg-green-700 text-white"
+                            className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm"
+                            size="sm"
                           >
                             Accept
                           </Button>
                           <Button
                             onClick={() => handleBookingAction(booking._id, 'reject')}
                             variant="outline"
-                            className="text-red-600 border-red-600 hover:bg-red-50"
+                            className="text-red-600 border-red-600 hover:bg-red-50 text-xs sm:text-sm"
+                            size="sm"
                           >
                             Reject
                           </Button>
@@ -354,18 +363,22 @@ const VendorBookings = () => {
                       {booking.vendorStatus === 'ASSIGNED' && (
                         <Button
                           onClick={() => handleBookingAction(booking._id, 'start')}
-                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                          className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm"
+                          size="sm"
                         >
-                          Start Event
+                          <span className="hidden sm:inline">Start Event</span>
+                          <span className="sm:hidden">Start</span>
                         </Button>
                       )}
 
                       {booking.vendorStatus === 'IN_PROGRESS' && (
                         <Button
                           onClick={() => handleBookingAction(booking._id, 'complete')}
-                          className="bg-green-600 hover:bg-green-700 text-white"
+                          className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm"
+                          size="sm"
                         >
-                          Complete Event
+                          <span className="hidden sm:inline">Complete Event</span>
+                          <span className="sm:hidden">Complete</span>
                         </Button>
                       )}
                     </div>

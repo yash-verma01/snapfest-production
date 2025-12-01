@@ -30,29 +30,29 @@ const VendorStatsCard = ({
   };
 
   return (
-    <Card className={`p-6 ${className}`}>
+    <Card className={`p-4 sm:p-6 ${className}`}>
       <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mb-2">{value}</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1 truncate">{title}</p>
+          <p className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 truncate">{value}</p>
           {change && (
-            <div className={`flex items-center text-sm ${getChangeColor()}`}>
+            <div className={`flex items-center text-xs sm:text-sm ${getChangeColor()}`}>
               <span className="mr-1">{getChangeIcon()}</span>
-              <span>{change}</span>
+              <span className="truncate">{change}</span>
             </div>
           )}
           {description && (
-            <p className="text-xs text-gray-500 mt-1">{description}</p>
+            <p className="text-xs text-gray-500 mt-1 truncate">{description}</p>
           )}
         </div>
-        <div className="flex-shrink-0">
-          <div className="w-12 h-12 bg-primary-50 rounded-lg flex items-center justify-center">
+        <div className="flex-shrink-0 ml-2">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary-50 rounded-lg flex items-center justify-center">
             {icon}
           </div>
         </div>
       </div>
       {trend && (
-        <div className="mt-4">
+        <div className="mt-3 sm:mt-4">
           <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTrendColor()}`}>
             {trend === 'up' ? '↗' : trend === 'down' ? '↘' : '→'} {trend}
           </div>

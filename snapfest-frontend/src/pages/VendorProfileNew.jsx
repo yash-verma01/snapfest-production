@@ -36,6 +36,7 @@ import { vendorAPI } from '../services/api';
 const VendorProfileNew = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [vendorData, setVendorData] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -63,6 +64,7 @@ const VendorProfileNew = () => {
   const loadVendorProfile = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await vendorAPI.getVendorProfile();
       if (response.data.success) {
         const data = response.data.data;
@@ -89,6 +91,7 @@ const VendorProfileNew = () => {
       }
     } catch (error) {
       console.error('Error loading vendor profile:', error);
+      setError(error.response?.data?.message || 'Failed to load vendor profile. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -140,6 +143,36 @@ const VendorProfileNew = () => {
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading your profile...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (error && !vendorData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <Card className="p-8 text-center max-w-md">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Profile</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={loadVendorProfile} className="bg-blue-600 hover:bg-blue-700">
+            Retry
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!vendorData && !loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <Card className="p-8 text-center max-w-md">
+          <User className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">No Profile Data</h2>
+          <p className="text-gray-600 mb-4">Unable to load vendor profile. Please try refreshing the page.</p>
+          <Button onClick={loadVendorProfile} className="bg-blue-600 hover:bg-blue-700">
+            Reload Profile
+          </Button>
+        </Card>
       </div>
     );
   }

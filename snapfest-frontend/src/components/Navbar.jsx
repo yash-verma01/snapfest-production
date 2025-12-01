@@ -177,6 +177,8 @@ const Navbar = () => {
 
   // Check if current user is admin - hide browsing features in admin UI
   const isAdmin = currentRole === 'admin';
+  // Check if current user is vendor - hide browsing features in vendor UI (same as admin)
+  const isVendor = currentRole === 'vendor';
 
   return (
     <nav className="bg-white/95 backdrop-blur-xl shadow-lg sticky top-0 z-50 border-b border-pink-100 transition-all duration-300">
@@ -202,8 +204,8 @@ const Navbar = () => {
             >
               Home
             </Link>
-            {/* Removed packages/events/venue/about/contact/cart links for admin UI (temporary) */}
-            {!isAdmin && (
+            {/* Removed packages/events/venue/about/contact/cart links for admin and vendor UI */}
+            {!isAdmin && !isVendor && (
               <>
                 <Link
                   to="/packages"
@@ -455,8 +457,8 @@ const Navbar = () => {
                 <Home className="w-5 h-5 mr-3 text-primary-500" />
                 Home
               </Link>
-              {/* Removed packages/events/venue/about/contact/cart links for admin UI (temporary) */}
-              {!isAdmin && (
+              {/* Removed packages/events/venue/about/contact/cart links for admin and vendor UI */}
+              {!isAdmin && !isVendor && (
                 <>
                   <Link
                     to="/packages"

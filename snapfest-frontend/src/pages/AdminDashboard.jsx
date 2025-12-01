@@ -302,7 +302,7 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-red-50">
       {/* Enhanced Header */}
       <ScrollReveal direction="down">
-        <div className="bg-white/80 backdrop-blur-xl shadow-lg border-b border-pink-100">
+        <div className="bg-white/80 backdrop-blur-xl shadow-lg border-b border-pink-100 relative z-40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex items-center justify-between">
               <div>
@@ -313,7 +313,7 @@ const AdminDashboard = () => {
                   System overview and management
                 </p>
               </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 relative z-50">
               <NotificationBell 
                 userRole="admin" 
                 onNavigate={handleNotificationNavigation}
@@ -333,7 +333,7 @@ const AdminDashboard = () => {
         </div>
       </ScrollReveal>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         {/* Conditional Content Based on Active Tab */}
         {activeTab === 'dashboard' && (
           <>

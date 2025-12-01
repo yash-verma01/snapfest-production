@@ -534,9 +534,9 @@ const BeatBloomManagement = () => {
 
       {/* Beat & Bloom Form Modal */}
       {showCreateForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-2 sm:p-4" style={{ zIndex: 9999 }}>
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-base sm:text-lg font-semibold mb-4">
               {editingBeatBloom ? 'Edit Beat & Bloom Service' : 'Create New Beat & Bloom Service'}
             </h3>
             
@@ -810,7 +810,7 @@ const BeatBloomManagement = () => {
                 <label className="ml-2 block text-sm text-gray-900">Active</label>
               </div>
               
-              <div className="flex justify-end space-x-3 pt-4">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 sm:space-x-3 pt-4">
                 <Button type="button" variant="outline" onClick={() => { 
                   setShowCreateForm(false); 
                   setEditingBeatBloom(null);
@@ -823,8 +823,8 @@ const BeatBloomManagement = () => {
                   setPrimaryPreview(null);
                   setSelectedGalleryFiles([]);
                   setGalleryPreviews([]);
-                }}>Cancel</Button>
-                <Button type="submit" className="bg-primary-600 hover:bg-primary-700">{editingBeatBloom ? 'Update Service' : 'Create Service'}</Button>
+                }} className="w-full sm:w-auto text-xs sm:text-sm" size="sm">Cancel</Button>
+                <Button type="submit" className="bg-primary-600 hover:bg-primary-700 w-full sm:w-auto text-xs sm:text-sm" size="sm">{editingBeatBloom ? 'Update Service' : 'Create Service'}</Button>
               </div>
             </form>
           </div>

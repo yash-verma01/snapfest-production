@@ -147,9 +147,9 @@ const EventForm = ({ event: evt, onSave, onCancel, onReload, validationErrors = 
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <h3 className="text-lg font-semibold mb-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-2 sm:p-4" style={{ zIndex: 9999 }}>
+      <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <h3 className="text-base sm:text-lg font-semibold mb-4">
           {evt ? 'Edit Event' : 'Create New Event'}
         </h3>
         
@@ -465,17 +465,20 @@ const EventForm = ({ event: evt, onSave, onCancel, onReload, validationErrors = 
             <label className="ml-2 block text-sm text-gray-900">Active</label>
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 sm:space-x-3 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={onCancel}
+              className="w-full sm:w-auto text-xs sm:text-sm"
+              size="sm"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-600 hover:bg-primary-700"
+              className="bg-primary-600 hover:bg-primary-700 w-full sm:w-auto text-xs sm:text-sm"
+              size="sm"
             >
               {evt ? 'Update Event' : 'Create Event'}
             </Button>
@@ -704,16 +707,17 @@ const EventManagement = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Event Management</h2>
-          <p className="text-gray-600">Manage event gallery and listings</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Event Management</h2>
+          <p className="text-sm sm:text-base text-gray-600">Manage event gallery and listings</p>
         </div>
         <Button 
           onClick={() => setShowCreateForm(true)}
-          className="bg-primary-600 hover:bg-primary-700"
+          className="bg-primary-600 hover:bg-primary-700 w-full sm:w-auto text-xs sm:text-sm"
+          size="sm"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Event
@@ -721,10 +725,10 @@ const EventManagement = () => {
       </div>
 
       {/* Search and Filters */}
-      <Card className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <Card className="p-4 sm:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Search</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
@@ -732,16 +736,16 @@ const EventManagement = () => {
                 placeholder="Search events..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Type</label>
             <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
             >
               <option value="">All Types</option>
               <option value="WEDDING">Wedding</option>
@@ -754,11 +758,12 @@ const EventManagement = () => {
               <option value="OTHER">Other</option>
             </select>
           </div>
-          <div className="flex items-end">
+          <div className="flex items-end sm:col-span-2 lg:col-span-1">
             <Button
               variant="outline"
               onClick={loadEvents}
-              className="w-full"
+              className="w-full text-xs sm:text-sm"
+              size="sm"
             >
               <Filter className="w-4 h-4 mr-2" />
               Apply Filters
@@ -769,67 +774,69 @@ const EventManagement = () => {
 
       {/* Events Table */}
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {events.map((event) => (
-                <tr key={event._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-                          <Calendar className="h-5 w-5 text-primary-600" />
+        <div className="overflow-x-auto -mx-2 sm:mx-0">
+          <div className="inline-block min-w-full align-middle px-2 sm:px-0">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {events.map((event) => (
+                  <tr key={event._id} className="hover:bg-gray-50">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10">
+                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                            <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-primary-600" />
+                          </div>
+                        </div>
+                        <div className="ml-2 sm:ml-4 min-w-0">
+                          <div className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-[120px] sm:max-w-none">{event.title}</div>
+                          <div className="text-xs sm:text-sm text-gray-500 truncate max-w-[120px] sm:max-w-none">{event.shortDescription || event.description}</div>
                         </div>
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{event.title}</div>
-                        <div className="text-sm text-gray-500 truncate max-w-xs">{event.shortDescription || event.description}</div>
+                    </td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                      <Badge className={`${getTypeBadgeColor(event.type)} text-xs`}>
+                        {event.type}
+                      </Badge>
+                    </td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                      <div className="text-xs sm:text-sm text-gray-900">
+                        {event.date ? new Date(event.date).toLocaleDateString() : 'TBD'}
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge className={getTypeBadgeColor(event.type)}>
-                      {event.type}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {event.date ? new Date(event.date).toLocaleDateString() : 'TBD'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900">
-                      <MapPin className="w-4 h-4 mr-1" />
-                      {event.location.name || event.location.city || 'Location TBD'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge className={getStatusBadgeColor(event.isActive)}>
-                      {event.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2">
+                    </td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                      <div className="flex items-center text-xs sm:text-sm text-gray-900">
+                        <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1 flex-shrink-0" />
+                        <span className="truncate max-w-[100px] sm:max-w-none">{event.location.name || event.location.city || 'Location TBD'}</span>
+                      </div>
+                    </td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                      <Badge className={`${getStatusBadgeColor(event.isActive)} text-xs`}>
+                        {event.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium">
+                      <div className="flex items-center gap-1">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleToggleStatus(event._id)}
                         title={event.isActive ? 'Deactivate' : 'Activate'}
+                        className="text-xs"
                       >
                         {event.isActive ? (
-                          <ToggleLeft className="w-4 h-4" />
+                          <ToggleLeft className="w-3 h-3 sm:w-4 sm:h-4" />
                         ) : (
-                          <ToggleRight className="w-4 h-4" />
+                          <ToggleRight className="w-3 h-3 sm:w-4 sm:h-4" />
                         )}
                       </Button>
                       <Button 
@@ -837,79 +844,63 @@ const EventManagement = () => {
                         size="sm"
                         onClick={() => handleViewEvent(event._id)}
                         title="View Event Details"
+                        className="text-xs"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
                       </Button>
                       <Button 
                         variant="outline" 
                         size="sm"
                         onClick={() => handleEditEvent(event._id)}
                         title="Edit Event"
+                        className="text-xs"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleDeleteEvent(event._id)}
-                        className="text-red-600 hover:text-red-700"
+                        className="text-red-600 hover:text-red-700 text-xs"
                         title="Delete Event"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                       </Button>
                     </div>
                   </td>
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <Button
-                variant="outline"
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </Button>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Showing page <span className="font-medium">{currentPage}</span> of{' '}
-                  <span className="font-medium">{totalPages}</span>
-                </p>
+          <div className="bg-white px-4 sm:px-6 py-3 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="text-xs sm:text-sm text-gray-700">
+                Page {currentPage} of {totalPages}
               </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                  <Button
-                    variant="outline"
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md"
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md"
-                  >
-                    Next
-                  </Button>
-                </nav>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="text-xs"
+                  size="sm"
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="text-xs"
+                  size="sm"
+                >
+                  Next
+                </Button>
               </div>
             </div>
           </div>

@@ -607,6 +607,7 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
                       <SignIn
                         routing="path"
                         path="/sign-in"
+                        fallbackRedirectUrl="/sign-in/complete"
                         afterSignInUrl="/sign-in/complete"
                         appearance={{
                           elements: {
@@ -643,6 +644,7 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
                       <SignUp
                         routing="path"
                         path="/sign-up"
+                        fallbackRedirectUrl="/sign-up/complete"
                         afterSignUpUrl="/sign-up/complete"
                         appearance={{
                           elements: {

@@ -291,48 +291,50 @@ const VendorDashboard = () => {
       {/* Enhanced Header */}
       <ScrollReveal direction="down">
         <div className="bg-white/80 backdrop-blur-xl shadow-lg border-b border-pink-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex items-center justify-between">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">
                   Welcome back, {user?.name || 'Vendor'}!
                 </h1>
-                <p className="text-gray-600 mt-1">
+                <p className="text-gray-600 mt-1 text-sm sm:text-base">
                   Manage your bookings and earnings
                 </p>
               </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center flex-wrap gap-2 sm:gap-4">
               <NotificationBell 
                 userRole="vendor" 
                 onNavigate={handleNotificationNavigation}
               />
               <Link to="/vendor/profile">
-                <Button variant="outline" size="sm">
-                  <User className="w-4 h-4 mr-2" />
-                  Profile
+                <Button variant="outline" size="sm" title="Profile">
+                  <User className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Profile</span>
                 </Button>
               </Link>
               <Link to="/vendor/bookings">
-                <Button variant="outline" size="sm">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Bookings
+                <Button variant="outline" size="sm" title="Bookings">
+                  <Calendar className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Bookings</span>
                 </Button>
               </Link>
-              <Link to="/vendor/earnings">
-                <Button variant="outline" size="sm">
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  Earnings
+              {/* Temporarily hidden - Earnings button */}
+              {/* <Link to="/vendor/earnings">
+                <Button variant="outline" size="sm" title="Earnings">
+                  <CreditCard className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Earnings</span>
                 </Button>
-              </Link>
-              <Link to="/vendor/settings">
-                <Button variant="outline" size="sm">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
+              </Link> */}
+              {/* Temporarily hidden - Settings button */}
+              {/* <Link to="/vendor/settings">
+                <Button variant="outline" size="sm" title="Settings">
+                  <Settings className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Settings</span>
                 </Button>
-              </Link>
-              <Button variant="outline" size="sm" onClick={logout}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
+              </Link> */}
+              <Button variant="outline" size="sm" onClick={logout} title="Logout">
+                <LogOut className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
@@ -344,12 +346,13 @@ const VendorDashboard = () => {
         {/* Show Notifications Section if requested */}
         {showNotifications ? (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">Notifications</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Notifications</h2>
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => setShowNotifications(false)}
+                className="w-full sm:w-auto"
               >
                 ← Back to Dashboard
               </Button>
@@ -359,7 +362,7 @@ const VendorDashboard = () => {
         ) : (
           <>
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
               {stats.map((stat, index) => (
                 <VendorStatsCard
                   key={index}
@@ -374,28 +377,28 @@ const VendorDashboard = () => {
               ))}
             </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Pending OTPs Alert */}
             {pendingOTPs && pendingOTPs.length > 0 && (
               <ScrollReveal direction="up" delay={0.1}>
-                <GlassCard className="p-6 border-yellow-200 bg-yellow-50/80 backdrop-blur-sm">
-                <div className="flex items-center justify-between">
+                <GlassCard className="p-4 sm:p-6 border-yellow-200 bg-yellow-50/80 backdrop-blur-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex items-center">
-                    <Shield className="w-6 h-6 text-yellow-600 mr-3" />
+                    <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600 mr-3 flex-shrink-0" />
                     <div>
-                      <h3 className="font-semibold text-yellow-900">
+                      <h3 className="font-semibold text-yellow-900 text-sm sm:text-base">
                         {pendingOTPs?.length || 0} Pending OTP Verification{(pendingOTPs?.length || 0) > 1 ? 's' : ''}
                       </h3>
-                      <p className="text-sm text-yellow-700">
+                      <p className="text-xs sm:text-sm text-yellow-700">
                         Customer payments are waiting for OTP verification
                       </p>
                     </div>
                   </div>
                   <Button
                     onClick={() => setShowOTPModal(true)}
-                    className="bg-yellow-600 hover:bg-yellow-700"
+                    className="bg-yellow-600 hover:bg-yellow-700 w-full sm:w-auto"
                   >
                     <Shield className="w-4 h-4 mr-2" />
                     Verify OTPs
@@ -407,26 +410,26 @@ const VendorDashboard = () => {
 
             {/* Unified Bookings Section */}
             <ScrollReveal direction="up" delay={0.2}>
-              <GlassCard className="p-6">
-              <div className="flex items-center justify-between mb-6">
+              <GlassCard className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">All Bookings</h2>
-                  <p className="text-sm text-gray-600">Manage all your bookings in one place</p>
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">All Bookings</h2>
+                  <p className="text-xs sm:text-sm text-gray-600">Manage all your bookings in one place</p>
                 </div>
                 <Link to="/vendor/bookings">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
                     View All
                   </Button>
                 </Link>
               </div>
 
               {/* Filters Section */}
-              <div className="mb-6 space-y-4">
+              <div className="mb-4 sm:mb-6 space-y-4">
                 {/* Status Tabs */}
-                <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-4">
+                <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-4 overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
                   <button
                     onClick={() => setBookingFilter('all')}
-                    className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                    className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${
                       bookingFilter === 'all'
                         ? 'bg-primary-600 text-white border-b-2 border-primary-600'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -436,7 +439,7 @@ const VendorDashboard = () => {
                   </button>
                   <button
                     onClick={() => setBookingFilter('assigned')}
-                    className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                    className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${
                       bookingFilter === 'assigned'
                         ? 'bg-primary-600 text-white border-b-2 border-primary-600'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -446,7 +449,7 @@ const VendorDashboard = () => {
                   </button>
                   <button
                     onClick={() => setBookingFilter('pending')}
-                    className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                    className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${
                       bookingFilter === 'pending'
                         ? 'bg-primary-600 text-white border-b-2 border-primary-600'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -456,7 +459,7 @@ const VendorDashboard = () => {
                   </button>
                   <button
                     onClick={() => setBookingFilter('in_progress')}
-                    className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                    className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${
                       bookingFilter === 'in_progress'
                         ? 'bg-primary-600 text-white border-b-2 border-primary-600'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -466,7 +469,7 @@ const VendorDashboard = () => {
                   </button>
                   <button
                     onClick={() => setBookingFilter('completed')}
-                    className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                    className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${
                       bookingFilter === 'completed'
                         ? 'bg-primary-600 text-white border-b-2 border-primary-600'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -481,10 +484,10 @@ const VendorDashboard = () => {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search bookings by package, location, or booking ID..."
+                    placeholder="Search bookings..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm sm:text-base"
                   />
                 </div>
               </div>
@@ -493,8 +496,8 @@ const VendorDashboard = () => {
               {bookingFilter === 'all' && bookings?.some(booking => booking.assignedVendorId) && (
                 <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                   <div className="flex items-center">
-                    <UserCheck className="w-5 h-5 text-green-600 mr-2" />
-                    <span className="text-sm font-medium text-green-800">
+                    <UserCheck className="w-5 h-5 text-green-600 mr-2 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm font-medium text-green-800">
                       You have {bookings.filter(booking => booking.assignedVendorId).length} assigned booking(s) - these appear first
                     </span>
                   </div>
@@ -574,28 +577,28 @@ const VendorDashboard = () => {
           </ScrollReveal>
 
           {/* Sidebar */}
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             {/* Tips & Guidelines */}
-            <GlassCard className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Tips & Guidelines</h3>
-              <div className="space-y-4">
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-1">OTP Verification</h4>
-                  <p className="text-sm text-blue-700">
+            <GlassCard className="p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Tips & Guidelines</h3>
+              <div className="space-y-3 sm:space-y-4">
+                <div className="p-3 sm:p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-1 text-sm sm:text-base">OTP Verification</h4>
+                  <p className="text-xs sm:text-sm text-blue-700">
                     Always verify customer OTPs before starting photography sessions to ensure payment confirmation.
                   </p>
                 </div>
                 
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <h4 className="font-medium text-green-900 mb-1">Quality Standards</h4>
-                  <p className="text-sm text-green-700">
+                <div className="p-3 sm:p-4 bg-green-50 rounded-lg">
+                  <h4 className="font-medium text-green-900 mb-1 text-sm sm:text-base">Quality Standards</h4>
+                  <p className="text-xs sm:text-sm text-green-700">
                     Maintain high quality standards and deliver photos within 48 hours of the event.
                   </p>
                 </div>
                 
-                <div className="p-4 bg-yellow-50 rounded-lg">
-                  <h4 className="font-medium text-yellow-900 mb-1">Communication</h4>
-                  <p className="text-sm text-yellow-700">
+                <div className="p-3 sm:p-4 bg-yellow-50 rounded-lg">
+                  <h4 className="font-medium text-yellow-900 mb-1 text-sm sm:text-base">Communication</h4>
+                  <p className="text-xs sm:text-sm text-yellow-700">
                     Keep customers informed about event progress and any changes in schedule.
                   </p>
                 </div>
@@ -610,11 +613,11 @@ const VendorDashboard = () => {
 
       {/* OTP Verification Modal */}
       {showOTPModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">OTP Verification</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">OTP Verification</h3>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -635,9 +638,9 @@ const VendorDashboard = () => {
 
       {/* Booking OTP Verification Modal */}
       <ModalPortal isOpen={showBookingOTPModal}>
-        <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+        <div className="bg-white p-4 sm:p-6 rounded-lg max-w-md w-full mx-2 sm:mx-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold">Verify Booking OTP</h3>
+            <h3 className="text-base sm:text-lg font-bold">Verify Booking OTP</h3>
             <Button
               variant="ghost"
               size="sm"
@@ -653,15 +656,15 @@ const VendorDashboard = () => {
           
           {selectedBookingForOTP && (
             <>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-xs sm:text-sm text-gray-600 mb-4">
                 Enter the OTP provided by the customer for booking #{selectedBookingForOTP._id.slice(-8)}
               </p>
               
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                   Booking Details
                 </label>
-                <div className="bg-gray-50 p-3 rounded-lg text-sm">
+                <div className="bg-gray-50 p-3 rounded-lg text-xs sm:text-sm">
                   <p><strong>Package:</strong> {selectedBookingForOTP.packageId?.title || 'N/A'}</p>
                   <p><strong>Date:</strong> {new Date(selectedBookingForOTP.eventDate).toLocaleDateString()}</p>
                   <p><strong>Location:</strong> {selectedBookingForOTP.location || 'N/A'}</p>
@@ -669,7 +672,7 @@ const VendorDashboard = () => {
               </div>
               
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                   OTP Code
                 </label>
                 <input
@@ -678,12 +681,12 @@ const VendorDashboard = () => {
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
                   placeholder="Enter 6-digit OTP"
-                  className="w-full px-4 py-3 border rounded-lg text-center text-2xl tracking-widest focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-3 border rounded-lg text-center text-xl sm:text-2xl tracking-widest focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   autoFocus
                 />
               </div>
               
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   onClick={handleOTPSubmit}
                   disabled={verifyingOTP || otpCode.length !== 6}
@@ -699,6 +702,7 @@ const VendorDashboard = () => {
                     setSelectedBookingForOTP(null);
                   }}
                   disabled={verifyingOTP}
+                  className="w-full sm:w-auto"
                 >
                   Cancel
                 </Button>
@@ -711,9 +715,9 @@ const VendorDashboard = () => {
       {/* Booking Details Modal */}
       {showBookingDetails && selectedBookingDetails && (
         <ModalPortal isOpen={showBookingDetails}>
-          <div className="bg-white p-6 rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white p-4 sm:p-6 rounded-lg max-w-2xl w-full mx-2 sm:mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold">Booking Details</h3>
+              <h3 className="text-base sm:text-lg font-bold">Booking Details</h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -727,7 +731,7 @@ const VendorDashboard = () => {
             </div>
             
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2">Event Details</h4>
                   <div className="space-y-2 text-sm">

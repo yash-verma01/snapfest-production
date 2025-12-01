@@ -18,7 +18,13 @@ console.log('🔑 User Portal Clerk Key Debug:', {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ClerkProvider publishableKey={CLERK_PK} afterSignInUrl="/sign-in/complete" afterSignUpUrl="/sign-up/complete">
+    <ClerkProvider 
+      publishableKey={CLERK_PK} 
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+      afterSignInUrl="/sign-in/complete" 
+      afterSignUpUrl="/sign-up/complete"
+    >
       <App />
     </ClerkProvider>
   </StrictMode>,

@@ -103,16 +103,17 @@ const VendorManagement = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Vendor Management</h2>
-          <p className="text-gray-600">Manage photographers and vendors</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Vendor Management</h2>
+          <p className="text-sm sm:text-base text-gray-600">Manage photographers and vendors</p>
         </div>
         <Button 
           onClick={() => setShowCreateForm(true)}
-          className="bg-primary-600 hover:bg-primary-700"
+          className="bg-primary-600 hover:bg-primary-700 w-full sm:w-auto text-xs sm:text-sm"
+          size="sm"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Vendor
@@ -120,7 +121,7 @@ const VendorManagement = () => {
       </div>
 
       {/* Search */}
-      <Card className="p-4">
+      <Card className="p-4 sm:p-6">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
@@ -128,55 +129,57 @@ const VendorManagement = () => {
             placeholder="Search vendors..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
           />
         </div>
       </Card>
 
       {/* Vendors Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {filteredVendors.map((vendor) => (
-          <Card key={vendor._id} className="p-6">
+          <Card key={vendor._id} className="p-4 sm:p-6">
             <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-                  <Users className="w-6 h-6 text-primary-600" />
+              <div className="flex items-center min-w-0 flex-1">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary-600" />
                 </div>
-                <div className="ml-3">
-                  <h3 className="font-semibold text-gray-900">{vendor.userId?.name || 'N/A'}</h3>
-                  <p className="text-sm text-gray-600">{vendor.businessName}</p>
+                <div className="ml-2 sm:ml-3 min-w-0">
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{vendor.userId?.name || 'N/A'}</h3>
+                  <p className="text-xs sm:text-sm text-gray-600 truncate">{vendor.businessName}</p>
                 </div>
               </div>
-              {getStatusBadge(vendor.userId?.isActive)}
+              <div className="flex-shrink-0 ml-2">
+                {getStatusBadge(vendor.userId?.isActive)}
+              </div>
             </div>
 
             <div className="space-y-2 mb-4">
-              <div className="flex items-center text-sm text-gray-600">
-                <Mail className="w-4 h-4 mr-2" />
-                {vendor.userId?.email || 'N/A'}
+              <div className="flex items-center text-xs sm:text-sm text-gray-600 min-w-0">
+                <Mail className="w-3 h-3 sm:w-4 sm:h-4 mr-2 flex-shrink-0" />
+                <span className="truncate">{vendor.userId?.email || 'N/A'}</span>
               </div>
               {vendor.userId?.phone && (
-                <div className="flex items-center text-sm text-gray-600">
-                  <Phone className="w-4 h-4 mr-2" />
-                  {vendor.userId.phone}
+                <div className="flex items-center text-xs sm:text-sm text-gray-600 min-w-0">
+                  <Phone className="w-3 h-3 sm:w-4 sm:h-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">{vendor.userId.phone}</span>
                 </div>
               )}
               {vendor.location && (
-                <div className="flex items-center text-sm text-gray-600">
-                  <MapPin className="w-4 h-4 mr-2" />
-                  {vendor.location}
+                <div className="flex items-center text-xs sm:text-sm text-gray-600 min-w-0">
+                  <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">{vendor.location}</span>
                 </div>
               )}
               {vendor.rating && (
-                <div className="flex items-center text-sm text-gray-600">
-                  <Star className="w-4 h-4 mr-2" />
-                  {vendor.rating} ({vendor.reviewCount || 0} reviews)
+                <div className="flex items-center text-xs sm:text-sm text-gray-600 min-w-0">
+                  <Star className="w-3 h-3 sm:w-4 sm:h-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">{vendor.rating} ({vendor.reviewCount || 0} reviews)</span>
                 </div>
               )}
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-between gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   onClick={() => {
                     setSelectedVendor(vendor);
@@ -184,44 +187,47 @@ const VendorManagement = () => {
                   }}
                   variant="outline"
                   size="sm"
-                  className="text-primary-600 hover:text-primary-900 border-primary-200 hover:border-primary-300"
+                  className="text-primary-600 hover:text-primary-900 border-primary-200 hover:border-primary-300 text-xs flex-1 sm:flex-none"
                   title="View Details"
                 >
-                  <Eye className="w-4 h-4 mr-1" />
-                  View
+                  <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                  <span className="hidden sm:inline">View</span>
                 </Button>
                 <Button
                   onClick={() => handleToggleStatus(vendor._id)}
                   variant="outline"
                   size="sm"
                   disabled={actionLoading[vendor._id]}
-                  className={vendor.userId?.isActive 
-                    ? 'text-red-600 hover:text-red-900 border-red-200 hover:border-red-300' 
-                    : 'text-green-600 hover:text-green-900 border-green-200 hover:border-green-300'
-                  }
+                  className={`text-xs flex-1 sm:flex-none ${
+                    vendor.userId?.isActive 
+                      ? 'text-red-600 hover:text-red-900 border-red-200 hover:border-red-300' 
+                      : 'text-green-600 hover:text-green-900 border-green-200 hover:border-green-300'
+                  }`}
                   title={vendor.userId?.isActive ? 'Deactivate Vendor' : 'Activate Vendor'}
                 >
                   {actionLoading[vendor._id] ? (
-                    <div className="w-4 h-4 mr-1 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 mr-1 animate-spin rounded-full border-2 border-current border-t-transparent" />
                   ) : (
-                    vendor.userId?.isActive ? <ToggleRight className="w-4 h-4 mr-1" /> : <ToggleLeft className="w-4 h-4 mr-1" />
+                    vendor.userId?.isActive ? <ToggleRight className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> : <ToggleLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                   )}
-                  {actionLoading[vendor._id] ? 'Processing...' : (vendor.userId?.isActive ? 'Deactivate' : 'Activate')}
+                  <span className="hidden sm:inline">{actionLoading[vendor._id] ? 'Processing...' : (vendor.userId?.isActive ? 'Deactivate' : 'Activate')}</span>
+                  <span className="sm:hidden">{actionLoading[vendor._id] ? '...' : (vendor.userId?.isActive ? 'Off' : 'On')}</span>
                 </Button>
                 <Button
                   onClick={() => handleDeleteVendor(vendor._id)}
                   variant="outline"
                   size="sm"
                   disabled={actionLoading[vendor._id]}
-                  className="text-red-600 hover:text-red-900 border-red-200 hover:border-red-300"
+                  className="text-red-600 hover:text-red-900 border-red-200 hover:border-red-300 text-xs flex-1 sm:flex-none"
                   title="Delete Vendor"
                 >
                   {actionLoading[vendor._id] ? (
-                    <div className="w-4 h-4 mr-1 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 mr-1 animate-spin rounded-full border-2 border-current border-t-transparent" />
                   ) : (
-                    <Trash2 className="w-4 h-4 mr-1" />
+                    <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                   )}
-                  {actionLoading[vendor._id] ? 'Processing...' : 'Delete'}
+                  <span className="hidden sm:inline">{actionLoading[vendor._id] ? 'Processing...' : 'Delete'}</span>
+                  <span className="sm:hidden">{actionLoading[vendor._id] ? '...' : 'Del'}</span>
                 </Button>
               </div>
             </div>
@@ -231,47 +237,48 @@ const VendorManagement = () => {
 
       {/* Vendor Details Modal */}
       {showDetails && selectedVendor && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">
+              <h3 className="text-base sm:text-lg font-semibold truncate">
                 Vendor Details - {selectedVendor.userId?.name || selectedVendor.businessName}
               </h3>
               <Button
                 onClick={() => setShowDetails(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 text-xs sm:text-sm"
+                size="sm"
               >
                 ×
               </Button>
             </div>
             
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Basic Information */}
               <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Basic Information</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Name</label>
-                    <p className="text-sm text-gray-900">{selectedVendor.userId?.name || 'N/A'}</p>
+                    <label className="text-xs sm:text-sm font-medium text-gray-700">Name</label>
+                    <p className="text-xs sm:text-sm text-gray-900 break-words">{selectedVendor.userId?.name || 'N/A'}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Business Name</label>
-                    <p className="text-sm text-gray-900">{selectedVendor.businessName || 'N/A'}</p>
+                    <label className="text-xs sm:text-sm font-medium text-gray-700">Business Name</label>
+                    <p className="text-xs sm:text-sm text-gray-900 break-words">{selectedVendor.businessName || 'N/A'}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Email</label>
-                    <p className="text-sm text-gray-900">{selectedVendor.userId?.email || 'N/A'}</p>
+                    <label className="text-xs sm:text-sm font-medium text-gray-700">Email</label>
+                    <p className="text-xs sm:text-sm text-gray-900 break-all">{selectedVendor.userId?.email || 'N/A'}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Phone</label>
-                    <p className="text-sm text-gray-900">{selectedVendor.userId?.phone || 'N/A'}</p>
+                    <label className="text-xs sm:text-sm font-medium text-gray-700">Phone</label>
+                    <p className="text-xs sm:text-sm text-gray-900">{selectedVendor.userId?.phone || 'N/A'}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Location</label>
-                    <p className="text-sm text-gray-900">{selectedVendor.location || 'N/A'}</p>
+                    <label className="text-xs sm:text-sm font-medium text-gray-700">Location</label>
+                    <p className="text-xs sm:text-sm text-gray-900 break-words">{selectedVendor.location || 'N/A'}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Status</label>
+                    <label className="text-xs sm:text-sm font-medium text-gray-700">Status</label>
                     <div className="mt-1">{getStatusBadge(selectedVendor.userId?.isActive)}</div>
                   </div>
                 </div>
@@ -279,23 +286,23 @@ const VendorManagement = () => {
 
               {/* Business Information */}
               <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">Business Information</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Business Information</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Business Type</label>
-                    <p className="text-sm text-gray-900">{selectedVendor.businessType || 'N/A'}</p>
+                    <label className="text-xs sm:text-sm font-medium text-gray-700">Business Type</label>
+                    <p className="text-xs sm:text-sm text-gray-900">{selectedVendor.businessType || 'N/A'}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Experience</label>
-                    <p className="text-sm text-gray-900">{selectedVendor.experience || 0} years</p>
+                    <label className="text-xs sm:text-sm font-medium text-gray-700">Experience</label>
+                    <p className="text-xs sm:text-sm text-gray-900">{selectedVendor.experience || 0} years</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Availability</label>
-                    <p className="text-sm text-gray-900">{selectedVendor.availability || 'N/A'}</p>
+                    <label className="text-xs sm:text-sm font-medium text-gray-700">Availability</label>
+                    <p className="text-xs sm:text-sm text-gray-900">{selectedVendor.availability || 'N/A'}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Profile Complete</label>
-                    <p className="text-sm text-gray-900">{selectedVendor.profileComplete ? 'Yes' : 'No'}</p>
+                    <label className="text-xs sm:text-sm font-medium text-gray-700">Profile Complete</label>
+                    <p className="text-xs sm:text-sm text-gray-900">{selectedVendor.profileComplete ? 'Yes' : 'No'}</p>
                   </div>
                 </div>
               </div>
@@ -303,10 +310,10 @@ const VendorManagement = () => {
               {/* Services Offered */}
               {selectedVendor.servicesOffered && selectedVendor.servicesOffered.length > 0 && (
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Services Offered</h4>
+                  <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Services Offered</h4>
                   <div className="flex flex-wrap gap-2">
                     {selectedVendor.servicesOffered.map((service, index) => (
-                      <Badge key={index} className="bg-blue-100 text-blue-800">
+                      <Badge key={index} className="bg-blue-100 text-blue-800 text-xs">
                         {service}
                       </Badge>
                     ))}
@@ -317,15 +324,15 @@ const VendorManagement = () => {
               {/* Bio */}
               {selectedVendor.bio && (
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">About</h4>
-                  <p className="text-sm text-gray-900">{selectedVendor.bio}</p>
+                  <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">About</h4>
+                  <p className="text-xs sm:text-sm text-gray-900 break-words">{selectedVendor.bio}</p>
                 </div>
               )}
 
               {/* Account Information */}
               <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Account Information</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-gray-700">Member Since</label>
                     <p className="text-sm text-gray-900">

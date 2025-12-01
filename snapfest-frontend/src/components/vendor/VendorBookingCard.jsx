@@ -122,7 +122,7 @@ const VendorBookingCard = ({
             size="sm"
             onClick={() => handleAction('accept')}
             disabled={isLoading && action === 'accept'}
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm flex-1 sm:flex-none"
           >
             <CheckCircle className="w-4 h-4 mr-1" />
             Accept
@@ -133,7 +133,7 @@ const VendorBookingCard = ({
             size="sm"
             onClick={() => handleAction('reject')}
             disabled={isLoading && action === 'reject'}
-            className="border-red-300 text-red-600 hover:bg-red-50"
+            className="border-red-300 text-red-600 hover:bg-red-50 text-xs sm:text-sm flex-1 sm:flex-none"
           >
             <X className="w-4 h-4 mr-1" />
             Reject
@@ -147,10 +147,11 @@ const VendorBookingCard = ({
             size="sm"
             onClick={() => handleAction('complete')}
             disabled={isLoading && action === 'complete'}
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm w-full sm:w-auto"
           >
             <CheckCircle className="w-4 h-4 mr-1" />
-            Mark as Completed
+            <span className="hidden sm:inline">Mark as Completed</span>
+            <span className="sm:hidden">Complete</span>
           </Button>
         );
         break;
@@ -162,7 +163,7 @@ const VendorBookingCard = ({
               key="verify-otp"
               size="sm"
               onClick={() => setShowOTPModal(true)}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm w-full sm:w-auto"
             >
               <Key className="w-4 h-4 mr-1" />
               Verify OTP
@@ -190,7 +191,7 @@ const VendorBookingCard = ({
         variant="outline"
         size="sm"
         onClick={() => onViewDetails(booking)}
-        className="border-gray-300"
+        className="border-gray-300 text-xs sm:text-sm flex-1 sm:flex-none"
       >
         <Eye className="w-4 h-4 mr-1" />
         View
@@ -209,68 +210,69 @@ const VendorBookingCard = ({
   };
 
   return (
-    <Card className={`p-6 ${booking.assignedVendorId ? 'border-l-4 border-l-green-500 bg-green-50' : ''} ${className}`}>
+    <Card className={`p-4 sm:p-6 ${booking.assignedVendorId ? 'border-l-4 border-l-green-500 bg-green-50' : ''} ${className}`}>
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between">
         {/* Booking Info */}
         <div className="flex-1">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 break-words">
                 {booking.packageId?.title || 'Photography Package'}
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs sm:text-sm text-gray-600 break-all">
                 Booking ID: #{booking._id}
               </p>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center flex-wrap gap-2">
               {getStatusIcon(booking.vendorStatus)}
-              <Badge variant={getStatusColor(booking.vendorStatus)} size="sm">
+              <Badge variant={getStatusColor(booking.vendorStatus)} size="sm" className="text-xs">
                 {(booking.vendorStatus || (booking.assignedVendorId ? 'ASSIGNED' : 'Not Assigned')).replace('_', ' ')}
               </Badge>
               {booking.assignedVendorId && (
-                <Badge variant="success" size="sm" className="bg-green-100 text-green-800">
+                <Badge variant="success" size="sm" className="bg-green-100 text-green-800 text-xs">
                   <UserCheck className="w-3 h-3 mr-1" />
-                  Assigned to You
+                  <span className="hidden sm:inline">Assigned to You</span>
+                  <span className="sm:hidden">Assigned</span>
                 </Badge>
               )}
             </div>
           </div>
 
           {/* Booking Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div className="flex items-center text-sm text-gray-600">
-              <Calendar className="w-4 h-4 mr-2" />
-              <span>{dateUtils.formatDate(booking.eventDate)}</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
+            <div className="flex items-center text-xs sm:text-sm text-gray-600">
+              <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="break-words">{dateUtils.formatDate(booking.eventDate)}</span>
             </div>
-            <div className="flex items-center text-sm text-gray-600">
-              <MapPin className="w-4 h-4 mr-2" />
-              <span>{booking.location || 'Location not specified'}</span>
+            <div className="flex items-center text-xs sm:text-sm text-gray-600">
+              <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="break-words">{booking.location || 'Location not specified'}</span>
             </div>
-            <div className="flex items-center text-sm text-gray-600">
-              <Clock className="w-4 h-4 mr-2" />
-              <span>{booking.duration || 'Full day'}</span>
+            <div className="flex items-center text-xs sm:text-sm text-gray-600">
+              <Clock className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="break-words">{booking.duration || 'Full day'}</span>
             </div>
           </div>
 
           {/* Customer Info */}
-          <div className="bg-gray-50 rounded-lg p-4 mb-4">
-            <h4 className="font-medium text-gray-900 mb-2">Customer Details</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-              <div className="flex items-center">
-                <span className="text-gray-600 w-20">Name:</span>
-                <span className="font-medium">{booking.userId?.name || 'N/A'}</span>
+          <div className="bg-gray-50 rounded-lg p-3 sm:p-4 mb-4">
+            <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">Customer Details</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm">
+              <div className="flex items-center min-w-0">
+                <span className="text-gray-600 w-16 sm:w-20 flex-shrink-0">Name:</span>
+                <span className="font-medium truncate">{booking.userId?.name || 'N/A'}</span>
               </div>
-              <div className="flex items-center">
-                <span className="text-gray-600 w-20">Phone:</span>
-                <span className="font-medium">{booking.userId?.phone || 'N/A'}</span>
+              <div className="flex items-center min-w-0">
+                <span className="text-gray-600 w-16 sm:w-20 flex-shrink-0">Phone:</span>
+                <span className="font-medium truncate">{booking.userId?.phone || 'N/A'}</span>
               </div>
-              <div className="flex items-center">
-                <span className="text-gray-600 w-20">Email:</span>
-                <span className="font-medium">{booking.userId?.email || 'N/A'}</span>
+              <div className="flex items-center min-w-0 sm:col-span-2">
+                <span className="text-gray-600 w-16 sm:w-20 flex-shrink-0">Email:</span>
+                <span className="font-medium truncate">{booking.userId?.email || 'N/A'}</span>
               </div>
-              <div className="flex items-center">
-                <span className="text-gray-600 w-20">Amount:</span>
-                <span className="font-medium text-primary-600">
+              <div className="flex items-center min-w-0">
+                <span className="text-gray-600 w-16 sm:w-20 flex-shrink-0">Amount:</span>
+                <span className="font-medium text-primary-600 truncate">
                   {formatPrice(booking.totalAmount)}
                 </span>
               </div>
@@ -280,29 +282,29 @@ const VendorBookingCard = ({
           {/* Special Requests */}
           {booking.specialRequests && (
             <div className="mb-4">
-              <h4 className="font-medium text-gray-900 mb-1">Special Requests</h4>
-              <p className="text-sm text-gray-600 bg-yellow-50 p-3 rounded-lg">
+              <h4 className="font-medium text-gray-900 mb-1 text-sm sm:text-base">Special Requests</h4>
+              <p className="text-xs sm:text-sm text-gray-600 bg-yellow-50 p-3 rounded-lg break-words">
                 {booking.specialRequests}
               </p>
             </div>
           )}
 
           {/* Payment Status */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-4">
-              <div className="text-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+              <div className="text-xs sm:text-sm">
                 <span className="text-gray-600">Payment Status:</span>
                 <Badge 
                   variant={booking.paymentStatus === 'PAID' ? 'success' : 'warning'} 
                   size="sm" 
-                  className="ml-2"
+                  className="ml-2 text-xs"
                 >
                   {booking.paymentStatus || 'PENDING'}
                 </Badge>
               </div>
               {booking.remainingAmount !== undefined && (
-                <div className="text-sm">
-                  <span className="text-gray-600">Remaining Amount:</span>
+                <div className="text-xs sm:text-sm">
+                  <span className="text-gray-600">Remaining:</span>
                   <span className="font-medium ml-1">
                     {formatPrice(booking.remainingAmount)}
                   </span>
@@ -313,36 +315,38 @@ const VendorBookingCard = ({
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col space-y-2 lg:ml-6">
+        <div className="flex flex-row sm:flex-col flex-wrap sm:flex-nowrap gap-2 lg:ml-6 mt-4 lg:mt-0">
           {getActionButtons()}
           
           <Button
             variant="outline"
             size="sm"
             onClick={() => onMessageCustomer(booking)}
-            className="border-blue-300 text-blue-600 hover:bg-blue-50"
+            className="border-blue-300 text-blue-600 hover:bg-blue-50 flex-1 sm:flex-none text-xs sm:text-sm"
           >
             <MessageCircle className="w-4 h-4 mr-1" />
-            Message
+            <span className="hidden sm:inline">Message</span>
+            <span className="sm:hidden">Msg</span>
           </Button>
           
           <Button
             variant="outline"
             size="sm"
             onClick={() => {/* TODO: Download invoice */}}
-            className="border-gray-300"
+            className="border-gray-300 flex-1 sm:flex-none text-xs sm:text-sm"
           >
             <Download className="w-4 h-4 mr-1" />
-            Invoice
+            <span className="hidden sm:inline">Invoice</span>
+            <span className="sm:hidden">Inv</span>
           </Button>
         </div>
       </div>
 
       {/* OTP Verification Modal */}
       <ModalPortal isOpen={showOTPModal}>
-        <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+        <div className="bg-white p-4 sm:p-6 rounded-lg max-w-md w-full mx-2 sm:mx-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold">Verify Booking OTP</h3>
+            <h3 className="text-base sm:text-lg font-bold">Verify Booking OTP</h3>
             <Button
               variant="ghost"
               size="sm"
@@ -354,7 +358,7 @@ const VendorBookingCard = ({
               ×
             </Button>
           </div>
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-xs sm:text-sm text-gray-600 mb-4">
             Enter the OTP provided by the customer for booking #{booking._id.slice(-8)}
           </p>
           <input
@@ -363,10 +367,10 @@ const VendorBookingCard = ({
             value={otpCode}
             onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
             placeholder="Enter 6-digit OTP"
-            className="w-full px-4 py-2 border rounded-lg mb-4 text-center text-2xl tracking-widest focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border rounded-lg mb-4 text-center text-xl sm:text-2xl tracking-widest focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             autoFocus
           />
-          <div className="flex space-x-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Button
               onClick={async () => {
                 if (!otpCode || otpCode.length !== 6) {
@@ -404,6 +408,7 @@ const VendorBookingCard = ({
                 setOtpCode('');
               }}
               disabled={verifyingOTP}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>

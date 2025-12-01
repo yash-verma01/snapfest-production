@@ -258,18 +258,40 @@ const useCart = () => {
   }, []);
 
   const removeFromCart = useCallback(async (itemId) => {
-    setLoading(true);
-    setError(null);
-
+    // Optimistic update - immediately remove item from UI
+    setCart(prevCart => {
+      if (!prevCart || !prevCart.items) return prevCart;
+      
+      const updatedItems = prevCart.items.filter(item => item._id !== itemId);
+      const updatedTotal = updatedItems.reduce((sum, item) => {
+        const itemType = item.itemType || 'package';
+        if (itemType === 'package') {
+          const basePrice = item.packageId?.basePrice || 0;
+          const perGuestPrice = item.packageId?.perGuestPrice || 0;
+          return sum + basePrice + (perGuestPrice * (item.guests || 1));
+        } else {
+          return sum + (item.beatBloomId?.price || 0);
+        }
+      }, 0);
+      
+      return {
+        ...prevCart,
+        items: updatedItems,
+        totalAmount: updatedTotal,
+        itemCount: updatedItems.length
+      };
+    });
+    
+    // Invalidate cache
+    cartCache.data = null;
+    cartCache.timestamp = 0;
+    
+    // Make API call in background (don't set loading to true)
     try {
       const response = await cartAPI.removeFromCart(itemId);
       
-      if (response.data.success) {
-        // Invalidate cache
-        cartCache.data = null;
-        cartCache.timestamp = 0;
-        
-        // After successful deletion, fetch the updated cart
+      if (!response.data.success) {
+        // If API call fails, refresh cart to revert optimistic update
         const updatedCartResponse = await cartAPI.getCart();
         const dataNode = updatedCartResponse?.data?.data ?? {};
         const normalized = {
@@ -278,23 +300,40 @@ const useCart = () => {
           itemCount: dataNode.itemCount ?? (dataNode.cartItems ? dataNode.cartItems.length : 0),
         };
         
-        // Update cache
         cartCache.data = normalized;
         cartCache.timestamp = Date.now();
-        
         setCart(normalized);
-        return normalized;
-      } else {
+        
         throw new Error(response.data.message || 'Failed to remove from cart');
       }
+      
+      // Update cache with fresh data (optional - for consistency)
+      const updatedCartResponse = await cartAPI.getCart();
+      const dataNode = updatedCartResponse?.data?.data ?? {};
+      const normalized = {
+        items: dataNode.cartItems ?? [],
+        totalAmount: dataNode.totalAmount ?? 0,
+        itemCount: dataNode.itemCount ?? (dataNode.cartItems ? dataNode.cartItems.length : 0),
+      };
+      
+      cartCache.data = normalized;
+      cartCache.timestamp = Date.now();
+      
+      // Only update if there's a mismatch (safety check)
+      setCart(prevCart => {
+        if (prevCart?.items?.length !== normalized.items.length) {
+          return normalized;
+        }
+        return prevCart;
+      });
+      
+      return normalized;
     } catch (err) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Error removing from cart:', err);
       }
       setError(err.response?.data?.message || 'Failed to remove from cart');
       throw err;
-    } finally {
-      setLoading(false);
     }
   }, []);
 
