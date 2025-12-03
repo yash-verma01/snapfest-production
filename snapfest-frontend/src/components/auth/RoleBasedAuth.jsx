@@ -106,14 +106,27 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
         // Sync user with backend to set role
         const syncUser = async () => {
           try {
-            // Call backend sync endpoint with role query parameter
-            const response = await fetch(`http://localhost:5001/api/users/sync?role=${role}`, {
-              method: 'POST',
-              credentials: 'include',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            });
+            let response;
+            
+            // For vendors, use vendor sync endpoint instead of user sync
+            if (role === 'vendor') {
+              response = await fetch('http://localhost:5001/api/vendors/sync', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              });
+            } else {
+              // For users and admins, use user sync endpoint
+              response = await fetch(`http://localhost:5001/api/users/sync?role=${role}`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              });
+            }
             
             if (response.ok) {
               const data = await response.json();
@@ -126,7 +139,12 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
             // Clear sessionStorage
             sessionStorage.removeItem('selectedRole');
             
-            // Redirect immediately based on role
+            // Add small delay for vendor to ensure backend is ready
+            if (role === 'vendor') {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
+            // Redirect based on role
             redirectBasedOnRole(role);
           } catch (error) {
             console.error('Error syncing user:', error);

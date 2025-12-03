@@ -266,16 +266,17 @@ const VendorDashboard = () => {
       changeType: 'positive',
       description: 'Lifetime earnings',
       trend: 'up'
-    },
-    {
-      title: 'Average Rating',
-      value: dashboardData?.averageRating || 0,
-      icon: <TrendingUp className="w-6 h-6 text-blue-600" />,
-      change: 'Based on 12 reviews',
-      changeType: 'positive',
-      description: 'Customer satisfaction',
-      trend: 'up'
     }
+    // Temporarily hidden - Average Rating
+    // {
+    //   title: 'Average Rating',
+    //   value: dashboardData?.averageRating || 0,
+    //   icon: <TrendingUp className="w-6 h-6 text-blue-600" />,
+    //   change: 'Based on 12 reviews',
+    //   changeType: 'positive',
+    //   description: 'Customer satisfaction',
+    //   trend: 'up'
+    // }
   ];
 
   if (loading) {
@@ -362,7 +363,7 @@ const VendorDashboard = () => {
         ) : (
           <>
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
               {stats.map((stat, index) => (
                 <VendorStatsCard
                   key={index}
