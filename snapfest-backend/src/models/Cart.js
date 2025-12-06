@@ -50,6 +50,9 @@ const cartSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Add index on userId for faster cart queries
+cartSchema.index({ userId: 1 });
+
 // Migration helper: Set itemType for existing items without it
 cartSchema.pre('save', function(next) {
   // If itemType is not set but packageId exists, set it to 'package'

@@ -100,7 +100,9 @@ const PackageDetail = () => {
         customizations: Object.keys(selectedCustomizations).map(key => ({
           optionId: key,
           quantity: selectedCustomizations[key].quantity,
-          price: selectedCustomizations[key].price
+          price: selectedCustomizations[key].price,
+          selectedOption: selectedCustomizations[key].selectedOption || null,
+          optionPriceModifier: selectedCustomizations[key].optionPriceModifier || 0
         })),
         removedFeatures: Object.keys(removedFeatures).map(key => ({
           name: removedFeatures[key].name,
@@ -169,7 +171,9 @@ const PackageDetail = () => {
         customizations: Object.keys(selectedCustomizations).map(key => ({
           optionId: key,
           quantity: selectedCustomizations[key].quantity,
-          price: selectedCustomizations[key].price
+          price: selectedCustomizations[key].price,
+          selectedOption: selectedCustomizations[key].selectedOption || null,
+          optionPriceModifier: selectedCustomizations[key].optionPriceModifier || 0
         })),
         removedFeatures: Object.keys(removedFeatures).map(key => ({
           name: removedFeatures[key].name,
@@ -325,7 +329,9 @@ const PackageDetail = () => {
     if (!packageData) return 0;
     const baseTotal = packageData.basePrice;
     const customizationTotal = Object.values(selectedCustomizations).reduce((sum, item) => {
-      return sum + (item.price * item.quantity);
+      // Include base price + option price modifier (if any)
+      const itemPrice = item.price + (item.optionPriceModifier || 0);
+      return sum + (itemPrice * item.quantity);
     }, 0);
     const removedFeaturesTotal = Object.values(removedFeatures).reduce((sum, item) => {
       return sum + item.price;
@@ -335,7 +341,9 @@ const PackageDetail = () => {
 
   const calculateCustomizationTotal = () => {
     return Object.values(selectedCustomizations).reduce((sum, item) => {
-      return sum + (item.price * item.quantity);
+      // Include base price + option price modifier (if any)
+      const itemPrice = item.price + (item.optionPriceModifier || 0);
+      return sum + (itemPrice * item.quantity);
     }, 0);
   };
 
@@ -378,15 +386,43 @@ const PackageDetail = () => {
         delete newState[option._id];
         return newState;
       } else {
+        // If option has sub-options, select the first one by default
+        const hasOptions = option.options && option.options.length > 0;
+        const selectedOption = hasOptions ? option.options[0] : null;
+        
         return {
           ...prev,
           [option._id]: {
             name: option.name,
             price: option.price,
-            quantity: 1
+            quantity: 1,
+            selectedOption: selectedOption ? selectedOption.label : null,
+            optionPriceModifier: selectedOption ? (selectedOption.priceModifier || 0) : 0
           }
         };
       }
+    });
+  };
+
+  // Handle option selection change (e.g., changing cake flavor)
+  const handleOptionSelectionChange = (optionId, selectedOptionLabel) => {
+    setSelectedCustomizations(prev => {
+      if (!prev[optionId]) return prev;
+      
+      const option = packageData?.customizationOptions?.find(opt => opt._id === optionId);
+      if (!option || !option.options) return prev;
+      
+      const selectedOption = option.options.find(opt => opt.label === selectedOptionLabel);
+      const priceModifier = selectedOption ? (selectedOption.priceModifier || 0) : 0;
+      
+      return {
+        ...prev,
+        [optionId]: {
+          ...prev[optionId],
+          selectedOption: selectedOptionLabel,
+          optionPriceModifier: priceModifier
+        }
+      };
     });
   };
 
@@ -395,7 +431,9 @@ const PackageDetail = () => {
       if (!prev[optionId]) return prev;
       
       const newQuantity = Math.max(1, prev[optionId].quantity + change);
-      const maxQuantity = packageData?.customizationOptions?.find(opt => opt._id === optionId)?.maxQuantity || 1;
+      const option = packageData?.customizationOptions?.find(opt => opt._id === optionId);
+      // If maxQuantity is 1 (default), allow up to at least 6. Otherwise use the set maxQuantity
+      const maxQuantity = option?.maxQuantity && option.maxQuantity > 1 ? option.maxQuantity : 10;
       
       if (newQuantity > maxQuantity) return prev;
       
@@ -799,27 +837,27 @@ const PackageDetail = () => {
                               {formatPrice(option.price)}
                             </span>
                             {selectedCustomizations[option._id] ? (
-                              <div className="flex items-center space-x-1">
+                              <div className="flex items-center space-x-2">
                                 <Button
                                   onClick={() => handleCustomizationQuantity(option._id, -1)}
                                   variant="outline"
-                                  size="sm"
                                   disabled={selectedCustomizations[option._id].quantity <= 1}
-                                  className="w-6 h-6 rounded-full p-0"
+                                  className="!p-0 w-8 h-8 rounded-full flex items-center justify-center min-w-[32px] border-2 hover:bg-primary-600 hover:text-white transition-colors disabled:opacity-50"
+                                  title="Decrease quantity"
                                 >
-                                  <Minus className="w-3 h-3" />
+                                  <Minus className="w-4 h-4" />
                                 </Button>
-                                <span className="w-6 text-center text-xs font-bold">
+                                <span className="w-8 text-center text-sm font-bold text-gray-900">
                                   {selectedCustomizations[option._id].quantity}
                                 </span>
                                 <Button
                                   onClick={() => handleCustomizationQuantity(option._id, 1)}
                                   variant="outline"
-                                  size="sm"
-                                  disabled={selectedCustomizations[option._id].quantity >= option.maxQuantity}
-                                  className="w-6 h-6 rounded-full p-0"
+                                  disabled={selectedCustomizations[option._id].quantity >= (option.maxQuantity && option.maxQuantity > 1 ? option.maxQuantity : 10)}
+                                  className="!p-0 w-8 h-8 rounded-full flex items-center justify-center min-w-[32px] border-2 hover:bg-primary-600 hover:text-white transition-colors disabled:opacity-50"
+                                  title="Increase quantity"
                                 >
-                                  <Plus className="w-3 h-3" />
+                                  <Plus className="w-4 h-4" />
                                 </Button>
                               </div>
                             ) : (
@@ -835,14 +873,39 @@ const PackageDetail = () => {
                           </div>
                         </div>
                         {selectedCustomizations[option._id] && (
-                          <div className="mt-2 pt-2 border-t border-gray-200">
+                          <div className="mt-2 pt-2 border-t border-gray-200 space-y-2">
+                            {/* Show dropdown if option has sub-options */}
+                            {option.options && option.options.length > 0 && (
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                  Select {option.name} Option:
+                                </label>
+                                <select
+                                  value={selectedCustomizations[option._id].selectedOption || ''}
+                                  onChange={(e) => handleOptionSelectionChange(option._id, e.target.value)}
+                                  className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                                >
+                                  {option.options.map((opt, idx) => (
+                                    <option key={idx} value={opt.label}>
+                                      {opt.label} {opt.priceModifier !== 0 ? `(${opt.priceModifier > 0 ? '+' : ''}₹${opt.priceModifier})` : ''}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+                            
                             <div className="flex justify-between items-center">
                               <span className="text-xs text-gray-600">
-                                {selectedCustomizations[option._id].quantity} × {formatPrice(option.price)}
+                                {selectedCustomizations[option._id].quantity} × {formatPrice(option.price + (selectedCustomizations[option._id].optionPriceModifier || 0))}
+                                {selectedCustomizations[option._id].selectedOption && (
+                                  <span className="ml-1 text-gray-500">
+                                    ({selectedCustomizations[option._id].selectedOption})
+                                  </span>
+                                )}
                               </span>
                               <div className="flex items-center space-x-2">
                                 <span className="font-semibold text-pink-600 text-sm">
-                                  {formatPrice(selectedCustomizations[option._id].price * selectedCustomizations[option._id].quantity)}
+                                  {formatPrice((option.price + (selectedCustomizations[option._id].optionPriceModifier || 0)) * selectedCustomizations[option._id].quantity)}
                                 </span>
                                 <Button
                                   onClick={() => handleCustomizationToggle(option)}

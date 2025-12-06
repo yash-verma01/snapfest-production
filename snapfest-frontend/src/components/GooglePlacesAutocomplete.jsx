@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { MapPin } from 'lucide-react';
 
 const GooglePlacesAutocomplete = ({
@@ -17,113 +17,144 @@ const GooglePlacesAutocomplete = ({
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef(null);
   const predictionsRef = useRef(null);
-  const autocompleteServiceRef = useRef(null);
-  const placesServiceRef = useRef(null);
-  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const debounceTimerRef = useRef(null);
 
   const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
-  // Debug logging to verify API key is loaded
+  // Debug logging to verify API key is loaded (only in development)
   useEffect(() => {
-    console.log('🔍 Google Maps API Key Debug:', {
-      keyExists: !!GOOGLE_MAPS_API_KEY,
-      keyLength: GOOGLE_MAPS_API_KEY?.length || 0,
-      keyPreview: GOOGLE_MAPS_API_KEY ? GOOGLE_MAPS_API_KEY.substring(0, 20) + '...' : 'MISSING',
-      allEnvKeys: Object.keys(import.meta.env).filter(k => k.includes('GOOGLE')),
-      mode: import.meta.env.MODE,
-      dev: import.meta.env.DEV,
-      prod: import.meta.env.PROD
-    });
-  }, []);
-
-  // Initialize Google Maps services
-  useEffect(() => {
-    if (!GOOGLE_MAPS_API_KEY) {
-      console.error('❌ Google Maps API key not found!');
-      console.error('📝 Please add VITE_GOOGLE_MAPS_API_KEY to your .env file in the frontend directory');
-      console.error('📁 Expected location: snapfest-frontend/.env');
-      console.error('📋 Format: VITE_GOOGLE_MAPS_API_KEY=your_key_here');
-      console.error('⚠️  Make sure:');
-      console.error('   - Variable name starts with VITE_');
-      console.error('   - No quotes around the value');
-      console.error('   - No spaces around the = sign');
-      console.error('   - Dev server was restarted after adding the key');
-      return;
-    }
-
-    console.log('✅ Google Maps API key found, initializing...');
-
-    // Check if script is already loaded
-    if (window.google && window.google.maps && window.google.maps.places) {
-      initializeServices();
-      setScriptLoaded(true);
-      return;
-    }
-
-    // Check if script is already being loaded
-    if (document.querySelector('script[src*="maps.googleapis.com"]')) {
-      // Wait for script to load
-      const checkGoogle = setInterval(() => {
-        if (window.google && window.google.maps && window.google.maps.places) {
-          initializeServices();
-          setScriptLoaded(true);
-          clearInterval(checkGoogle);
-        }
-      }, 100);
-      return () => clearInterval(checkGoogle);
-    }
-
-    // Load Google Maps script
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
-      console.log('✅ Google Maps script loaded successfully');
-      if (window.google && window.google.maps && window.google.maps.places) {
-        initializeServices();
-        setScriptLoaded(true);
-        console.log('✅ Google Maps services initialized');
+    if (import.meta.env.DEV) {
+      console.log('🔍 Google Maps API Key Debug:', {
+        keyExists: !!GOOGLE_MAPS_API_KEY,
+        keyLength: GOOGLE_MAPS_API_KEY?.length || 0,
+        keyPreview: GOOGLE_MAPS_API_KEY ? GOOGLE_MAPS_API_KEY.substring(0, 20) + '...' : 'MISSING',
+        allEnvKeys: Object.keys(import.meta.env).filter(k => k.includes('GOOGLE')),
+        mode: import.meta.env.MODE,
+      });
+      
+      if (!GOOGLE_MAPS_API_KEY) {
+        console.error('❌ Google Maps API key not found!');
+        console.error('📝 Add VITE_GOOGLE_MAPS_API_KEY to snapfest-frontend/.env');
+        console.error('📋 Format: VITE_GOOGLE_MAPS_API_KEY=your_key_here');
+        console.error('⚠️  Restart dev server after adding the key');
       } else {
-        console.error('❌ Google Maps script loaded but services not available');
+        console.log('✅ Using Places API (New) - REST endpoints');
       }
-    };
-    script.onerror = (error) => {
-      console.error('❌ Failed to load Google Maps script');
-      console.error('Error details:', error);
-      console.error('Script URL:', script.src);
-      console.error('Possible causes:');
-      console.error('  - Invalid API key');
-      console.error('  - API key restrictions blocking localhost');
-      console.error('  - Places API not enabled in Google Cloud Console');
-      console.error('  - Network connectivity issues');
-    };
-    document.head.appendChild(script);
-  }, [GOOGLE_MAPS_API_KEY]);
-
-  const initializeServices = () => {
-    try {
-      autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
-      placesServiceRef.current = new window.google.maps.places.PlacesService(
-        document.createElement('div')
-      );
-      console.log('✅ Google Maps services initialized successfully');
-    } catch (error) {
-      console.error('❌ Error initializing Google Maps services:', error);
-      console.error('Error stack:', error.stack);
     }
-  };
+  }, [GOOGLE_MAPS_API_KEY]);
 
   // Update input value when prop changes
   useEffect(() => {
     setInputValue(value || '');
   }, [value]);
 
-  // Handle input change
+  // Fetch autocomplete predictions using Places API (New)
+  const fetchAutocompletePredictions = useCallback(async (input) => {
+    if (!GOOGLE_MAPS_API_KEY || !input || input.length < 3) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      const response = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
+          'X-Goog-FieldMask': 'suggestions.placePrediction.placeId,suggestions.placePrediction.text'
+        },
+        body: JSON.stringify({
+          input: input,
+          locationBias: {
+            circle: {
+              center: {
+                latitude: 26.8467,  // Lucknow coordinates
+                longitude: 80.9462
+              },
+              radius: 50000.0  // 50km radius
+            }
+          },
+          includedRegionCodes: ['IN'],  // Restrict to India
+          languageCode: 'en'
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.suggestions && data.suggestions.length > 0) {
+        // Transform new API format to match existing component structure
+        const transformedPredictions = data.suggestions
+          .filter(suggestion => suggestion.placePrediction)
+          .map(suggestion => {
+            const prediction = suggestion.placePrediction;
+            const textObj = prediction.text || {};
+            const fullText = textObj.text || '';
+            
+            // Extract main text and secondary text from the structured text
+            // The API returns text with matches array indicating highlighted portions
+            let mainText = fullText;
+            let secondaryText = '';
+            
+            // If there are matches, try to extract secondary text
+            if (textObj.matches && textObj.matches.length > 0) {
+              const firstMatch = textObj.matches[0];
+              if (firstMatch.matchedSubstring) {
+                const matchLength = firstMatch.matchedSubstring.length || 0;
+                mainText = fullText.substring(0, matchLength);
+                secondaryText = fullText.substring(matchLength);
+              }
+            }
+            
+            return {
+              place_id: prediction.placeId,
+              description: fullText,
+              structured_formatting: {
+                main_text: mainText || fullText,
+                secondary_text: secondaryText
+              }
+            };
+          });
+
+        if (import.meta.env.DEV && transformedPredictions.length > 0) {
+          console.log(`✅ Found ${transformedPredictions.length} place predictions`);
+        }
+        
+        setPredictions(transformedPredictions);
+        setShowPredictions(true);
+      } else {
+        setPredictions([]);
+        setShowPredictions(false);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching autocomplete predictions:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error details:', error.message);
+        console.error('💡 Make sure Places API (New) is enabled in Google Cloud Console');
+        console.error('💡 Check: https://console.cloud.google.com/apis/library/places-backend.googleapis.com');
+      }
+      setPredictions([]);
+      setShowPredictions(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [GOOGLE_MAPS_API_KEY]);
+
+  // Handle input change with debouncing
   const handleInputChange = (e) => {
     const newValue = e.target.value;
     setInputValue(newValue);
     onChange(newValue);
+
+    // Clear previous debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
 
     if (newValue.length < 3) {
       setPredictions([]);
@@ -131,93 +162,94 @@ const GooglePlacesAutocomplete = ({
       return;
     }
 
-    // Get predictions from Google Places API
-    if (autocompleteServiceRef.current && scriptLoaded) {
-      setIsLoading(true);
-      
-      // Bias results to Lucknow, Uttar Pradesh, India (using new API - no deprecation)
-      const request = {
-        input: newValue,
-        componentRestrictions: { country: 'in' }, // Restrict to India
-        locationBias: {
-          center: { lat: 26.8467, lng: 80.9462 }, // Lucknow coordinates
-          radius: 50000 // 50km radius from Lucknow
-        },
-        types: ['establishment', 'geocode'] // Get both places and addresses
-      };
-
-      autocompleteServiceRef.current.getPlacePredictions(request, (predictions, status) => {
-        setIsLoading(false);
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-          console.log(`✅ Found ${predictions.length} place predictions`);
-          setPredictions(predictions);
-          setShowPredictions(true);
-        } else {
-          console.warn('⚠️  Places API returned status:', status);
-          if (status === 'REQUEST_DENIED') {
-            console.error('❌ REQUEST_DENIED - Possible causes:');
-            console.error('   1. Billing not enabled for this project');
-            console.error('   2. Places API not enabled');
-            console.error('   3. API key restrictions blocking the request');
-            console.error('   4. Invalid API key');
-            console.error('   5. Billing account not linked to the project');
-            console.error('💡 Check: https://console.cloud.google.com/billing?project=YOUR_PROJECT_ID');
-            console.error('💡 Enable billing: https://console.cloud.google.com/project/_/billing/enable');
-          }
-          console.warn('Status meaning:', {
-            'OK': 'Request was successful',
-            'ZERO_RESULTS': 'No results found',
-            'OVER_QUERY_LIMIT': 'Quota exceeded',
-            'REQUEST_DENIED': 'Request denied (check API key, billing, and restrictions)',
-            'INVALID_REQUEST': 'Invalid request parameters'
-          }[status] || 'Unknown status');
-          setPredictions([]);
-          setShowPredictions(false);
-        }
-      });
-    }
+    // Debounce API calls (wait 300ms after user stops typing)
+    debounceTimerRef.current = setTimeout(() => {
+      fetchAutocompletePredictions(newValue);
+    }, 300);
   };
 
-  // Handle place selection
-  const handlePlaceSelect = (place) => {
-    if (placesServiceRef.current && scriptLoaded) {
-      placesServiceRef.current.getDetails(
-        {
-          placeId: place.place_id,
-          fields: ['formatted_address', 'name', 'geometry', 'address_components']
-        },
-        (details, status) => {
-          if (status === window.google.maps.places.PlacesServiceStatus.OK && details) {
-            // Use formatted address or name
-            const locationText = details.formatted_address || details.name || place.description;
-            setInputValue(locationText);
-            onChange(locationText);
-            
-            // Call optional callback with full place details
-            if (onPlaceSelect) {
-              onPlaceSelect({
-                address: locationText,
-                placeId: place.place_id,
-                coordinates: details.geometry?.location ? {
-                  lat: details.geometry.location.lat(),
-                  lng: details.geometry.location.lng()
-                } : null,
-                components: details.address_components
-              });
-            }
-            
-            setShowPredictions(false);
-            setPredictions([]);
-          }
+  // Fetch place details using Places API (New)
+  const fetchPlaceDetails = useCallback(async (placeId) => {
+    if (!GOOGLE_MAPS_API_KEY || !placeId) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
+          'X-Goog-FieldMask': 'id,displayName,formattedAddress,location,addressComponents'
         }
-      );
-    } else {
-      // Fallback if service not ready
-      setInputValue(place.description);
-      onChange(place.description);
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      return {
+        formatted_address: data.formattedAddress || data.displayName?.text || '',
+        name: data.displayName?.text || '',
+        geometry: {
+          location: data.location ? {
+            lat: () => data.location.latitude,
+            lng: () => data.location.longitude
+          } : null
+        },
+        address_components: data.addressComponents || []
+      };
+    } catch (error) {
+      console.error('❌ Error fetching place details:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error details:', error.message);
+      }
+      return null;
+    }
+  }, [GOOGLE_MAPS_API_KEY]);
+
+  // Handle place selection
+  const handlePlaceSelect = async (place) => {
+    if (!place.place_id) {
+      // Fallback if no place_id
+      setInputValue(place.description || '');
+      onChange(place.description || '');
       setShowPredictions(false);
       setPredictions([]);
+      return;
     }
+
+    // Fetch full place details
+    const details = await fetchPlaceDetails(place.place_id);
+    
+    if (details) {
+      const locationText = details.formatted_address || details.name || place.description || '';
+      setInputValue(locationText);
+      onChange(locationText);
+      
+      // Call optional callback with full place details
+      if (onPlaceSelect) {
+        onPlaceSelect({
+          address: locationText,
+          placeId: place.place_id,
+          coordinates: details.geometry?.location ? {
+            lat: details.geometry.location.lat(),
+            lng: details.geometry.location.lng()
+          } : null,
+          components: details.address_components
+        });
+      }
+    } else {
+      // Fallback if details fetch fails
+      setInputValue(place.description || '');
+      onChange(place.description || '');
+    }
+    
+    setShowPredictions(false);
+    setPredictions([]);
   };
 
   // Handle click outside
@@ -234,7 +266,13 @@ const GooglePlacesAutocomplete = ({
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      // Cleanup debounce timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, []);
 
   return (
@@ -281,11 +319,13 @@ const GooglePlacesAutocomplete = ({
                 <MapPin className="w-4 h-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
-                    {prediction.structured_formatting.main_text}
+                    {prediction.structured_formatting?.main_text || prediction.description}
                   </p>
-                  <p className="text-xs text-gray-500 truncate">
-                    {prediction.structured_formatting.secondary_text}
-                  </p>
+                  {prediction.structured_formatting?.secondary_text && (
+                    <p className="text-xs text-gray-500 truncate">
+                      {prediction.structured_formatting.secondary_text}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -297,5 +337,3 @@ const GooglePlacesAutocomplete = ({
 };
 
 export default GooglePlacesAutocomplete;
-
-

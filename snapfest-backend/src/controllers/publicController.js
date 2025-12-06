@@ -18,9 +18,22 @@ export const getAllPackages = asyncHandler(async (req, res) => {
     if (maxPrice) query.basePrice.$lte = parseInt(maxPrice);
   }
 
-  // Build sort object
+  // Build sort object - map frontend sortBy values to actual database fields
   const sort = {};
-  sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+  if (sortBy === 'popularity') {
+    // Popularity is calculated from bookingCount, which isn't in the model
+    // Sort by createdAt (newest first) as a proxy for popularity
+    sort.createdAt = sortOrder === 'desc' ? -1 : 1;
+  } else if (sortBy === 'price_asc') {
+    sort.basePrice = 1;
+  } else if (sortBy === 'price_desc') {
+    sort.basePrice = -1;
+  } else if (sortBy === 'rating') {
+    sort.rating = sortOrder === 'desc' ? -1 : 1;
+  } else {
+    // Default to createdAt (newest first) for any other sortBy value
+    sort.createdAt = sortOrder === 'desc' ? -1 : 1;
+  }
 
   const packages = await Package.find(query)
     .sort(sort)

@@ -3,7 +3,7 @@ import axios from 'axios';
 // Create axios instance with base configuration
 const api = axios.create({
   baseURL: 'http://localhost:5001/api',
-  timeout: 10000,
+  timeout: 20000, // Increased from 10000 to 20000 (20 seconds) to handle slow database queries
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',

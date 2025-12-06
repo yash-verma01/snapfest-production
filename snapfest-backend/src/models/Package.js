@@ -103,6 +103,20 @@ const packageSchema = new mongoose.Schema({
     maxQuantity: {
       type: Number,
       default: 1
+    },
+    // Options for this add-on (e.g., Cake flavors: Chocolate, Vanilla, Strawberry)
+    options: {
+      type: [{
+        label: {
+          type: String,
+          required: true
+        },
+        priceModifier: {
+          type: Number,
+          default: 0  // Price difference from base price (can be positive or negative)
+        }
+      }],
+      default: []  // Default to empty array for backward compatibility
     }
   }],
   // SEO fields
@@ -117,6 +131,42 @@ const packageSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true
+});
+
+// Ensure options array exists for backward compatibility with existing packages
+packageSchema.pre('save', function(next) {
+  if (this.customizationOptions && Array.isArray(this.customizationOptions)) {
+    this.customizationOptions = this.customizationOptions.map(option => {
+      // Ensure options array exists and is an array
+      if (!option.options || !Array.isArray(option.options)) {
+        option.options = [];
+      }
+      // Ensure each option in the array has valid structure
+      if (option.options && Array.isArray(option.options)) {
+        option.options = option.options.filter(opt => {
+          // Only keep options that have a valid label
+          return opt && opt.label && typeof opt.label === 'string' && opt.label.trim().length > 0;
+        }).map(opt => ({
+          label: opt.label,
+          priceModifier: typeof opt.priceModifier === 'number' ? opt.priceModifier : 0
+        }));
+      }
+      return option;
+    });
+  }
+  next();
+});
+
+// Also handle when documents are retrieved (for backward compatibility)
+packageSchema.post('init', function() {
+  if (this.customizationOptions && Array.isArray(this.customizationOptions)) {
+    this.customizationOptions = this.customizationOptions.map(option => {
+      if (!option.options || !Array.isArray(option.options)) {
+        option.options = [];
+      }
+      return option;
+    });
+  }
 });
 
 const Package = mongoose.model('Package', packageSchema);

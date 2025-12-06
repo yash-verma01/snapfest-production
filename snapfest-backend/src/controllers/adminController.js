@@ -1021,6 +1021,21 @@ export const createPackage = asyncHandler(async (req, res) => {
           message: 'Each customization option must have a name and price'
         });
       }
+      // Validate options array if provided
+      if (option.options && Array.isArray(option.options)) {
+        for (const opt of option.options) {
+          if (!opt.label) {
+            return res.status(400).json({
+              success: false,
+              message: 'Each add-on option must have a label'
+            });
+          }
+          // Ensure priceModifier is a number (default to 0 if not provided)
+          if (opt.priceModifier === undefined) {
+            opt.priceModifier = 0;
+          }
+        }
+      }
     }
   }
 
@@ -1103,6 +1118,21 @@ export const updatePackage = asyncHandler(async (req, res) => {
           success: false,
           message: 'Each customization option must have a name and price'
         });
+      }
+      // Validate options array if provided
+      if (option.options && Array.isArray(option.options)) {
+        for (const opt of option.options) {
+          if (!opt.label) {
+            return res.status(400).json({
+              success: false,
+              message: 'Each add-on option must have a label'
+            });
+          }
+          // Ensure priceModifier is a number (default to 0 if not provided)
+          if (opt.priceModifier === undefined) {
+            opt.priceModifier = 0;
+          }
+        }
       }
     }
   }

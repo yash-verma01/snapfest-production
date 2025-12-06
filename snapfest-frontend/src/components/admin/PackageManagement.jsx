@@ -183,7 +183,8 @@ const PackageForm = ({ package: pkg, onSave, onCancel, onReload, validationError
       price: 0,
       category: 'OTHER',
       isRequired: false,
-      maxQuantity: 1
+      maxQuantity: 10,  // Default to 10 to allow quantity selection (can be changed by admin)
+      options: []  // Array for sub-options (e.g., cake flavors)
     }]);
   };
 
@@ -199,6 +200,46 @@ const PackageForm = ({ package: pkg, onSave, onCancel, onReload, validationError
   // Remove customization option
   const removeCustomizationOption = (index) => {
     setCustomizationOptions(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Add option to a customization option (e.g., add "Chocolate" to "Cake")
+  const addOptionToCustomization = (optionIndex) => {
+    setCustomizationOptions(prev => {
+      const updated = [...prev];
+      if (!updated[optionIndex].options) {
+        updated[optionIndex].options = [];
+      }
+      updated[optionIndex].options.push({
+        label: '',
+        priceModifier: 0
+      });
+      return updated;
+    });
+  };
+
+  // Remove option from a customization option
+  const removeOptionFromCustomization = (optionIndex, optionItemIndex) => {
+    setCustomizationOptions(prev => {
+      const updated = [...prev];
+      if (updated[optionIndex].options) {
+        updated[optionIndex].options = updated[optionIndex].options.filter((_, i) => i !== optionItemIndex);
+      }
+      return updated;
+    });
+  };
+
+  // Update option within a customization option
+  const updateOptionInCustomization = (optionIndex, optionItemIndex, field, value) => {
+    setCustomizationOptions(prev => {
+      const updated = [...prev];
+      if (updated[optionIndex].options && updated[optionIndex].options[optionItemIndex]) {
+        updated[optionIndex].options[optionItemIndex] = {
+          ...updated[optionIndex].options[optionItemIndex],
+          [field]: value
+        };
+      }
+      return updated;
+    });
   };
 
   return (
@@ -662,10 +703,66 @@ const PackageForm = ({ package: pkg, onSave, onCancel, onReload, validationError
                   </div>
                 </div>
                 
+                {/* Add-on Options Section */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-medium text-gray-600">
+                      Options (e.g., Cake flavors: Chocolate, Vanilla, Strawberry)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => addOptionToCustomization(index)}
+                      className="text-xs text-primary-600 hover:text-primary-700 font-medium"
+                    >
+                      + Add Option
+                    </button>
+                  </div>
+                  
+                  {option.options && option.options.length > 0 ? (
+                    <div className="space-y-2">
+                      {option.options.map((opt, optIndex) => (
+                        <div key={optIndex} className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-gray-200">
+                          <div className="flex-1 grid grid-cols-2 gap-2">
+                            <div>
+                              <input
+                                type="text"
+                                value={opt.label || ''}
+                                onChange={(e) => updateOptionInCustomization(index, optIndex, 'label', e.target.value)}
+                                placeholder="Option label (e.g., Chocolate)"
+                                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                              />
+                            </div>
+                            <div>
+                              <input
+                                type="number"
+                                value={opt.priceModifier || 0}
+                                onChange={(e) => updateOptionInCustomization(index, optIndex, 'priceModifier', parseFloat(e.target.value) || 0)}
+                                placeholder="Price modifier (₹)"
+                                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-primary-500"
+                              />
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeOptionFromCustomization(index, optIndex)}
+                            className="text-xs text-red-600 hover:text-red-700 px-2"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-500 italic">
+                      No options added. If this add-on doesn't need options (e.g., "Extra Photography"), leave this empty.
+                    </p>
+                  )}
+                </div>
+                
                 <button
                   type="button"
                   onClick={() => removeCustomizationOption(index)}
-                  className="text-xs text-red-600 hover:text-red-700"
+                  className="text-xs text-red-600 hover:text-red-700 mt-3"
                 >
                   Remove Option
                 </button>

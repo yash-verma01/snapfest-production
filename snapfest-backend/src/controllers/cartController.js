@@ -26,9 +26,16 @@ export const getCart = asyncHandler(async (req, res) => {
   console.log('🛒 Cart Controller: Getting cart for user:', userId);
 
   try {
+    // Optimized query with better populate options for performance
     const cartItems = await Cart.find({ userId })
-      .populate('packageId', 'title category basePrice perGuestPrice description images')
-      .populate('beatBloomId', 'title category price description images primaryImage')
+      .populate({
+        path: 'packageId',
+        select: 'title category basePrice perGuestPrice description images'
+      })
+      .populate({
+        path: 'beatBloomId',
+        select: 'title category price description images primaryImage'
+      })
       .sort({ createdAt: -1 });
     
     console.log('🛒 Cart Controller: Found cart items:', cartItems.length);
