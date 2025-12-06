@@ -47,33 +47,45 @@ import { clerkMiddleware } from '@clerk/express';
 import { requireAdminClerk } from './src/middleware/requireAdminClerk.js';
 
 // Single Clerk application configuration
+// SECURITY: All keys must be in environment variables, never hardcoded!
+
 const requiredKeys = [
   'CLERK_PUBLISHABLE_KEY',
   'CLERK_SECRET_KEY'
 ];
 
 // Use single Clerk application (fallback to user keys for backward compatibility)
+// But NEVER use hardcoded fallback values in production
 process.env.CLERK_PUBLISHABLE_KEY = process.env.CLERK_PUBLISHABLE_KEY || 
-                                     process.env.CLERK_PUBLISHABLE_KEY_USER || 
-                                     'pk_test_c3RpcnJpbmctYnJlYW0tNDkuY2xlcmsuYWNjb3VudHMuZGV2JA';
+                                     process.env.CLERK_PUBLISHABLE_KEY_USER;
 process.env.CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY || 
-                                process.env.CLERK_SECRET_KEY_USER || 
-                                'sk_test_8pcerRqj0saXidBCYyG0NDth2cwCvEASypUMdrGZqC';
+                                process.env.CLERK_SECRET_KEY_USER;
 
 // Validate that keys are set
 const missingKeys = requiredKeys.filter(key => !process.env[key]);
 
 if (missingKeys.length > 0) {
-  console.error('\n❌ Error: Missing Clerk keys!');
-  console.error('   Required: CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY');
+  console.error('\n❌ CRITICAL ERROR: Missing Clerk keys!');
+  console.error('   Required environment variables:');
   missingKeys.forEach(key => {
     console.error(`   - ${key}`);
   });
+  console.error('\n   Please set these in your .env file:');
+  console.error('   CLERK_PUBLISHABLE_KEY=pk_test_... or pk_live_...');
+  console.error('   CLERK_SECRET_KEY=sk_test_... or sk_live_...');
+  console.error('\n   Or use role-specific keys:');
+  console.error('   CLERK_PUBLISHABLE_KEY_USER=pk_test_...');
+  console.error('   CLERK_SECRET_KEY_USER=sk_test_...');
   process.exit(1);
 }
 
-console.log('✅ Single Clerk application configured');
-console.log(`   Publishable Key: ${process.env.CLERK_PUBLISHABLE_KEY.substring(0, 30)}...`);
+// Log configuration (without exposing full keys)
+if (process.env.NODE_ENV === 'development') {
+  console.log('✅ Single Clerk application configured');
+  console.log(`   Publishable Key: ${process.env.CLERK_PUBLISHABLE_KEY.substring(0, 30)}...`);
+} else {
+  console.log('✅ Clerk application configured');
+}
 
 const app = express();
 const httpServer = createServer(app);
@@ -96,19 +108,61 @@ logInfo('SnapFest Backend Server starting...', {
   nodeVersion: process.version
 });
 
-// Security middleware
-app.use(helmet());
+// Security middleware - Enhanced configuration
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles (needed for some UI libraries)
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:", "http:"], // Allow images from various sources
+      connectSrc: ["'self'", "https://api.clerk.dev", "https://*.clerk.accounts.dev"],
+      fontSrc: ["'self'", "data:", "https:"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'self'", "https://checkout.razorpay.com"], // Allow Razorpay iframe
+    },
+  },
+  crossOriginEmbedderPolicy: false, // Disable for compatibility with some services
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true
+  },
+  frameguard: {
+    action: 'sameorigin' // Allow same-origin frames (needed for some features)
+  },
+  noSniff: true, // Prevent MIME type sniffing
+  xssFilter: true, // Enable XSS filter
+  referrerPolicy: {
+    policy: 'strict-origin-when-cross-origin'
+  }
+}));
 
-// Rate limiting - Very lenient for development
+// Rate limiting - Production-ready configuration
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+// General API rate limiting
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10000, // limit each IP - very high for development
+  max: isDevelopment ? 1000 : 100, // Lower limit for production
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Skip rate limiting for localhost in development
-    return req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1';
+    // Only skip in development mode for localhost
+    if (isDevelopment) {
+      return req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1';
+    }
+    return false; // Never skip in production
+  },
+  // Store rate limit info in response headers
+  handler: (req, res) => {
+    res.status(429).json({
+      success: false,
+      message: 'Too many requests from this IP, please try again later.',
+      retryAfter: Math.ceil(15 * 60) // seconds
+    });
   }
 }));
 
@@ -124,31 +178,47 @@ app.use((req, res, next) => {
   // Apply CORS for all other routes (API routes that need credentials)
   cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    // Allow all localhost ports for development (critical for cookie transmission)
-    if (origin.startsWith('http://localhost:')) {
-      return callback(null, true);
+    // Allow requests with no origin (like mobile apps or curl requests) - but only in development
+    if (!origin) {
+      if (isDevelopment) {
+        return callback(null, true);
+      }
+      // In production, reject requests without origin for security
+      return callback(new Error('Origin header required'));
     }
     
-    // Allow file:// protocol for local testing
-    if (origin.startsWith('file://')) {
-      return callback(null, true);
+    // Whitelist specific localhost ports for development
+    if (isDevelopment && origin.startsWith('http://localhost:')) {
+      const port = origin.split(':')[2]?.split('/')[0];
+      const allowedLocalhostPorts = ['5173', '3000', '3001', '5174', '5175'];
+      if (port && allowedLocalhostPorts.includes(port)) {
+        return callback(null, true);
+      }
+      // Block other localhost ports
+      if (isDevelopment) {
+        console.log('⚠️ CORS: Blocked localhost port:', port);
+      }
+      return callback(new Error('Not allowed by CORS'));
     }
+    
+    // SECURITY: Remove file:// protocol support (security risk)
+    // if (origin.startsWith('file://')) {
+    //   return callback(null, true);
+    // }
     
     // Allow specific production domains
     const allowedOrigins = [
       'https://snapfest-frontend.vercel.app',
-      'https://snapfest.vercel.app'
-    ];
+      'https://snapfest.vercel.app',
+      process.env.FRONTEND_URL // Allow from environment variable
+    ].filter(Boolean); // Remove undefined values
     
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     
     // Log the origin for debugging
-    if (process.env.NODE_ENV === 'development') {
+    if (isDevelopment) {
       console.log('⚠️ CORS: Blocked origin:', origin);
     }
     callback(new Error('Not allowed by CORS'));
@@ -197,19 +267,35 @@ app.use('/PUBLIC', (req, res, next) => {
   let allowedOrigin = '*';
   
   if (origin) {
-    // Allow all localhost origins for development
-    if (origin.startsWith('http://localhost:')) {
-      allowedOrigin = origin;
+    // Whitelist specific localhost ports for development
+    if (isDevelopment && origin.startsWith('http://localhost:')) {
+      const port = origin.split(':')[2]?.split('/')[0];
+      const allowedLocalhostPorts = ['5173', '3000', '3001', '5174', '5175'];
+      if (port && allowedLocalhostPorts.includes(port)) {
+        allowedOrigin = origin;
+      } else {
+        // For other localhost ports, use wildcard in development only
+        allowedOrigin = isDevelopment ? '*' : null;
+      }
     }
     // Allow specific production domains
     else if (origin === 'https://snapfest-frontend.vercel.app' || 
-             origin === 'https://snapfest.vercel.app') {
+             origin === 'https://snapfest.vercel.app' ||
+             origin === process.env.FRONTEND_URL) {
       allowedOrigin = origin;
     }
-    // For other origins, allow all (permissive for static assets)
+    // For other origins in production, be more restrictive
+    else if (!isDevelopment) {
+      // In production, only allow known origins
+      allowedOrigin = null;
+    }
+    // In development, allow all for static assets
     else {
       allowedOrigin = '*';
     }
+  } else if (!isDevelopment) {
+    // In production, require origin for static files too
+    allowedOrigin = null;
   }
   
   // Set CORS headers explicitly
@@ -239,23 +325,30 @@ app.use('/PUBLIC', express.static('PUBLIC', {
     
     // Determine allowed origin based on request origin
     if (origin) {
-      // Allow all localhost origins for development
-      if (origin.startsWith('http://localhost:')) {
-        allowedOrigin = origin; // Specific origin for localhost
+      // Whitelist specific localhost ports for development
+      if (isDevelopment && origin.startsWith('http://localhost:')) {
+        const port = origin.split(':')[2]?.split('/')[0];
+        const allowedLocalhostPorts = ['5173', '3000', '3001', '5174', '5175'];
+        if (port && allowedLocalhostPorts.includes(port)) {
+          allowedOrigin = origin; // Specific origin for localhost
+        } else {
+          allowedOrigin = isDevelopment ? '*' : null;
+        }
       }
       // Allow specific production domains
       else if (origin === 'https://snapfest-frontend.vercel.app' || 
-               origin === 'https://snapfest.vercel.app') {
+               origin === 'https://snapfest.vercel.app' ||
+               origin === process.env.FRONTEND_URL) {
         allowedOrigin = origin; // Specific origin for production
       }
-      // For other origins, allow all (permissive for static assets)
+      // For other origins, be restrictive
       else {
-        allowedOrigin = '*';
+        allowedOrigin = isDevelopment ? '*' : null;
       }
     }
-    // If no origin header (common with <img> tags), use wildcard
+    // If no origin header (common with <img> tags), use wildcard only in development
     else {
-      allowedOrigin = '*';
+      allowedOrigin = isDevelopment ? '*' : null;
     }
     
     // Set CORS headers - CRITICAL: This runs when file is actually served

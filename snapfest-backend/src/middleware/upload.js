@@ -30,13 +30,45 @@ const createStorage = (entityType) => {
 
 // ==================== FILE FILTER ====================
 
+// Allowed file types and extensions
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/gif',
+  'image/webp'
+];
+
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+
 const fileFilter = (req, file, cb) => {
-  // Check file type
-  if (file.mimetype.startsWith('image/')) {
-    cb(null, true);
-  } else {
-    cb(new Error('Only image files are allowed!'), false);
+  // Check file extension (more reliable than mimetype alone)
+  const ext = path.extname(file.originalname).toLowerCase();
+  
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    return cb(new Error(`Invalid file extension. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`), false);
   }
+  
+  // Check MIME type (can be spoofed, but still useful)
+  if (!ALLOWED_MIME_TYPES.includes(file.mimetype.toLowerCase())) {
+    return cb(new Error('Invalid file type. Only image files are allowed!'), false);
+  }
+  
+  // Additional security: Check if mimetype matches extension
+  const expectedMimeTypes = {
+    '.jpg': ['image/jpeg', 'image/jpg'],
+    '.jpeg': ['image/jpeg', 'image/jpg'],
+    '.png': ['image/png'],
+    '.gif': ['image/gif'],
+    '.webp': ['image/webp']
+  };
+  
+  const expectedTypes = expectedMimeTypes[ext];
+  if (expectedTypes && !expectedTypes.includes(file.mimetype.toLowerCase())) {
+    return cb(new Error('File extension and MIME type mismatch. Possible file spoofing detected.'), false);
+  }
+  
+  cb(null, true);
 };
 
 // ==================== MULTER CONFIGURATION ====================
@@ -218,10 +250,39 @@ export const validateImage = (file) => {
     errors.push('Image size must be less than 5MB');
   }
   
-  // Check file type
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-  if (!allowedTypes.includes(file.mimetype)) {
+  // Check minimum file size (prevent empty files)
+  if (file.size < 100) {
+    errors.push('File is too small. Minimum size is 100 bytes');
+  }
+  
+  // Check file extension
+  const ext = path.extname(file.originalname || '').toLowerCase();
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    errors.push(`Invalid file extension. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`);
+  }
+  
+  // Check MIME type
+  if (!ALLOWED_MIME_TYPES.includes(file.mimetype?.toLowerCase())) {
     errors.push('Only JPEG, PNG, GIF, and WebP images are allowed');
+  }
+  
+  // Check if mimetype matches extension
+  const expectedMimeTypes = {
+    '.jpg': ['image/jpeg', 'image/jpg'],
+    '.jpeg': ['image/jpeg', 'image/jpg'],
+    '.png': ['image/png'],
+    '.gif': ['image/gif'],
+    '.webp': ['image/webp']
+  };
+  
+  const expectedTypes = expectedMimeTypes[ext];
+  if (expectedTypes && !expectedTypes.includes(file.mimetype?.toLowerCase())) {
+    errors.push('File extension and MIME type mismatch. Possible file spoofing detected.');
+  }
+  
+  // Check filename for path traversal attempts
+  if (file.originalname && (file.originalname.includes('..') || file.originalname.includes('/') || file.originalname.includes('\\'))) {
+    errors.push('Invalid filename. Path traversal detected.');
   }
   
   // Check dimensions (optional)

@@ -1,9 +1,10 @@
 // Razorpay Configuration for Backend
-// This file contains the SECRET key - NEVER commit to version control!
+// SECURITY: All secrets must be in environment variables, never hardcoded!
 
+// Get Razorpay credentials from environment variables
 const razorpayConfig = {
-  keyId: 'rzp_test_RWpCivnUSkVbTS',
-  keySecret: 'hlA0mfH2eHc3BNh1iSGYshtw',
+  keyId: process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID_TEST,
+  keySecret: process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET_TEST,
   
   // Instructions for getting Razorpay keys:
   setupInstructions: `
@@ -23,6 +24,7 @@ const razorpayConfig = {
 // - Key Secret MUST be private (backend only)
 // - Never put secret in frontend code
 // - Use environment variables for production
+// - Never commit .env file to version control
 
 export default razorpayConfig;
 

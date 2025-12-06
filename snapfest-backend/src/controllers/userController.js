@@ -1,5 +1,6 @@
 import { User, Booking, Payment, Cart, AuditLog, Review, OTP } from '../models/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { sanitizeSearchQuery, createSafeRegex } from '../utils/securityUtils.js';
 import PasswordService from '../services/passwordService.js';
 import AuthService from '../services/authService.js';
 import { profileResponse, successResponse, errorResponse } from '../utils/responseFormat.js';
@@ -613,11 +614,18 @@ export const searchUsers = asyncHandler(async (req, res) => {
 
   // Search by name, email, or phone
   if (q) {
-    query.$or = [
-      { name: { $regex: q, $options: 'i' } },
-      { email: { $regex: q, $options: 'i' } },
-      { phone: { $regex: q, $options: 'i' } }
-    ];
+    // Sanitize search query to prevent NoSQL injection
+    const sanitizedQuery = sanitizeSearchQuery(q);
+    if (sanitizedQuery) {
+      const safeRegex = createSafeRegex(sanitizedQuery);
+      if (safeRegex) {
+        query.$or = [
+          { name: safeRegex },
+          { email: safeRegex },
+          { phone: safeRegex }
+        ];
+      }
+    }
   }
 
   // Filter by role

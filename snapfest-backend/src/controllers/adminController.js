@@ -1,4 +1,5 @@
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { sanitizeSearchQuery, createSafeRegex } from '../utils/securityUtils.js';
 import { User, Package, Booking, Payment, OTP, Review, Event, Venue, BeatBloom, AuditLog, Notification } from '../models/index.js';
 import OTPService from '../services/otpService.js';
 import mongoose from 'mongoose';
@@ -337,11 +338,18 @@ export const searchUsers = asyncHandler(async (req, res) => {
 
   // Search by name, email, or phone
   if (q) {
-    query.$or = [
-      { name: { $regex: q, $options: 'i' } },
-      { email: { $regex: q, $options: 'i' } },
-      { phone: { $regex: q, $options: 'i' } }
-    ];
+    // Sanitize search query to prevent NoSQL injection
+    const sanitizedQuery = sanitizeSearchQuery(q);
+    if (sanitizedQuery) {
+      const safeRegex = createSafeRegex(sanitizedQuery);
+      if (safeRegex) {
+        query.$or = [
+          { name: safeRegex },
+          { email: safeRegex },
+          { phone: safeRegex }
+        ];
+      }
+    }
   }
 
   // Filter by role
@@ -572,31 +580,31 @@ export const searchVendors = asyncHandler(async (req, res) => {
     });
   }
 
-  const vendors = await User.find({
-    role: 'vendor',
-    $or: [
-      { name: { $regex: q, $options: 'i' } },
-      { email: { $regex: q, $options: 'i' } },
-      { businessName: { $regex: q, $options: 'i' } },
-      { businessType: { $regex: q, $options: 'i' } },
-      { location: { $regex: q, $options: 'i' } }
-    ]
-  })
+  // Build query with sanitized search
+  let query = { role: 'vendor' };
+  
+  // Sanitize search query to prevent NoSQL injection
+  const sanitizedQuery = sanitizeSearchQuery(q);
+  if (sanitizedQuery) {
+    const safeRegex = createSafeRegex(sanitizedQuery);
+    if (safeRegex) {
+      query.$or = [
+        { name: safeRegex },
+        { email: safeRegex },
+        { businessName: safeRegex },
+        { businessType: safeRegex },
+        { location: safeRegex }
+      ];
+    }
+  }
+
+  const vendors = await User.find(query)
     .select('-password')
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
 
-  const total = await User.countDocuments({
-    role: 'vendor',
-    $or: [
-      { name: { $regex: q, $options: 'i' } },
-      { email: { $regex: q, $options: 'i' } },
-      { businessName: { $regex: q, $options: 'i' } },
-      { businessType: { $regex: q, $options: 'i' } },
-      { location: { $regex: q, $options: 'i' } }
-    ]
-  });
+  const total = await User.countDocuments(query);
 
   res.status(200).json({
     success: true,
@@ -2369,13 +2377,20 @@ export const searchBeatBlooms = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
-  const query = {
-    $or: [
-      { title: { $regex: q, $options: 'i' } },
-      { description: { $regex: q, $options: 'i' } },
-      { category: { $regex: q, $options: 'i' } }
-    ]
-  };
+  // Sanitize search query to prevent NoSQL injection
+  const sanitizedQuery = sanitizeSearchQuery(q);
+  let query = {};
+  
+  if (sanitizedQuery) {
+    const safeRegex = createSafeRegex(sanitizedQuery);
+    if (safeRegex) {
+      query.$or = [
+        { title: safeRegex },
+        { description: safeRegex },
+        { category: safeRegex }
+      ];
+    }
+  }
 
   const beatBlooms = await BeatBloom.find(query)
     .sort({ createdAt: -1 })

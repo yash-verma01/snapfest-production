@@ -1,24 +1,67 @@
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import { logInfo, logError, logDebug } from '../config/logger.js';
 
-// Initialize Razorpay with test credentials
-const razorpay = new Razorpay({
-  key_id: 'rzp_test_RWpCivnUSkVbTS',
-  key_secret: 'hlA0mfH2eHc3BNh1iSGYshtw'
-});
+// Lazy initialization - only create Razorpay instance when needed
+// This allows server to start even if Razorpay credentials are missing
+let razorpay = null;
 
-console.log('💳 RazorpayService: Initialized with key_id:', 'rzp_test_RWpCivnUSkVbTS');
-console.log('💳 RazorpayService: Key secret present:', true);
+// Get Razorpay credentials from environment variables (lazy evaluation)
+// This function reads env vars at call time, not module load time
+const getRazorpayCredentials = () => {
+  return {
+    keyId: process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID_TEST,
+    keySecret: process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET_TEST
+  };
+};
+
+const getRazorpayInstance = () => {
+  if (!razorpay) {
+    // Read credentials at function call time (after .env is loaded)
+    const credentials = getRazorpayCredentials();
+    
+    if (!credentials.keyId || !credentials.keySecret) {
+      logError('Razorpay credentials not found in environment variables', {
+        keyIdPresent: !!credentials.keyId,
+        keySecretPresent: !!credentials.keySecret,
+        allEnvKeys: Object.keys(process.env).filter(k => k.includes('RAZORPAY')),
+        nodeEnv: process.env.NODE_ENV
+      });
+      throw new Error('Razorpay credentials are required. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in .env file');
+    }
+
+    // Initialize Razorpay with environment variables
+    razorpay = new Razorpay({
+      key_id: credentials.keyId,
+      key_secret: credentials.keySecret
+    });
+
+    // Log initialization (without exposing secrets)
+    if (process.env.NODE_ENV === 'development') {
+      logInfo('RazorpayService initialized', {
+        keyId: credentials.keyId.substring(0, 8) + '...',
+        keySecretPresent: !!credentials.keySecret
+      });
+    }
+  }
+  return razorpay;
+};
 
 // Razorpay Service for Payment Gateway Integration
 class RazorpayService {
   // Create payment order
   static async createOrder(amount, currency = 'INR', receipt = null) {
     try {
-      console.log('💳 RazorpayService: Creating order');
-      console.log('💳 RazorpayService: Amount:', amount);
-      console.log('💳 RazorpayService: Currency:', currency);
-      console.log('💳 RazorpayService: Receipt:', receipt);
+      const rzp = getRazorpayInstance();
+      
+      // Log only in development mode and without sensitive data
+      if (process.env.NODE_ENV === 'development') {
+        logDebug('Creating Razorpay order', {
+          amount,
+          currency,
+          receipt: receipt ? receipt.substring(0, 8) + '...' : 'auto-generated'
+        });
+      }
       
       const options = {
         amount: amount * 100, // Convert to paise
@@ -27,19 +70,25 @@ class RazorpayService {
         payment_capture: 1
       };
 
-      console.log('💳 RazorpayService: Order options:', options);
-
-      const order = await razorpay.orders.create(options);
-      console.log('💳 RazorpayService: Order created successfully:', order);
+      const order = await rzp.orders.create(options);
+      
+      if (process.env.NODE_ENV === 'development') {
+        logInfo('Razorpay order created successfully', {
+          orderId: order.id,
+          amount: order.amount
+        });
+      }
       
       return {
         success: true,
         order
       };
     } catch (error) {
-      console.error('💳 RazorpayService: Order creation failed:', error);
-      console.error('💳 RazorpayService: Error message:', error.message);
-      console.error('💳 RazorpayService: Error details:', error);
+      logError('Razorpay order creation failed', {
+        error: error.message,
+        amount,
+        currency
+      });
       
       return {
         success: false,
@@ -51,18 +100,38 @@ class RazorpayService {
   // Verify payment signature
   static verifyPaymentSignature(orderId, paymentId, signature) {
     try {
+      // Read credentials at function call time (after .env is loaded)
+      const credentials = getRazorpayCredentials();
+      
+      if (!credentials.keySecret) {
+        logError('Razorpay key secret not available for signature verification');
+        return {
+          success: false,
+          message: 'Payment verification service unavailable'
+        };
+      }
+
       const body = orderId + '|' + paymentId;
       const expectedSignature = crypto
-        .createHmac('sha256', 'hlA0mfH2eHc3BNh1iSGYshtw')
+        .createHmac('sha256', credentials.keySecret)
         .update(body.toString())
         .digest('hex');
 
       const isValid = expectedSignature === signature;
+      
+      if (process.env.NODE_ENV === 'development') {
+        logDebug('Payment signature verification', {
+          isValid,
+          orderId: orderId.substring(0, 8) + '...'
+        });
+      }
+      
       return {
         success: isValid,
         message: isValid ? 'Payment verified successfully' : 'Invalid payment signature'
       };
     } catch (error) {
+      logError('Error verifying payment signature', { error: error.message });
       return {
         success: false,
         message: 'Error verifying payment signature',
@@ -74,7 +143,8 @@ class RazorpayService {
   // Capture payment
   static async capturePayment(paymentId, amount) {
     try {
-      const payment = await razorpay.payments.capture(paymentId, amount * 100);
+      const rzp = getRazorpayInstance();
+      const payment = await rzp.payments.capture(paymentId, amount * 100);
       return {
         success: true,
         payment
@@ -90,7 +160,8 @@ class RazorpayService {
   // Get payment details
   static async getPaymentDetails(paymentId) {
     try {
-      const payment = await razorpay.payments.fetch(paymentId);
+      const rzp = getRazorpayInstance();
+      const payment = await rzp.payments.fetch(paymentId);
       return {
         success: true,
         payment
@@ -106,7 +177,8 @@ class RazorpayService {
   // Process refund
   static async processRefund(paymentId, amount, notes = '') {
     try {
-      const refund = await razorpay.payments.refund(paymentId, {
+      const rzp = getRazorpayInstance();
+      const refund = await rzp.payments.refund(paymentId, {
         amount: amount * 100, // Convert to paise
         notes: {
           reason: notes
@@ -127,7 +199,8 @@ class RazorpayService {
   // Get refund details
   static async getRefundDetails(refundId) {
     try {
-      const refund = await razorpay.payments.fetchRefund(refundId);
+      const rzp = getRazorpayInstance();
+      const refund = await rzp.payments.fetchRefund(refundId);
       return {
         success: true,
         refund
@@ -143,13 +216,28 @@ class RazorpayService {
   // Verify webhook signature
   static verifyWebhookSignature(body, signature) {
     try {
+      // Read credentials at function call time (after .env is loaded)
+      const credentials = getRazorpayCredentials();
+      
+      if (!credentials.keySecret) {
+        logError('Razorpay key secret not available for webhook verification');
+        return false;
+      }
+
       const expectedSignature = crypto
-        .createHmac('sha256', 'hlA0mfH2eHc3BNh1iSGYshtw')
+        .createHmac('sha256', credentials.keySecret)
         .update(body)
         .digest('hex');
 
-      return expectedSignature === signature;
+      const isValid = expectedSignature === signature;
+      
+      if (process.env.NODE_ENV === 'development') {
+        logDebug('Webhook signature verification', { isValid });
+      }
+      
+      return isValid;
     } catch (error) {
+      logError('Error verifying webhook signature', { error: error.message });
       return false;
     }
   }
@@ -157,7 +245,8 @@ class RazorpayService {
   // Generate payment link
   static async createPaymentLink(amount, description, customer = {}) {
     try {
-      const paymentLink = await razorpay.paymentLink.create({
+      const rzp = getRazorpayInstance();
+      const paymentLink = await rzp.paymentLink.create({
         amount: amount * 100,
         currency: 'INR',
         description,
@@ -190,7 +279,8 @@ class RazorpayService {
   // Get payment link details
   static async getPaymentLinkDetails(linkId) {
     try {
-      const paymentLink = await razorpay.paymentLink.fetch(linkId);
+      const rzp = getRazorpayInstance();
+      const paymentLink = await rzp.paymentLink.fetch(linkId);
       return {
         success: true,
         paymentLink

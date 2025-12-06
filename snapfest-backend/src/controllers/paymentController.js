@@ -5,6 +5,7 @@ import RazorpayService from '../services/razorpayService.js';
 // Use lazy initialization - getEmailService is a function that returns the instance
 import getEmailService from '../services/emailService.js';
 import notificationService from '../services/notificationService.js';
+import { logInfo, logError, logDebug } from '../config/logger.js';
 
 // @desc    Get user payments
 // @route   GET /api/payments
@@ -360,10 +361,14 @@ export const verifyPayment = asyncHandler(async (req, res) => {
   const { orderId, paymentId, signature } = req.body;
   const userId = req.userId;
 
-  console.log('💳 Payment Verification: Starting verification');
-  console.log('💳 Payment Verification: Order ID:', orderId);
-  console.log('💳 Payment Verification: Payment ID:', paymentId);
-  console.log('💳 Payment Verification: User ID:', userId);
+  // Log only in development mode and without sensitive data
+  if (process.env.NODE_ENV === 'development') {
+    logDebug('Payment verification started', {
+      orderId: orderId ? orderId.substring(0, 8) + '...' : 'missing',
+      hasPaymentId: !!paymentId,
+      userId: userId ? userId.toString().substring(0, 8) + '...' : 'missing'
+    });
+  }
 
   // Verify payment signature
   const verificationResult = RazorpayService.verifyPaymentSignature(
@@ -371,9 +376,12 @@ export const verifyPayment = asyncHandler(async (req, res) => {
     paymentId,
     signature
   );
-  console.log('💳 Payment Verification: Signature verification result:', verificationResult);
 
   if (!verificationResult.success) {
+    logError('Payment verification failed', {
+      orderId: orderId ? orderId.substring(0, 8) + '...' : 'missing',
+      reason: verificationResult.message
+    });
     return res.status(400).json({
       success: false,
       message: verificationResult.message
@@ -381,28 +389,21 @@ export const verifyPayment = asyncHandler(async (req, res) => {
   }
 
   // Find payment record
-  console.log('💳 Payment Verification: Looking for payment with razorpayOrderId:', orderId);
   let payment = await Payment.findOne({
     razorpayOrderId: orderId
   });
 
-  console.log('💳 Payment Verification: Found payment:', payment);
-
   if (!payment) {
     // Try to find payment with different criteria
-    console.log('💳 Payment Verification: Trying alternative search by transactionId');
     const alternativePayment = await Payment.findOne({
       transactionId: orderId
     });
-    
-    console.log('💳 Payment Verification: Alternative payment search result:', alternativePayment);
     
     if (alternativePayment) {
       payment = alternativePayment;
     } else {
       // Try to find by booking ID if provided
       const { bookingId } = req.body;
-      console.log('💳 Payment Verification: Trying booking search with bookingId:', bookingId);
       if (bookingId) {
         const bookingPayment = await Payment.findOne({
           bookingId

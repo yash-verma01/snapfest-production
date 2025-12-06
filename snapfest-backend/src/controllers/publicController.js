@@ -1,4 +1,5 @@
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { sanitizeSearchQuery, createSafeRegex } from '../utils/securityUtils.js';
 import { Package, Booking, Review, Event, Venue, BeatBloom, User } from '../models/index.js';
 
 // ==================== PACKAGE ROUTES ====================
@@ -301,11 +302,18 @@ export const searchPackages = asyncHandler(async (req, res) => {
   let query = { isActive: { $ne: false } };
 
   if (q) {
-    query.$or = [
-      { name: { $regex: q, $options: 'i' } },
-      { description: { $regex: q, $options: 'i' } },
-      { features: { $in: [new RegExp(q, 'i')] } }
-    ];
+    // Sanitize search query to prevent NoSQL injection
+    const sanitizedQuery = sanitizeSearchQuery(q);
+    if (sanitizedQuery) {
+      const safeRegex = createSafeRegex(sanitizedQuery);
+      if (safeRegex) {
+        query.$or = [
+          { name: safeRegex },
+          { description: safeRegex },
+          { features: { $in: [new RegExp(sanitizedQuery, 'i')] } }
+        ];
+      }
+    }
   }
 
   if (category) query.category = category;
@@ -576,10 +584,17 @@ export const searchEvents = asyncHandler(async (req, res) => {
   let query = { isActive: { $ne: false } };
 
   if (q) {
-    query.$or = [
-      { name: { $regex: q, $options: 'i' } },
-      { description: { $regex: q, $options: 'i' } }
-    ];
+    // Sanitize search query to prevent NoSQL injection
+    const sanitizedQuery = sanitizeSearchQuery(q);
+    if (sanitizedQuery) {
+      const safeRegex = createSafeRegex(sanitizedQuery);
+      if (safeRegex) {
+        query.$or = [
+          { name: safeRegex },
+          { description: safeRegex }
+        ];
+      }
+    }
   }
 
   if (category) query.category = category;
@@ -726,7 +741,16 @@ export const searchAll = asyncHandler(async (req, res) => {
     });
   }
 
-  const searchQuery = { $regex: q, $options: 'i' };
+  // Sanitize search query to prevent NoSQL injection
+  const sanitizedQuery = sanitizeSearchQuery(q);
+  if (!sanitizedQuery) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid search query'
+    });
+  }
+
+  const searchQuery = createSafeRegex(sanitizedQuery);
   const results = {
     packages: [],
     events: [],
@@ -740,7 +764,7 @@ export const searchAll = asyncHandler(async (req, res) => {
       $or: [
         { name: searchQuery },
         { description: searchQuery },
-        { features: { $regex: q, $options: 'i' } }
+        { features: searchQuery }
       ]
     })
       .limit(limit)
