@@ -181,10 +181,10 @@ const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
-                className="flex flex-col h-full"
+                className="flex flex-col min-h-0"
               >
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
                   <h3 className="font-semibold text-gray-900">Notifications</h3>
                   <div className="flex items-center space-x-2">
                     {unreadCount > 0 && (
@@ -203,7 +203,10 @@ const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
                 </div>
 
                 {/* Notifications List */}
-                <div className="overflow-y-auto flex-1">
+                <div 
+                  className="overflow-y-auto flex-1 min-h-0"
+                  style={{ WebkitOverflowScrolling: 'touch' }}
+                >
                   {loading ? (
                     <motion.div
                       initial={{ opacity: 0 }}
@@ -265,7 +268,7 @@ const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
 
                 {/* Footer */}
                 {notifications.length > 0 && (
-                  <div className="p-3 border-t border-gray-200 text-center">
+                  <div className="p-3 border-t border-gray-200 text-center flex-shrink-0">
                     <button
                       onClick={() => {
                         close();
