@@ -414,7 +414,7 @@ export const getAllVendors = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
 
   const vendors = await User.find({ role: 'vendor' })
-    .select('name email phone isActive profileImage lastLogin businessName businessType servicesOffered experience availability location')
+    .select('name email phone isActive profileImage lastLogin businessName businessType servicesOffered experience availability location currentLocation')
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);

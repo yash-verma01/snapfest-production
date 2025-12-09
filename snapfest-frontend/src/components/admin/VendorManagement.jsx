@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { Card, Button, Badge } from '../ui';
+import VendorLocationMap from './VendorLocationMap';
 
 const VendorManagement = () => {
   const [vendors, setVendors] = useState([]);
@@ -168,6 +169,13 @@ const VendorManagement = () => {
                 <div className="flex items-center text-xs sm:text-sm text-gray-600 min-w-0">
                   <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2 flex-shrink-0" />
                   <span className="truncate">{vendor.location}</span>
+                </div>
+              )}
+              {/* GPS Location Indicator */}
+              {vendor.currentLocation?.latitude && vendor.currentLocation?.longitude && (
+                <div className="flex items-center text-xs sm:text-sm text-green-600 min-w-0">
+                  <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">📍 Live Location Available</span>
                 </div>
               )}
               {vendor.rating && (
@@ -326,6 +334,20 @@ const VendorManagement = () => {
                 <div>
                   <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">About</h4>
                   <p className="text-xs sm:text-sm text-gray-900 break-words">{selectedVendor.bio}</p>
+                </div>
+              )}
+
+              {/* Location Map */}
+              {selectedVendor.currentLocation?.latitude && selectedVendor.currentLocation?.longitude && (
+                <div>
+                  <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Current Location</h4>
+                  <VendorLocationMap
+                    latitude={selectedVendor.currentLocation.latitude}
+                    longitude={selectedVendor.currentLocation.longitude}
+                    vendorName={selectedVendor.userId?.name || selectedVendor.businessName}
+                    address={selectedVendor.currentLocation.address}
+                    lastUpdated={selectedVendor.currentLocation.lastUpdated}
+                  />
                 </div>
               )}
 

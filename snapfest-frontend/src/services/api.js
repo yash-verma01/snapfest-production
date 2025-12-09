@@ -203,6 +203,11 @@ export const vendorAPI = {
   startEventExecution: (id) => api.post(`/vendors/events/${id}/start`),
   completeEvent: (id, data) => api.post(`/vendors/events/${id}/complete`, data),
   reportIssues: (id, data) => api.post(`/vendors/events/${id}/issues`, data),
+  
+  // Location Tracking
+  updateLocation: (data) => api.put('/vendors/location/update', data),
+  getLocation: () => api.get('/vendors/location/current'),
+  toggleLocationTracking: (data) => api.put('/vendors/location/tracking', data),
 };
 
 export const adminAPI = {

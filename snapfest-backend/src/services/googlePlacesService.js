@@ -267,8 +267,68 @@ export const getPlaceDetails = async (placeId) => {
   }
 };
 
+/**
+ * Reverse Geocoding - Convert coordinates to address
+ * @param {number} latitude 
+ * @param {number} longitude 
+ */
+export const reverseGeocode = async (latitude, longitude) => {
+  try {
+    if (!latitude || !longitude) {
+      return { success: false, message: 'Latitude and longitude are required' };
+    }
+
+    const accessToken = await getAccessToken();
+
+    if (process.env.NODE_ENV === 'development') {
+      logDebug('Reverse geocoding', { latitude, longitude });
+    }
+
+    // Use Places API (New) for reverse geocoding
+    // Format: places/{placeId} where placeId can be coordinates
+    const response = await fetch(
+      `https://places.googleapis.com/v1/places/${latitude},${longitude}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+          'X-Goog-FieldMask': 'formattedAddress,addressComponents'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      logError('Reverse geocoding failed', {
+        status: response.status,
+        error: errorData.error?.message
+      });
+      return {
+        success: false,
+        message: errorData.error?.message || `HTTP ${response.status}`
+      };
+    }
+
+    const data = await response.json();
+
+    return {
+      success: true,
+      address: data.formattedAddress || '',
+      components: data.addressComponents || []
+    };
+  } catch (error) {
+    logError('Error in reverseGeocode', { error: error.message });
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+};
+
 export default {
   getAutocompletePredictions,
-  getPlaceDetails
+  getPlaceDetails,
+  reverseGeocode
 };
 

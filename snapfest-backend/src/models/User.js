@@ -103,6 +103,38 @@ const userSchema = new mongoose.Schema({
   location: {
     type: String
   },
+  // GPS Location Tracking (for vendors)
+  currentLocation: {
+    latitude: {
+      type: Number,
+      default: null
+    },
+    longitude: {
+      type: Number,
+      default: null
+    },
+    address: {
+      type: String,
+      default: ''
+    },
+    lastUpdated: {
+      type: Date,
+      default: null
+    },
+    isTrackingEnabled: {
+      type: Boolean,
+      default: false
+    }
+  },
+  locationHistory: [{
+    latitude: Number,
+    longitude: Number,
+    address: String,
+    timestamp: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   bio: {
     type: String,
     maxlength: 500

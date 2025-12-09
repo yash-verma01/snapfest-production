@@ -69,7 +69,12 @@ import {
   getEventChecklist,
   startEventExecution,
   completeEvent,
-  reportIssues
+  reportIssues,
+  
+  // Location Tracking
+  updateVendorLocation,
+  getVendorLocation,
+  toggleLocationTracking
 } from '../controllers/vendorController.js';
 import { authenticate, vendorOnly, optionalAuth } from '../middleware/auth.js';
 import { validatePagination } from '../middleware/validation.js';
@@ -163,5 +168,10 @@ router.get('/payments/:id', getPaymentById);
 // Additional Booking Management
 router.put('/bookings/:id/accept', acceptBooking);
 router.put('/bookings/:id/reject', rejectBooking);
+
+// ==================== LOCATION TRACKING ====================
+router.put('/location/update', updateVendorLocation);
+router.get('/location/current', getVendorLocation);
+router.put('/location/tracking', toggleLocationTracking);
 
 export default router;

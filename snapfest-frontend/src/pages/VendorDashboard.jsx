@@ -25,6 +25,7 @@ import { vendorAPI } from '../services/api';
 import VendorStatsCard from '../components/vendor/VendorStatsCard';
 import OTPVerification from '../components/vendor/OTPVerification';
 import VendorBookingCard from '../components/vendor/VendorBookingCard';
+import VendorLocationTracker from '../components/vendor/VendorLocationTracker';
 import ModalPortal from '../components/modals/ModalPortal';
 import NotificationBell from '../components/NotificationBell';
 import VendorNotificationManagement from '../components/vendor/VendorNotificationManagement';
@@ -583,6 +584,11 @@ const VendorDashboard = () => {
 
           {/* Sidebar */}
           <div className="space-y-6 sm:space-y-8">
+            {/* Location Tracker */}
+            <ScrollReveal direction="up" delay={0.3}>
+              <VendorLocationTracker />
+            </ScrollReveal>
+            
             {/* Tips & Guidelines */}
             <GlassCard className="p-4 sm:p-6">
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Tips & Guidelines</h3>

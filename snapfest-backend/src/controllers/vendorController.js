@@ -2289,3 +2289,152 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
     }
   });
 });
+
+// ==================== LOCATION TRACKING ====================
+
+/**
+ * Update vendor's current location
+ * @route PUT /api/vendors/location/update
+ */
+export const updateVendorLocation = asyncHandler(async (req, res) => {
+  const { latitude, longitude, address } = req.body;
+
+  if (!latitude || !longitude) {
+    return res.status(400).json({
+      success: false,
+      message: 'Latitude and longitude are required'
+    });
+  }
+
+  const user = await User.findById(req.userId);
+  
+  if (!user || user.role !== 'vendor') {
+    return res.status(403).json({
+      success: false,
+      message: 'Only vendors can update location'
+    });
+  }
+
+  // Get address from reverse geocoding if not provided
+  let finalAddress = address;
+  if (!finalAddress) {
+    try {
+      const { reverseGeocode } = await import('../services/googlePlacesService.js');
+      const geocodeResult = await reverseGeocode(latitude, longitude);
+      if (geocodeResult.success) {
+        finalAddress = geocodeResult.address;
+      }
+    } catch (error) {
+      console.warn('Reverse geocoding failed:', error);
+    }
+  }
+
+  // Initialize currentLocation if doesn't exist
+  if (!user.currentLocation) {
+    user.currentLocation = {
+      latitude: null,
+      longitude: null,
+      address: '',
+      lastUpdated: null,
+      isTrackingEnabled: false
+    };
+  }
+
+  // Update current location
+  user.currentLocation = {
+    latitude,
+    longitude,
+    address: finalAddress || user.currentLocation?.address || '',
+    lastUpdated: new Date(),
+    isTrackingEnabled: user.currentLocation?.isTrackingEnabled || false
+  };
+
+  // Add to location history (keep last 100 entries)
+  if (!user.locationHistory) {
+    user.locationHistory = [];
+  }
+  
+  user.locationHistory.push({
+    latitude,
+    longitude,
+    address: finalAddress || '',
+    timestamp: new Date()
+  });
+
+  // Keep only last 100 location points
+  if (user.locationHistory.length > 100) {
+    user.locationHistory = user.locationHistory.slice(-100);
+  }
+
+  await user.save();
+
+  res.json({
+    success: true,
+    message: 'Location updated successfully',
+    data: {
+      location: user.currentLocation
+    }
+  });
+});
+
+/**
+ * Get vendor's current location
+ * @route GET /api/vendors/location/current
+ */
+export const getVendorLocation = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.userId);
+  
+  if (!user || user.role !== 'vendor') {
+    return res.status(403).json({
+      success: false,
+      message: 'Only vendors can access location'
+    });
+  }
+
+  res.json({
+    success: true,
+    data: {
+      location: user.currentLocation || null,
+      isTrackingEnabled: user.currentLocation?.isTrackingEnabled || false
+    }
+  });
+});
+
+/**
+ * Toggle location tracking on/off
+ * @route PUT /api/vendors/location/tracking
+ */
+export const toggleLocationTracking = asyncHandler(async (req, res) => {
+  const { enabled } = req.body;
+
+  const user = await User.findById(req.userId);
+  
+  if (!user || user.role !== 'vendor') {
+    return res.status(403).json({
+      success: false,
+      message: 'Only vendors can toggle location tracking'
+    });
+  }
+
+  if (!user.currentLocation) {
+    user.currentLocation = {
+      latitude: null,
+      longitude: null,
+      address: '',
+      lastUpdated: null,
+      isTrackingEnabled: enabled || false
+    };
+  } else {
+    user.currentLocation.isTrackingEnabled = enabled || false;
+  }
+
+  await user.save();
+
+  res.json({
+    success: true,
+    message: `Location tracking ${enabled ? 'enabled' : 'disabled'}`,
+    data: {
+      isTrackingEnabled: user.currentLocation.isTrackingEnabled
+    }
+  });
+});
