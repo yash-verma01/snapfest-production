@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { Popover, Transition } from '@headlessui/react';
 import { Bell, X, CheckCheck } from 'lucide-react';
 import { Badge } from './ui';
@@ -6,61 +6,45 @@ import { adminAPI, vendorAPI } from '../services/api';
 import { useSocket } from '../hooks/useSocket';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
+const NotificationBell = memo(({ userRole = 'admin', onNavigate }) => {
   const { socket, isConnected } = useSocket();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const API = userRole === 'admin' ? adminAPI : vendorAPI;
+  // Memoize API selection to prevent recreation on every render
+  const API = useMemo(() => userRole === 'admin' ? adminAPI : vendorAPI, [userRole]);
 
-  useEffect(() => {
-    fetchNotifications();
-  }, [userRole]);
+  // Memoize handlers for socket events (defined before useEffects that use them)
+  const handleNewNotification = useCallback((data) => {
+    console.log('📬 New notification received:', data);
+    setNotifications(prev => [data.notification, ...prev]);
+    setUnreadCount(data.unreadCount || 0);
+    
+    // Show browser notification if permission granted
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(data.notification.title, {
+        body: data.notification.message,
+        icon: '/favicon.ico',
+        badge: '/favicon.ico'
+      });
+    }
+  }, []);
 
-  // Listen for real-time notifications via WebSocket
-  useEffect(() => {
-    if (!socket || !isConnected) return;
+  const handleNotificationRead = useCallback((data) => {
+    setNotifications(prev => 
+      prev.map(n => n._id === data.notificationId ? { ...n, isRead: true } : n)
+    );
+    setUnreadCount(data.unreadCount || 0);
+  }, []);
 
-    const handleNewNotification = (data) => {
-      console.log('📬 New notification received:', data);
-      setNotifications(prev => [data.notification, ...prev]);
-      setUnreadCount(data.unreadCount || 0);
-      
-      // Show browser notification if permission granted
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(data.notification.title, {
-          body: data.notification.message,
-          icon: '/favicon.ico',
-          badge: '/favicon.ico'
-        });
-      }
-    };
+  const handleAllRead = useCallback((data) => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    setUnreadCount(0);
+  }, []);
 
-    const handleNotificationRead = (data) => {
-      setNotifications(prev => 
-        prev.map(n => n._id === data.notificationId ? { ...n, isRead: true } : n)
-      );
-      setUnreadCount(data.unreadCount || 0);
-    };
-
-    const handleAllRead = (data) => {
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-      setUnreadCount(0);
-    };
-
-    socket.on('new_notification', handleNewNotification);
-    socket.on('notification_read', handleNotificationRead);
-    socket.on('all_notifications_read', handleAllRead);
-
-    return () => {
-      socket.off('new_notification', handleNewNotification);
-      socket.off('notification_read', handleNotificationRead);
-      socket.off('all_notifications_read', handleAllRead);
-    };
-  }, [socket, isConnected]);
-
-  const fetchNotifications = async () => {
+  // Memoize fetchNotifications to prevent recreation
+  const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
       const response = await API.getNotifications({ limit: 10 });
@@ -71,9 +55,29 @@ const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API]);
 
-  const handleMarkAsRead = async (notificationId) => {
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  // Listen for real-time notifications via WebSocket
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    socket.on('new_notification', handleNewNotification);
+    socket.on('notification_read', handleNotificationRead);
+    socket.on('all_notifications_read', handleAllRead);
+
+    return () => {
+      socket.off('new_notification', handleNewNotification);
+      socket.off('notification_read', handleNotificationRead);
+      socket.off('all_notifications_read', handleAllRead);
+    };
+  }, [socket, isConnected, handleNewNotification, handleNotificationRead, handleAllRead]);
+
+  // Memoize handlers to prevent recreation
+  const handleMarkAsRead = useCallback(async (notificationId) => {
     try {
       await API.markNotificationRead(notificationId);
       setNotifications(prev => 
@@ -83,9 +87,9 @@ const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
-  };
+  }, [API]);
 
-  const handleMarkAllAsRead = async () => {
+  const handleMarkAllAsRead = useCallback(async () => {
     try {
       await API.markAllNotificationsRead();
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
@@ -93,9 +97,9 @@ const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
     } catch (error) {
       console.error('Error marking all as read:', error);
     }
-  };
+  }, [API]);
 
-  const handleNotificationClick = (notification, close) => {
+  const handleNotificationClick = useCallback((notification, close) => {
     if (!notification.isRead) {
       handleMarkAsRead(notification._id);
     }
@@ -126,9 +130,10 @@ const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
         }
       }
     }
-  };
+  }, [onNavigate, handleMarkAsRead]);
 
-  const getTimeAgo = (date) => {
+  // Memoize getTimeAgo to prevent recreation
+  const getTimeAgo = useCallback((date) => {
     const seconds = Math.floor((new Date() - new Date(date)) / 1000);
     if (seconds < 60) return 'Just now';
     const minutes = Math.floor(seconds / 60);
@@ -137,7 +142,7 @@ const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
     if (hours < 24) return `${hours}h ago`;
     const days = Math.floor(hours / 24);
     return `${days}d ago`;
-  };
+  }, []);
 
   // Request browser notification permission
   useEffect(() => {
@@ -293,7 +298,15 @@ const NotificationBell = ({ userRole = 'admin', onNavigate }) => {
       )}
     </Popover>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison function for better memoization
+  return (
+    prevProps.userRole === nextProps.userRole &&
+    prevProps.onNavigate === nextProps.onNavigate
+  );
+});
+
+NotificationBell.displayName = 'NotificationBell';
 
 export default NotificationBell;
 

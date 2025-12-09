@@ -18,6 +18,7 @@ import {
 import { getAllEvents, getEventById, getRecentEvents, getEventsByCategory, searchEvents } from '../controllers/eventController.js';
 import { getAllVenues, getVenueById } from '../controllers/venueController.js';
 import { getAllBeatBloom, getBeatBloomById, getBeatBloomsByCategory, searchBeatBlooms } from '../controllers/beatBloomController.js';
+import { autocomplete, placeDetails } from '../controllers/googlePlacesController.js';
 import { optionalAuth } from '../middleware/auth.js';
 import { validatePagination, validateSearch } from '../middleware/validation.js';
 
@@ -65,5 +66,9 @@ router.get('/gallery', getAllGalleryImages);
 
 // ==================== HERO IMAGES ====================
 router.get('/hero-images', getHeroImages);
+
+// ==================== GOOGLE PLACES API ====================
+router.post('/places/autocomplete', autocomplete);
+router.get('/places/:placeId', placeDetails);
 
 export default router;

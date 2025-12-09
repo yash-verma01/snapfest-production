@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { MapPin } from 'lucide-react';
+import { publicAPI } from '../services/api';
 
 const GooglePlacesAutocomplete = ({
   value,
@@ -19,113 +20,51 @@ const GooglePlacesAutocomplete = ({
   const predictionsRef = useRef(null);
   const debounceTimerRef = useRef(null);
 
-  const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-
-  // Debug logging to verify API key is loaded (only in development)
+  // Debug logging (only in development)
   useEffect(() => {
     if (import.meta.env.DEV) {
-      console.log('🔍 Google Maps API Key Debug:', {
-        keyExists: !!GOOGLE_MAPS_API_KEY,
-        keyLength: GOOGLE_MAPS_API_KEY?.length || 0,
-        keyPreview: GOOGLE_MAPS_API_KEY ? GOOGLE_MAPS_API_KEY.substring(0, 20) + '...' : 'MISSING',
-        allEnvKeys: Object.keys(import.meta.env).filter(k => k.includes('GOOGLE')),
-        mode: import.meta.env.MODE,
-      });
-      
-      if (!GOOGLE_MAPS_API_KEY) {
-        console.error('❌ Google Maps API key not found!');
-        console.error('📝 Add VITE_GOOGLE_MAPS_API_KEY to snapfest-frontend/.env');
-        console.error('📋 Format: VITE_GOOGLE_MAPS_API_KEY=your_key_here');
-        console.error('⚠️  Restart dev server after adding the key');
-      } else {
-        console.log('✅ Using Places API (New) - REST endpoints');
-      }
+      console.log('✅ Using Google Places API via backend (Service Account)');
+      console.log('📋 Project: snap-map-480617 (Snap-map)');
     }
-  }, [GOOGLE_MAPS_API_KEY]);
+  }, []);
 
   // Update input value when prop changes
   useEffect(() => {
     setInputValue(value || '');
   }, [value]);
 
-  // Fetch autocomplete predictions using Places API (New)
+  // Fetch autocomplete predictions via backend API
   const fetchAutocompletePredictions = useCallback(async (input) => {
-    if (!GOOGLE_MAPS_API_KEY || !input || input.length < 3) {
+    if (!input || input.length < 3) {
       return;
     }
 
     try {
       setIsLoading(true);
       
-      const response = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
-          'X-Goog-FieldMask': 'suggestions.placePrediction.placeId,suggestions.placePrediction.text'
+      const response = await publicAPI.getPlacesAutocomplete({
+        input: input,
+        locationBias: {
+          circle: {
+            center: {
+              latitude: 26.8467,  // Lucknow coordinates
+              longitude: 80.9462
+            },
+            radius: 50000.0  // 50km radius
+          }
         },
-        body: JSON.stringify({
-          input: input,
-          locationBias: {
-            circle: {
-              center: {
-                latitude: 26.8467,  // Lucknow coordinates
-                longitude: 80.9462
-              },
-              radius: 50000.0  // 50km radius
-            }
-          },
-          includedRegionCodes: ['IN'],  // Restrict to India
-          languageCode: 'en'
-        })
+        includedRegionCodes: ['IN'],  // Restrict to India
+        languageCode: 'en'
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      if (data.suggestions && data.suggestions.length > 0) {
-        // Transform new API format to match existing component structure
-        const transformedPredictions = data.suggestions
-          .filter(suggestion => suggestion.placePrediction)
-          .map(suggestion => {
-            const prediction = suggestion.placePrediction;
-            const textObj = prediction.text || {};
-            const fullText = textObj.text || '';
-            
-            // Extract main text and secondary text from the structured text
-            // The API returns text with matches array indicating highlighted portions
-            let mainText = fullText;
-            let secondaryText = '';
-            
-            // If there are matches, try to extract secondary text
-            if (textObj.matches && textObj.matches.length > 0) {
-              const firstMatch = textObj.matches[0];
-              if (firstMatch.matchedSubstring) {
-                const matchLength = firstMatch.matchedSubstring.length || 0;
-                mainText = fullText.substring(0, matchLength);
-                secondaryText = fullText.substring(matchLength);
-              }
-            }
-            
-            return {
-              place_id: prediction.placeId,
-              description: fullText,
-              structured_formatting: {
-                main_text: mainText || fullText,
-                secondary_text: secondaryText
-              }
-            };
-          });
-
-        if (import.meta.env.DEV && transformedPredictions.length > 0) {
-          console.log(`✅ Found ${transformedPredictions.length} place predictions`);
+      if (response.data.success && response.data.predictions) {
+        const predictions = response.data.predictions;
+        
+        if (import.meta.env.DEV && predictions.length > 0) {
+          console.log(`✅ Found ${predictions.length} place predictions`);
         }
         
-        setPredictions(transformedPredictions);
+        setPredictions(predictions);
         setShowPredictions(true);
       } else {
         setPredictions([]);
@@ -134,16 +73,15 @@ const GooglePlacesAutocomplete = ({
     } catch (error) {
       console.error('❌ Error fetching autocomplete predictions:', error);
       if (import.meta.env.DEV) {
-        console.error('Error details:', error.message);
-        console.error('💡 Make sure Places API (New) is enabled in Google Cloud Console');
-        console.error('💡 Check: https://console.cloud.google.com/apis/library/places-backend.googleapis.com');
+        console.error('Error details:', error.response?.data?.message || error.message);
+        console.error('💡 Make sure backend service account is configured correctly');
       }
       setPredictions([]);
       setShowPredictions(false);
     } finally {
       setIsLoading(false);
     }
-  }, [GOOGLE_MAPS_API_KEY]);
+  }, []);
 
   // Handle input change with debouncing
   const handleInputChange = (e) => {
@@ -168,48 +106,38 @@ const GooglePlacesAutocomplete = ({
     }, 300);
   };
 
-  // Fetch place details using Places API (New)
+  // Fetch place details via backend API
   const fetchPlaceDetails = useCallback(async (placeId) => {
-    if (!GOOGLE_MAPS_API_KEY || !placeId) {
+    if (!placeId) {
       return null;
     }
 
     try {
-      const response = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
-          'X-Goog-FieldMask': 'id,displayName,formattedAddress,location,addressComponents'
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
+      const response = await publicAPI.getPlaceDetails(placeId);
       
-      return {
-        formatted_address: data.formattedAddress || data.displayName?.text || '',
-        name: data.displayName?.text || '',
-        geometry: {
-          location: data.location ? {
-            lat: () => data.location.latitude,
-            lng: () => data.location.longitude
-          } : null
-        },
-        address_components: data.addressComponents || []
-      };
+      if (response.data.success && response.data.place) {
+        const place = response.data.place;
+        return {
+          formatted_address: place.formatted_address || '',
+          name: place.name || '',
+          geometry: {
+            location: place.geometry?.location ? {
+              lat: () => place.geometry.location.lat,
+              lng: () => place.geometry.location.lng
+            } : null
+          },
+          address_components: place.address_components || []
+        };
+      }
+      return null;
     } catch (error) {
       console.error('❌ Error fetching place details:', error);
       if (import.meta.env.DEV) {
-        console.error('Error details:', error.message);
+        console.error('Error details:', error.response?.data?.message || error.message);
       }
       return null;
     }
-  }, [GOOGLE_MAPS_API_KEY]);
+  }, []);
 
   // Handle place selection
   const handlePlaceSelect = async (place) => {

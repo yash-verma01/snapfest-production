@@ -1,4 +1,4 @@
-import React, { useEffect, lazy, Suspense } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { SignedIn, SignedOut, RedirectToSignIn, useUser, useAuth } from '@clerk/clerk-react';
@@ -6,31 +6,28 @@ import { SignIn, SignUp } from '@clerk/clerk-react';
 import { vendorAPI } from './services/api';
 import ErrorBoundary from './components/ErrorBoundary';
 import PortGuard from './components/PortGuard';
-import LoadingSpinner from './components/LoadingSpinner';
 
 // Components
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import ScrollToTop from './components/ScrollToTop';
 
-// Lazy load all pages for code splitting
-const Home = lazy(() => import('./pages/Home'));
-const Packages = lazy(() => import('./pages/Packages'));
-const PackageDetail = lazy(() => import('./pages/PackageDetail'));
-const Events = lazy(() => import('./pages/Events'));
-const EventDetail = lazy(() => import('./pages/EventDetail'));
-const Gallery = lazy(() => import('./pages/Gallery'));
-const Reviews = lazy(() => import('./pages/Reviews'));
-const About = lazy(() => import('./pages/About'));
-const Contact = lazy(() => import('./pages/Contact'));
-const Venues = lazy(() => import('./pages/Venues'));
-const VenueDetail = lazy(() => import('./pages/VenueDetail'));
-const VendorDashboard = lazy(() => import('./pages/VendorDashboard'));
-const VendorBookings = lazy(() => import('./pages/VendorBookings'));
-const VendorEarnings = lazy(() => import('./pages/VendorEarnings'));
-const VendorSettings = lazy(() => import('./pages/VendorSettings'));
-const VendorProfileNew = lazy(() => import('./pages/VendorProfileNew'));
-const NotFound = lazy(() => import('./pages/NotFound'));
+// Pages
+import Home from './pages/Home';
+import Packages from './pages/Packages';
+import PackageDetail from './pages/PackageDetail';
+import Events from './pages/Events';
+import EventDetail from './pages/EventDetail';
+import Gallery from './pages/Gallery';
+import About from './pages/About';
+import Contact from './pages/Contact';
+import Venues from './pages/Venues';
+import VenueDetail from './pages/VenueDetail';
+import VendorDashboard from './pages/VendorDashboard';
+import VendorBookings from './pages/VendorBookings';
+import VendorEarnings from './pages/VendorEarnings';
+import VendorSettings from './pages/VendorSettings';
+import VendorProfileNew from './pages/VendorProfileNew';
+import NotFound from './pages/NotFound';
 
 // Protected Route Component
 import ProtectedRoute from './components/ProtectedRoute';
@@ -90,64 +87,60 @@ function VendorApp() {
   return (
     <ErrorBoundary>
       <Router>
-        <ScrollToTop />
         <PortGuard>
           <div className="min-h-screen bg-gray-50">
             <Navbar />
             
             <main className="min-h-screen">
-            <Suspense fallback={<LoadingSpinner />}>
-              <Routes>
-                {/* Root redirect for vendors */}
-                <Route path="/" element={<VendorRootRedirect />} />
-                
-                {/* Clerk auth routes */}
-                <Route path="/sign-in/*" element={<SignIn />} />
-                <Route path="/sign-up/*" element={<SignUp />} />
-                
-                {/* Public routes */}
-                <Route path="/packages" element={<Packages />} />
-                <Route path="/packages/:id" element={<PackageDetail />} />
-                <Route path="/events" element={<Events />} />
-                <Route path="/events/:id" element={<EventDetail />} />
-                <Route path="/gallery" element={<Gallery />} />
-                <Route path="/reviews" element={<Reviews />} />
-                <Route path="/venues" element={<Venues />} />
-                <Route path="/venues/:id" element={<VenueDetail />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                
-                {/* Protected Routes - Vendor Only */}
-                <Route path="/vendor/dashboard" element={
-                  <ProtectedRoute allowedRoles={['vendor']}>
-                    <VendorDashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="/vendor/profile" element={
-                  <ProtectedRoute allowedRoles={['vendor']}>
-                    <VendorProfileNew />
-                  </ProtectedRoute>
-                } />
-                <Route path="/vendor/bookings" element={
-                  <ProtectedRoute allowedRoles={['vendor']}>
-                    <VendorBookings />
-                  </ProtectedRoute>
-                } />
-                <Route path="/vendor/earnings" element={
-                  <ProtectedRoute allowedRoles={['vendor']}>
-                    <VendorEarnings />
-                  </ProtectedRoute>
-                } />
-                <Route path="/vendor/settings" element={
-                  <ProtectedRoute allowedRoles={['vendor']}>
-                    <VendorSettings />
-                  </ProtectedRoute>
-                } />
-                
-                {/* 404 Route */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
+            <Routes>
+            {/* Root redirect for vendors */}
+            <Route path="/" element={<VendorRootRedirect />} />
+            
+            {/* Clerk auth routes */}
+            <Route path="/sign-in/*" element={<SignIn />} />
+            <Route path="/sign-up/*" element={<SignUp />} />
+            
+            {/* Public routes */}
+            <Route path="/packages" element={<Packages />} />
+            <Route path="/packages/:id" element={<PackageDetail />} />
+            <Route path="/events" element={<Events />} />
+            <Route path="/events/:id" element={<EventDetail />} />
+            <Route path="/gallery" element={<Gallery />} />
+            <Route path="/venues" element={<Venues />} />
+            <Route path="/venues/:id" element={<VenueDetail />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            
+            {/* Protected Routes - Vendor Only */}
+            <Route path="/vendor/dashboard" element={
+              <ProtectedRoute allowedRoles={['vendor']}>
+                <VendorDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/vendor/profile" element={
+              <ProtectedRoute allowedRoles={['vendor']}>
+                <VendorProfileNew />
+              </ProtectedRoute>
+            } />
+            <Route path="/vendor/bookings" element={
+              <ProtectedRoute allowedRoles={['vendor']}>
+                <VendorBookings />
+              </ProtectedRoute>
+            } />
+            <Route path="/vendor/earnings" element={
+              <ProtectedRoute allowedRoles={['vendor']}>
+                <VendorEarnings />
+              </ProtectedRoute>
+            } />
+            <Route path="/vendor/settings" element={
+              <ProtectedRoute allowedRoles={['vendor']}>
+                <VendorSettings />
+              </ProtectedRoute>
+            } />
+            
+            {/* 404 Route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </main>
         
         <Footer />
@@ -179,6 +172,7 @@ function VendorApp() {
             },
           }}
         />
+      </div>
       </Router>
     </ErrorBoundary>
   );

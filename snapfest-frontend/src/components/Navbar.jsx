@@ -1,92 +1,132 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser, useClerk, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 import { Menu as MenuIcon, X, User, LogOut, Settings, Package, Calendar, Home, Camera, Heart, ShoppingCart, Star } from 'lucide-react';
 import { Menu, Transition } from '@headlessui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const Navbar = () => {
+const Navbar = memo(() => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [userRole, setUserRole] = useState(null);
   const [backendUserName, setBackendUserName] = useState(null);
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
   const navigate = useNavigate();
+  
+  // Request deduplication refs
+  const syncRequestRef = useRef(null);
+  const profileRequestRef = useRef(null);
 
-  // Fetch user role from backend if not in Clerk metadata
-  useEffect(() => {
-    if (isLoaded && user) {
-      // CRITICAL FIX: Check sessionStorage first (during signup)
-      // This ensures correct menu is shown immediately during registration
-      const selectedRole = sessionStorage.getItem('selectedRole');
-      
-      // If we have a selected role in sessionStorage, use it immediately
-      if (selectedRole && ['user', 'vendor', 'admin'].includes(selectedRole)) {
-        setUserRole(selectedRole);
-        
-        // Also sync with backend using the role parameter to ensure consistency
-        const syncWithRole = async () => {
-          try {
-            const response = await fetch(`http://localhost:5001/api/users/sync?role=${selectedRole}`, {
-              method: 'POST',
-              credentials: 'include',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            });
-            
-            if (response.ok) {
-              const data = await response.json();
-              const role = data.data?.user?.role || data.data?.vendor?.role || selectedRole;
-              setUserRole(role);
-            }
-          } catch (error) {
-            console.error('Error syncing user role:', error);
-            // Keep the selectedRole as fallback - don't change to 'user'
-          }
-        };
-        
-        syncWithRole();
-        return; // Don't proceed with default sync
-      }
-      
-      // If Clerk metadata has role, use it
-      if (user.publicMetadata?.role) {
-        setUserRole(user.publicMetadata.role);
-        return;
-      }
-      
-      // Otherwise, fetch from backend (but don't default to 'user' immediately)
-      const fetchUserRole = async () => {
-        try {
-          const response = await fetch('http://localhost:5001/api/users/sync', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            const role = data.data?.user?.role || data.data?.vendor?.role;
-            if (role) {
-              setUserRole(role);
-            }
-            // Don't default to 'user' - let it stay null until we know for sure
-          }
-        } catch (error) {
-          console.error('Error fetching user role:', error);
-          // Don't default to 'user' - let it stay null
-        }
-      };
-      
-      fetchUserRole();
+  // Memoized sync function with request deduplication
+  const syncUserRole = useCallback(async (selectedRole = null) => {
+    // Prevent duplicate requests
+    if (syncRequestRef.current) {
+      return syncRequestRef.current;
     }
-  }, [user, isLoaded]);
 
-  // CRITICAL FIX: Add another useEffect to watch for Clerk metadata changes
-  // This ensures Navbar updates immediately when Clerk metadata is updated
+    const syncPromise = (async () => {
+      try {
+        const url = selectedRole 
+          ? `http://localhost:5001/api/users/sync?role=${selectedRole}`
+          : 'http://localhost:5001/api/users/sync';
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const role = data.data?.user?.role || data.data?.vendor?.role || selectedRole;
+          if (role) {
+            setUserRole(role);
+          }
+          return role;
+        }
+      } catch (error) {
+        console.error('Error syncing user role:', error);
+        return null;
+      } finally {
+        syncRequestRef.current = null;
+      }
+    })();
+
+    syncRequestRef.current = syncPromise;
+    return syncPromise;
+  }, []);
+
+  // Memoized profile fetch with request deduplication
+  const fetchBackendProfile = useCallback(async () => {
+    // Prevent duplicate requests
+    if (profileRequestRef.current) {
+      return profileRequestRef.current;
+    }
+
+    const profilePromise = (async () => {
+      try {
+        const response = await fetch('http://localhost:5001/api/users/profile', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const userName = data.data?.user?.name;
+          if (userName) {
+            setBackendUserName(userName);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching backend profile:', error);
+        // Silently fail - will use Clerk fallback
+      } finally {
+        profileRequestRef.current = null;
+      }
+    })();
+
+    profileRequestRef.current = profilePromise;
+    return profilePromise;
+  }, []);
+
+  // Combined useEffect for user role and profile - optimized
+  useEffect(() => {
+    if (!isLoaded || !user) {
+      return;
+    }
+
+    // CRITICAL FIX: Check sessionStorage first (during signup)
+    const selectedRole = sessionStorage.getItem('selectedRole');
+    
+    // If we have a selected role in sessionStorage, use it immediately
+    if (selectedRole && ['user', 'vendor', 'admin'].includes(selectedRole)) {
+      setUserRole(selectedRole);
+      syncUserRole(selectedRole);
+      return; // Don't proceed with default sync
+    }
+    
+    // If Clerk metadata has role, use it
+    if (user.publicMetadata?.role) {
+      setUserRole(user.publicMetadata.role);
+      // Clear sessionStorage if metadata is now set (signup complete)
+      if (selectedRole) {
+        sessionStorage.removeItem('selectedRole');
+      }
+      // Still fetch profile
+      fetchBackendProfile();
+      return;
+    }
+    
+    // Otherwise, fetch from backend
+    syncUserRole();
+    fetchBackendProfile();
+  }, [user, isLoaded, syncUserRole, fetchBackendProfile]);
+
+  // Watch for Clerk metadata changes separately (for immediate updates)
   useEffect(() => {
     if (user?.publicMetadata?.role) {
       setUserRole(user.publicMetadata.role);
@@ -97,46 +137,27 @@ const Navbar = () => {
     }
   }, [user?.publicMetadata?.role]);
 
-  // Fetch backend profile name to display in navbar
-  useEffect(() => {
-    const fetchBackendProfile = async () => {
-      if (isLoaded && user) {
-        try {
-          const response = await fetch('http://localhost:5001/api/users/profile', {
-            credentials: 'include',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            const userName = data.data?.user?.name;
-            if (userName) {
-              setBackendUserName(userName);
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching backend profile:', error);
-          // Silently fail - will use Clerk fallback
-        }
-      }
-    };
-    
-    fetchBackendProfile();
-  }, [user, isLoaded]);
-
-  const handleLogout = async () => {
+  // Memoize handlers
+  const handleLogout = useCallback(async () => {
     await signOut();
     navigate('/');
-  };
+  }, [signOut, navigate]);
 
-  // Get role from sessionStorage (during signup) > Clerk metadata > backend > default
-  // CRITICAL FIX: Check sessionStorage first to show correct menu immediately during signup
-  const selectedRoleFromStorage = sessionStorage.getItem('selectedRole');
-  const currentRole = selectedRoleFromStorage || user?.publicMetadata?.role || userRole || 'user';
+  const toggleMenu = useCallback(() => {
+    setIsMenuOpen(prev => !prev);
+  }, []);
 
-  const getDashboardLink = () => {
+  const closeMenu = useCallback(() => {
+    setIsMenuOpen(false);
+  }, []);
+
+  // Memoize derived values
+  const currentRole = useMemo(() => {
+    const selectedRoleFromStorage = sessionStorage.getItem('selectedRole');
+    return selectedRoleFromStorage || user?.publicMetadata?.role || userRole || 'user';
+  }, [user?.publicMetadata?.role, userRole]);
+
+  const getDashboardLink = useMemo(() => {
     switch (currentRole) {
       case 'admin':
         return '/admin/dashboard';
@@ -147,9 +168,9 @@ const Navbar = () => {
       default:
         return '/';
     }
-  };
+  }, [currentRole]);
 
-  const getProfileLink = () => {
+  const getProfileLink = useMemo(() => {
     switch (currentRole) {
       case 'admin':
         return '/admin/profile';
@@ -160,9 +181,9 @@ const Navbar = () => {
       default:
         return '/user/profile';
     }
-  };
+  }, [currentRole]);
 
-  const getRoleDisplayName = () => {
+  const getRoleDisplayName = useMemo(() => {
     switch (currentRole) {
       case 'admin':
         return 'Admin';
@@ -173,12 +194,26 @@ const Navbar = () => {
       default:
         return 'User';
     }
-  };
+  }, [currentRole]);
+
+  // Memoize user display name
+  const userDisplayName = useMemo(() => {
+    if (backendUserName) {
+      return backendUserName.split(' ')[0];
+    }
+    if (user?.firstName) {
+      return user.firstName;
+    }
+    if (user?.fullName) {
+      return user.fullName.split(' ')[0];
+    }
+    return 'User';
+  }, [backendUserName, user?.firstName, user?.fullName]);
 
   // Check if current user is admin - hide browsing features in admin UI
-  const isAdmin = currentRole === 'admin';
+  const isAdmin = useMemo(() => currentRole === 'admin', [currentRole]);
   // Check if current user is vendor - hide browsing features in vendor UI (same as admin)
-  const isVendor = currentRole === 'vendor';
+  const isVendor = useMemo(() => currentRole === 'vendor', [currentRole]);
 
   return (
     <nav className="bg-white/95 backdrop-blur-xl shadow-lg sticky top-0 z-50 border-b border-pink-100 transition-all duration-300">
@@ -274,24 +309,10 @@ const Navbar = () => {
                       </div>
                       <div className="text-left">
                         <div className="font-semibold text-xs">
-                          {(() => {
-                            // Extract first name from backend name if it exists
-                            if (backendUserName) {
-                              return backendUserName.split(' ')[0];
-                            }
-                            // Use Clerk firstName if available
-                            if (user?.firstName) {
-                              return user.firstName;
-                            }
-                            // Extract first name from fullName if available
-                            if (user?.fullName) {
-                              return user.fullName.split(' ')[0];
-                            }
-                            return 'User';
-                          })()}
+                          {userDisplayName}
                         </div>
                         <div className="text-xs text-pink-600 font-medium">
-                          {getRoleDisplayName()}
+                          {getRoleDisplayName}
                         </div>
                       </div>
                     </Menu.Button>
@@ -319,7 +340,7 @@ const Navbar = () => {
                             <Menu.Item>
                               {({ active }) => (
                                 <Link
-                                  to={getDashboardLink()}
+                                  to={getDashboardLink}
                                   className={`flex items-center px-4 py-3 text-sm transition-all duration-200 ${
                                     active
                                       ? 'bg-gradient-to-r from-primary-50 to-accent-50 text-primary-700'
@@ -335,7 +356,7 @@ const Navbar = () => {
                           <Menu.Item>
                             {({ active }) => (
                               <Link
-                                to={getProfileLink()}
+                                to={getProfileLink}
                                 className={`flex items-center px-4 py-3 text-sm transition-all duration-200 ${
                                   active
                                     ? 'bg-gradient-to-r from-primary-50 to-accent-50 text-primary-700'
@@ -424,7 +445,7 @@ const Navbar = () => {
           {/* Mobile menu button */}
           <div className="md:hidden">
             <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              onClick={toggleMenu}
               className="text-neutral-700 hover:text-primary-600 transition-all duration-300 hover:scale-105 p-2 rounded-xl hover:bg-primary-50"
             >
               {isMenuOpen ? <X className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
@@ -452,7 +473,7 @@ const Navbar = () => {
               <Link
                 to="/"
                 className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
-                onClick={() => setIsMenuOpen(false)}
+                onClick={closeMenu}
               >
                 <Home className="w-5 h-5 mr-3 text-primary-500" />
                 Home
@@ -463,7 +484,7 @@ const Navbar = () => {
                   <Link
                     to="/packages"
                     className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={closeMenu}
                   >
                     <Package className="w-5 h-5 mr-3 text-primary-500" />
                     Packages
@@ -471,7 +492,7 @@ const Navbar = () => {
                   <Link
                     to="/events"
                     className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={closeMenu}
                   >
                     <Calendar className="w-5 h-5 mr-3 text-primary-500" />
                     Events
@@ -479,7 +500,7 @@ const Navbar = () => {
                   <Link
                     to="/gallery"
                     className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={closeMenu}
                   >
                     <Camera className="w-5 h-5 mr-3 text-primary-500" />
                     Gallery
@@ -487,7 +508,7 @@ const Navbar = () => {
                   <Link
                     to="/reviews"
                     className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={closeMenu}
                   >
                     <Star className="w-5 h-5 mr-3 text-primary-500" />
                     Reviews
@@ -495,7 +516,7 @@ const Navbar = () => {
                   <Link
                     to="/venues"
                     className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={closeMenu}
                   >
                     <Heart className="w-5 h-5 mr-3 text-primary-500" />
                     Venues
@@ -503,7 +524,7 @@ const Navbar = () => {
                   <Link
                     to="/about"
                     className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={closeMenu}
                   >
                     <span className="w-5 h-5 mr-3 text-primary-500 font-bold text-lg">i</span>
                     About
@@ -511,7 +532,7 @@ const Navbar = () => {
                   <Link
                     to="/contact"
                     className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={closeMenu}
                   >
                     <span className="w-5 h-5 mr-3 text-primary-500 font-bold text-lg">@</span>
                     Contact
@@ -520,7 +541,7 @@ const Navbar = () => {
                     <Link
                       to="/cart"
                       className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
-                      onClick={() => setIsMenuOpen(false)}
+                      onClick={closeMenu}
                     >
                       <ShoppingCart className="w-5 h-5 mr-3 text-primary-500" />
                       Cart
@@ -533,18 +554,18 @@ const Navbar = () => {
                   <div className="border-t border-primary-100 my-2"></div>
                   {(currentRole === 'admin' || currentRole === 'vendor') && (
                     <Link
-                      to={getDashboardLink()}
+                      to={getDashboardLink}
                       className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
-                      onClick={() => setIsMenuOpen(false)}
+                      onClick={closeMenu}
                     >
                       <Home className="w-5 h-5 mr-3 text-primary-500" />
                       Dashboard
                     </Link>
                   )}
                   <Link
-                    to={getProfileLink()}
+                    to={getProfileLink}
                     className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={closeMenu}
                   >
                     <Settings className="w-5 h-5 mr-3 text-primary-500" />
                     Profile
@@ -554,7 +575,7 @@ const Navbar = () => {
                       <Link
                         to="/user/bookings"
                         className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
-                        onClick={() => setIsMenuOpen(false)}
+                        onClick={closeMenu}
                       >
                         <Calendar className="w-5 h-5 mr-3 text-primary-500" />
                         Bookings
@@ -562,7 +583,7 @@ const Navbar = () => {
                       <Link
                         to="/user/payments"
                         className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
-                        onClick={() => setIsMenuOpen(false)}
+                        onClick={closeMenu}
                       >
                         <Package className="w-5 h-5 mr-3 text-primary-500" />
                         Payments
@@ -584,7 +605,7 @@ const Navbar = () => {
                   <Link
                     to="/sign-in"
                     className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={closeMenu}
                   >
                     <User className="w-5 h-5 mr-3 text-primary-500" />
                     Login
@@ -592,7 +613,7 @@ const Navbar = () => {
                   <Link
                     to="/sign-up"
                     className="flex items-center px-4 py-3 text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 transition-all duration-300 rounded-xl font-semibold"
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={closeMenu}
                   >
                     <span className="w-5 h-5 mr-3">+</span>
                     Register
@@ -606,6 +627,8 @@ const Navbar = () => {
       </div>
     </nav>
   );
-};
+});
+
+Navbar.displayName = 'Navbar';
 
 export default Navbar;

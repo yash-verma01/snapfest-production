@@ -398,6 +398,10 @@ export const publicAPI = {
   
   // Admin limit check
   checkAdminLimit: () => api.get('/users/check-admin-limit'),
+  
+  // Google Places API (via backend)
+  getPlacesAutocomplete: (data) => api.post('/places/autocomplete', data),
+  getPlaceDetails: (placeId) => api.get(`/places/${placeId}`),
 };
 
 export const bookingAPI = {
