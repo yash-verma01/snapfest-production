@@ -16,6 +16,7 @@ import {
 import { adminAPI } from '../../services/api';
 import { Card, Button, Badge } from '../ui';
 import VendorLocationMap from './VendorLocationMap';
+import { useVendorLocationUpdates } from '../../hooks/useVendorLocationUpdates';
 
 const VendorManagement = () => {
   const [vendors, setVendors] = useState([]);
@@ -26,10 +27,45 @@ const VendorManagement = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [actionLoading, setActionLoading] = useState({});
+  const [vendorLocations, setVendorLocations] = useState({});
 
   useEffect(() => {
     loadVendors();
   }, []);
+
+  // Listen for real-time vendor location updates
+  useVendorLocationUpdates(null, (data) => {
+    // Update vendor location in state
+    setVendorLocations(prev => ({
+      ...prev,
+      [data.vendorId]: data.location
+    }));
+    
+    // If viewing this vendor's details, update the selected vendor
+    if (selectedVendor && selectedVendor._id === data.vendorId) {
+      setSelectedVendor(prev => ({
+        ...prev,
+        currentLocation: data.location
+      }));
+    }
+    
+    // Also update in vendors list if vendor exists
+    setVendors(prev => prev.map(vendor => {
+      if (vendor._id === data.vendorId) {
+        return {
+          ...vendor,
+          currentLocation: data.location
+        };
+      }
+      return vendor;
+    }));
+  });
+
+  // Helper function to get vendor location (real-time or stored)
+  const getVendorLocation = (vendor) => {
+    // Use real-time location if available, otherwise use stored location
+    return vendorLocations[vendor._id] || vendor.currentLocation;
+  };
 
   const loadVendors = async () => {
     try {
@@ -172,12 +208,20 @@ const VendorManagement = () => {
                 </div>
               )}
               {/* GPS Location Indicator */}
-              {vendor.currentLocation?.latitude && vendor.currentLocation?.longitude && (
-                <div className="flex items-center text-xs sm:text-sm text-green-600 min-w-0">
-                  <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">📍 Live Location Available</span>
-                </div>
-              )}
+              {(() => {
+                const location = getVendorLocation(vendor);
+                return location?.latitude && location?.longitude ? (
+                  <div className="flex items-center text-xs sm:text-sm text-green-600 min-w-0">
+                    <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2 flex-shrink-0" />
+                    <span className="truncate">
+                      {location.isTrackingEnabled ? '📍 Live Tracking Active' : '📍 Location Available'}
+                    </span>
+                    {location.isTrackingEnabled && (
+                      <div className="ml-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    )}
+                  </div>
+                ) : null;
+              })()}
               {vendor.rating && (
                 <div className="flex items-center text-xs sm:text-sm text-gray-600 min-w-0">
                   <Star className="w-3 h-3 sm:w-4 sm:h-4 mr-2 flex-shrink-0" />
@@ -338,18 +382,31 @@ const VendorManagement = () => {
               )}
 
               {/* Location Map */}
-              {selectedVendor.currentLocation?.latitude && selectedVendor.currentLocation?.longitude && (
-                <div>
-                  <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Current Location</h4>
-                  <VendorLocationMap
-                    latitude={selectedVendor.currentLocation.latitude}
-                    longitude={selectedVendor.currentLocation.longitude}
-                    vendorName={selectedVendor.userId?.name || selectedVendor.businessName}
-                    address={selectedVendor.currentLocation.address}
-                    lastUpdated={selectedVendor.currentLocation.lastUpdated}
-                  />
-                </div>
-              )}
+              {(() => {
+                const location = getVendorLocation(selectedVendor);
+                return location?.latitude && location?.longitude ? (
+                  <div>
+                    <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      Current Location
+                      {location.isTrackingEnabled && (
+                        <Badge className="bg-green-100 text-green-800">
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                            Live Tracking
+                          </div>
+                        </Badge>
+                      )}
+                    </h4>
+                    <VendorLocationMap
+                      latitude={location.latitude}
+                      longitude={location.longitude}
+                      vendorName={selectedVendor.userId?.name || selectedVendor.businessName}
+                      address={location.address}
+                      lastUpdated={location.lastUpdated}
+                    />
+                  </div>
+                ) : null;
+              })()}
 
               {/* Account Information */}
               <div>

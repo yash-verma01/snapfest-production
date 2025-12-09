@@ -2368,6 +2368,36 @@ export const updateVendorLocation = asyncHandler(async (req, res) => {
 
   await user.save();
 
+  // Emit socket event to notify admins of location update
+  try {
+    const { getIO } = await import('../socket/socketServer.js');
+    const io = getIO();
+    
+    const locationData = {
+      vendorId: user._id.toString(),
+      vendorName: user.name,
+      businessName: user.businessName,
+      location: {
+        latitude,
+        longitude,
+        address: finalAddress || user.currentLocation?.address || '',
+        lastUpdated: user.currentLocation.lastUpdated,
+        isTrackingEnabled: user.currentLocation.isTrackingEnabled
+      }
+    };
+    
+    // Emit to all admins (broadcast)
+    io.to('admin').emit('vendor_location_update', locationData);
+    
+    // Also emit to specific vendor location room (for subscribed admins)
+    io.to(`vendor_location:${user._id}`).emit('vendor_location_update', locationData);
+    
+    console.log(`📍 Location update emitted for vendor ${user._id}`);
+  } catch (socketError) {
+    console.error('Socket emit error (location still saved):', socketError);
+    // Don't fail the request if socket fails
+  }
+
   res.json({
     success: true,
     message: 'Location updated successfully',

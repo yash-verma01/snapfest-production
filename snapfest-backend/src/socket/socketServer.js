@@ -76,6 +76,18 @@ export const initializeSocket = (httpServer) => {
     if (socket.userRole === 'admin') {
       socket.join('admin');
       console.log(`👑 Admin joined: ${socket.userId}`);
+      
+      // Allow admin to subscribe to specific vendor locations
+      socket.on('subscribe_vendor_location', (vendorId) => {
+        socket.join(`vendor_location:${vendorId}`);
+        console.log(`👑 Admin ${socket.userId} subscribed to vendor ${vendorId} location`);
+      });
+      
+      // Allow admin to unsubscribe from vendor locations
+      socket.on('unsubscribe_vendor_location', (vendorId) => {
+        socket.leave(`vendor_location:${vendorId}`);
+        console.log(`👑 Admin ${socket.userId} unsubscribed from vendor ${vendorId} location`);
+      });
     } else if (socket.userRole === 'vendor') {
       socket.join(`vendor:${socket.userId}`);
       console.log(`🏪 Vendor joined: ${socket.userId}`);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { MapPin, Clock } from 'lucide-react';
 
 const VendorLocationMap = ({ 
@@ -8,6 +8,17 @@ const VendorLocationMap = ({
   address,
   lastUpdated 
 }) => {
+  const mapRef = useRef(null);
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+  // Update map URL when location changes
+  useEffect(() => {
+    if (latitude && longitude && mapRef.current && apiKey) {
+      const embedUrl = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${latitude},${longitude}&zoom=15`;
+      mapRef.current.src = embedUrl;
+    }
+  }, [latitude, longitude, apiKey]);
+
   if (!latitude || !longitude) {
     return (
       <div className="text-center p-8 text-gray-500 bg-gray-50 rounded-lg">
@@ -16,8 +27,6 @@ const VendorLocationMap = ({
       </div>
     );
   }
-
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   
   if (!apiKey) {
     return (
@@ -34,6 +43,7 @@ const VendorLocationMap = ({
     <div className="space-y-4">
       <div className="relative rounded-lg overflow-hidden border border-gray-200" style={{ height: '400px' }}>
         <iframe
+          ref={mapRef}
           width="100%"
           height="100%"
           style={{ border: 0 }}
