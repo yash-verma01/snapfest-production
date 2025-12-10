@@ -557,12 +557,12 @@ const Home = () => {
                 transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
                 style={{ willChange: 'transform' }}
                 onClick={() => navigate('/packages')}
-                className="group relative bg-gradient-to-r from-pink-600 to-pink-500 hover:from-pink-700 hover:to-pink-600 text-white px-10 py-4 text-sm font-semibold rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden"
+                className="group relative bg-gradient-to-r from-pink-600 to-pink-500 hover:from-pink-700 hover:to-pink-600 text-white px-10 py-4 text-sm font-semibold rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden whitespace-nowrap flex-shrink-0 min-w-[200px] sm:min-w-[220px]"
               >
-                <span className="relative z-10 flex items-center gap-2">
-                  <Package className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                  Explore Packages
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  <Package className="w-5 h-5 group-hover:rotate-12 transition-transform flex-shrink-0" />
+                  <span className="whitespace-nowrap">Explore Packages</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                 </span>
                 <motion.div
                   className="absolute inset-0 bg-gradient-to-r from-pink-700 to-pink-600"
@@ -578,11 +578,11 @@ const Home = () => {
                 transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
                 style={{ willChange: 'transform' }}
                 onClick={() => navigate('/contact')}
-                className="bg-white/95 backdrop-blur-sm text-pink-600 hover:text-pink-700 border-2 border-white/50 px-10 py-4 text-sm font-semibold rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-white"
+                className="bg-white/95 backdrop-blur-sm text-pink-600 hover:text-pink-700 border-2 border-white/50 px-10 py-4 text-sm font-semibold rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-white whitespace-nowrap flex-shrink-0 min-w-[200px] sm:min-w-[220px]"
               >
-                <span className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  Hire Event Managers
+                <span className="flex items-center justify-center gap-2">
+                  <Users className="w-5 h-5 flex-shrink-0" />
+                  <span className="whitespace-nowrap">Hire Event Managers</span>
                 </span>
               </motion.button>
             </motion.div>

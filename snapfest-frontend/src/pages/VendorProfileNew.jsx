@@ -58,10 +58,32 @@ const VendorProfileNew = () => {
   });
 
   useEffect(() => {
-    loadVendorProfile();
+    // Wait for vendor sync to complete before loading profile
+    const initializeProfile = async () => {
+      // First, ensure vendor is synced with backend
+      // This handles the race condition where profile loads before sync completes
+      try {
+        await vendorAPI.sync();
+        console.log('✅ Vendor synced, loading profile...');
+      } catch (syncError) {
+        console.warn('⚠️ Vendor sync failed, will retry in loadVendorProfile:', syncError);
+        // Don't fail immediately - will retry in loadVendorProfile
+      }
+      
+      // Small delay to ensure backend has processed the sync
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Now load the profile
+      loadVendorProfile();
+    };
+
+    initializeProfile();
   }, []);
 
-  const loadVendorProfile = async () => {
+  const loadVendorProfile = async (retryCount = 0) => {
+    const maxRetries = 3;
+    const retryDelay = 1000 * (retryCount + 1); // Exponential backoff: 1s, 2s, 3s
+
     try {
       setLoading(true);
       setError(null);
@@ -91,6 +113,27 @@ const VendorProfileNew = () => {
       }
     } catch (error) {
       console.error('Error loading vendor profile:', error);
+      
+      // Retry logic for 401/403 errors (authentication/sync issues)
+      if ((error.response?.status === 401 || error.response?.status === 403) && retryCount < maxRetries) {
+        console.log(`⏳ Retrying profile load (attempt ${retryCount + 1}/${maxRetries})...`);
+        
+        // Try to sync vendor again before retry (in case sync failed initially)
+        try {
+          await vendorAPI.sync();
+          console.log('✅ Vendor re-synced, retrying profile load...');
+        } catch (syncError) {
+          console.warn('⚠️ Re-sync failed:', syncError);
+        }
+        
+        // Wait before retry with exponential backoff
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        
+        // Retry loading profile
+        return loadVendorProfile(retryCount + 1);
+      }
+      
+      // If max retries reached or different error, show error message
       setError(error.response?.data?.message || 'Failed to load vendor profile. Please try again.');
     } finally {
       setLoading(false);

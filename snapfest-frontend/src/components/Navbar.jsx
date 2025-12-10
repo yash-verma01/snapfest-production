@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, memo, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useUser, useClerk, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 import { Menu as MenuIcon, X, User, LogOut, Settings, Package, Calendar, Home, Camera, Heart, ShoppingCart, Star } from 'lucide-react';
 import { Menu, Transition } from '@headlessui/react';
@@ -12,10 +12,19 @@ const Navbar = memo(() => {
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
   const navigate = useNavigate();
+  const location = useLocation();
   
   // Request deduplication refs
   const syncRequestRef = useRef(null);
   const profileRequestRef = useRef(null);
+  
+  // Helper function to check if a path is active
+  const isActive = useCallback((path) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
+  }, [location.pathname]);
 
   // Memoized sync function with request deduplication
   const syncUserRole = useCallback(async (selectedRole = null) => {
@@ -235,7 +244,11 @@ const Navbar = memo(() => {
           <div className="hidden md:flex items-center space-x-1">
             <Link
               to="/"
-              className="px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-red-500 text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 hover:scale-105 ${
+                isActive('/')
+                  ? 'bg-gradient-to-r from-pink-500 to-red-500 text-white shadow-md'
+                  : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600'
+              }`}
             >
               Home
             </Link>
@@ -244,50 +257,82 @@ const Navbar = memo(() => {
               <>
                 <Link
                   to="/packages"
-                  className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300 hover:scale-105"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105 ${
+                    isActive('/packages')
+                      ? 'bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 font-semibold shadow-sm'
+                      : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600'
+                  }`}
                 >
                   Packages
                 </Link>
                 <Link
                   to="/events"
-                  className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300 hover:scale-105"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105 ${
+                    isActive('/events')
+                      ? 'bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 font-semibold shadow-sm'
+                      : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600'
+                  }`}
                 >
                   Events
                 </Link>
                 <Link
                   to="/gallery"
-                  className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300 hover:scale-105"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105 ${
+                    isActive('/gallery')
+                      ? 'bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 font-semibold shadow-sm'
+                      : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600'
+                  }`}
                 >
                   Gallery
                 </Link>
                 <Link
                   to="/reviews"
-                  className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300 hover:scale-105"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105 ${
+                    isActive('/reviews')
+                      ? 'bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 font-semibold shadow-sm'
+                      : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600'
+                  }`}
                 >
                   Reviews
                 </Link>
                 <Link
                   to="/venues"
-                  className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300 hover:scale-105"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105 ${
+                    isActive('/venues')
+                      ? 'bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 font-semibold shadow-sm'
+                      : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600'
+                  }`}
                 >
                   Venues
                 </Link>
                 <Link
                   to="/about"
-                  className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300 hover:scale-105"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105 ${
+                    isActive('/about')
+                      ? 'bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 font-semibold shadow-sm'
+                      : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600'
+                  }`}
                 >
                   About
                 </Link>
                 <Link
                   to="/contact"
-                  className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300 hover:scale-105"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105 ${
+                    isActive('/contact')
+                      ? 'bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 font-semibold shadow-sm'
+                      : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600'
+                  }`}
                 >
                   Contact
                 </Link>
                 {user && (
                   <Link
                     to="/cart"
-                    className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300 flex items-center space-x-1"
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center space-x-1 ${
+                      isActive('/cart')
+                        ? 'bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 font-semibold shadow-sm'
+                        : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600'
+                    }`}
                   >
                     <ShoppingCart className="w-4 h-4" />
                     <span>Cart</span>
@@ -472,7 +517,11 @@ const Navbar = memo(() => {
               >
               <Link
                 to="/"
-                className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
+                className={`flex items-center px-4 py-3 transition-all duration-300 rounded-xl ${
+                  isActive('/')
+                    ? 'bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 font-semibold'
+                    : 'text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50'
+                }`}
                 onClick={closeMenu}
               >
                 <Home className="w-5 h-5 mr-3 text-primary-500" />
@@ -483,7 +532,11 @@ const Navbar = memo(() => {
                 <>
                   <Link
                     to="/packages"
-                    className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
+                    className={`flex items-center px-4 py-3 transition-all duration-300 rounded-xl ${
+                      isActive('/packages')
+                        ? 'bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 font-semibold'
+                        : 'text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50'
+                    }`}
                     onClick={closeMenu}
                   >
                     <Package className="w-5 h-5 mr-3 text-primary-500" />
@@ -491,7 +544,11 @@ const Navbar = memo(() => {
                   </Link>
                   <Link
                     to="/events"
-                    className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
+                    className={`flex items-center px-4 py-3 transition-all duration-300 rounded-xl ${
+                      isActive('/events')
+                        ? 'bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 font-semibold'
+                        : 'text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50'
+                    }`}
                     onClick={closeMenu}
                   >
                     <Calendar className="w-5 h-5 mr-3 text-primary-500" />
@@ -499,7 +556,11 @@ const Navbar = memo(() => {
                   </Link>
                   <Link
                     to="/gallery"
-                    className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
+                    className={`flex items-center px-4 py-3 transition-all duration-300 rounded-xl ${
+                      isActive('/gallery')
+                        ? 'bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 font-semibold'
+                        : 'text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50'
+                    }`}
                     onClick={closeMenu}
                   >
                     <Camera className="w-5 h-5 mr-3 text-primary-500" />
@@ -507,7 +568,11 @@ const Navbar = memo(() => {
                   </Link>
                   <Link
                     to="/reviews"
-                    className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
+                    className={`flex items-center px-4 py-3 transition-all duration-300 rounded-xl ${
+                      isActive('/reviews')
+                        ? 'bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 font-semibold'
+                        : 'text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50'
+                    }`}
                     onClick={closeMenu}
                   >
                     <Star className="w-5 h-5 mr-3 text-primary-500" />
@@ -515,7 +580,11 @@ const Navbar = memo(() => {
                   </Link>
                   <Link
                     to="/venues"
-                    className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
+                    className={`flex items-center px-4 py-3 transition-all duration-300 rounded-xl ${
+                      isActive('/venues')
+                        ? 'bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 font-semibold'
+                        : 'text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50'
+                    }`}
                     onClick={closeMenu}
                   >
                     <Heart className="w-5 h-5 mr-3 text-primary-500" />
@@ -523,7 +592,11 @@ const Navbar = memo(() => {
                   </Link>
                   <Link
                     to="/about"
-                    className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
+                    className={`flex items-center px-4 py-3 transition-all duration-300 rounded-xl ${
+                      isActive('/about')
+                        ? 'bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 font-semibold'
+                        : 'text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50'
+                    }`}
                     onClick={closeMenu}
                   >
                     <span className="w-5 h-5 mr-3 text-primary-500 font-bold text-lg">i</span>
@@ -531,7 +604,11 @@ const Navbar = memo(() => {
                   </Link>
                   <Link
                     to="/contact"
-                    className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
+                    className={`flex items-center px-4 py-3 transition-all duration-300 rounded-xl ${
+                      isActive('/contact')
+                        ? 'bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 font-semibold'
+                        : 'text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50'
+                    }`}
                     onClick={closeMenu}
                   >
                     <span className="w-5 h-5 mr-3 text-primary-500 font-bold text-lg">@</span>
@@ -540,7 +617,11 @@ const Navbar = memo(() => {
                   {user && (
                     <Link
                       to="/cart"
-                      className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
+                      className={`flex items-center px-4 py-3 transition-all duration-300 rounded-xl ${
+                        isActive('/cart')
+                          ? 'bg-gradient-to-r from-pink-100 to-red-100 text-pink-700 font-semibold'
+                          : 'text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50'
+                      }`}
                       onClick={closeMenu}
                     >
                       <ShoppingCart className="w-5 h-5 mr-3 text-primary-500" />

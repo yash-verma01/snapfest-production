@@ -519,14 +519,15 @@ const PackageDetail = () => {
               Back
             </Button>
             
-            <div className="flex items-center space-x-2">
+            {/* Heart and Share buttons hidden for now */}
+            {/* <div className="flex items-center space-x-2">
               <Button variant="ghost" size="sm" className="text-gray-500 hover:text-pink-600">
                 <Heart className="w-4 h-4" />
               </Button>
               <Button variant="ghost" size="sm" className="text-gray-500 hover:text-pink-600">
                 <Share2 className="w-4 h-4" />
               </Button>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

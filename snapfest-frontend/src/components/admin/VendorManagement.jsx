@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   Search, 
-  Plus, 
-  Edit, 
   Trash2, 
   ToggleLeft, 
   ToggleRight,
@@ -25,7 +23,6 @@ const VendorManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [showCreateForm, setShowCreateForm] = useState(false);
   const [actionLoading, setActionLoading] = useState({});
   const [vendorLocations, setVendorLocations] = useState({});
 
@@ -124,8 +121,8 @@ const VendorManagement = () => {
 
   const filteredVendors = vendors.filter(vendor => {
     const matchesSearch = !searchTerm || 
-      vendor.userId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vendor.userId?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      vendor.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      vendor.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vendor.businessName?.toLowerCase().includes(searchTerm.toLowerCase());
     
     return matchesSearch;
@@ -147,14 +144,6 @@ const VendorManagement = () => {
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Vendor Management</h2>
           <p className="text-sm sm:text-base text-gray-600">Manage photographers and vendors</p>
         </div>
-        <Button 
-          onClick={() => setShowCreateForm(true)}
-          className="bg-primary-600 hover:bg-primary-700 w-full sm:w-auto text-xs sm:text-sm"
-          size="sm"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Vendor
-        </Button>
       </div>
 
       {/* Search */}
@@ -181,24 +170,24 @@ const VendorManagement = () => {
                   <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary-600" />
                 </div>
                 <div className="ml-2 sm:ml-3 min-w-0">
-                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{vendor.userId?.name || 'N/A'}</h3>
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{vendor.name || 'N/A'}</h3>
                   <p className="text-xs sm:text-sm text-gray-600 truncate">{vendor.businessName}</p>
                 </div>
               </div>
               <div className="flex-shrink-0 ml-2">
-                {getStatusBadge(vendor.userId?.isActive)}
+                {getStatusBadge(vendor.isActive)}
               </div>
             </div>
 
             <div className="space-y-2 mb-4">
               <div className="flex items-center text-xs sm:text-sm text-gray-600 min-w-0">
                 <Mail className="w-3 h-3 sm:w-4 sm:h-4 mr-2 flex-shrink-0" />
-                <span className="truncate">{vendor.userId?.email || 'N/A'}</span>
+                <span className="truncate">{vendor.email || 'N/A'}</span>
               </div>
-              {vendor.userId?.phone && (
+              {vendor.phone && (
                 <div className="flex items-center text-xs sm:text-sm text-gray-600 min-w-0">
                   <Phone className="w-3 h-3 sm:w-4 sm:h-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">{vendor.userId.phone}</span>
+                  <span className="truncate">{vendor.phone}</span>
                 </div>
               )}
               {vendor.location && (
@@ -251,19 +240,19 @@ const VendorManagement = () => {
                   size="sm"
                   disabled={actionLoading[vendor._id]}
                   className={`text-xs flex-1 sm:flex-none ${
-                    vendor.userId?.isActive 
+                    vendor.isActive 
                       ? 'text-red-600 hover:text-red-900 border-red-200 hover:border-red-300' 
                       : 'text-green-600 hover:text-green-900 border-green-200 hover:border-green-300'
                   }`}
-                  title={vendor.userId?.isActive ? 'Deactivate Vendor' : 'Activate Vendor'}
+                  title={vendor.isActive ? 'Deactivate Vendor' : 'Activate Vendor'}
                 >
                   {actionLoading[vendor._id] ? (
                     <div className="w-3 h-3 sm:w-4 sm:h-4 mr-1 animate-spin rounded-full border-2 border-current border-t-transparent" />
                   ) : (
-                    vendor.userId?.isActive ? <ToggleRight className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> : <ToggleLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                    vendor.isActive ? <ToggleRight className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> : <ToggleLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                   )}
-                  <span className="hidden sm:inline">{actionLoading[vendor._id] ? 'Processing...' : (vendor.userId?.isActive ? 'Deactivate' : 'Activate')}</span>
-                  <span className="sm:hidden">{actionLoading[vendor._id] ? '...' : (vendor.userId?.isActive ? 'Off' : 'On')}</span>
+                  <span className="hidden sm:inline">{actionLoading[vendor._id] ? 'Processing...' : (vendor.isActive ? 'Deactivate' : 'Activate')}</span>
+                  <span className="sm:hidden">{actionLoading[vendor._id] ? '...' : (vendor.isActive ? 'Off' : 'On')}</span>
                 </Button>
                 <Button
                   onClick={() => handleDeleteVendor(vendor._id)}
@@ -311,7 +300,7 @@ const VendorManagement = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs sm:text-sm font-medium text-gray-700">Name</label>
-                    <p className="text-xs sm:text-sm text-gray-900 break-words">{selectedVendor.userId?.name || 'N/A'}</p>
+                    <p className="text-xs sm:text-sm text-gray-900 break-words">{selectedVendor.name || 'N/A'}</p>
                   </div>
                   <div>
                     <label className="text-xs sm:text-sm font-medium text-gray-700">Business Name</label>
@@ -319,11 +308,11 @@ const VendorManagement = () => {
                   </div>
                   <div>
                     <label className="text-xs sm:text-sm font-medium text-gray-700">Email</label>
-                    <p className="text-xs sm:text-sm text-gray-900 break-all">{selectedVendor.userId?.email || 'N/A'}</p>
+                    <p className="text-xs sm:text-sm text-gray-900 break-all">{selectedVendor.email || 'N/A'}</p>
                   </div>
                   <div>
                     <label className="text-xs sm:text-sm font-medium text-gray-700">Phone</label>
-                    <p className="text-xs sm:text-sm text-gray-900">{selectedVendor.userId?.phone || 'N/A'}</p>
+                    <p className="text-xs sm:text-sm text-gray-900">{selectedVendor.phone || 'N/A'}</p>
                   </div>
                   <div>
                     <label className="text-xs sm:text-sm font-medium text-gray-700">Location</label>
@@ -331,7 +320,7 @@ const VendorManagement = () => {
                   </div>
                   <div>
                     <label className="text-xs sm:text-sm font-medium text-gray-700">Status</label>
-                    <div className="mt-1">{getStatusBadge(selectedVendor.userId?.isActive)}</div>
+                    <div className="mt-1">{getStatusBadge(selectedVendor.isActive)}</div>
                   </div>
                 </div>
               </div>
@@ -400,7 +389,7 @@ const VendorManagement = () => {
                     <VendorLocationMap
                       latitude={location.latitude}
                       longitude={location.longitude}
-                      vendorName={selectedVendor.userId?.name || selectedVendor.businessName}
+                      vendorName={selectedVendor.name || selectedVendor.businessName}
                       address={location.address}
                       lastUpdated={location.lastUpdated}
                     />

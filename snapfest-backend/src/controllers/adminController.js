@@ -412,14 +412,20 @@ export const getAllVendors = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
+  
+  // Build query - filter by isActive if provided
+  const query = { role: 'vendor' };
+  if (req.query.isActive !== undefined) {
+    query.isActive = req.query.isActive === 'true';
+  }
 
-  const vendors = await User.find({ role: 'vendor' })
+  const vendors = await User.find(query)
     .select('name email phone isActive profileImage lastLogin businessName businessType servicesOffered experience availability location currentLocation')
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
 
-  const total = await User.countDocuments({ role: 'vendor' });
+  const total = await User.countDocuments(query);
 
   res.status(200).json({
     success: true,
@@ -638,6 +644,14 @@ export const assignVendorToBooking = asyncHandler(async (req, res) => {
     return res.status(404).json({
       success: false,
       message: 'Vendor not found'
+    });
+  }
+
+  // Prevent assigning inactive vendors
+  if (!vendor.isActive) {
+    return res.status(400).json({
+      success: false,
+      message: 'Cannot assign inactive vendor to booking. Please activate the vendor first.'
     });
   }
 

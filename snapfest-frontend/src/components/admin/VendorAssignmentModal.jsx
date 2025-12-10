@@ -24,6 +24,7 @@ const VendorAssignmentModal = ({ isOpen, onClose, booking, onAssignmentSuccess, 
       const params = {
         page: 1,
         limit: 100, // Fetch enough vendors
+        isActive: 'true', // Only fetch active vendors for assignment
         ...(searchQuery && { q: searchQuery }),
         ...(selectedService && { service: selectedService }),
       };
@@ -208,7 +209,7 @@ const VendorAssignmentModal = ({ isOpen, onClose, booking, onAssignmentSuccess, 
                     </div>
                     <Button
                       onClick={() => handleAssignVendor(vendor._id)}
-                      disabled={assigning || vendor.availability !== 'AVAILABLE'}
+                      disabled={assigning || vendor.availability !== 'AVAILABLE' || !vendor.isActive}
                       className="w-full sm:w-auto bg-primary-600 hover:bg-primary-700"
                     >
                       {assigning ? (isEditMode ? 'Changing...' : 'Assigning...') : (isEditMode ? 'Change Vendor' : 'Assign Vendor')}

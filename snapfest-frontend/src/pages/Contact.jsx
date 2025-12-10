@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MapPin, Phone, Mail, Clock, Send, MessageCircle, Users, Award, Sparkles } from 'lucide-react';
 import { Card, Button, Input } from '../components/ui';
 import { GlassCard, ScrollReveal } from '../components/enhanced';
+import CompanyLocationMap from '../components/CompanyLocationMap';
 import toast from 'react-hot-toast';
 import { useAuth } from '@clerk/clerk-react';
 import { userAPI } from '../services/api';
@@ -455,19 +456,13 @@ const Contact = () => {
                   </h2>
                 </div>
                 
-                {/* Map Placeholder */}
-                <Card className="p-0 mb-8 overflow-hidden shadow-xl border-0 rounded-2xl">
-                <div className="relative h-80 bg-gradient-to-br from-pink-100 to-red-100 flex items-center justify-center">
-                  <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: `url('/heroImages/WhatsApp Image 2025-11-28 at 10.55.36.jpeg')` }}></div>
-                  <div className="text-center relative z-10">
-                    <div className="bg-white/90 backdrop-blur-sm rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-xl">
-                      <MapPin className="w-10 h-10 text-pink-600" />
-                    </div>
-                    <p className="text-pink-800 font-bold text-lg mb-2">Interactive Map</p>
-                    <p className="text-sm text-pink-700 font-medium">Vikas Nagar, Lucknow</p>
-                  </div>
+                {/* Map with Company Address */}
+                <div className="mb-8">
+                  <CompanyLocationMap 
+                    showAddressCard={true}
+                    height="320px"
+                  />
                 </div>
-              </Card>
 
               {/* Quick Contact */}
               <Card className="p-6 shadow-xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl">
