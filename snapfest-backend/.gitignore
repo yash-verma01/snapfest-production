@@ -38,3 +38,9 @@ Thumbs.db
 dist/
 build/
 
+# Google Cloud Service Account Keys (Sensitive)
+*.json
+!package.json
+!package-lock.json
+snap-map-*.json
+
