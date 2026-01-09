@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { SignedIn, SignedOut, RedirectToSignIn, useUser, useAuth } from '@clerk/clerk-react';
+import { useUser, useAuth } from '@clerk/clerk-react';
 import { SignIn, SignUp } from '@clerk/clerk-react';
 import { vendorAPI } from './services/api';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -12,7 +12,6 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
 // Pages
-import Home from './pages/Home';
 import Packages from './pages/Packages';
 import PackageDetail from './pages/PackageDetail';
 import Events from './pages/Events';
@@ -29,14 +28,14 @@ import VendorSettings from './pages/VendorSettings';
 import VendorProfileNew from './pages/VendorProfileNew';
 import NotFound from './pages/NotFound';
 
-// Protected Route Component
+// Protected Route
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Component to handle root redirect for vendors
+// Root redirect for vendors
 function VendorRootRedirect() {
   const { user, isLoaded } = useUser();
   const { isSignedIn } = useAuth();
-  
+
   if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -47,40 +46,34 @@ function VendorRootRedirect() {
       </div>
     );
   }
-  
-  // If signed in and on vendor port (3001), redirect to vendor dashboard
-  // Even if role isn't set yet, being on port 3001 means they're a vendor
+
   if (isSignedIn) {
-    // Wait a moment for sync to complete and role to be set
     const role = user?.publicMetadata?.role;
     if (role === 'vendor' || window.location.port === '3001') {
       return <Navigate to="/vendor/dashboard" replace />;
     }
   }
-  
+
   return <Navigate to="/sign-in" replace />;
 }
 
 function VendorApp() {
-  // Sync Clerk vendor to backend on sign-in
   const { isSignedIn } = useAuth();
-  
+
+  // Sync vendor with backend
   useEffect(() => {
-    const sync = async () => {
-      if (!isSignedIn) return;
-      
+    if (!isSignedIn) return;
+
+    const syncVendor = async () => {
       try {
         await vendorAPI.sync();
-        console.log('✅ Vendor synced with backend via cookie session');
+        console.log('✅ Vendor synced with backend');
       } catch (e) {
-        console.warn('⚠️ Vendor sync failed (non-blocking):', e.message);
+        console.warn('⚠️ Vendor sync failed:', e.message);
       }
     };
-    
-    const timeoutId = setTimeout(() => {
-      sync();
-    }, 500);
-    
+
+    const timeoutId = setTimeout(syncVendor, 500);
     return () => clearTimeout(timeoutId);
   }, [isSignedIn]);
 
@@ -90,89 +83,94 @@ function VendorApp() {
         <PortGuard>
           <div className="min-h-screen bg-gray-50">
             <Navbar />
-            
+
             <main className="min-h-screen">
-            <Routes>
-            {/* Root redirect for vendors */}
-            <Route path="/" element={<VendorRootRedirect />} />
-            
-            {/* Clerk auth routes */}
-            <Route path="/sign-in/*" element={<SignIn />} />
-            <Route path="/sign-up/*" element={<SignUp />} />
-            
-            {/* Public routes */}
-            <Route path="/packages" element={<Packages />} />
-            <Route path="/packages/:id" element={<PackageDetail />} />
-            <Route path="/events" element={<Events />} />
-            <Route path="/events/:id" element={<EventDetail />} />
-            <Route path="/gallery" element={<Gallery />} />
-            <Route path="/venues" element={<Venues />} />
-            <Route path="/venues/:id" element={<VenueDetail />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            
-            {/* Protected Routes - Vendor Only */}
-            <Route path="/vendor/dashboard" element={
-              <ProtectedRoute allowedRoles={['vendor']}>
-                <VendorDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/vendor/profile" element={
-              <ProtectedRoute allowedRoles={['vendor']}>
-                <VendorProfileNew />
-              </ProtectedRoute>
-            } />
-            <Route path="/vendor/bookings" element={
-              <ProtectedRoute allowedRoles={['vendor']}>
-                <VendorBookings />
-              </ProtectedRoute>
-            } />
-            <Route path="/vendor/earnings" element={
-              <ProtectedRoute allowedRoles={['vendor']}>
-                <VendorEarnings />
-              </ProtectedRoute>
-            } />
-            <Route path="/vendor/settings" element={
-              <ProtectedRoute allowedRoles={['vendor']}>
-                <VendorSettings />
-              </ProtectedRoute>
-            } />
-            
-            {/* 404 Route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </main>
-        
-        <Footer />
-        </div>
+              <Routes>
+                {/* Root */}
+                <Route path="/" element={<VendorRootRedirect />} />
+
+                {/* Auth */}
+                <Route path="/sign-in/*" element={<SignIn />} />
+                <Route path="/sign-up/*" element={<SignUp />} />
+
+                {/* Public */}
+                <Route path="/packages" element={<Packages />} />
+                <Route path="/packages/:id" element={<PackageDetail />} />
+                <Route path="/events" element={<Events />} />
+                <Route path="/events/:id" element={<EventDetail />} />
+                <Route path="/gallery" element={<Gallery />} />
+                <Route path="/venues" element={<Venues />} />
+                <Route path="/venues/:id" element={<VenueDetail />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+
+                {/* Vendor Protected */}
+                <Route
+                  path="/vendor/dashboard"
+                  element={
+                    <ProtectedRoute allowedRoles={['vendor']}>
+                      <VendorDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/vendor/profile"
+                  element={
+                    <ProtectedRoute allowedRoles={['vendor']}>
+                      <VendorProfileNew />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/vendor/bookings"
+                  element={
+                    <ProtectedRoute allowedRoles={['vendor']}>
+                      <VendorBookings />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/vendor/earnings"
+                  element={
+                    <ProtectedRoute allowedRoles={['vendor']}>
+                      <VendorEarnings />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/vendor/settings"
+                  element={
+                    <ProtectedRoute allowedRoles={['vendor']}>
+                      <VendorSettings />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* 404 */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+
+            <Footer />
+
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: '#363636',
+                  color: '#fff',
+                },
+                success: {
+                  duration: 3000,
+                },
+                error: {
+                  duration: 5000,
+                },
+              }}
+            />
+          </div>
         </PortGuard>
-        
-        {/* Toast Notifications */}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-            success: {
-              duration: 3000,
-              iconTheme: {
-                primary: '#10B981',
-                secondary: '#fff',
-              },
-            },
-            error: {
-              duration: 5000,
-              iconTheme: {
-                primary: '#EF4444',
-                secondary: '#fff',
-              },
-            },
-          }}
-        />
-      </div>
       </Router>
     </ErrorBoundary>
   );
