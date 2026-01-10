@@ -11,23 +11,12 @@ const getClerkClient = () => createClerkClient({
 
 export const initializeSocket = (httpServer) => {
   // Configure allowed origins for WebSocket connections
+  // All origins are configured via environment variables for flexibility
   const allowedOrigins = [
-    // Development
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:3002',
-    // Azure Static Web Apps (update with your actual URLs)
-    'https://snapfest-user.azurestaticapps.net',
-    'https://snapfest-vendor.azurestaticapps.net',
-    'https://snapfest-admin.azurestaticapps.net',
-    // Vercel
-    'https://snapfest-frontend.vercel.app',
-    'https://snapfest.vercel.app',
-    // Environment variables
+    // Primary frontend URL (set in .env)
     process.env.FRONTEND_URL,
-    process.env.FRONTEND_URL_VENDOR,
-    process.env.FRONTEND_URL_ADMIN
+    // Additional allowed origins (comma-separated in .env)
+    ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : [])
   ].filter(Boolean);
 
   io = new Server(httpServer, {
