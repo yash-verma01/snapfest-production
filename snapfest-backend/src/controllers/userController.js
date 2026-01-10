@@ -428,7 +428,7 @@ export const getUserDashboard = asyncHandler(async (req, res) => {
   // Get recent bookings
   const recentBookings = await Booking.find({ userId })
     .populate('packageId', 'title category basePrice')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .limit(5);
 
   // Get total spent
@@ -469,7 +469,7 @@ export const getAllUsers = asyncHandler(async (req, res) => {
     .select('-password')
     .skip(skip)
     .limit(limit)
-    .sort({ createdAt: -1 });
+    .sort({ _id: -1 });
 
   const total = await User.countDocuments();
 
@@ -637,7 +637,7 @@ export const searchUsers = asyncHandler(async (req, res) => {
     .select('-password')
     .skip(skip)
     .limit(limit)
-    .sort({ createdAt: -1 });
+    .sort({ _id: -1 });
 
   const total = await User.countDocuments(query);
 
@@ -671,7 +671,7 @@ export const getAdminUserStats = asyncHandler(async (req, res) => {
 
   const recentUsers = await User.find()
     .select('-password')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .limit(5);
 
   res.status(200).json({
@@ -796,7 +796,7 @@ export const getUserPayments = asyncHandler(async (req, res) => {
     // Get all bookings for this user with package details
     const userBookings = await Booking.find({ userId })
       .populate('packageId', 'title category basePrice images primaryImage')
-      .sort({ createdAt: -1 });
+      .sort({ _id: -1 });
 
     console.log('👤 User Controller: Found user bookings:', userBookings.length);
 
@@ -809,7 +809,7 @@ export const getUserPayments = asyncHandler(async (req, res) => {
     }
 
     const allPayments = await Payment.find(paymentQuery)
-      .sort({ createdAt: -1 });
+      .sort({ _id: -1 });
 
     console.log('👤 User Controller: Found payments:', allPayments.length);
 
@@ -922,7 +922,7 @@ export const getUserReviews = asyncHandler(async (req, res) => {
 
   const reviews = await Review.find({ userId })
     .populate('bookingId', 'packageId eventDate')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
@@ -1118,7 +1118,7 @@ export const getUserNotifications = asyncHandler(async (req, res) => {
     targetId: userId,
     action: { $in: ['BOOKING_CREATED', 'BOOKING_UPDATED', 'PAYMENT_RECEIVED', 'BOOKING_ASSIGNED'] }
   })
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
@@ -1155,7 +1155,7 @@ export const getUserActivity = asyncHandler(async (req, res) => {
       { targetId: userId }
     ]
   })
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
@@ -1298,7 +1298,7 @@ export const getSearchHistory = asyncHandler(async (req, res) => {
     actorId: userId,
     action: 'SEARCH'
   })
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
@@ -1453,7 +1453,7 @@ export const getBookingDetails = asyncHandler(async (req, res) => {
 
   // Get all payments for this booking
   const payments = await Payment.find({ bookingId: booking._id })
-    .sort({ createdAt: -1 });
+    .sort({ _id: -1 });
 
   const remainingAmount = booking.totalAmount - booking.amountPaid;
 
@@ -1578,7 +1578,7 @@ export const getUserTestimonials = asyncHandler(async (req, res) => {
   const testimonials = await Review.find({ 
     userId: req.userId, 
     type: 'TESTIMONIAL' 
-  }).sort({ createdAt: -1 });
+  }).sort({ _id: -1 });
 
   res.status(200).json({
     success: true,

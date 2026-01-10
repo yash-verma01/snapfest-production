@@ -144,7 +144,7 @@ export const getAllEnquiries = asyncHandler(async (req, res) => {
     .populate('userId', 'name email')
     .populate('respondedBy', 'name email')
     .populate('relatedId') // Populate venue/package/event info
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
   

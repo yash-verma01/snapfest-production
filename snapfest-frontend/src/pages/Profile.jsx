@@ -302,7 +302,7 @@ const Profile = () => {
           <User className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Please Login</h2>
           <p className="text-gray-600 mb-4">You need to be logged in to view your profile.</p>
-          <Button onClick={() => window.location.href = '/sign-in'}>
+          <Button onClick={() => window.location.href = '/login'}>
             Go to Login
           </Button>
         </GlassCard>

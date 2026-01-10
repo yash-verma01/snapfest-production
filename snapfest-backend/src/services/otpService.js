@@ -68,7 +68,7 @@ class OTPService {
       bookingId,
       isUsed: false,
       expiresAt: { $gt: new Date() }
-    }).sort({ createdAt: -1 });
+    }).sort({ _id: -1 });
   }
 
   // Clean expired OTPs

@@ -36,7 +36,7 @@ export const getCart = asyncHandler(async (req, res) => {
         path: 'beatBloomId',
         select: 'title category price description images primaryImage'
       })
-      .sort({ createdAt: -1 });
+      .sort({ _id: -1 });
     
     console.log('🛒 Cart Controller: Found cart items:', cartItems.length);
 

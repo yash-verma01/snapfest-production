@@ -36,7 +36,7 @@ export const getUserBookings = asyncHandler(async (req, res) => {
     .populate('assignedVendorId', 'name email phone')
     .skip(skip)
     .limit(limit)
-    .sort({ createdAt: -1 });
+    .sort({ _id: -1 });
 
   const total = await Booking.countDocuments(query);
 

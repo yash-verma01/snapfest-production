@@ -37,8 +37,9 @@ export const getAllPackages = asyncHandler(async (req, res) => {
     ];
   }
 
-  // Sort options
-  let sort = { createdAt: -1 };
+  // Sort options - using _id for default (always indexed in Cosmos DB, and time-sortable)
+  let sort = { _id: -1 };
+  if (req.query.sortBy === 'createdAt') sort = { _id: -1 }; // _id is time-sortable
   if (req.query.sortBy === 'price_asc') sort = { basePrice: 1 };
   if (req.query.sortBy === 'price_desc') sort = { basePrice: -1 };
   if (req.query.sortBy === 'rating') sort = { rating: -1 };
@@ -175,7 +176,7 @@ export const getFeaturedPackages = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 6;
 
   const packages = await Package.find({ isFeatured: true })
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .limit(limit);
 
   res.status(200).json({
@@ -196,7 +197,7 @@ export const getPackagesByCategory = asyncHandler(async (req, res) => {
   const packages = await Package.find({ category })
     .skip(skip)
     .limit(limit)
-    .sort({ createdAt: -1 });
+    .sort({ _id: -1 });
 
   const total = await Package.countDocuments({ category });
 

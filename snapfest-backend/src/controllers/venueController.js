@@ -22,7 +22,7 @@ export const getAllVenues = asyncHandler(async (req, res) => {
   }
 
   const [items, total] = await Promise.all([
-    Venue.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Venue.find(query).sort({ _id: -1 }).skip(skip).limit(limit),
     Venue.countDocuments(query)
   ]);
 
@@ -383,7 +383,7 @@ export const searchVenues = asyncHandler(async (req, res) => {
   const venues = await Venue.find(query)
     .skip(skip)
     .limit(limit)
-    .sort({ createdAt: -1 });
+    .sort({ _id: -1 });
 
   const total = await Venue.countDocuments(query);
 

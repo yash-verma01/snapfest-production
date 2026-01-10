@@ -207,10 +207,12 @@ app.use((req, res, next) => {
     // }
     
     // Allow specific production domains
+    // All origins are configured via environment variables for flexibility
     const allowedOrigins = [
-      'https://snapfest-frontend.vercel.app',
-      'https://snapfest.vercel.app',
-      process.env.FRONTEND_URL // Allow from environment variable
+      // Primary frontend URL (set in .env)
+      process.env.FRONTEND_URL,
+      // Additional allowed origins (comma-separated in .env)
+      ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : [])
     ].filter(Boolean); // Remove undefined values
     
     if (allowedOrigins.includes(origin)) {
@@ -278,10 +280,9 @@ app.use('/PUBLIC', (req, res, next) => {
         allowedOrigin = isDevelopment ? '*' : null;
       }
     }
-    // Allow specific production domains
-    else if (origin === 'https://snapfest-frontend.vercel.app' || 
-             origin === 'https://snapfest.vercel.app' ||
-             origin === process.env.FRONTEND_URL) {
+    // Allow specific production domains (configured via environment variables)
+    else if (origin === process.env.FRONTEND_URL ||
+             (process.env.ALLOWED_ORIGINS && process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).includes(origin))) {
       allowedOrigin = origin;
     }
     // For other origins in production, be more restrictive
@@ -335,10 +336,9 @@ app.use('/PUBLIC', express.static('PUBLIC', {
           allowedOrigin = isDevelopment ? '*' : null;
         }
       }
-      // Allow specific production domains
-      else if (origin === 'https://snapfest-frontend.vercel.app' || 
-               origin === 'https://snapfest.vercel.app' ||
-               origin === process.env.FRONTEND_URL) {
+      // Allow specific production domains (configured via environment variables)
+      else if (origin === process.env.FRONTEND_URL ||
+               (process.env.ALLOWED_ORIGINS && process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).includes(origin))) {
         allowedOrigin = origin; // Specific origin for production
       }
       // For other origins, be restrictive

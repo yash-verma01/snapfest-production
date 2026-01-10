@@ -172,7 +172,6 @@ function VendorApp() {
             },
           }}
         />
-      </div>
       </Router>
     </ErrorBoundary>
   );
