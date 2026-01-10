@@ -7,7 +7,7 @@ export const getAllPackages = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 12;
   const skip = (page - 1) * limit;
-  const { category, minPrice, maxPrice, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+  const { category, minPrice, maxPrice, sortBy = '_id', sortOrder = 'desc' } = req.query;
 
   // Build query
   let query = { isActive: { $ne: false } };
@@ -20,11 +20,12 @@ export const getAllPackages = asyncHandler(async (req, res) => {
   }
 
   // Build sort object - map frontend sortBy values to actual database fields
+  // Using _id for default sorting (always indexed in Cosmos DB, and time-sortable)
   const sort = {};
   if (sortBy === 'popularity') {
     // Popularity is calculated from bookingCount, which isn't in the model
-    // Sort by createdAt (newest first) as a proxy for popularity
-    sort.createdAt = sortOrder === 'desc' ? -1 : 1;
+    // Sort by _id (newest first) as a proxy for popularity (_id is time-sortable)
+    sort._id = sortOrder === 'desc' ? -1 : 1;
   } else if (sortBy === 'price_asc') {
     sort.basePrice = 1;
   } else if (sortBy === 'price_desc') {
@@ -32,8 +33,8 @@ export const getAllPackages = asyncHandler(async (req, res) => {
   } else if (sortBy === 'rating') {
     sort.rating = sortOrder === 'desc' ? -1 : 1;
   } else {
-    // Default to createdAt (newest first) for any other sortBy value
-    sort.createdAt = sortOrder === 'desc' ? -1 : 1;
+    // Default to _id (newest first) for any other sortBy value (_id is always indexed)
+    sort._id = sortOrder === 'desc' ? -1 : 1;
   }
 
   const packages = await Package.find(query)
@@ -140,7 +141,7 @@ export const getPackageById = asyncHandler(async (req, res) => {
         'user.name': 1
       }
     },
-    { $sort: { createdAt: -1 } },
+    { $sort: { _id: -1 } },
     { $limit: 10 }
   ]);
 
@@ -209,11 +210,11 @@ export const getFeaturedPackages = asyncHandler(async (req, res) => {
         }
       },
       {
-        $sort: [
-          { hasBookings: -1 }, // Packages with bookings first
-          { bookingCount: -1 }, // Then by booking count
-          { createdAt: -1 } // Then by creation date
-        ]
+        $sort: {
+          hasBookings: -1, // Packages with bookings first
+          bookingCount: -1, // Then by booking count
+          _id: -1 // Then by creation date (_id is time-sortable)
+        }
       },
       { $limit: limit }
     ]);
@@ -227,7 +228,7 @@ export const getFeaturedPackages = asyncHandler(async (req, res) => {
         isActive: true,
         _id: { $nin: allPackages.map(pkg => pkg._id) }
       })
-      .sort({ createdAt: -1 })
+      .sort({ _id: -1 })
       .limit(limit - allPackages.length);
       
       console.log('📦 Additional packages found:', additionalPackages.length);
@@ -273,7 +274,7 @@ export const getPackagesByCategory = asyncHandler(async (req, res) => {
     category, 
     isActive: true 
   })
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
@@ -324,7 +325,7 @@ export const searchPackages = asyncHandler(async (req, res) => {
   }
 
   const packages = await Package.find(query)
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
@@ -647,7 +648,7 @@ export const getAllBeatBlooms = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 12;
   const skip = (page - 1) * limit;
-  const { category, minPrice, maxPrice, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+  const { category, minPrice, maxPrice, sortBy = '_id', sortOrder = 'desc' } = req.query;
 
   // Build query
   let query = { isActive: { $ne: false } };
@@ -658,9 +659,10 @@ export const getAllBeatBlooms = asyncHandler(async (req, res) => {
     if (maxPrice) query.price.$lte = parseInt(maxPrice);
   }
 
-  // Build sort object
+  // Build sort object - map createdAt to _id for Cosmos DB compatibility
   const sort = {};
-  sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+  const actualSortBy = sortBy === 'createdAt' ? '_id' : sortBy;
+  sort[actualSortBy] = sortOrder === 'desc' ? -1 : 1;
 
   const beatBlooms = await BeatBloom.find(query)
     .sort(sort)
@@ -708,7 +710,7 @@ export const getBeatBloomsByCategory = asyncHandler(async (req, res) => {
     category, 
     isActive: true 
   })
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
@@ -768,7 +770,7 @@ export const searchAll = asyncHandler(async (req, res) => {
       ]
     })
       .limit(limit)
-      .sort({ createdAt: -1 });
+      .sort({ _id: -1 });
     
     results.packages = packages;
   }
@@ -798,7 +800,7 @@ export const searchAll = asyncHandler(async (req, res) => {
       ]
     })
       .limit(limit)
-      .sort({ createdAt: -1 });
+      .sort({ _id: -1 });
     
     results.beatBlooms = beatBlooms;
   }
@@ -832,7 +834,7 @@ export const getApprovedTestimonials = asyncHandler(async (req, res) => {
     isApproved: true
   })
     .populate('userId', 'name')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .limit(parseInt(limit));
 
   res.status(200).json({
@@ -858,7 +860,7 @@ export const getAllReviews = asyncHandler(async (req, res) => {
     type: 'BOOKING_REVIEW'  // Only show reviews, not testimonials
   })
     .populate('userId', 'name email')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(parseInt(limit));
 

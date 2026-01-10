@@ -17,7 +17,7 @@ export const getAllEvents = asyncHandler(async (req, res) => {
   }
 
   const [items, total] = await Promise.all([
-    Event.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Event.find(query).sort({ _id: -1 }).skip(skip).limit(limit),
     Event.countDocuments(query)
   ]);
 
@@ -45,7 +45,7 @@ export const getEventById = asyncHandler(async (req, res) => {
 export const getRecentEvents = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 6;
   const items = await Event.find({ isActive: { $ne: false } })
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .limit(limit);
   
   res.status(200).json({
@@ -66,7 +66,7 @@ export const getEventsByCategory = asyncHandler(async (req, res) => {
   };
 
   const [items, total] = await Promise.all([
-    Event.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Event.find(query).sort({ _id: -1 }).skip(skip).limit(limit),
     Event.countDocuments(query)
   ]);
 
@@ -106,7 +106,7 @@ export const searchEvents = asyncHandler(async (req, res) => {
   };
 
   const [items, total] = await Promise.all([
-    Event.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Event.find(query).sort({ _id: -1 }).skip(skip).limit(limit),
     Event.countDocuments(query)
   ]);
 

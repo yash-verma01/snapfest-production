@@ -105,8 +105,9 @@ function UserApp() {
               <main className="min-h-screen">
               <Suspense fallback={<LoadingSpinner />}>
                 <Routes>
-                  {/* Root redirect for users */}
-                  <Route path="/" element={<UserRootRedirect />} />
+                  {/* Public Home page */}
+                  <Route path="/" element={<Home />} />
+                  <Route path="/home" element={<Home />} />
                   <Route path="/packages" element={<Packages />} />
                   <Route path="/packages/:id" element={<PackageDetail />} />
                   <Route path="/beatbloom" element={<BeatBloom />} />
@@ -122,8 +123,16 @@ function UserApp() {
                   <Route path="/venues/:id" element={<VenueDetail />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
+                  
+                  {/* Auth routes - handle both /login and /sign-in */}
                   <Route path="/login" element={<Login />} />
+                  <Route path="/login/*" element={<Login />} />
+                  <Route path="/sign-in" element={<Login />} />
+                  <Route path="/sign-in/*" element={<Login />} />
                   <Route path="/register" element={<Register />} />
+                  <Route path="/register/*" element={<Register />} />
+                  <Route path="/sign-up" element={<Register />} />
+                  <Route path="/sign-up/*" element={<Register />} />
                   
                   {/* Protected Routes - User Only */}
                   <Route path="/user/profile" element={

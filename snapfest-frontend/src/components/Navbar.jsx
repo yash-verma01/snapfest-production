@@ -472,13 +472,13 @@ const Navbar = memo(() => {
             ) : (
               <div className="flex items-center space-x-3">
                 <Link
-                  to="/sign-in"
+                  to="/login"
                   className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300"
                 >
                   Login
                 </Link>
                 <Link
-                  to="/sign-up"
+                  to="/register"
                   className="px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
                 >
                   Register
@@ -684,7 +684,7 @@ const Navbar = memo(() => {
                 <>
                   <div className="border-t border-primary-100 my-2"></div>
                   <Link
-                    to="/sign-in"
+                    to="/login"
                     className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
                     onClick={closeMenu}
                   >
@@ -692,7 +692,7 @@ const Navbar = memo(() => {
                     Login
                   </Link>
                   <Link
-                    to="/sign-up"
+                    to="/register"
                     className="flex items-center px-4 py-3 text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 transition-all duration-300 rounded-xl font-semibold"
                     onClick={closeMenu}
                   >

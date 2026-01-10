@@ -36,7 +36,7 @@ export const getUserPayments = asyncHandler(async (req, res) => {
     .populate('bookingId.beatBloomId', 'title category price')
     .skip(skip)
     .limit(limit)
-    .sort({ createdAt: -1 });
+    .sort({ _id: -1 });
 
   const total = await Payment.countDocuments(query);
 

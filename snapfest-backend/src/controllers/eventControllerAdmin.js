@@ -22,7 +22,7 @@ export const getAllEventsAdmin = asyncHandler(async (req, res) => {
   if (isFeatured !== undefined) query.isFeatured = isFeatured === 'true';
 
   const [items, total] = await Promise.all([
-    Event.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Event.find(query).sort({ _id: -1 }).skip(skip).limit(limit),
     Event.countDocuments(query)
   ]);
 
@@ -172,7 +172,7 @@ export const searchEventsAdmin = asyncHandler(async (req, res) => {
   };
 
   const [items, total] = await Promise.all([
-    Event.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Event.find(query).sort({ _id: -1 }).skip(skip).limit(limit),
     Event.countDocuments(query)
   ]);
 

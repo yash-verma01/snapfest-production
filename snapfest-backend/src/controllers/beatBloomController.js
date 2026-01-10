@@ -58,7 +58,7 @@ export const getBeatBloomsByCategory = asyncHandler(async (req, res) => {
     category, 
     isActive: true 
   })
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
@@ -387,7 +387,7 @@ export const searchBeatBlooms = asyncHandler(async (req, res) => {
   const beatBlooms = await BeatBloom.find(query)
     .skip(skip)
     .limit(limit)
-    .sort({ createdAt: -1 });
+    .sort({ _id: -1 });
 
   const total = await BeatBloom.countDocuments(query);
 

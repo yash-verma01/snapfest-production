@@ -79,7 +79,7 @@ const PackageDetail = () => {
   const handleAddToCart = async () => {
     if (!isSignedIn) {
       toast.error('Please login to add items to cart');
-      navigate('/sign-in');
+      navigate('/login');
       return;
     }
 
@@ -141,7 +141,7 @@ const PackageDetail = () => {
   const handleBookNow = async () => {
     if (!isSignedIn) {
       toast.error('Please login to book packages');
-      navigate('/sign-in');
+      navigate('/login');
       return;
     }
     
@@ -293,7 +293,7 @@ const PackageDetail = () => {
         toast.error(err.response?.data?.message || 'Invalid request. Please check your input.');
       } else if (err.response?.status === 401) {
         toast.error('Please login to book packages');
-        navigate('/sign-in');
+        navigate('/login');
       } else if (err.response?.status === 404) {
         toast.error('Package not found. Please try again.');
       } else if (err.response?.status === 500) {

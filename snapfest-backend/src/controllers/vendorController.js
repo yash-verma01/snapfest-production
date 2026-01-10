@@ -334,7 +334,7 @@ export const getVendorDashboard = asyncHandler(async (req, res) => {
   const recentBookings = await Booking.find({ assignedVendorId: vendor._id })
     .populate('userId', 'name email phone')
     .populate('packageId', 'title category')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .limit(5);
 
   // Get pending bookings
@@ -667,7 +667,7 @@ export const getVendorPerformance = asyncHandler(async (req, res) => {
       }
     },
     {
-      $sort: { createdAt: -1 }
+      $sort: { _id: -1 }
     },
     {
       $limit: 5
@@ -738,7 +738,7 @@ export const getVendorBookings = asyncHandler(async (req, res) => {
     .populate('userId', 'name email phone')
     .populate('packageId', 'title category basePrice')
     .populate('assignedVendorId', 'name email')
-    .sort({ assignedAt: -1, createdAt: -1 })
+    .sort({ assignedAt: -1, _id: -1 })
     .limit(limit);
 
   // If we have space, get other bookings
@@ -749,7 +749,7 @@ export const getVendorBookings = asyncHandler(async (req, res) => {
     otherBookings = await Booking.find(otherQuery)
       .populate('userId', 'name email phone')
       .populate('packageId', 'title category basePrice')
-      .sort({ createdAt: -1 })
+      .sort({ _id: -1 })
       .limit(remainingLimit);
   }
 
@@ -1134,7 +1134,7 @@ export const getPendingOTPs = asyncHandler(async (req, res) => {
   })
     .populate('userId', 'name phone')
     .populate('packageId', 'title')
-    .sort({ createdAt: -1 });
+    .sort({ _id: -1 });
 
   res.status(200).json({
     success: true,
@@ -1447,7 +1447,7 @@ export const getVendorNotifications = asyncHandler(async (req, res) => {
   }
 
   const notifications = await Notification.find(query)
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
@@ -1800,7 +1800,7 @@ export const getVendorPayments = asyncHandler(async (req, res) => {
 
   const payments = await Payment.find(filter)
     .populate('bookingId', 'eventName eventDate')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .limit(limit * 1)
     .skip((page - 1) * limit);
 
@@ -1934,7 +1934,7 @@ export const getAssignedBookings = asyncHandler(async (req, res) => {
   const bookings = await Booking.find({ assignedVendorId: vendorId })
     .populate('userId', 'name email phone')
     .populate('packageId', 'title category basePrice')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
