@@ -208,9 +208,17 @@ app.use((req, res, next) => {
     
     // Allow specific production domains
     const allowedOrigins = [
+      // Vercel deployments
       'https://snapfest-frontend.vercel.app',
       'https://snapfest.vercel.app',
-      process.env.FRONTEND_URL // Allow from environment variable
+      // Azure Static Web Apps (update these with your actual URLs)
+      'https://snapfest-user.azurestaticapps.net',
+      'https://snapfest-vendor.azurestaticapps.net',
+      'https://snapfest-admin.azurestaticapps.net',
+      // Environment variable for dynamic configuration
+      process.env.FRONTEND_URL,
+      process.env.FRONTEND_URL_VENDOR,
+      process.env.FRONTEND_URL_ADMIN
     ].filter(Boolean); // Remove undefined values
     
     if (allowedOrigins.includes(origin)) {
@@ -281,7 +289,12 @@ app.use('/PUBLIC', (req, res, next) => {
     // Allow specific production domains
     else if (origin === 'https://snapfest-frontend.vercel.app' || 
              origin === 'https://snapfest.vercel.app' ||
-             origin === process.env.FRONTEND_URL) {
+             origin === 'https://snapfest-user.azurestaticapps.net' ||
+             origin === 'https://snapfest-vendor.azurestaticapps.net' ||
+             origin === 'https://snapfest-admin.azurestaticapps.net' ||
+             origin === process.env.FRONTEND_URL ||
+             origin === process.env.FRONTEND_URL_VENDOR ||
+             origin === process.env.FRONTEND_URL_ADMIN) {
       allowedOrigin = origin;
     }
     // For other origins in production, be more restrictive
@@ -338,7 +351,12 @@ app.use('/PUBLIC', express.static('PUBLIC', {
       // Allow specific production domains
       else if (origin === 'https://snapfest-frontend.vercel.app' || 
                origin === 'https://snapfest.vercel.app' ||
-               origin === process.env.FRONTEND_URL) {
+               origin === 'https://snapfest-user.azurestaticapps.net' ||
+               origin === 'https://snapfest-vendor.azurestaticapps.net' ||
+               origin === 'https://snapfest-admin.azurestaticapps.net' ||
+               origin === process.env.FRONTEND_URL ||
+               origin === process.env.FRONTEND_URL_VENDOR ||
+               origin === process.env.FRONTEND_URL_ADMIN) {
         allowedOrigin = origin; // Specific origin for production
       }
       // For other origins, be restrictive
