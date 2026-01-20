@@ -2004,25 +2004,42 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
       try {
         const clerkClient = getClerkClient();
         
-        // Update Clerk metadata with the selected role
-        await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
-          publicMetadata: { 
-            ...publicMetadata,
-            role: targetRole 
+        // Update Clerk metadata with retry logic and verification
+        let retries = 3;
+        let success = false;
+        
+        while (retries > 0 && !success) {
+          try {
+            await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
+              publicMetadata: { 
+                ...publicMetadata,
+                role: targetRole 
+              }
+            });
+            
+            // Verify update was successful
+            const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
+            if (updatedUser.publicMetadata?.role === targetRole) {
+              success = true;
+              publicMetadata = updatedUser.publicMetadata;
+              console.log(`✅ syncClerkUser: Set ${targetRole} role in Clerk publicMetadata for new user:`, clerkAuth.userId);
+              if (process.env.NODE_ENV === 'development') {
+                console.log('   Updated publicMetadata:', publicMetadata);
+              }
+            } else {
+              throw new Error(`Metadata verification failed: expected ${targetRole}, got ${updatedUser.publicMetadata?.role || 'none'}`);
+            }
+          } catch (retryError) {
+            retries--;
+            if (retries === 0) {
+              throw retryError;
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries))); // Exponential backoff
           }
-        });
-        
-        // Refresh metadata after update to confirm it was saved
-        const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
-        publicMetadata = updatedUser.publicMetadata || { role: targetRole };
-        
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`✅ syncClerkUser: Set ${targetRole} role in Clerk publicMetadata for user:`, clerkAuth.userId);
-          console.log('   Updated publicMetadata:', publicMetadata);
         }
       } catch (updateError) {
         // Log the full error for debugging
-        console.error('❌ syncClerkUser: Failed to update Clerk metadata:', {
+        console.error('❌ syncClerkUser: Failed to update Clerk metadata after retries:', {
           error: updateError.message,
           stack: updateError.stack,
           userId: clerkAuth.userId,
@@ -2312,25 +2329,41 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
     if (targetRole && publicMetadata?.role !== targetRole) {
       try {
         const clerkClient = getClerkClient();
-        await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
-          publicMetadata: { 
-            ...publicMetadata,
-            role: targetRole 
+        
+        // Update with retry logic and verification
+        let retries = 3;
+        let success = false;
+        
+        while (retries > 0 && !success) {
+          try {
+            await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
+              publicMetadata: { 
+                ...publicMetadata,
+                role: targetRole 
+              }
+            });
+            
+            // Verify update was successful
+            const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
+            if (updatedUser.publicMetadata?.role === targetRole) {
+              success = true;
+              publicMetadata = updatedUser.publicMetadata;
+              console.log(`✅ syncClerkUser: Updated ${targetRole} role in Clerk publicMetadata for existing user:`, clerkAuth.userId);
+            } else {
+              throw new Error(`Metadata verification failed: expected ${targetRole}, got ${updatedUser.publicMetadata?.role || 'none'}`);
+            }
+          } catch (retryError) {
+            retries--;
+            if (retries === 0) throw retryError;
+            await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries))); // Exponential backoff
           }
-        });
-        
-        // Refresh metadata after update
-        const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
-        publicMetadata = updatedUser.publicMetadata || { role: targetRole };
-        
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`✅ syncClerkUser: Updated ${targetRole} role in Clerk publicMetadata for existing user:`, clerkAuth.userId);
         }
       } catch (updateError) {
-        console.error('❌ syncClerkUser: Failed to update Clerk metadata for existing user:', {
+        console.error('❌ syncClerkUser: Failed to update Clerk metadata for existing user after retries:', {
           error: updateError.message,
           userId: clerkAuth.userId,
-          targetRole: targetRole
+          targetRole: targetRole,
+          stack: updateError.stack
         });
       }
     }

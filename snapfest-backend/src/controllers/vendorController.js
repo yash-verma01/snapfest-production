@@ -2131,25 +2131,41 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
   if (publicMetadata?.role !== 'vendor') {
     try {
       const clerkClient = getClerkClient();
-      await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
-        publicMetadata: { 
-          ...publicMetadata,
-          role: 'vendor' 
+      
+      // Update with retry logic and verification
+      let retries = 3;
+      let success = false;
+      
+      while (retries > 0 && !success) {
+        try {
+          await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
+            publicMetadata: { 
+              ...publicMetadata,
+              role: 'vendor' 
+            }
+          });
+          
+          // Verify update was successful
+          const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
+          if (updatedUser.publicMetadata?.role === 'vendor') {
+            success = true;
+            publicMetadata = updatedUser.publicMetadata;
+            console.log('✅ syncClerkVendor: Set vendor role in Clerk publicMetadata for user:', clerkAuth.userId);
+          } else {
+            throw new Error(`Metadata verification failed: expected vendor, got ${updatedUser.publicMetadata?.role || 'none'}`);
+          }
+        } catch (retryError) {
+          retries--;
+          if (retries === 0) throw retryError;
+          await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries))); // Exponential backoff
         }
-      });
-      
-      // Refresh metadata after update
-      const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
-      publicMetadata = updatedUser.publicMetadata || { role: 'vendor' };
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ syncClerkVendor: Set vendor role in Clerk publicMetadata for user:', clerkAuth.userId);
       }
     } catch (updateError) {
       // Log error but don't block - allow vendor creation to proceed
-      console.error('❌ syncClerkVendor: Failed to update Clerk metadata:', {
+      console.error('❌ syncClerkVendor: Failed to update Clerk metadata after retries:', {
         error: updateError.message,
-        userId: clerkAuth.userId
+        userId: clerkAuth.userId,
+        stack: updateError.stack
       });
       // Set role locally as fallback
       publicMetadata = { ...publicMetadata, role: 'vendor' };
