@@ -1,10 +1,29 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
+import fs from 'fs'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 // User App Configuration - Port 3000
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: 'rename-index-html',
+      closeBundle() {
+        const indexPath = resolve(__dirname, 'dist/user/index.user.html');
+        const targetPath = resolve(__dirname, 'dist/user/index.html');
+        if (fs.existsSync(indexPath)) {
+          fs.copyFileSync(indexPath, targetPath);
+          console.log('✅ Created index.html from index.user.html');
+        }
+      }
+    }
+  ],
   publicDir: 'public',
   server: {
     port: 3000,
@@ -15,17 +34,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: './index.user.html'
-      },
-      output: {
-        entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: (assetInfo) => {
-          // Rename index.user.html to index.html for Azure Static Web Apps
-          if (assetInfo.name === 'index.user.html') {
-            return 'index.html';
-          }
-          return 'assets/[name]-[hash][extname]';
-        }
       }
     },
     // Copy staticwebapp.config.json to output
