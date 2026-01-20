@@ -1982,9 +1982,64 @@ export const getBookingById = asyncHandler(async (req, res) => {
 // @route   POST /api/vendors/sync
 // @access  Private (Clerk cookie session) - uses optionalAuth to handle session edge cases
 export const syncClerkVendor = asyncHandler(async (req, res) => {
-  // If req.user already exists (from auth middleware), return it
+  // If req.user already exists (from auth middleware), verify/update Clerk metadata
   if (req.user && req.user.role === 'vendor') {
     const vendor = req.user;
+    
+    // CRITICAL FIX: Always verify/update Clerk metadata
+    const { getAuth } = await import('@clerk/express');
+    const { createClerkClient } = await import('@clerk/clerk-sdk-node');
+    const getClerkClient = () => createClerkClient({ 
+      secretKey: process.env.CLERK_SECRET_KEY || process.env.CLERK_SECRET_KEY_USER
+    });
+    
+    let clerkAuth = getAuth(req) || req.auth;
+    let clerkPublicMetadata = {};
+    
+    if (clerkAuth?.userId) {
+      try {
+        const clerkClient = getClerkClient();
+        let clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+        clerkPublicMetadata = clerkUser.publicMetadata || {};
+        
+        // Update if role is not 'vendor'
+        if (clerkPublicMetadata?.role !== 'vendor') {
+          let retries = 3;
+          let success = false;
+          
+          while (retries > 0 && !success) {
+            try {
+              await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
+                publicMetadata: { 
+                  ...clerkPublicMetadata,
+                  role: 'vendor' 
+                }
+              });
+              
+              const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
+              if (updatedUser.publicMetadata?.role === 'vendor') {
+                success = true;
+                clerkPublicMetadata = updatedUser.publicMetadata;
+                console.log(`✅ syncClerkVendor: Updated Clerk metadata role=vendor for existing vendor=${clerkAuth.userId}`);
+              } else {
+                throw new Error(`Metadata verification failed: expected vendor, got ${updatedUser.publicMetadata?.role || 'none'}`);
+              }
+            } catch (retryError) {
+              retries--;
+              if (retries === 0) throw retryError;
+              await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries))); // Exponential backoff
+            }
+          }
+        }
+      } catch (updateError) {
+        console.error('❌ syncClerkVendor: Failed to update Clerk metadata:', {
+          error: updateError.message,
+          userId: clerkAuth?.userId,
+          stack: updateError.stack
+        });
+      }
+    }
+    
     return res.status(200).json({
       success: true,
       message: 'Vendor synced',
@@ -2002,7 +2057,9 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
           profileComplete: vendor.profileComplete,
           createdAt: vendor.createdAt,
           updatedAt: vendor.updatedAt,
-        }
+        },
+        clerkPublicMetadata: clerkPublicMetadata,
+        roleSet: clerkPublicMetadata?.role || null
       }
     });
   }

@@ -1730,11 +1730,86 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
     }
   }
   
-  // If req.user already exists (from optionalAuth middleware), update role if needed
+  // If req.user already exists (from optionalAuth middleware), update role AND Clerk metadata
   if (req.user && req.userId) {
     const user = await User.findById(req.userId);
     if (user) {
-      // Update role if requested and different from current role
+      // CRITICAL FIX: Get Clerk auth for metadata update
+      const { getAuth } = await import('@clerk/express');
+      const { createClerkClient } = await import('@clerk/clerk-sdk-node');
+      const getClerkClient = () => createClerkClient({ 
+        secretKey: process.env.CLERK_SECRET_KEY || process.env.CLERK_SECRET_KEY_USER
+      });
+      
+      let clerkAuth = getAuth(req) || req.auth;
+      let clerkPublicMetadata = {};
+      
+      // CRITICAL: Update Clerk metadata FIRST if role is provided
+      if (requestedRole && ['user', 'vendor', 'admin'].includes(requestedRole) && clerkAuth?.userId) {
+        try {
+          const clerkClient = getClerkClient();
+          
+          // Fetch current Clerk metadata
+          let clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+          clerkPublicMetadata = clerkUser.publicMetadata || {};
+          
+          // Only update if role is different
+          if (clerkPublicMetadata?.role !== requestedRole) {
+            // Update with retry logic and verification
+            let retries = 3;
+            let success = false;
+            
+            while (retries > 0 && !success) {
+              try {
+                await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
+                  publicMetadata: { 
+                    ...clerkPublicMetadata,
+                    role: requestedRole 
+                  }
+                });
+                
+                // Verify update was successful
+                const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
+                if (updatedUser.publicMetadata?.role === requestedRole) {
+                  success = true;
+                  clerkPublicMetadata = updatedUser.publicMetadata;
+                  console.log(`✅ syncClerkUser: Updated Clerk metadata role=${requestedRole} for existing user=${clerkAuth.userId}`);
+                } else {
+                  throw new Error(`Metadata verification failed: expected ${requestedRole}, got ${updatedUser.publicMetadata?.role || 'none'}`);
+                }
+              } catch (retryError) {
+                retries--;
+                if (retries === 0) {
+                  throw retryError;
+                }
+                await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries))); // Exponential backoff
+              }
+            }
+          } else {
+            // Role already set correctly in Clerk
+            clerkPublicMetadata = clerkUser.publicMetadata || {};
+          }
+        } catch (updateError) {
+          console.error('❌ syncClerkUser: Failed to update Clerk metadata after retries:', {
+            error: updateError.message,
+            userId: clerkAuth?.userId,
+            requestedRole: requestedRole,
+            stack: updateError.stack
+          });
+          // Continue - don't fail the request, but log the error
+        }
+      } else if (clerkAuth?.userId) {
+        // Fetch Clerk metadata even if no role update needed
+        try {
+          const clerkClient = getClerkClient();
+          const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+          clerkPublicMetadata = clerkUser.publicMetadata || {};
+        } catch (e) {
+          // Non-blocking
+        }
+      }
+      
+      // Update database role if requested and different
       if (requestedRole && ['user', 'vendor', 'admin'].includes(requestedRole) && user.role !== requestedRole) {
         // Check admin limit if trying to become admin
         if (requestedRole === 'admin') {
@@ -1786,7 +1861,9 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
             lastLogin: user.lastLogin,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
-          }
+          },
+          clerkPublicMetadata: clerkPublicMetadata,
+          roleSet: clerkPublicMetadata?.role || null
         }
       });
     }
