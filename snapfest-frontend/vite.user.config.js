@@ -15,6 +15,17 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: './index.user.html'
+      },
+      output: {
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: (assetInfo) => {
+          // Rename index.user.html to index.html for Azure Static Web Apps
+          if (assetInfo.name === 'index.user.html') {
+            return 'index.html';
+          }
+          return 'assets/[name]-[hash][extname]';
+        }
       }
     },
     // Copy staticwebapp.config.json to output
