@@ -1716,6 +1716,19 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
   // Get role from query parameter (set by frontend when selecting role)
   const requestedRole = req.query.role || null;
   
+  // DIAGNOSTIC LOGGING - Always log for debugging
+  const clerkSecretKey = process.env.CLERK_SECRET_KEY || process.env.CLERK_SECRET_KEY_USER;
+  console.log('🔍 syncClerkUser: Starting sync', {
+    requestedRole,
+    hasReqUser: !!req.user,
+    reqUserId: req.userId,
+    queryParams: req.query,
+    clerkSecretKeySet: !!clerkSecretKey,
+    clerkSecretKeyLength: clerkSecretKey?.length || 0,
+    clerkSecretKeyPrefix: clerkSecretKey?.substring(0, 15) || 'NOT SET',
+    nodeEnv: process.env.NODE_ENV
+  });
+  
   // Check admin limit if user is trying to become admin
   if (requestedRole === 'admin') {
     const adminCount = await User.countDocuments({ role: 'admin' });
@@ -1737,11 +1750,31 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
       // CRITICAL FIX: Get Clerk auth for metadata update
       const { getAuth } = await import('@clerk/express');
       const { createClerkClient } = await import('@clerk/clerk-sdk-node');
-      const getClerkClient = () => createClerkClient({ 
-        secretKey: process.env.CLERK_SECRET_KEY || process.env.CLERK_SECRET_KEY_USER
-      });
+      
+      // Check if Clerk secret key is available
+      if (!clerkSecretKey) {
+        console.error('❌ CRITICAL: Clerk secret key not set! Cannot update metadata.');
+        console.error('   Set CLERK_SECRET_KEY or CLERK_SECRET_KEY_USER in environment variables');
+        // Continue without metadata update - at least update database
+      }
+      
+      const getClerkClient = () => {
+        if (!clerkSecretKey) {
+          throw new Error('Clerk secret key not configured');
+        }
+        return createClerkClient({ secretKey: clerkSecretKey });
+      };
       
       let clerkAuth = getAuth(req) || req.auth;
+      
+      console.log('🔍 syncClerkUser: Clerk auth check', {
+        hasGetAuth: !!getAuth(req),
+        hasReqAuth: !!req.auth,
+        clerkUserId: clerkAuth?.userId,
+        clerkSessionId: clerkAuth?.sessionId,
+        clerkClaims: clerkAuth?.claims ? Object.keys(clerkAuth.claims) : []
+      });
+      
       let clerkPublicMetadata = {};
       
       // CRITICAL: Update Clerk metadata FIRST if role is provided
@@ -1792,20 +1825,60 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
         } catch (updateError) {
           console.error('❌ syncClerkUser: Failed to update Clerk metadata after retries:', {
             error: updateError.message,
+            errorCode: updateError.errors?.[0]?.code,
+            errorStatus: updateError.status,
+            errorStatusCode: updateError.statusCode,
             userId: clerkAuth?.userId,
             requestedRole: requestedRole,
+            clerkSecretKeyLength: clerkSecretKey?.length || 0,
             stack: updateError.stack
           });
-          // Continue - don't fail the request, but log the error
+          
+          // Return error response so frontend knows metadata update failed
+          return res.status(500).json({
+            success: false,
+            message: 'Failed to update Clerk metadata. Please check backend logs.',
+            error: updateError.message,
+            code: 'CLERK_METADATA_UPDATE_FAILED',
+            debug: {
+              userId: clerkAuth?.userId,
+              requestedRole: requestedRole,
+              errorCode: updateError.errors?.[0]?.code,
+              errorStatus: updateError.status
+            },
+            data: {
+              user: {
+                id: user._id,
+                clerkId: user.clerkId,
+                name: user.name,
+                email: user.email,
+                role: user.role
+              }
+            }
+          });
         }
-      } else if (clerkAuth?.userId) {
-        // Fetch Clerk metadata even if no role update needed
-        try {
-          const clerkClient = getClerkClient();
-          const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
-          clerkPublicMetadata = clerkUser.publicMetadata || {};
-        } catch (e) {
-          // Non-blocking
+      } else {
+        console.log('⚠️ syncClerkUser: Skipping metadata update', {
+          hasRequestedRole: !!requestedRole,
+          validRole: requestedRole && ['user', 'vendor', 'admin'].includes(requestedRole),
+          hasClerkUserId: !!clerkAuth?.userId,
+          clerkUserId: clerkAuth?.userId,
+          reason: !requestedRole ? 'no role provided' : !['user', 'vendor', 'admin'].includes(requestedRole) ? 'invalid role' : !clerkAuth?.userId ? 'no clerk userId' : 'unknown'
+        });
+        
+        if (clerkAuth?.userId) {
+          // Fetch Clerk metadata even if no role update needed
+          try {
+            const clerkClient = getClerkClient();
+            const clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+            clerkPublicMetadata = clerkUser.publicMetadata || {};
+            console.log('🔍 syncClerkUser: Fetched Clerk metadata (no update needed)', {
+              metadata: clerkPublicMetadata
+            });
+          } catch (e) {
+            console.error('❌ syncClerkUser: Failed to fetch Clerk metadata:', e.message);
+            // Non-blocking
+          }
         }
       }
       
