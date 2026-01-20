@@ -589,7 +589,7 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
                     >
                       <SignIn
                         routing="path"
-                        path="/sign-in"
+                        path={location.pathname.startsWith('/sign-in') ? '/sign-in' : '/login'}
                         fallbackRedirectUrl="/sign-in/complete"
                         afterSignInUrl="/sign-in/complete"
                         appearance={{
@@ -626,7 +626,7 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
                     >
                       <SignUp
                         routing="path"
-                        path="/sign-up"
+                        path={location.pathname.startsWith('/sign-up') ? '/sign-up' : '/register'}
                         fallbackRedirectUrl="/sign-up/complete"
                         afterSignUpUrl="/sign-up/complete"
                         appearance={{
