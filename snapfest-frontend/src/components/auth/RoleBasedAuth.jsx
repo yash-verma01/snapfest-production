@@ -168,6 +168,15 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
     }
   };
 
+  // Clear old selectedRole from sessionStorage on mount (unless on completion page)
+  useEffect(() => {
+    if (!isSignupComplete && !isSigninComplete) {
+      // Clear any old role selection when starting fresh
+      sessionStorage.removeItem('selectedRole');
+      setSelectedRole(null);
+    }
+  }, [isSignupComplete, isSigninComplete]);
+
   // Check admin limit on component mount
   useEffect(() => {
     const checkAdminLimit = async () => {
@@ -204,6 +213,8 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
 
   const handleBack = () => {
     setSelectedRole(null);
+    // Clear sessionStorage when going back to role selection
+    sessionStorage.removeItem('selectedRole');
   };
 
   // If no role selected, show role selection cards
