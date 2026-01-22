@@ -2085,22 +2085,50 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
     }
   }
   
-  // Debug logging
-  if (process.env.NODE_ENV === 'development') {
-    if (!clerkAuth?.userId) {
-      console.log('🔍 syncClerkVendor: No Clerk session found');
-      console.log('   getAuth(req):', getAuth(req));
-      console.log('   req.auth:', req.auth);
-      console.log('   Request cookies:', Object.keys(req.cookies || {}));
-    }
-  }
-  
+  // CRITICAL: Enhanced debugging for Clerk session extraction
   if (!clerkAuth?.userId) {
+    console.error('❌ syncClerkVendor: CRITICAL - No Clerk session found!', {
+      hasGetAuth: !!getAuth(req),
+      getAuthUserId: getAuth(req)?.userId || null,
+      hasReqAuth: !!req.auth,
+      reqAuthUserId: req.auth?.userId || null,
+      requestCookies: Object.keys(req.cookies || {}),
+      cookieNames: Object.keys(req.cookies || {}),
+      hasAuthorizationHeader: !!req.headers.authorization,
+      origin: req.headers.origin,
+      referer: req.headers.referer,
+      userAgent: req.headers['user-agent']?.substring(0, 50),
+      nodeEnv: process.env.NODE_ENV
+    });
+    
+    // Check if cookies are being sent
+    const cookieHeader = req.headers.cookie;
+    console.error('❌ syncClerkVendor: Cookie header check', {
+      hasCookieHeader: !!cookieHeader,
+      cookieHeaderLength: cookieHeader?.length || 0,
+      cookieHeaderPreview: cookieHeader?.substring(0, 100) || 'N/A',
+      containsClerk: cookieHeader?.includes('__clerk') || false,
+      containsSession: cookieHeader?.includes('session') || false
+    });
+    
     return res.status(401).json({ 
       success: false, 
-      message: 'Access denied. Please sign in.' 
+      message: 'Access denied. Please sign in.',
+      code: 'CLERK_SESSION_NOT_FOUND',
+      debug: {
+        hasGetAuth: !!getAuth(req),
+        hasReqAuth: !!req.auth,
+        cookieCount: Object.keys(req.cookies || {}).length
+      }
     });
   }
+  
+  console.log('✅ syncClerkVendor: Clerk session found', {
+    userId: clerkAuth.userId,
+    sessionId: clerkAuth.sessionId,
+    hasClaims: !!clerkAuth.claims,
+    claimKeys: clerkAuth.claims ? Object.keys(clerkAuth.claims) : []
+  });
   
   // Check if request came from vendor port (3001)
   // Get origin from multiple sources for better reliability
@@ -2126,18 +2154,50 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
     }
   }
   
-  // If role is not set in Clerk metadata, update it (for new vendor signups)
-  // This handles the case where vendor signs up but Clerk metadata doesn't have role yet
+  // CRITICAL: Update Clerk metadata FIRST before creating vendor
+  // This ensures the role is persisted in Clerk for future requests
+  const clerkSecretKey = process.env.CLERK_SECRET_KEY || process.env.CLERK_SECRET_KEY_USER;
+  
   if (publicMetadata?.role !== 'vendor') {
+    console.log('🔍 syncClerkVendor: Attempting to update Clerk metadata for vendor', {
+      clerkUserId: clerkAuth.userId,
+      currentMetadataRole: publicMetadata?.role,
+      clerkSecretKeySet: !!clerkSecretKey,
+      clerkSecretKeyLength: clerkSecretKey?.length || 0
+    });
+    
     try {
       const clerkClient = getClerkClient();
+      
+      // Fetch current user to get existing metadata
+      let currentClerkUser;
+      try {
+        currentClerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+        publicMetadata = currentClerkUser.publicMetadata || {};
+        console.log('🔍 syncClerkVendor: Fetched current Clerk metadata', {
+          userId: clerkAuth.userId,
+          currentRole: publicMetadata?.role,
+          allMetadata: publicMetadata
+        });
+      } catch (fetchError) {
+        console.error('❌ syncClerkVendor: Failed to fetch current Clerk user:', {
+          error: fetchError.message,
+          errorCode: fetchError.errors?.[0]?.code,
+          errorStatus: fetchError.status,
+          userId: clerkAuth.userId
+        });
+        publicMetadata = {};
+      }
       
       // Update with retry logic and verification
       let retries = 3;
       let success = false;
+      let lastError = null;
       
       while (retries > 0 && !success) {
         try {
+          console.log(`🔍 syncClerkVendor: Metadata update attempt ${4 - retries}/3 for userId=${clerkAuth.userId}, role=vendor`);
+          
           await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
             publicMetadata: { 
               ...publicMetadata,
@@ -2145,31 +2205,85 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
             }
           });
           
+          // CRITICAL: Wait a bit before verification (Clerk API might have eventual consistency)
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
           // Verify update was successful
           const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
-          if (updatedUser.publicMetadata?.role === 'vendor') {
+          const updatedRole = updatedUser.publicMetadata?.role;
+          
+          console.log('🔍 syncClerkVendor: Verification check', {
+            expected: 'vendor',
+            actual: updatedRole,
+            match: updatedRole === 'vendor',
+            allMetadata: updatedUser.publicMetadata
+          });
+          
+          if (updatedRole === 'vendor') {
             success = true;
             publicMetadata = updatedUser.publicMetadata;
-            console.log('✅ syncClerkVendor: Set vendor role in Clerk publicMetadata for user:', clerkAuth.userId);
+            console.log(`✅ syncClerkVendor: Successfully set vendor role in Clerk publicMetadata for user:`, clerkAuth.userId);
+            console.log('   Final publicMetadata:', JSON.stringify(publicMetadata, null, 2));
           } else {
-            throw new Error(`Metadata verification failed: expected vendor, got ${updatedUser.publicMetadata?.role || 'none'}`);
+            throw new Error(`Metadata verification failed: expected vendor, got ${updatedRole || 'none'}`);
           }
         } catch (retryError) {
+          lastError = retryError;
           retries--;
-          if (retries === 0) throw retryError;
-          await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries))); // Exponential backoff
+          
+          console.error(`❌ syncClerkVendor: Retry ${4 - retries} failed:`, {
+            error: retryError.message,
+            errorCode: retryError.errors?.[0]?.code,
+            errorStatus: retryError.status,
+            errorStatusCode: retryError.statusCode,
+            userId: clerkAuth.userId,
+            retriesLeft: retries
+          });
+          
+          if (retries === 0) {
+            throw retryError;
+          }
+          
+          // Exponential backoff
+          const delay = 1000 * (4 - retries);
+          console.log(`⏳ syncClerkVendor: Waiting ${delay}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
+      
+      if (!success) {
+        throw lastError || new Error('Metadata update failed after all retries');
+      }
     } catch (updateError) {
-      // Log error but don't block - allow vendor creation to proceed
-      console.error('❌ syncClerkVendor: Failed to update Clerk metadata after retries:', {
+      // CRITICAL: Log the full error with all details
+      console.error('❌ syncClerkVendor: CRITICAL FAILURE - Failed to update Clerk metadata after retries:', {
         error: updateError.message,
+        errorCode: updateError.errors?.[0]?.code || 'N/A',
+        errorStatus: updateError.status || 'N/A',
+        errorStatusCode: updateError.statusCode || 'N/A',
+        errorType: updateError.constructor?.name || 'Unknown',
+        stack: updateError.stack,
         userId: clerkAuth.userId,
-        stack: updateError.stack
+        clerkSecretKeyLength: clerkSecretKey?.length || 0,
+        clerkSecretKeyPrefix: clerkSecretKey?.substring(0, 15) || 'NOT SET',
+        nodeEnv: process.env.NODE_ENV
       });
-      // Set role locally as fallback
-      publicMetadata = { ...publicMetadata, role: 'vendor' };
+      
+      // CRITICAL: Return error response so frontend knows metadata update failed
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to update Clerk metadata. Please check backend logs.',
+        error: updateError.message,
+        code: 'CLERK_METADATA_UPDATE_FAILED',
+        debug: {
+          userId: clerkAuth.userId,
+          errorCode: updateError.errors?.[0]?.code,
+          errorStatus: updateError.status
+        }
+      });
     }
+  } else {
+    console.log(`✅ syncClerkVendor: Role already set correctly in Clerk metadata (vendor)`);
   }
   
   // Extract email and name from Clerk session
