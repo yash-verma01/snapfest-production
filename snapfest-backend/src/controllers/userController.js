@@ -1831,31 +1831,14 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
             userId: clerkAuth?.userId,
             requestedRole: requestedRole,
             clerkSecretKeyLength: clerkSecretKey?.length || 0,
+            clerkSecretKeyPrefix: clerkSecretKey?.substring(0, 15) || 'NOT SET',
             stack: updateError.stack
           });
           
-          // Return error response so frontend knows metadata update failed
-          return res.status(500).json({
-            success: false,
-            message: 'Failed to update Clerk metadata. Please check backend logs.',
-            error: updateError.message,
-            code: 'CLERK_METADATA_UPDATE_FAILED',
-            debug: {
-              userId: clerkAuth?.userId,
-              requestedRole: requestedRole,
-              errorCode: updateError.errors?.[0]?.code,
-              errorStatus: updateError.status
-            },
-            data: {
-              user: {
-                id: user._id,
-                clerkId: user.clerkId,
-                name: user.name,
-                email: user.email,
-                role: user.role
-              }
-            }
-          });
+          // CRITICAL: Don't fail the request - continue with database update
+          // Admin endpoints can fallback to database role if metadata is missing
+          // Log error but allow user creation/update to proceed
+          console.warn('⚠️ syncClerkUser: Continuing despite metadata update failure. Database role will be used as fallback.');
         }
       } else {
         console.log('⚠️ syncClerkUser: Skipping metadata update', {

@@ -164,10 +164,41 @@ export const requireAdminClerk = async (req, res, next) => {
       }
     }
 
-    // 4. Primary check: publicMetadata.role === 'admin'
+    // 4. Primary check: publicMetadata.role === 'admin' OR database role === 'admin'
     const isAdminFromMetadata = publicMetadata?.role === 'admin';
     
-    if (isAdminFromMetadata) {
+    // CRITICAL FIX: Also check database role if metadata is missing
+    // This handles cases where metadata update failed but user was created as admin
+    let isAdminFromDB = false;
+    if (!isAdminFromMetadata) {
+      const user = await User.findOne({ clerkId: userId });
+      isAdminFromDB = user?.role === 'admin';
+      
+      if (isAdminFromDB) {
+        console.log('⚠️ requireAdminClerk: Metadata missing but user has admin role in DB. Attempting to sync metadata...');
+        
+        // Try to update Clerk metadata if user is admin in DB but not in Clerk
+        try {
+          // Get origin for clerk client selection
+          const origin = req.headers.origin || req.headers.referer || '';
+          const clerkClient = getClerkClientForOrigin(origin);
+          await clerkClient.users.updateUserMetadata(userId, {
+            publicMetadata: { 
+              ...(publicMetadata || {}),
+              role: 'admin' 
+            }
+          });
+          console.log('✅ requireAdminClerk: Synced admin role to Clerk metadata');
+          // Update local variable
+          publicMetadata = { ...(publicMetadata || {}), role: 'admin' };
+        } catch (syncError) {
+          console.error('❌ requireAdminClerk: Failed to sync admin role to Clerk metadata:', syncError.message);
+          // Continue - allow access based on DB role
+        }
+      }
+    }
+    
+    if (isAdminFromMetadata || isAdminFromDB) {
       // Find user in database (already created via Clerk with role='admin')
       const user = await User.findOne({ clerkId: userId });
       
@@ -192,11 +223,11 @@ export const requireAdminClerk = async (req, res, next) => {
       req.admin = {
         email: email || user?.email || 'unknown',
         userId: userId,
-        method: 'clerk'
+        method: isAdminFromMetadata ? 'clerk-metadata' : 'clerk-db-fallback'
       };
       
       if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Admin access granted via publicMetadata.role for userId:', userId);
+        console.log(`✅ Admin access granted via ${isAdminFromMetadata ? 'publicMetadata.role' : 'database role'} for userId:`, userId);
       }
       
       // Optional: Update admin audit log (non-blocking)

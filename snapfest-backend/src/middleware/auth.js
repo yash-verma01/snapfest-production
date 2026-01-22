@@ -490,9 +490,25 @@ export const optionalAuth = async (req, res, next) => {
         const normalizedEmail = email.toLowerCase().trim();
         
         // Check if user should be admin based on email or metadata
-        const isAdmin = publicMetadata?.role === 'admin' ||
-                        normalizedEmail === adminEmail.toLowerCase() ||
-                        adminEmails.includes(normalizedEmail);
+        let isAdmin = publicMetadata?.role === 'admin' ||
+                      normalizedEmail === adminEmail.toLowerCase() ||
+                      adminEmails.includes(normalizedEmail);
+        
+        // CRITICAL FIX: Check admin limit BEFORE creating admin user
+        if (isAdmin) {
+          const { User } = await import('../models/index.js');
+          const adminCount = await User.countDocuments({ role: 'admin' });
+          const maxAdmins = 2;
+          
+          // Check if this user is already an admin (shouldn't happen here, but safety check)
+          const existingAdmin = await User.findOne({ clerkId: clerkAuth.userId, role: 'admin' });
+          
+          // If limit reached and user is not already an admin, reject admin role
+          if (adminCount >= maxAdmins && !existingAdmin) {
+            console.warn(`⚠️ optionalAuth: Admin limit reached (${adminCount}/${maxAdmins}). Creating user as 'user' instead of 'admin'.`);
+            isAdmin = false; // Override to prevent admin creation
+          }
+        }
         
         // Determine final role
         const finalRole = isAdmin ? 'admin' : (publicMetadata?.role || 'user');
