@@ -9,7 +9,7 @@ import { TestimonialCard } from '../components/cards';
 import { Badge } from '../components/ui';
 import { LoadingSkeleton } from '../components/enhanced';
 import { publicAPI } from '../services/api';
-import { dummyPackages, dummyTestimonials } from '../data';
+import { dummyTestimonials } from '../data';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Home = () => {
@@ -68,16 +68,24 @@ const Home = () => {
           publicAPI.getTestimonials({ limit: 8 })
         ]);
         
+        // Handle packages - ALWAYS use API data, never dummy data
         if (packagesResponse.data.success && packagesResponse.data.data) {
           const featured = packagesResponse.data.data.packages || [];
           setFeaturedPackages(Array.isArray(featured) ? featured.slice(0, 6) : []);
+        } else {
+          // API returned but no success - set empty array
+          setFeaturedPackages([]);
         }
 
+        // Handle beatbloom
         if (beatBloomResponse.data.success && beatBloomResponse.data.data) {
           const beatBloom = beatBloomResponse.data.data.items || [];
           setBeatBloomPackages(Array.isArray(beatBloom) ? beatBloom : []);
+        } else {
+          setBeatBloomPackages([]);
         }
 
+        // Handle testimonials - keep fallback for testimonials
         if (testimonialsResponse.data.success && testimonialsResponse.data.data) {
           const testimonials = testimonialsResponse.data.data.testimonials || [];
           if (testimonials.length > 0) {
@@ -99,10 +107,12 @@ const Home = () => {
           setTestimonials(dummyTestimonials.slice(0, 8));
         }
       } catch (error) {
+        // Remove dummy package fallback - always use empty array if API fails
         if (process.env.NODE_ENV !== 'production') {
           console.error('Error loading data:', error);
         }
-        setFeaturedPackages(dummyPackages.filter(pkg => pkg.isPremium).slice(0, 6));
+        // Set empty arrays instead of dummy data
+        setFeaturedPackages([]);
         setBeatBloomPackages([]);
         setTestimonials([]);
       } finally {
