@@ -18,9 +18,10 @@ export const getAllBeatBloom = asyncHandler(async (req, res) => {
     if (maxPrice) query.price.$lte = parseInt(maxPrice);
   }
 
-  // Build sort object
+  // Build sort object - map createdAt to _id for Cosmos DB compatibility
   const sort = {};
-  sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+  const actualSortBy = sortBy === 'createdAt' ? '_id' : sortBy;
+  sort[actualSortBy] = sortOrder === 'desc' ? -1 : 1;
 
   const [items, total] = await Promise.all([
     BeatBloom.find(query).sort(sort).skip(skip).limit(limit),
