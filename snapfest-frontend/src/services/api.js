@@ -30,21 +30,41 @@ export const setupAuthToken = (getToken) => {
 };
 
 /**
- * Helper function to get Clerk token - tries multiple methods
+ * Helper function to get Clerk token - EXACT IMPLEMENTATION
+ * Uses window.Clerk.session.getToken() which we verified works
  */
 const getClerkToken = async () => {
-  // Method 1: Use stored getToken function (from useAuth hook) - PRIMARY METHOD
+  // Method 1: Use window.Clerk.session.getToken() - PRIMARY (VERIFIED TO WORK)
+  if (typeof window !== 'undefined' && window.Clerk?.session) {
+    try {
+      const token = await window.Clerk.session.getToken();
+      if (token && typeof token === 'string' && token.length > 0) {
+        console.log('✅ getClerkToken: Got token from window.Clerk.session');
+        return token;
+      }
+    } catch (error) {
+      console.warn('⚠️ getClerkToken: window.Clerk.session.getToken() failed:', error.message);
+    }
+  }
+  
+  // Method 2: Use stored getToken function (from useAuth hook) - FALLBACK
   if (getTokenFunction && typeof getTokenFunction === 'function') {
     try {
       const token = await getTokenFunction();
       if (token && typeof token === 'string' && token.length > 0) {
+        console.log('✅ getClerkToken: Got token from getTokenFunction');
         return token;
       }
     } catch (error) {
-      // getToken() might fail if user is not signed in - this is normal
-      // Don't log as error, just return null
+      console.warn('⚠️ getClerkToken: getTokenFunction failed:', error.message);
     }
   }
+  
+  console.error('❌ getClerkToken: All methods failed', {
+    hasWindowClerk: typeof window !== 'undefined' && !!window.Clerk,
+    hasClerkSession: typeof window !== 'undefined' && !!window.Clerk?.session,
+    hasGetTokenFunction: !!getTokenFunction
+  });
   
   return null;
 };
@@ -67,19 +87,20 @@ api.interceptors.request.use(
         // Use Clerk session token in Authorization header
         config.headers.Authorization = `Bearer ${token}`;
         
-        // Log in production too for debugging (can remove later)
-        console.log('✅ API Request: Token added', {
+        // Log in production for debugging
+        console.log('✅ API Request: Token added to Authorization header', {
           url: config.url?.substring(0, 50),
           method: config.method,
-          hasToken: !!token
+          tokenLength: token.length
         });
       } else {
         // No token available - log for debugging
         console.warn('⚠️ API Request: No token available', {
           url: config.url?.substring(0, 50),
           method: config.method,
-          hasGetTokenFunction: !!getTokenFunction,
-          hasWindowClerk: typeof window !== 'undefined' && !!window.Clerk
+          hasWindowClerk: typeof window !== 'undefined' && !!window.Clerk,
+          hasClerkSession: typeof window !== 'undefined' && !!window.Clerk?.session,
+          hasGetTokenFunction: !!getTokenFunction
         });
       }
       
