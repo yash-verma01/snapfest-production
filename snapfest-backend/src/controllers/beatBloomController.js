@@ -92,9 +92,10 @@ export const getAllBeatBloomsAdmin = asyncHandler(async (req, res) => {
   if (status === 'active') query.isActive = true;
   if (status === 'inactive') query.isActive = false;
 
-  // Build sort object
+  // Build sort object - map createdAt to _id for Cosmos DB compatibility
   const sort = {};
-  sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+  const actualSortBy = sortBy === 'createdAt' ? '_id' : sortBy;
+  sort[actualSortBy] = sortOrder === 'desc' ? -1 : 1;
 
   const beatBlooms = await BeatBloom.find(query)
     .skip(skip)

@@ -701,9 +701,10 @@ export const getAllPackages = asyncHandler(async (req, res) => {
   if (status === 'active') query.isActive = true;
   if (status === 'inactive') query.isActive = false;
 
-  // Build sort object
+  // Build sort object - map createdAt to _id for Cosmos DB compatibility
   const sort = {};
-  sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+  const actualSortBy = sortBy === 'createdAt' ? '_id' : sortBy;
+  sort[actualSortBy] = sortOrder === 'desc' ? -1 : 1;
 
   const packages = await Package.find(query)
     .skip(skip)
@@ -1284,9 +1285,10 @@ export const getAllBookings = asyncHandler(async (req, res) => {
   let query = {};
   if (status) query.vendorStatus = status;
 
-  // Build sort object
+  // Build sort object - map createdAt to _id for Cosmos DB compatibility
   const sort = {};
-  sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+  const actualSortBy = sortBy === 'createdAt' ? '_id' : sortBy;
+  sort[actualSortBy] = sortOrder === 'desc' ? -1 : 1;
 
   const bookings = await Booking.find(query)
     .populate('userId', 'name email phone')
