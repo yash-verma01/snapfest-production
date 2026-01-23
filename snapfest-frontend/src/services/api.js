@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getToken } from '@clerk/clerk-react';
+import { useAuth } from '@clerk/clerk-react';
 
 // API Base URL - Uses environment variable for production, falls back to localhost for development
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
@@ -14,6 +14,17 @@ const api = axios.create({
   },
 });
 
+// Store getToken function reference (set by components using useAuth hook)
+let getTokenFunction = null;
+
+/**
+ * Setup function to initialize token getter from Clerk useAuth hook
+ * This should be called from a component that has access to useAuth hook
+ */
+export const setupAuthToken = (getToken) => {
+  getTokenFunction = getToken;
+};
+
 /**
  * Request interceptor - Token-based authentication (Clerk session tokens)
  * 
@@ -26,11 +37,14 @@ api.interceptors.request.use(
   async (config) => {
     try {
       // Get Clerk session token (works cross-origin)
-      const token = await getToken();
-      
-      if (token) {
-        // Use Clerk session token in Authorization header
-        config.headers.Authorization = `Bearer ${token}`;
+      // Use getTokenFunction if available (set by components)
+      if (getTokenFunction) {
+        const token = await getTokenFunction();
+        
+        if (token) {
+          // Use Clerk session token in Authorization header
+          config.headers.Authorization = `Bearer ${token}`;
+        }
       }
       
       // Fallback: Legacy token support (if needed)

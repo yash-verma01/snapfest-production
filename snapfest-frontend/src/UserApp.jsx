@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { useAuth as useClerkAuth, useUser } from '@clerk/clerk-react';
-import { userAPI } from './services/api';
+import { userAPI, setupAuthToken } from './services/api';
 import ErrorBoundary from './components/ErrorBoundary';
 import PortGuard from './components/PortGuard';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -57,8 +57,15 @@ function UserRootRedirect() {
 function UserApp() {
   // Sync Clerk user to backend on sign-in
   // This ensures the backend knows about the user and creates them in MongoDB
-  const { isSignedIn } = useClerkAuth();
+  const { isSignedIn, getToken } = useClerkAuth();
   const { user } = useUser();
+  
+  // Setup token getter for axios interceptor
+  useEffect(() => {
+    if (getToken) {
+      setupAuthToken(getToken);
+    }
+  }, [getToken]);
   
   useEffect(() => {
     const sync = async () => {
