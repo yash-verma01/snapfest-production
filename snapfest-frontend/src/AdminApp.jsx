@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 // Auth handled by Clerk
 import { SignedIn, SignedOut, RedirectToSignIn, useUser, useAuth } from '@clerk/clerk-react';
-import { userAPI } from './services/api';
+import { userAPI, setupAuthToken } from './services/api';
 import ErrorBoundary from './components/ErrorBoundary';
 import PortGuard from './components/PortGuard';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -72,7 +72,14 @@ function AdminGuard({ children }) {
 function AdminApp() {
   // Sync Clerk user to backend on sign-in
   // This ensures the backend knows about the user and can check admin status
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, getToken } = useAuth();
+  
+  // Setup token getter for axios interceptor
+  useEffect(() => {
+    if (getToken) {
+      setupAuthToken(getToken);
+    }
+  }, [getToken]);
   
   useEffect(() => {
     const sync = async () => {

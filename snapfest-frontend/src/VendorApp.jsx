@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { SignedIn, SignedOut, RedirectToSignIn, useUser, useAuth } from '@clerk/clerk-react';
 import { SignIn, SignUp } from '@clerk/clerk-react';
-import { vendorAPI } from './services/api';
+import { vendorAPI, setupAuthToken } from './services/api';
 import ErrorBoundary from './components/ErrorBoundary';
 import PortGuard from './components/PortGuard';
 
@@ -63,7 +63,14 @@ function VendorRootRedirect() {
 
 function VendorApp() {
   // Sync Clerk vendor to backend on sign-in
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, getToken } = useAuth();
+  
+  // Setup token getter for axios interceptor
+  useEffect(() => {
+    if (getToken) {
+      setupAuthToken(getToken);
+    }
+  }, [getToken]);
   
   useEffect(() => {
     const sync = async () => {

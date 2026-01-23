@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { SignIn, SignUp, useUser, useClerk } from '@clerk/clerk-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { SignIn, SignUp, useUser, useClerk, useAuth } from '@clerk/clerk-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Card from '../ui/Card';
-import { userAPI, vendorAPI, publicAPI } from '../../services/api';
+import { userAPI, vendorAPI, publicAPI, setupAuthToken } from '../../services/api';
 import { Sparkles, ArrowRight, Users, Briefcase, Shield } from 'lucide-react';
 
 const RoleBasedAuth = ({ mode = 'signin' }) => {
@@ -14,89 +14,88 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
   const location = useLocation();
   const { user, isLoaded } = useUser();
   const clerk = useClerk();
+  const { getToken } = useAuth();
+  const syncInProgressRef = useRef(false);
+  
+  // Setup token getter for axios interceptor
+  useEffect(() => {
+    if (getToken) {
+      setupAuthToken(getToken);
+    }
+  }, [getToken]);
 
   // Check if we're on the signup/signin completion page
   const isSignupComplete = location.pathname === '/sign-up/complete';
   const isSigninComplete = location.pathname === '/sign-in/complete';
 
-  // If user is already signed in, redirect based on role
+  // If user is already signed in, redirect based on role (for sign-in only)
+  // NOTE: Sign-up redirect is handled by the sync useEffect below to ensure sync happens first
   useEffect(() => {
-    if (isLoaded && user) {
-      if (isSigninComplete || isSignupComplete) {
-        // For signin completion, check Clerk metadata first, then backend
-        if (isSigninComplete) {
-          const role = user.publicMetadata?.role;
-          if (role) {
-            redirectBasedOnRole(role);
-          } else {
-            // If no role in metadata, fetch from backend
-            const fetchAndRedirect = async () => {
-              try {
-                const response = await userAPI.sync();
-                const data = response.data;
-                const userRole = data.data?.user?.role || data.data?.vendor?.role || 'user';
-                redirectBasedOnRole(userRole);
-              } catch (error) {
-                console.error('Error fetching user role:', error);
-                redirectBasedOnRole('user');
-              }
-            };
-            
-            setTimeout(() => {
-              fetchAndRedirect();
-            }, 500);
+    if (isLoaded && user && isSigninComplete && !isSignupComplete) {
+      // For signin completion, check Clerk metadata first, then backend
+      const role = user.publicMetadata?.role;
+      if (role) {
+        redirectBasedOnRole(role);
+      } else {
+        // If no role in metadata, fetch from backend
+        const fetchAndRedirect = async () => {
+          try {
+            const response = await userAPI.sync();
+            const data = response.data;
+            const userRole = data.data?.user?.role || data.data?.vendor?.role || 'user';
+            redirectBasedOnRole(userRole);
+          } catch (error) {
+            console.error('Error fetching user role:', error);
+            redirectBasedOnRole('user');
           }
-        } else if (isSignupComplete) {
-          // For signup completion, check sessionStorage for selected role
-          const selectedRole = sessionStorage.getItem('selectedRole');
-          if (selectedRole) {
-            redirectBasedOnRole(selectedRole);
-          } else {
-            // Fallback: check backend
-            const fetchAndRedirect = async () => {
-              try {
-                const response = await userAPI.sync();
-                const data = response.data;
-                const userRole = data.data?.user?.role || data.data?.vendor?.role || 'user';
-                redirectBasedOnRole(userRole);
-              } catch (error) {
-                console.error('Error fetching user role:', error);
-                redirectBasedOnRole('user');
-              }
-            };
-            
-            setTimeout(() => {
-              fetchAndRedirect();
-            }, 500);
-          }
-        }
+        };
+        
+        setTimeout(() => {
+          fetchAndRedirect();
+        }, 500);
       }
     }
   }, [user, isLoaded, isSigninComplete, isSignupComplete]);
 
   // Handle role setting after signup - check for newly signed up user
   useEffect(() => {
-    if (isLoaded && user && isSignupComplete) {
+    if (isLoaded && user && isSignupComplete && !syncInProgressRef.current) {
       // Get role from sessionStorage (set when role was selected)
       const role = sessionStorage.getItem('selectedRole') || selectedRole;
       
+      console.log('🔍 RoleBasedAuth: Signup complete detected', {
+        userEmail: user.primaryEmailAddress?.emailAddress,
+        userId: user.id,
+        role: role,
+        pathname: location.pathname
+      });
+      
       if (role) {
+        // Prevent multiple syncs
+        syncInProgressRef.current = true;
+        
         // Sync user with backend to set role
         const syncUser = async () => {
           try {
+            console.log(`🔄 Starting sync for role: ${role}`);
             let response;
             
             // For vendors, use vendor sync endpoint instead of user sync
             if (role === 'vendor') {
+              console.log('📞 Calling vendorAPI.sync()...');
               response = await vendorAPI.sync();
             } else {
               // For users and admins, use user sync endpoint
+              console.log(`📞 Calling userAPI.sync(${role})...`);
               response = await userAPI.sync(role);
             }
             
             if (response.data) {
               const data = response.data;
-              console.log('User synced with role:', role, data);
+              console.log('✅ User synced successfully:', {
+                role: role,
+                response: data
+              });
               
               // Update Clerk metadata if possible (this requires backend webhook in production)
               // For now, we'll rely on the database role
@@ -111,9 +110,17 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
             }
             
             // Redirect based on role
+            console.log(`➡️ Redirecting to ${role} profile...`);
             redirectBasedOnRole(role);
           } catch (error) {
-            console.error('Error syncing user:', error);
+            console.error('❌ Error syncing user:', {
+              error: error.message,
+              response: error.response?.data,
+              status: error.response?.status,
+              url: error.config?.url,
+              role: role,
+              fullError: error
+            });
             // Still redirect based on selected role
             const roleFromStorage = sessionStorage.getItem('selectedRole') || selectedRole;
             sessionStorage.removeItem('selectedRole');
@@ -123,6 +130,8 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
               // Default to user profile if no role found
               redirectBasedOnRole('user');
             }
+          } finally {
+            syncInProgressRef.current = false;
           }
         };
         
@@ -132,6 +141,7 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
         }, 500);
       } else if (isSignupComplete) {
         // If no role selected but on signup complete page, check backend
+        console.log('⚠️ No role found in sessionStorage, checking backend...');
         const checkUserRole = async () => {
           try {
             const response = await userAPI.sync();
@@ -149,7 +159,7 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
         }, 500);
       }
     }
-  }, [user, isLoaded, mode, isSignupComplete, selectedRole]);
+  }, [user, isLoaded, mode, isSignupComplete, selectedRole, location.pathname]);
 
   const redirectBasedOnRole = (role) => {
     const from = location.state?.from?.pathname || '/';

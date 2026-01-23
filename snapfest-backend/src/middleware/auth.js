@@ -445,16 +445,28 @@ export const optionalAuth = async (req, res, next) => {
             }
           };
           
-          if (process.env.NODE_ENV === 'development') {
-            console.log('✅ optionalAuth: Using token-based authentication');
-          }
+          console.log('✅ optionalAuth: Using token-based authentication', {
+            userId: userId,
+            email: clerkUser.emailAddresses?.[0]?.emailAddress,
+            role: clerkUser.publicMetadata?.role || 'none'
+          });
+        } else {
+          console.warn('⚠️ optionalAuth: Token decoded but no userId found', {
+            decoded: decoded ? Object.keys(decoded) : null
+          });
         }
       } catch (tokenError) {
         // Token invalid or decode failed, fall back to cookie-based auth
-        if (process.env.NODE_ENV === 'development') {
-          console.log('⚠️ optionalAuth: Token decode failed, falling back to cookies');
-        }
+        console.warn('⚠️ optionalAuth: Token decode failed, falling back to cookies', {
+          error: tokenError.message,
+          tokenPreview: token.substring(0, 20) + '...'
+        });
       }
+    } else if (authHeader) {
+      // Authorization header present but not Bearer token
+      console.warn('⚠️ optionalAuth: Authorization header present but not Bearer token', {
+        headerPreview: authHeader.substring(0, 20) + '...'
+      });
     }
     
     // Method 2: Fallback to cookie-based auth (getAuth from cookies)
