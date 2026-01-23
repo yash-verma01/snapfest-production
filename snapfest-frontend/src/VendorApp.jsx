@@ -65,10 +65,13 @@ function VendorApp() {
   // Sync Clerk vendor to backend on sign-in
   const { isSignedIn, getToken } = useAuth();
   
-  // Setup token getter for axios interceptor
+  // Setup token getter for axios interceptor - CRITICAL: Must happen first
   useEffect(() => {
-    if (getToken) {
+    if (getToken && typeof getToken === 'function') {
       setupAuthToken(getToken);
+      console.log('✅ VendorApp: Token getter set up');
+    } else {
+      console.warn('⚠️ VendorApp: getToken not available yet');
     }
   }, [getToken]);
   
@@ -76,11 +79,22 @@ function VendorApp() {
     const sync = async () => {
       if (!isSignedIn) return;
       
+      // CRITICAL: Ensure token is set up before making API calls
+      if (getToken && typeof getToken === 'function') {
+        setupAuthToken(getToken);
+        // Small delay to ensure token setup is complete
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
       try {
         await vendorAPI.sync();
-        console.log('✅ Vendor synced with backend via cookie session');
+        console.log('✅ Vendor synced with backend');
       } catch (e) {
-        console.warn('⚠️ Vendor sync failed (non-blocking):', e.message);
+        console.error('❌ Vendor sync failed:', {
+          error: e.message,
+          status: e.response?.status,
+          data: e.response?.data
+        });
       }
     };
     

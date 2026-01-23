@@ -17,12 +17,23 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
   const { getToken } = useAuth();
   const syncInProgressRef = useRef(false);
   
-  // Setup token getter for axios interceptor
+  // Setup token getter for axios interceptor - CRITICAL: Must happen immediately
   useEffect(() => {
-    if (getToken) {
+    if (getToken && typeof getToken === 'function') {
       setupAuthToken(getToken);
+      console.log('✅ RoleBasedAuth: Token getter set up');
+    } else {
+      console.warn('⚠️ RoleBasedAuth: getToken not available yet');
     }
   }, [getToken]);
+  
+  // Also ensure token is set up when user loads
+  useEffect(() => {
+    if (isLoaded && user && getToken) {
+      setupAuthToken(getToken);
+      console.log('✅ RoleBasedAuth: Token getter set up (user loaded)');
+    }
+  }, [isLoaded, user, getToken]);
 
   // Check if we're on the signup/signin completion page
   const isSignupComplete = location.pathname === '/sign-up/complete';
@@ -77,6 +88,13 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
         // Sync user with backend to set role
         const syncUser = async () => {
           try {
+            // CRITICAL: Ensure token is set up before making API calls
+            if (getToken && typeof getToken === 'function') {
+              setupAuthToken(getToken);
+              // Small delay to ensure token setup is complete
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
             console.log(`🔄 Starting sync for role: ${role}`);
             let response;
             

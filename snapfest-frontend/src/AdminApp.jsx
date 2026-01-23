@@ -74,10 +74,13 @@ function AdminApp() {
   // This ensures the backend knows about the user and can check admin status
   const { isSignedIn, getToken } = useAuth();
   
-  // Setup token getter for axios interceptor
+  // Setup token getter for axios interceptor - CRITICAL: Must happen first
   useEffect(() => {
-    if (getToken) {
+    if (getToken && typeof getToken === 'function') {
       setupAuthToken(getToken);
+      console.log('✅ AdminApp: Token getter set up');
+    } else {
+      console.warn('⚠️ AdminApp: getToken not available yet');
     }
   }, [getToken]);
   
@@ -85,14 +88,24 @@ function AdminApp() {
     const sync = async () => {
       if (!isSignedIn) return;
       
+      // CRITICAL: Ensure token is set up before making API calls
+      if (getToken && typeof getToken === 'function') {
+        setupAuthToken(getToken);
+        // Small delay to ensure token setup is complete
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
       try {
         // Sync user with backend - pass admin role to ensure correct role assignment
-        // Cookies are sent automatically by axios
         await userAPI.sync('admin');
-        console.log('✅ Admin user synced with backend via cookie session');
+        console.log('✅ Admin user synced with backend');
       } catch (e) {
         // Non-blocking - log error but don't prevent app from loading
-        console.warn('⚠️ Admin user sync failed (non-blocking):', e.message);
+        console.error('❌ Admin user sync failed:', {
+          error: e.message,
+          status: e.response?.status,
+          data: e.response?.data
+        });
       }
     };
     

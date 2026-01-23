@@ -60,10 +60,13 @@ function UserApp() {
   const { isSignedIn, getToken } = useClerkAuth();
   const { user } = useUser();
   
-  // Setup token getter for axios interceptor
+  // Setup token getter for axios interceptor - CRITICAL: Must happen first
   useEffect(() => {
-    if (getToken) {
+    if (getToken && typeof getToken === 'function') {
       setupAuthToken(getToken);
+      console.log('✅ UserApp: Token getter set up');
+    } else {
+      console.warn('⚠️ UserApp: getToken not available yet');
     }
   }, [getToken]);
   
@@ -81,14 +84,24 @@ function UserApp() {
         return;
       }
       
+      // CRITICAL: Ensure token is set up before making API calls
+      if (getToken && typeof getToken === 'function') {
+        setupAuthToken(getToken);
+        // Small delay to ensure token setup is complete
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
       try {
-        // Sync user with backend - cookies are sent automatically by axios
-        // This will create the user document in MongoDB if it doesn't exist
+        // Sync user with backend - tokens are sent automatically by axios interceptor
         await userAPI.sync();
-        console.log('✅ User synced with backend via cookie session');
+        console.log('✅ User synced with backend');
       } catch (e) {
         // Non-blocking - log error but don't prevent app from loading
-        console.warn('⚠️ User sync failed (non-blocking):', e.message);
+        console.error('❌ User sync failed:', {
+          error: e.message,
+          status: e.response?.status,
+          data: e.response?.data
+        });
       }
     };
     

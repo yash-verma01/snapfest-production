@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { useAuth } from '@clerk/clerk-react';
 
 // API Base URL - Uses environment variable for production, falls back to localhost for development
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
@@ -22,7 +21,32 @@ let getTokenFunction = null;
  * This should be called from a component that has access to useAuth hook
  */
 export const setupAuthToken = (getToken) => {
-  getTokenFunction = getToken;
+  if (getToken && typeof getToken === 'function') {
+    getTokenFunction = getToken;
+    console.log('✅ setupAuthToken: Token getter initialized');
+  } else {
+    console.warn('⚠️ setupAuthToken: Invalid getToken function provided');
+  }
+};
+
+/**
+ * Helper function to get Clerk token - tries multiple methods
+ */
+const getClerkToken = async () => {
+  // Method 1: Use stored getToken function (from useAuth hook) - PRIMARY METHOD
+  if (getTokenFunction && typeof getTokenFunction === 'function') {
+    try {
+      const token = await getTokenFunction();
+      if (token && typeof token === 'string' && token.length > 0) {
+        return token;
+      }
+    } catch (error) {
+      // getToken() might fail if user is not signed in - this is normal
+      // Don't log as error, just return null
+    }
+  }
+  
+  return null;
 };
 
 /**
@@ -36,65 +60,41 @@ export const setupAuthToken = (getToken) => {
 api.interceptors.request.use(
   async (config) => {
     try {
-      // Get Clerk session token (works cross-origin)
-      // Use getTokenFunction if available (set by components)
-      if (getTokenFunction) {
-        try {
-          const token = await getTokenFunction();
-          
-          if (token) {
-            // Use Clerk session token in Authorization header
-            config.headers.Authorization = `Bearer ${token}`;
-            
-            if (process.env.NODE_ENV === 'development') {
-              console.log('✅ API Request: Token added to Authorization header', {
-                url: config.url,
-                method: config.method,
-                tokenPreview: token.substring(0, 20) + '...'
-              });
-            }
-          } else {
-            if (process.env.NODE_ENV === 'development') {
-              console.warn('⚠️ API Request: getToken() returned null', {
-                url: config.url,
-                method: config.method
-              });
-            }
-          }
-        } catch (tokenError) {
-          // getToken() might fail if user is not signed in
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('⚠️ API Request: getToken() failed', {
-              url: config.url,
-              method: config.method,
-              error: tokenError.message
-            });
-          }
-        }
+      // Always try to get token (multiple fallback methods)
+      const token = await getClerkToken();
+      
+      if (token) {
+        // Use Clerk session token in Authorization header
+        config.headers.Authorization = `Bearer ${token}`;
+        
+        // Log in production too for debugging (can remove later)
+        console.log('✅ API Request: Token added', {
+          url: config.url?.substring(0, 50),
+          method: config.method,
+          hasToken: !!token
+        });
       } else {
-        // Token function not set up yet - this might happen on initial load
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('⚠️ API Request: getTokenFunction not set up yet', {
-            url: config.url,
-            method: config.method
-          });
-        }
+        // No token available - log for debugging
+        console.warn('⚠️ API Request: No token available', {
+          url: config.url?.substring(0, 50),
+          method: config.method,
+          hasGetTokenFunction: !!getTokenFunction,
+          hasWindowClerk: typeof window !== 'undefined' && !!window.Clerk
+        });
       }
       
       // Fallback: Legacy token support (if needed)
       const legacyToken = localStorage.getItem('token');
       if (legacyToken && !config.headers.Authorization) {
         config.headers.Authorization = `Bearer ${legacyToken}`;
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✅ API Request: Using legacy token from localStorage');
-        }
+        console.log('✅ API Request: Using legacy token from localStorage');
       }
       
       return config;
     } catch (error) {
       // If getToken() fails (user not signed in), continue without token
       // Backend will handle authentication via cookies if available
-      console.error('❌ API Request Interceptor Error:', error);
+      console.error('❌ API Request Interceptor Error:', error.message);
       return config;
     }
   },
