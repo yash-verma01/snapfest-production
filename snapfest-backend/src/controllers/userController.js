@@ -1934,13 +1934,50 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
     secretKey: process.env.CLERK_SECRET_KEY || process.env.CLERK_SECRET_KEY_USER
   });
   
-  // Try getAuth(req) first, then fallback to req.auth
-  let clerkAuth = getAuth(req);
+  let clerkAuth = null;
   
-  // Fallback: Check if req.auth exists
-  if (!clerkAuth?.userId && req.auth?.userId) {
-    clerkAuth = req.auth;
-    console.log('⚠️ syncClerkUser: Using req.auth fallback');
+  // Method 1: Check Authorization header (token-based - works cross-origin)
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    try {
+      // Decode Clerk JWT token to get userId
+      const jwt = await import('jsonwebtoken');
+      const decoded = jwt.default.decode(token);
+      
+      if (decoded && decoded.sub) {
+        const userId = decoded.sub;
+        const clerkClient = getClerkClient();
+        const clerkUser = await clerkClient.users.getUser(userId);
+        
+        clerkAuth = {
+          userId: userId,
+          claims: {
+            email: clerkUser.emailAddresses?.[0]?.emailAddress,
+            firstName: clerkUser.firstName,
+            lastName: clerkUser.lastName,
+            name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
+            publicMetadata: clerkUser.publicMetadata || {}
+          }
+        };
+        
+        console.log('✅ syncClerkUser: Using token-based authentication');
+      }
+    } catch (tokenError) {
+      // Token invalid, fall back to cookie-based auth
+      console.log('⚠️ syncClerkUser: Token decode failed, falling back to cookies');
+    }
+  }
+  
+  // Method 2: Fallback to cookie-based auth (getAuth from cookies)
+  if (!clerkAuth) {
+    clerkAuth = getAuth(req);
+    
+    // Fallback: Check if req.auth exists
+    if (!clerkAuth?.userId && req.auth?.userId) {
+      clerkAuth = req.auth;
+      console.log('⚠️ syncClerkUser: Using req.auth fallback');
+    }
   }
   
   // CRITICAL: Enhanced debugging for Clerk session extraction
@@ -1953,6 +1990,7 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
       requestCookies: Object.keys(req.cookies || {}),
       cookieNames: Object.keys(req.cookies || {}),
       hasAuthorizationHeader: !!req.headers.authorization,
+      authMethod: authHeader ? 'token' : 'cookie',
       origin: req.headers.origin,
       referer: req.headers.referer,
       userAgent: req.headers['user-agent']?.substring(0, 50),
@@ -1976,7 +2014,8 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
       debug: {
         hasGetAuth: !!getAuth(req),
         hasReqAuth: !!req.auth,
-        cookieCount: Object.keys(req.cookies || {}).length
+        cookieCount: Object.keys(req.cookies || {}).length,
+        hasAuthorizationHeader: !!authHeader
       }
     });
   }

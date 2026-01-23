@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getToken } from '@clerk/clerk-react';
 
 // API Base URL - Uses environment variable for production, falls back to localhost for development
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
@@ -7,31 +8,43 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 20000, // Increased from 10000 to 20000 (20 seconds) to handle slow database queries
-  withCredentials: true,
+  withCredentials: true, // Keep for cookie fallback in local development
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 /**
- * Request interceptor - cookie-based authentication
+ * Request interceptor - Token-based authentication (Clerk session tokens)
  * 
- * Switched from JWT tokens to Clerk cookie sessions:
- * - Removed getToken() calls and Authorization header injection for Clerk
- * - Session cookies are sent automatically via withCredentials: true
- * - Legacy token support kept for backward compatibility (if needed)
+ * CRITICAL FIX: Use Clerk getToken() for cross-origin authentication
+ * - Local: Cookies work (same domain)
+ * - Production: Tokens work (cross-origin)
+ * - Falls back to cookies if token unavailable (backward compatibility)
  */
 api.interceptors.request.use(
-  (config) => {
-    // Only add legacy token if explicitly present (for non-Clerk routes)
-    // Clerk authentication uses HTTP-only session cookies, not Authorization headers
-    const legacyToken = localStorage.getItem('token');
-    if (legacyToken && !config.headers.Authorization) {
-      // Only add if Authorization header wasn't explicitly set in the request
-      config.headers.Authorization = `Bearer ${legacyToken}`;
+  async (config) => {
+    try {
+      // Get Clerk session token (works cross-origin)
+      const token = await getToken();
+      
+      if (token) {
+        // Use Clerk session token in Authorization header
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      
+      // Fallback: Legacy token support (if needed)
+      const legacyToken = localStorage.getItem('token');
+      if (legacyToken && !config.headers.Authorization) {
+        config.headers.Authorization = `Bearer ${legacyToken}`;
+      }
+      
+      return config;
+    } catch (error) {
+      // If getToken() fails (user not signed in), continue without token
+      // Backend will handle authentication via cookies if available
+      return config;
     }
-    // Note: Clerk session cookies are automatically included via withCredentials: true
-    return config;
   },
   (error) => Promise.reject(error)
 );

@@ -415,14 +415,58 @@ export const vendorOrAdmin = (req, res, next) => {
  */
 export const optionalAuth = async (req, res, next) => {
   try {
-    // Try getAuth(req) first, then fallback to req.auth
-    let clerkAuth = getAuth(req);
+    let clerkAuth = null;
     
-    // Fallback: Check if req.auth exists
-    if (!clerkAuth?.userId && req.auth?.userId) {
-      clerkAuth = req.auth;
-      if (process.env.NODE_ENV === 'development') {
-        console.log('⚠️ optionalAuth: Using req.auth fallback');
+    // Method 1: Check Authorization header (token-based - works cross-origin)
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        // Decode Clerk JWT token to get userId
+        // Clerk tokens are JWTs with 'sub' claim containing userId
+        const jwt = await import('jsonwebtoken');
+        const decoded = jwt.default.decode(token);
+        
+        if (decoded && decoded.sub) {
+          const userId = decoded.sub;
+          
+          // Fetch user from Clerk to get full details
+          const clerkClient = getClerkClient();
+          const clerkUser = await clerkClient.users.getUser(userId);
+          
+          clerkAuth = {
+            userId: userId,
+            claims: {
+              email: clerkUser.emailAddresses?.[0]?.emailAddress,
+              firstName: clerkUser.firstName,
+              lastName: clerkUser.lastName,
+              name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
+              publicMetadata: clerkUser.publicMetadata || {}
+            }
+          };
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ optionalAuth: Using token-based authentication');
+          }
+        }
+      } catch (tokenError) {
+        // Token invalid or decode failed, fall back to cookie-based auth
+        if (process.env.NODE_ENV === 'development') {
+          console.log('⚠️ optionalAuth: Token decode failed, falling back to cookies');
+        }
+      }
+    }
+    
+    // Method 2: Fallback to cookie-based auth (getAuth from cookies)
+    if (!clerkAuth) {
+      clerkAuth = getAuth(req);
+      
+      // Fallback: Check if req.auth exists
+      if (!clerkAuth?.userId && req.auth?.userId) {
+        clerkAuth = req.auth;
+        if (process.env.NODE_ENV === 'development') {
+          console.log('⚠️ optionalAuth: Using req.auth fallback');
+        }
       }
     }
     
@@ -430,11 +474,13 @@ export const optionalAuth = async (req, res, next) => {
     if (process.env.NODE_ENV === 'development') {
       if (!clerkAuth?.userId) {
         console.log('🔍 optionalAuth: No Clerk session found');
+        console.log('   Auth method:', authHeader ? 'token' : 'cookie');
         console.log('   getAuth(req):', getAuth(req));
         console.log('   req.auth:', req.auth);
         console.log('   Request cookies:', Object.keys(req.cookies || {}));
         console.log('   Request headers:', {
           cookie: req.headers.cookie ? 'present' : 'missing',
+          authorization: authHeader ? 'present' : 'missing',
           origin: req.headers.origin,
           referer: req.headers.referer
         });
