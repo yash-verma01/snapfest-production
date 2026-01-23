@@ -4,6 +4,7 @@ import { useUser, useClerk, SignedIn, SignedOut, UserButton } from '@clerk/clerk
 import { Menu as MenuIcon, X, User, LogOut, Settings, Package, Calendar, Home, Camera, Heart, ShoppingCart, Star } from 'lucide-react';
 import { Menu, Transition } from '@headlessui/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { userAPI, vendorAPI } from '../services/api';
 
 const Navbar = memo(() => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -35,25 +36,28 @@ const Navbar = memo(() => {
 
     const syncPromise = (async () => {
       try {
-        const url = selectedRole 
-          ? `http://localhost:5001/api/users/sync?role=${selectedRole}`
-          : 'http://localhost:5001/api/users/sync';
+        // Determine role
+        const role = selectedRole || 
+                     user?.publicMetadata?.role || 
+                     sessionStorage.getItem('selectedRole') || 
+                     'user';
         
-        const response = await fetch(url, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        let response;
+        // Use role-specific sync endpoint
+        if (role === 'vendor') {
+          response = await vendorAPI.sync();
+        } else {
+          response = await userAPI.sync(role);
+        }
         
-        if (response.ok) {
-          const data = await response.json();
-          const role = data.data?.user?.role || data.data?.vendor?.role || selectedRole;
-          if (role) {
-            setUserRole(role);
+        if (response.data) {
+          const roleFromResponse = response.data?.user?.role || 
+                                  response.data?.vendor?.role || 
+                                  role;
+          if (roleFromResponse) {
+            setUserRole(roleFromResponse);
           }
-          return role;
+          return roleFromResponse;
         }
       } catch (error) {
         console.error('Error syncing user role:', error);
@@ -65,7 +69,7 @@ const Navbar = memo(() => {
 
     syncRequestRef.current = syncPromise;
     return syncPromise;
-  }, []);
+  }, [user]);
 
   // Memoized profile fetch with request deduplication
   const fetchBackendProfile = useCallback(async () => {
@@ -76,16 +80,23 @@ const Navbar = memo(() => {
 
     const profilePromise = (async () => {
       try {
-        const response = await fetch('http://localhost:5001/api/users/profile', {
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        // Determine role first
+        const role = user?.publicMetadata?.role || 
+                     userRole || 
+                     sessionStorage.getItem('selectedRole') || 
+                     'user';
         
-        if (response.ok) {
-          const data = await response.json();
-          const userName = data.data?.user?.name;
+        let response;
+        // Call role-specific API method
+        if (role === 'vendor') {
+          response = await vendorAPI.getVendorProfile();
+        } else {
+          response = await userAPI.getUserProfile();
+        }
+        
+        if (response.data) {
+          const userName = response.data?.data?.user?.name || 
+                          response.data?.data?.vendor?.name;
           if (userName) {
             setBackendUserName(userName);
           }
@@ -100,7 +111,7 @@ const Navbar = memo(() => {
 
     profileRequestRef.current = profilePromise;
     return profilePromise;
-  }, []);
+  }, [user, userRole]);
 
   // Combined useEffect for user role and profile - optimized
   useEffect(() => {

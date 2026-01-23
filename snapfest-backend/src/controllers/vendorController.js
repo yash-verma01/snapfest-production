@@ -738,7 +738,7 @@ export const getVendorBookings = asyncHandler(async (req, res) => {
     .populate('userId', 'name email phone')
     .populate('packageId', 'title category basePrice')
     .populate('assignedVendorId', 'name email')
-    .sort({ assignedAt: -1, _id: -1 })
+    .sort({ createdAt: -1 })
     .limit(limit);
 
   // If we have space, get other bookings

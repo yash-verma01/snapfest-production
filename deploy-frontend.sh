@@ -129,7 +129,7 @@ fi
 echo -e "${YELLOW}Deploying to Azure...${NC}"
 
 # Deploy using SWA CLI with SSL verification disabled
-NODE_TLS_REJECT_UNAUTHORIZED=0 swa deploy ./dist \
+NODE_TLS_REJECT_UNAUTHORIZED=0 npx @azure/static-web-apps-cli deploy ./dist \
     --deployment-token "$DEPLOYMENT_TOKEN" \
     --env production
 

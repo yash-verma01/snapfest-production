@@ -1,6 +1,7 @@
 import { User } from '../models/index.js';
 import { getAuth } from '@clerk/express';
 import { createClerkClient } from '@clerk/clerk-sdk-node';
+import jwt from 'jsonwebtoken';
 
 // Note: dotenv.config() is already called in server.js
 // No need to reload environment variables here
@@ -29,8 +30,7 @@ export const authenticate = async (req, res, next) => {
       const token = authHeader.substring(7);
       try {
         // Decode Clerk JWT token to get userId
-        const jwt = await import('jsonwebtoken');
-        const decoded = jwt.default.decode(token);
+        const decoded = jwt.decode(token);
         
         if (decoded && decoded.sub) {
           const userId = decoded.sub;
@@ -481,8 +481,7 @@ export const optionalAuth = async (req, res, next) => {
       try {
         // Decode Clerk JWT token to get userId
         // Clerk tokens are JWTs with 'sub' claim containing userId
-        const jwt = await import('jsonwebtoken');
-        const decoded = jwt.default.decode(token);
+        const decoded = jwt.decode(token);
         
         if (decoded && decoded.sub) {
           const userId = decoded.sub;
