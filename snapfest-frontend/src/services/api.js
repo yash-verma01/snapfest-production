@@ -125,16 +125,20 @@ api.interceptors.request.use(
 // Response interceptor to handle errors
 api.interceptors.response.use(
   (response) => {
-    // Only log in development mode, and only status/URL (no sensitive data)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('API Response:', response.status, response.config.url);
-    }
     return response;
   },
   (error) => {
-    // Only log error status/URL, not sensitive error data
-    if (process.env.NODE_ENV === 'development') {
-      console.error('API Request failed:', error.response?.status, error.config?.url);
+    // Enhanced error logging
+    if (error.response) {
+      console.error('❌ API Error:', {
+        status: error.response.status,
+        url: error.config?.url,
+        method: error.config?.method,
+        data: error.response.data,
+        hasAuthHeader: !!error.config?.headers?.Authorization
+      });
+    } else {
+      console.error('❌ API Network Error:', error.message);
     }
     // Do not force redirect; Clerk handles auth UI and ProtectedRoute gates access
     return Promise.reject(error);

@@ -64,6 +64,7 @@ function VendorRootRedirect() {
 function VendorApp() {
   // Sync Clerk vendor to backend on sign-in
   const { isSignedIn, getToken } = useAuth();
+  const { user } = useUser();
   
   // Setup token getter for axios interceptor - CRITICAL: Must happen first
   useEffect(() => {
@@ -76,25 +77,50 @@ function VendorApp() {
   }, [getToken]);
   
   useEffect(() => {
-    const sync = async () => {
+    const sync = async (retryCount = 0) => {
       if (!isSignedIn) return;
+      
+      // Wait for window.Clerk to be available
+      if (typeof window === 'undefined' || !window.Clerk?.session) {
+        if (retryCount < 10) {
+          console.log(`⏳ VendorApp: Waiting for Clerk session (attempt ${retryCount + 1}/10)...`);
+          setTimeout(() => sync(retryCount + 1), 300);
+          return;
+        } else {
+          console.error('❌ VendorApp: Clerk session not available after 10 attempts');
+          return;
+        }
+      }
       
       // CRITICAL: Ensure token is set up before making API calls
       if (getToken && typeof getToken === 'function') {
         setupAuthToken(getToken);
-        // Small delay to ensure token setup is complete
         await new Promise(resolve => setTimeout(resolve, 200));
       }
       
       try {
+        // Verify token is available before calling sync
+        const token = await window.Clerk.session.getToken();
+        if (!token) {
+          throw new Error('Token not available');
+        }
+        
+        console.log('🔄 VendorApp: Calling vendorAPI.sync()...');
         await vendorAPI.sync();
         console.log('✅ Vendor synced with backend');
       } catch (e) {
         console.error('❌ Vendor sync failed:', {
           error: e.message,
           status: e.response?.status,
-          data: e.response?.data
+          data: e.response?.data,
+          retryCount
         });
+        
+        // Retry once if it's a 401 and we haven't retried yet
+        if (e.response?.status === 401 && retryCount === 0) {
+          console.log('🔄 Retrying vendor sync after 1 second...');
+          setTimeout(() => sync(1), 1000);
+        }
       }
     };
     
@@ -103,7 +129,7 @@ function VendorApp() {
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [isSignedIn]);
+  }, [isSignedIn, getToken, user]);
 
   return (
     <ErrorBoundary>

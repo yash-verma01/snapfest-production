@@ -21,65 +21,122 @@ const getClerkClient = () => createClerkClient({
  */
 export const authenticate = async (req, res, next) => {
   try {
-    // Get authenticated user from Clerk middleware (parsed from session cookies)
-    // getAuth(req) should return the auth object, but if it's not authenticated, try calling req.auth() as function
-    let clerkAuth = getAuth(req);
+    let clerkAuth = null;
     
-    // Fallback: If getAuth returns unauthenticated, try calling req.auth as function
-    if (!clerkAuth?.userId && req.auth && typeof req.auth === 'function') {
+    // Method 1: Check Authorization header (token-based - works cross-origin)
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
       try {
-        const authFromFunc = req.auth();
-        if (authFromFunc?.userId) {
-          clerkAuth = authFromFunc;
-          if (process.env.NODE_ENV === 'development') {
-            console.log('⚠️ Using req.auth() fallback');
-          }
+        // Decode Clerk JWT token to get userId
+        const jwt = await import('jsonwebtoken');
+        const decoded = jwt.default.decode(token);
+        
+        if (decoded && decoded.sub) {
+          const userId = decoded.sub;
+          
+          // Fetch user from Clerk to get full details
+          const clerkClient = getClerkClient();
+          const clerkUser = await clerkClient.users.getUser(userId);
+          
+          clerkAuth = {
+            userId: userId,
+            sessionId: decoded.sid || null,
+            claims: {
+              email: clerkUser.emailAddresses?.[0]?.emailAddress,
+              firstName: clerkUser.firstName,
+              lastName: clerkUser.lastName,
+              name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
+              publicMetadata: clerkUser.publicMetadata || {}
+            }
+          };
+          
+          console.log('✅ authenticate: Using token-based authentication', {
+            userId: userId,
+            email: clerkUser.emailAddresses?.[0]?.emailAddress,
+            role: clerkUser.publicMetadata?.role || 'none',
+            url: req.url
+          });
+        } else {
+          console.warn('⚠️ authenticate: Token decoded but no userId found', {
+            decoded: decoded ? Object.keys(decoded) : null
+          });
         }
-      } catch (e) {
-        // Ignore errors from calling req.auth()
+      } catch (tokenError) {
+        // Token invalid or decode failed, fall back to cookie-based auth
+        console.warn('⚠️ authenticate: Token decode failed, falling back to cookies', {
+          error: tokenError.message,
+          url: req.url
+        });
+      }
+    } else if (authHeader) {
+      // Authorization header present but not Bearer token
+      console.warn('⚠️ authenticate: Authorization header present but not Bearer token', {
+        headerPreview: authHeader.substring(0, 20) + '...',
+        url: req.url
+      });
+    }
+    
+    // Method 2: Fallback to cookie-based auth (getAuth from cookies)
+    if (!clerkAuth) {
+      clerkAuth = getAuth(req);
+      
+      // Fallback: If getAuth returns unauthenticated, try calling req.auth as function
+      if (!clerkAuth?.userId && req.auth && typeof req.auth === 'function') {
+        try {
+          const authFromFunc = req.auth();
+          if (authFromFunc?.userId) {
+            clerkAuth = authFromFunc;
+            if (process.env.NODE_ENV === 'development') {
+              console.log('⚠️ authenticate: Using req.auth() fallback');
+            }
+          }
+        } catch (e) {
+          // Ignore errors from calling req.auth()
+        }
+      }
+      
+      // Also check if req.auth has properties directly (Proxy behavior)
+      if (!clerkAuth?.userId && req.auth && req.auth.userId) {
+        clerkAuth = req.auth;
+        if (process.env.NODE_ENV === 'development') {
+          console.log('⚠️ authenticate: Using req.auth properties directly');
+        }
       }
     }
     
-    // Also check if req.auth has properties directly (Proxy behavior)
-    if (!clerkAuth?.userId && req.auth && req.auth.userId) {
-      clerkAuth = req.auth;
-      if (process.env.NODE_ENV === 'development') {
-        console.log('⚠️ Using req.auth properties directly');
-      }
-    }
-    
-    // Debug logging in development
+    // Debug logging
     if (process.env.NODE_ENV === 'development') {
       if (!clerkAuth?.userId) {
-        console.log('🔍 authenticate: No Clerk session found');
-        console.log('   getAuth(req).isAuthenticated:', getAuth(req).isAuthenticated);
-        console.log('   getAuth(req).userId:', getAuth(req).userId);
-        console.log('   req.auth type:', typeof req.auth);
-        if (typeof req.auth === 'function') {
-          try {
-            console.log('   req.auth() result:', req.auth());
-          } catch (e) {
-            console.log('   req.auth() error:', e.message);
-          }
-        }
-        console.log('   Request cookies:', Object.keys(req.cookies || {}));
-        console.log('   Cookie header present:', !!req.headers.cookie);
-        if (req.cookies) {
-          console.log('   __session cookie value (first 50 chars):', req.cookies.__session?.substring(0, 50));
-        }
+        console.log('🔍 authenticate: No Clerk session found', {
+          url: req.url,
+          authMethod: authHeader ? 'token' : 'cookie',
+          hasAuthorizationHeader: !!authHeader,
+          hasCookies: !!req.headers.cookie,
+          getAuthUserId: getAuth(req)?.userId || null
+        });
       }
     }
     
     if (!clerkAuth?.userId) {
       return res.status(401).json({ 
         success: false, 
-        message: 'Access denied. Please sign in.' 
+        message: 'Access denied. Please sign in.',
+        code: 'CLERK_SESSION_NOT_FOUND',
+        debug: {
+          hasGetAuth: !!getAuth(req),
+          hasReqAuth: !!req.auth,
+          cookieCount: Object.keys(req.cookies || {}).length,
+          hasAuthorizationHeader: !!authHeader,
+          url: req.url
+        }
       });
     }
 
     // Extract user information from Clerk session claims
     // Clerk provides email in various claim formats - try all possibilities
     // Note: claims might be in sessionClaims, not directly in clerkAuth
+    // For token-based auth, claims are already populated in clerkAuth.claims
     const sessionClaims = clerkAuth?.sessionClaims || clerkAuth?.claims || {};
     const email = sessionClaims?.email || 
                   sessionClaims?.primary_email_address ||
