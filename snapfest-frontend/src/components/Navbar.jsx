@@ -36,19 +36,28 @@ const Navbar = memo(() => {
 
     const syncPromise = (async () => {
       try {
+        // Determine role
+        const role = selectedRole || 
+                     user?.publicMetadata?.role || 
+                     sessionStorage.getItem('selectedRole') || 
+                     'user';
+        
         let response;
-        if (selectedRole === 'vendor') {
+        // Use role-specific sync endpoint
+        if (role === 'vendor') {
           response = await vendorAPI.sync();
         } else {
-          response = await userAPI.sync(selectedRole);
+          response = await userAPI.sync(role);
         }
         
-        if (response.data?.success) {
-          const role = response.data.data?.user?.role || response.data.data?.vendor?.role || selectedRole;
-          if (role) {
-            setUserRole(role);
+        if (response.data) {
+          const roleFromResponse = response.data?.user?.role || 
+                                  response.data?.vendor?.role || 
+                                  role;
+          if (roleFromResponse) {
+            setUserRole(roleFromResponse);
           }
-          return role;
+          return roleFromResponse;
         }
       } catch (error) {
         console.error('Error syncing user role:', error);
@@ -60,7 +69,7 @@ const Navbar = memo(() => {
 
     syncRequestRef.current = syncPromise;
     return syncPromise;
-  }, []);
+  }, [user]);
 
   // Memoized profile fetch with request deduplication
   const fetchBackendProfile = useCallback(async () => {
@@ -71,20 +80,23 @@ const Navbar = memo(() => {
 
     const profilePromise = (async () => {
       try {
+        // Determine role first
         const role = user?.publicMetadata?.role || 
                      userRole || 
                      sessionStorage.getItem('selectedRole') || 
                      'user';
         
         let response;
+        // Call role-specific API method
         if (role === 'vendor') {
           response = await vendorAPI.getVendorProfile();
         } else {
           response = await userAPI.getUserProfile();
         }
         
-        if (response.data?.success) {
-          const userName = response.data.data?.user?.name || response.data.data?.vendor?.name;
+        if (response.data) {
+          const userName = response.data?.data?.user?.name || 
+                          response.data?.data?.vendor?.name;
           if (userName) {
             setBackendUserName(userName);
           }
@@ -99,7 +111,7 @@ const Navbar = memo(() => {
 
     profileRequestRef.current = profilePromise;
     return profilePromise;
-  }, []);
+  }, [user, userRole]);
 
   // Combined useEffect for user role and profile - optimized
   useEffect(() => {
@@ -471,13 +483,13 @@ const Navbar = memo(() => {
             ) : (
               <div className="flex items-center space-x-3">
                 <Link
-                  to="/sign-in"
+                  to="/login"
                   className="px-4 py-2 rounded-lg text-gray-700 hover:bg-pink-50 hover:text-pink-600 text-sm font-medium transition-all duration-300"
                 >
                   Login
                 </Link>
                 <Link
-                  to="/sign-up"
+                  to="/register"
                   className="px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
                 >
                   Register
@@ -683,7 +695,7 @@ const Navbar = memo(() => {
                 <>
                   <div className="border-t border-primary-100 my-2"></div>
                   <Link
-                    to="/sign-in"
+                    to="/login"
                     className="flex items-center px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-accent-50 transition-all duration-300 rounded-xl"
                     onClick={closeMenu}
                   >
@@ -691,7 +703,7 @@ const Navbar = memo(() => {
                     Login
                   </Link>
                   <Link
-                    to="/sign-up"
+                    to="/register"
                     className="flex items-center px-4 py-3 text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 transition-all duration-300 rounded-xl font-semibold"
                     onClick={closeMenu}
                   >
