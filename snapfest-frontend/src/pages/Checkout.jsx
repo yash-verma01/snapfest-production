@@ -15,7 +15,7 @@ import {
 import { useCart } from '../hooks';
 import { useAuth } from '../context/AuthContext';
 import { Card, Button, Badge } from '../components/ui';
-import { paymentAPI } from '../services/api';
+import { paymentAPI, bookingAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 const Checkout = () => {
@@ -91,16 +91,8 @@ const Checkout = () => {
         console.log('💳 Checkout: Creating booking...', bookingData);
         
         // Create booking
-        const bookingResponse = await fetch('http://localhost:5001/api/bookings', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify(bookingData)
-        });
-
-        const bookingResult = await bookingResponse.json();
+        const bookingResponse = await bookingAPI.createBooking(bookingData);
+        const bookingResult = bookingResponse.data;
         console.log('💳 Checkout: Booking created:', bookingResult);
 
         if (!bookingResult.success) {
@@ -116,16 +108,8 @@ const Checkout = () => {
 
         console.log('💳 Checkout: Creating partial payment order...', paymentData);
         
-        const paymentResponse = await fetch('http://localhost:5001/api/payments/create-order/partial', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify(paymentData)
-        });
-
-        const paymentResult = await paymentResponse.json();
+        const paymentResponse = await paymentAPI.createPartialPaymentOrder(paymentData);
+        const paymentResult = paymentResponse.data;
         console.log('💳 Checkout: Payment order created:', paymentResult);
 
         if (!paymentResult.success) {
@@ -163,29 +147,22 @@ const Checkout = () => {
           
           try {
             // Verify payment
-            const verifyResponse = await fetch('http://localhost:5001/api/payments/verify', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              },
-              body: JSON.stringify({
-                orderId: response.razorpay_order_id,
-                paymentId: response.razorpay_payment_id,
-                signature: response.razorpay_signature
-              })
+            const verifyResponse = await paymentAPI.verifyPayment({
+              orderId: response.razorpay_order_id,
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature
             });
 
-            const verifyResult = await verifyResponse.json();
+            const verifyResult = verifyResponse.data;
             console.log('💳 Checkout: Payment verified:', verifyResult);
 
-            if (verifyResult.data.success) {
+            if (verifyResult.success) {
               // Payment successful - redirect to success page
               navigate('/payment/success', { 
                 state: { 
                   bookingId: firstResult.booking._id,
                   amount: firstResult.payment.amount,
-                  remainingAmount: verifyResult.data.data.remainingAmount
+                  remainingAmount: verifyResult.data?.remainingAmount
                 }
               });
             } else {

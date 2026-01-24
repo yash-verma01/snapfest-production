@@ -3,7 +3,7 @@ import { SignIn, SignUp, useUser, useClerk } from '@clerk/clerk-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Card from '../ui/Card';
-import { userAPI } from '../../services/api';
+import { userAPI, vendorAPI, publicAPI } from '../../services/api';
 import { Sparkles, ArrowRight, Users, Briefcase, Shield } from 'lucide-react';
 
 const RoleBasedAuth = ({ mode = 'signin' }) => {
@@ -32,17 +32,10 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
             // If no role in metadata, fetch from backend
             const fetchAndRedirect = async () => {
               try {
-                const response = await fetch('http://localhost:5001/api/users/sync', {
-                  method: 'POST',
-                  credentials: 'include',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                });
+                const response = await userAPI.sync();
                 
-                if (response.ok) {
-                  const data = await response.json();
-                  const userRole = data.data?.user?.role || data.data?.vendor?.role || 'user';
+                if (response.data?.success) {
+                  const userRole = response.data.data?.user?.role || response.data.data?.vendor?.role || 'user';
                   redirectBasedOnRole(userRole);
                 } else {
                   redirectBasedOnRole('user');
@@ -66,17 +59,10 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
             // Fallback: check backend
             const fetchAndRedirect = async () => {
               try {
-                const response = await fetch('http://localhost:5001/api/users/sync', {
-                  method: 'POST',
-                  credentials: 'include',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                });
+                const response = await userAPI.sync();
                 
-                if (response.ok) {
-                  const data = await response.json();
-                  const userRole = data.data?.user?.role || data.data?.vendor?.role || 'user';
+                if (response.data?.success) {
+                  const userRole = response.data.data?.user?.role || response.data.data?.vendor?.role || 'user';
                   redirectBasedOnRole(userRole);
                 } else {
                   redirectBasedOnRole('user');
@@ -110,27 +96,14 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
             
             // For vendors, use vendor sync endpoint instead of user sync
             if (role === 'vendor') {
-              response = await fetch('http://localhost:5001/api/vendors/sync', {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-              });
+              response = await vendorAPI.sync();
             } else {
               // For users and admins, use user sync endpoint
-              response = await fetch(`http://localhost:5001/api/users/sync?role=${role}`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-              });
+              response = await userAPI.sync(role);
             }
             
-            if (response.ok) {
-              const data = await response.json();
-              console.log('User synced with role:', role, data);
+            if (response.data?.success) {
+              console.log('User synced with role:', role, response.data);
               
               // Update Clerk metadata if possible (this requires backend webhook in production)
               // For now, we'll rely on the database role
@@ -168,17 +141,10 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
         // If no role selected but on signup complete page, check backend
         const checkUserRole = async () => {
           try {
-            const response = await fetch('http://localhost:5001/api/users/sync', {
-              method: 'POST',
-              credentials: 'include',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            });
+            const response = await userAPI.sync();
             
-            if (response.ok) {
-              const data = await response.json();
-              const userRole = data.data?.user?.role || data.data?.vendor?.role || 'user';
+            if (response.data?.success) {
+              const userRole = response.data.data?.user?.role || response.data.data?.vendor?.role || 'user';
               redirectBasedOnRole(userRole);
             } else {
               // Default to user profile if sync fails
@@ -218,11 +184,10 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
   useEffect(() => {
     const checkAdminLimit = async () => {
       try {
-        const response = await fetch('http://localhost:5001/api/users/check-admin-limit');
-        const data = await response.json();
+        const response = await publicAPI.checkAdminLimit();
         
-        if (data.success) {
-          setAdminLimitReached(!data.data.isAllowed);
+        if (response.data?.success) {
+          setAdminLimitReached(!response.data.data.isAllowed);
         }
       } catch (error) {
         console.error('Error checking admin limit:', error);

@@ -124,26 +124,19 @@ const VenueDetail = () => {
         }
       }
       
-      const response = await fetch('http://localhost:5001/api/enquiries', {
-        method: 'POST',
-        headers,
-        credentials: 'include',
-        body: JSON.stringify({
-          name: enquiryForm.name,
-          email: enquiryForm.email,
-          phone: enquiryForm.phone,
-          enquiryType: 'venue',
-          relatedId: venue?._id,
-          relatedModel: 'Venue',
-          subject: 'Enquiry',
-          message: enquiryForm.message,
-          eventDate: enquiryForm.eventDate || null
-        })
+      const response = await publicAPI.createEnquiry({
+        name: enquiryForm.name,
+        email: enquiryForm.email,
+        phone: enquiryForm.phone,
+        enquiryType: 'venue',
+        relatedId: venue?._id,
+        relatedModel: 'Venue',
+        subject: 'Enquiry',
+        message: enquiryForm.message,
+        eventDate: enquiryForm.eventDate || null
       });
       
-      const data = await response.json();
-      
-      if (data.success) {
+      if (response.data?.success) {
         toast.success('Enquiry sent successfully! We\'ll get back to you soon.');
         
         // Reload user profile to reset form with correct values

@@ -1,8 +1,14 @@
 import axios from 'axios';
 
+// Get API URL from environment variable or use production URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+                     (import.meta.env.PROD 
+                       ? 'https://snapfest-api.azurewebsites.net/api'
+                       : 'http://localhost:5001/api');
+
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: 'http://localhost:5001/api',
+  baseURL: API_BASE_URL,
   timeout: 20000, // Increased from 10000 to 20000 (20 seconds) to handle slow database queries
   withCredentials: true,
   headers: {
@@ -407,6 +413,9 @@ export const publicAPI = {
   // Google Places API (via backend)
   getPlacesAutocomplete: (data) => api.post('/places/autocomplete', data),
   getPlaceDetails: (placeId) => api.get(`/places/${placeId}`),
+  
+  // Enquiries
+  createEnquiry: (data) => api.post('/enquiries', data),
 };
 
 export const bookingAPI = {

@@ -4,6 +4,7 @@ import { useUser, useClerk, SignedIn, SignedOut, UserButton } from '@clerk/clerk
 import { Menu as MenuIcon, X, User, LogOut, Settings, Package, Calendar, Home, Camera, Heart, ShoppingCart, Star } from 'lucide-react';
 import { Menu, Transition } from '@headlessui/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { userAPI, vendorAPI } from '../services/api';
 
 const Navbar = memo(() => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -35,21 +36,15 @@ const Navbar = memo(() => {
 
     const syncPromise = (async () => {
       try {
-        const url = selectedRole 
-          ? `http://localhost:5001/api/users/sync?role=${selectedRole}`
-          : 'http://localhost:5001/api/users/sync';
+        let response;
+        if (selectedRole === 'vendor') {
+          response = await vendorAPI.sync();
+        } else {
+          response = await userAPI.sync(selectedRole);
+        }
         
-        const response = await fetch(url, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          const role = data.data?.user?.role || data.data?.vendor?.role || selectedRole;
+        if (response.data?.success) {
+          const role = response.data.data?.user?.role || response.data.data?.vendor?.role || selectedRole;
           if (role) {
             setUserRole(role);
           }
@@ -76,16 +71,20 @@ const Navbar = memo(() => {
 
     const profilePromise = (async () => {
       try {
-        const response = await fetch('http://localhost:5001/api/users/profile', {
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        const role = user?.publicMetadata?.role || 
+                     userRole || 
+                     sessionStorage.getItem('selectedRole') || 
+                     'user';
         
-        if (response.ok) {
-          const data = await response.json();
-          const userName = data.data?.user?.name;
+        let response;
+        if (role === 'vendor') {
+          response = await vendorAPI.getVendorProfile();
+        } else {
+          response = await userAPI.getUserProfile();
+        }
+        
+        if (response.data?.success) {
+          const userName = response.data.data?.user?.name || response.data.data?.vendor?.name;
           if (userName) {
             setBackendUserName(userName);
           }
