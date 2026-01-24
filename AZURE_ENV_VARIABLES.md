@@ -58,6 +58,15 @@ ADMIN_EMAIL=admin@yourdomain.com
 ADMIN_EMAILS=admin@yourdomain.com
 
 # ============================================
+# AZURE BLOB STORAGE (for image uploads)
+# ============================================
+# Get connection string from Azure Portal -> Storage Account -> Access Keys
+AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName=snapfeststorage;AccountKey=xxxxx;EndpointSuffix=core.windows.net
+AZURE_STORAGE_CONTAINER_NAME=uploads
+AZURE_STORAGE_ACCOUNT_NAME=snapfeststorage
+AZURE_STORAGE_ACCOUNT_URL=https://snapfeststorage.blob.core.windows.net
+
+# ============================================
 # JWT (Legacy - for backward compatibility)
 # ============================================
 JWT_SECRET=your-super-secret-jwt-key-change-in-production
@@ -135,6 +144,8 @@ az webapp config appsettings show \
 - [ ] `CLERK_SECRET_KEY` is production key (starts with `sk_live_`)
 - [ ] `CLERK_PUBLISHABLE_KEY` is production key (starts with `pk_live_`)
 - [ ] `MONGODB_URI` is correct and accessible
+- [ ] `AZURE_STORAGE_CONNECTION_STRING` is set (for blob storage)
+- [ ] `AZURE_STORAGE_CONTAINER_NAME` is set (default: uploads)
 - [ ] `NODE_ENV=production`
 - [ ] App Service has been restarted after setting variables
 - [ ] Health check endpoint returns success
