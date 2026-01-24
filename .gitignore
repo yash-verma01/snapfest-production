@@ -28,4 +28,5 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
-*~
+# Mac
+**/.DS_Store

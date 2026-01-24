@@ -11,7 +11,7 @@ import {
   uploadBulkImages
 } from '../controllers/uploadController.js';
 import { authenticate, adminOnly, vendorOrAdmin } from '../middleware/auth.js';
-import { uploadSingle, uploadMultiple, uploadMixed } from '../middleware/upload.js';
+import { uploadSingle, uploadMultiple, uploadMixed, processUploadedFiles } from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -22,7 +22,11 @@ const router = express.Router();
 // @access  Private
 router.post('/profile', 
   authenticate, 
-  uploadSingle('profileImage', 'profiles'), 
+  uploadSingle('profileImage', 'profiles'),
+  async (req, res, next) => {
+    await processUploadedFiles(req, 'profiles');
+    next();
+  },
   uploadProfileImage
 );
 
@@ -34,7 +38,11 @@ router.post('/profile',
 router.post('/package/:packageId', 
   authenticate, 
   adminOnly, 
-  uploadMultiple('images', 10, 'packages'), 
+  uploadMultiple('images', 10, 'packages'),
+  async (req, res, next) => {
+    await processUploadedFiles(req, 'packages');
+    next();
+  },
   uploadPackageImages
 );
 
@@ -46,7 +54,11 @@ router.post('/package/:packageId',
 router.post('/addon/:addonId', 
   authenticate, 
   vendorOrAdmin, 
-  uploadMultiple('images', 5, 'beatbloom'), 
+  uploadMultiple('images', 5, 'beatbloom'),
+  async (req, res, next) => {
+    await processUploadedFiles(req, 'beatbloom');
+    next();
+  },
   uploadAddonImages
 );
 
@@ -58,7 +70,11 @@ router.post('/addon/:addonId',
 router.post('/event/:eventId', 
   authenticate, 
   adminOnly, 
-  uploadMultiple('images', 10, 'events'), 
+  uploadMultiple('images', 10, 'events'),
+  async (req, res, next) => {
+    await processUploadedFiles(req, 'events');
+    next();
+  },
   uploadEventImages
 );
 
@@ -70,7 +86,11 @@ router.post('/event/:eventId',
 router.post('/venue/:venueId', 
   authenticate, 
   adminOnly, 
-  uploadMultiple('images', 10, 'venues'), 
+  uploadMultiple('images', 10, 'venues'),
+  async (req, res, next) => {
+    await processUploadedFiles(req, 'venues');
+    next();
+  },
   uploadVenueImages
 );
 
@@ -82,7 +102,11 @@ router.post('/venue/:venueId',
 router.post('/beatbloom/:beatBloomId', 
   authenticate, 
   adminOnly, 
-  uploadMultiple('images', 10, 'beatbloom'), 
+  uploadMultiple('images', 10, 'beatbloom'),
+  async (req, res, next) => {
+    await processUploadedFiles(req, 'beatbloom');
+    next();
+  },
   uploadBeatBloomImages
 );
 
@@ -94,12 +118,16 @@ router.post('/beatbloom/:beatBloomId',
 // Note: Entity type should be passed as query parameter (e.g., ?entityType=packages)
 router.post('/bulk', 
   authenticate, 
-  (req, res, next) => {
+  async (req, res, next) => {
     // Extract entity type from query parameter or default to 'packages'
     const entityType = req.query.entityType || 'packages';
     // Create middleware with correct entity type
     const upload = uploadMultiple('images', 20, entityType);
-    upload(req, res, next);
+    upload(req, res, async (err) => {
+      if (err) return next(err);
+      await processUploadedFiles(req, entityType);
+      next();
+    });
   },
   uploadBulkImages
 );

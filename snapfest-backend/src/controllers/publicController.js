@@ -1,5 +1,6 @@
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { sanitizeSearchQuery, createSafeRegex } from '../utils/securityUtils.js';
+import { transformImageUrls, transformImageUrl } from '../utils/urlTransformer.js';
 import { Package, Booking, Review, Event, Venue, BeatBloom, User } from '../models/index.js';
 
 // ==================== PACKAGE ROUTES ====================
@@ -7,7 +8,7 @@ export const getAllPackages = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 12;
   const skip = (page - 1) * limit;
-  const { category, minPrice, maxPrice, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+  const { category, minPrice, maxPrice, sortBy = '_id', sortOrder = 'desc' } = req.query;
 
   // Build query
   let query = { isActive: { $ne: false } };
@@ -20,11 +21,12 @@ export const getAllPackages = asyncHandler(async (req, res) => {
   }
 
   // Build sort object - map frontend sortBy values to actual database fields
+  // Using _id for default sorting (always indexed in Cosmos DB, and time-sortable)
   const sort = {};
   if (sortBy === 'popularity') {
     // Popularity is calculated from bookingCount, which isn't in the model
-    // Sort by createdAt (newest first) as a proxy for popularity
-    sort.createdAt = sortOrder === 'desc' ? -1 : 1;
+    // Sort by _id (newest first) as a proxy for popularity (_id is time-sortable)
+    sort._id = sortOrder === 'desc' ? -1 : 1;
   } else if (sortBy === 'price_asc') {
     sort.basePrice = 1;
   } else if (sortBy === 'price_desc') {
@@ -32,8 +34,8 @@ export const getAllPackages = asyncHandler(async (req, res) => {
   } else if (sortBy === 'rating') {
     sort.rating = sortOrder === 'desc' ? -1 : 1;
   } else {
-    // Default to createdAt (newest first) for any other sortBy value
-    sort.createdAt = sortOrder === 'desc' ? -1 : 1;
+    // Default to _id (newest first) for any other sortBy value (_id is always indexed)
+    sort._id = sortOrder === 'desc' ? -1 : 1;
   }
 
   const packages = await Package.find(query)
@@ -77,10 +79,13 @@ export const getAllPackages = asyncHandler(async (req, res) => {
     })
   );
 
+  // Transform image URLs to blob storage URLs
+  const transformedPackages = transformImageUrls(packagesWithStats, ['primaryImage', 'images']);
+
   res.status(200).json({
     success: true,
     data: {
-      packages: packagesWithStats,
+      packages: transformedPackages,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
@@ -140,7 +145,7 @@ export const getPackageById = asyncHandler(async (req, res) => {
         'user.name': 1
       }
     },
-    { $sort: { createdAt: -1 } },
+    { $sort: { _id: -1 } },
     { $limit: 10 }
   ]);
 
@@ -167,10 +172,13 @@ export const getPackageById = asyncHandler(async (req, res) => {
     }
   ]);
 
+  // Transform image URLs to blob storage URLs
+  const transformedPackage = transformImageUrls(packageData.toObject(), ['primaryImage', 'images']);
+
   res.status(200).json({
     success: true,
     data: {
-      package: packageData,
+      package: transformedPackage,
       stats: {
         bookingCount,
         averageRating: avgRating[0]?.averageRating || 0,
@@ -209,11 +217,11 @@ export const getFeaturedPackages = asyncHandler(async (req, res) => {
         }
       },
       {
-        $sort: [
-          { hasBookings: -1 }, // Packages with bookings first
-          { bookingCount: -1 }, // Then by booking count
-          { createdAt: -1 } // Then by creation date
-        ]
+        $sort: {
+          hasBookings: -1, // Packages with bookings first
+          bookingCount: -1, // Then by booking count
+          _id: -1 // Then by creation date (_id is time-sortable)
+        }
       },
       { $limit: limit }
     ]);
@@ -227,7 +235,7 @@ export const getFeaturedPackages = asyncHandler(async (req, res) => {
         isActive: true,
         _id: { $nin: allPackages.map(pkg => pkg._id) }
       })
-      .sort({ createdAt: -1 })
+      .sort({ _id: -1 })
       .limit(limit - allPackages.length);
       
       console.log('📦 Additional packages found:', additionalPackages.length);
@@ -236,9 +244,12 @@ export const getFeaturedPackages = asyncHandler(async (req, res) => {
 
     console.log('✅ Final featured packages count:', allPackages.length);
     
+    // Transform image URLs to blob storage URLs
+    const transformedPackages = transformImageUrls(allPackages, ['primaryImage', 'images']);
+    
     res.status(200).json({
       success: true,
-      data: { packages: allPackages }
+      data: { packages: transformedPackages }
     });
   } catch (error) {
     console.error('❌ Error in getFeaturedPackages:', error);
@@ -248,9 +259,12 @@ export const getFeaturedPackages = asyncHandler(async (req, res) => {
       const fallbackPackages = await Package.find({ isActive: true }).limit(limit);
       console.log('🔄 Fallback packages found:', fallbackPackages.length);
       
+      // Transform image URLs to blob storage URLs
+      const transformedFallback = transformImageUrls(fallbackPackages, ['primaryImage', 'images']);
+      
       res.status(200).json({
         success: true,
-        data: { packages: fallbackPackages }
+        data: { packages: transformedFallback }
       });
     } catch (fallbackError) {
       console.error('❌ Fallback also failed:', fallbackError);
@@ -273,7 +287,7 @@ export const getPackagesByCategory = asyncHandler(async (req, res) => {
     category, 
     isActive: true 
   })
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
@@ -324,7 +338,7 @@ export const searchPackages = asyncHandler(async (req, res) => {
   }
 
   const packages = await Package.find(query)
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
@@ -477,17 +491,20 @@ export const getAllEvents = asyncHandler(async (req, res) => {
   const sort = {};
   sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-  const events = await Package.find(query)
+  const events = await Event.find(query)
     .sort(sort)
     .skip(skip)
     .limit(limit);
 
-  const total = await Package.countDocuments(query);
+  const total = await Event.countDocuments(query);
+
+  // Transform image URLs to blob storage URLs
+  const transformedEvents = transformImageUrls(events, ['image', 'images']);
 
   res.status(200).json({
     success: true,
     data: {
-      events,
+      events: transformedEvents,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
@@ -498,7 +515,7 @@ export const getAllEvents = asyncHandler(async (req, res) => {
 });
 
 export const getEventById = asyncHandler(async (req, res) => {
-  const event = await Package.findById(req.params.id);
+  const event = await Event.findById(req.params.id);
 
   if (!event || !event.isActive) {
     return res.status(404).json({
@@ -508,7 +525,7 @@ export const getEventById = asyncHandler(async (req, res) => {
   }
 
   // Get event statistics
-  const bookingCount = await Booking.countDocuments({ packageId: event._id });
+  const bookingCount = await Booking.countDocuments({ eventId: event._id });
   const avgRating = await Review.aggregate([
     {
       $lookup: {
@@ -520,7 +537,7 @@ export const getEventById = asyncHandler(async (req, res) => {
     },
     {
       $match: {
-        'booking.packageId': event._id
+        'booking.eventId': event._id
       }
     },
     {
@@ -532,10 +549,13 @@ export const getEventById = asyncHandler(async (req, res) => {
     }
   ]);
 
+  // Transform image URLs to blob storage URLs
+  const transformedEvent = transformImageUrls(event.toObject(), ['image', 'images']);
+
   res.status(200).json({
     success: true,
     data: {
-      event,
+      event: transformedEvent,
       stats: {
         bookingCount,
         averageRating: avgRating[0]?.averageRating || 0,
@@ -551,7 +571,7 @@ export const getEventsByCategory = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 12;
   const skip = (page - 1) * limit;
 
-  const events = await Package.find({ 
+  const events = await Event.find({ 
     category, 
     isActive: true 
   })
@@ -559,12 +579,15 @@ export const getEventsByCategory = asyncHandler(async (req, res) => {
     .skip(skip)
     .limit(limit);
 
-  const total = await Package.countDocuments({ category, isActive: true });
+  const total = await Event.countDocuments({ category, isActive: true });
+
+  // Transform image URLs to blob storage URLs
+  const transformedEvents = transformImageUrls(events, ['image', 'images']);
 
   res.status(200).json({
     success: true,
     data: {
-      events,
+      events: transformedEvents,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
@@ -647,7 +670,7 @@ export const getAllBeatBlooms = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 12;
   const skip = (page - 1) * limit;
-  const { category, minPrice, maxPrice, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+  const { category, minPrice, maxPrice, sortBy = '_id', sortOrder = 'desc' } = req.query;
 
   // Build query
   let query = { isActive: { $ne: false } };
@@ -658,9 +681,10 @@ export const getAllBeatBlooms = asyncHandler(async (req, res) => {
     if (maxPrice) query.price.$lte = parseInt(maxPrice);
   }
 
-  // Build sort object
+  // Build sort object - map createdAt to _id for Cosmos DB compatibility
   const sort = {};
-  sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+  const actualSortBy = sortBy === 'createdAt' ? '_id' : sortBy;
+  sort[actualSortBy] = sortOrder === 'desc' ? -1 : 1;
 
   const beatBlooms = await BeatBloom.find(query)
     .sort(sort)
@@ -708,7 +732,7 @@ export const getBeatBloomsByCategory = asyncHandler(async (req, res) => {
     category, 
     isActive: true 
   })
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
@@ -768,7 +792,7 @@ export const searchAll = asyncHandler(async (req, res) => {
       ]
     })
       .limit(limit)
-      .sort({ createdAt: -1 });
+      .sort({ _id: -1 });
     
     results.packages = packages;
   }
@@ -798,7 +822,7 @@ export const searchAll = asyncHandler(async (req, res) => {
       ]
     })
       .limit(limit)
-      .sort({ createdAt: -1 });
+      .sort({ _id: -1 });
     
     results.beatBlooms = beatBlooms;
   }
@@ -832,7 +856,7 @@ export const getApprovedTestimonials = asyncHandler(async (req, res) => {
     isApproved: true
   })
     .populate('userId', 'name')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .limit(parseInt(limit));
 
   res.status(200).json({
@@ -858,7 +882,7 @@ export const getAllReviews = asyncHandler(async (req, res) => {
     type: 'BOOKING_REVIEW'  // Only show reviews, not testimonials
   })
     .populate('userId', 'name email')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(parseInt(limit));
 
@@ -1003,19 +1027,25 @@ export const getAllGalleryImages = asyncHandler(async (req, res) => {
     });
   }
   
+  // Transform image URLs to blob storage URLs
+  const transformedImages = images.map(img => ({
+    ...img,
+    url: transformImageUrl(img.url)
+  }));
+  
   // Shuffle and limit
-  const shuffled = images.sort(() => 0.5 - Math.random());
+  const shuffled = transformedImages.sort(() => 0.5 - Math.random());
   const limited = shuffled.slice(0, parseInt(limit));
   
   res.status(200).json({
     success: true,
     data: {
       images: limited,
-      total: images.length,
+      total: transformedImages.length,
       categories: {
-        events: images.filter(img => img.category === 'events').length,
-        venues: images.filter(img => img.category === 'venues').length,
-        packages: images.filter(img => img.category === 'packages').length
+        events: transformedImages.filter(img => img.category === 'events').length,
+        venues: transformedImages.filter(img => img.category === 'venues').length,
+        packages: transformedImages.filter(img => img.category === 'packages').length
       }
     }
   });

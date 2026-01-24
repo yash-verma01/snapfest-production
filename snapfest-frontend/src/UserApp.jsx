@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { useAuth as useClerkAuth, useUser } from '@clerk/clerk-react';
-import { userAPI } from './services/api';
+import { userAPI, setupAuthToken } from './services/api';
 import ErrorBoundary from './components/ErrorBoundary';
 import PortGuard from './components/PortGuard';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -24,8 +24,8 @@ const About = lazy(() => import('./pages/About'));
 const Contact = lazy(() => import('./pages/Contact'));
 const Venues = lazy(() => import('./pages/Venues'));
 const VenueDetail = lazy(() => import('./pages/VenueDetail'));
-const Login = lazy(() => import('./pages/Login'));
-const Register = lazy(() => import('./pages/Register'));
+// Import RoleBasedAuth for role selection before login/register
+import RoleBasedAuth from './components/auth/RoleBasedAuth';
 const Profile = lazy(() => import('./pages/Profile'));
 const Bookings = lazy(() => import('./pages/Bookings'));
 const Payments = lazy(() => import('./pages/Payments'));
@@ -57,8 +57,18 @@ function UserRootRedirect() {
 function UserApp() {
   // Sync Clerk user to backend on sign-in
   // This ensures the backend knows about the user and creates them in MongoDB
-  const { isSignedIn } = useClerkAuth();
+  const { isSignedIn, getToken } = useClerkAuth();
   const { user } = useUser();
+  
+  // Setup token getter for axios interceptor - CRITICAL: Must happen first
+  useEffect(() => {
+    if (getToken && typeof getToken === 'function') {
+      setupAuthToken(getToken);
+      console.log('✅ UserApp: Token getter set up');
+    } else {
+      console.warn('⚠️ UserApp: getToken not available yet');
+    }
+  }, [getToken]);
   
   useEffect(() => {
     const sync = async () => {
@@ -74,14 +84,24 @@ function UserApp() {
         return;
       }
       
+      // CRITICAL: Ensure token is set up before making API calls
+      if (getToken && typeof getToken === 'function') {
+        setupAuthToken(getToken);
+        // Small delay to ensure token setup is complete
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
       try {
-        // Sync user with backend - cookies are sent automatically by axios
-        // This will create the user document in MongoDB if it doesn't exist
+        // Sync user with backend - tokens are sent automatically by axios interceptor
         await userAPI.sync();
-        console.log('✅ User synced with backend via cookie session');
+        console.log('✅ User synced with backend');
       } catch (e) {
         // Non-blocking - log error but don't prevent app from loading
-        console.warn('⚠️ User sync failed (non-blocking):', e.message);
+        console.error('❌ User sync failed:', {
+          error: e.message,
+          status: e.response?.status,
+          data: e.response?.data
+        });
       }
     };
     
@@ -105,8 +125,9 @@ function UserApp() {
               <main className="min-h-screen">
               <Suspense fallback={<LoadingSpinner />}>
                 <Routes>
-                  {/* Root redirect for users */}
-                  <Route path="/" element={<UserRootRedirect />} />
+                  {/* Public Home page */}
+                  <Route path="/" element={<Home />} />
+                  <Route path="/home" element={<Home />} />
                   <Route path="/packages" element={<Packages />} />
                   <Route path="/packages/:id" element={<PackageDetail />} />
                   <Route path="/beatbloom" element={<BeatBloom />} />
@@ -122,8 +143,18 @@ function UserApp() {
                   <Route path="/venues/:id" element={<VenueDetail />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
+                  
+                  {/* Auth routes with role selection - handle both /login and /sign-in */}
+                  <Route path="/login" element={<RoleBasedAuth mode="signin" />} />
+                  <Route path="/login/*" element={<RoleBasedAuth mode="signin" />} />
+                  <Route path="/sign-in" element={<RoleBasedAuth mode="signin" />} />
+                  <Route path="/sign-in/*" element={<RoleBasedAuth mode="signin" />} />
+                  <Route path="/sign-in/complete" element={<RoleBasedAuth mode="signin" />} />
+                  <Route path="/register" element={<RoleBasedAuth mode="signup" />} />
+                  <Route path="/register/*" element={<RoleBasedAuth mode="signup" />} />
+                  <Route path="/sign-up" element={<RoleBasedAuth mode="signup" />} />
+                  <Route path="/sign-up/*" element={<RoleBasedAuth mode="signup" />} />
+                  <Route path="/sign-up/complete" element={<RoleBasedAuth mode="signup" />} />
                   
                   {/* Protected Routes - User Only */}
                   <Route path="/user/profile" element={

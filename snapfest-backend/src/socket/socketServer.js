@@ -10,9 +10,18 @@ const getClerkClient = () => createClerkClient({
 });
 
 export const initializeSocket = (httpServer) => {
+  // Configure allowed origins for WebSocket connections
+  // All origins are configured via environment variables for flexibility
+  const allowedOrigins = [
+    // Primary frontend URL (set in .env)
+    process.env.FRONTEND_URL,
+    // Additional allowed origins (comma-separated in .env)
+    ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : [])
+  ].filter(Boolean);
+
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.FRONTEND_URL || "http://localhost:5173",
+      origin: allowedOrigins,
       credentials: true,
       methods: ["GET", "POST"]
     },

@@ -1,5 +1,6 @@
 import { Event } from '../models/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { transformImageUrls } from '../utils/urlTransformer.js';
 
 export const getAllEvents = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -17,14 +18,17 @@ export const getAllEvents = asyncHandler(async (req, res) => {
   }
 
   const [items, total] = await Promise.all([
-    Event.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Event.find(query).sort({ _id: -1 }).skip(skip).limit(limit),
     Event.countDocuments(query)
   ]);
+
+  // Transform image URLs to blob storage URLs
+  const transformedItems = transformImageUrls(items, ['image', 'images']);
 
   res.status(200).json({
     success: true,
     data: {
-      items,
+      items: transformedItems,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
@@ -39,18 +43,25 @@ export const getEventById = asyncHandler(async (req, res) => {
   if (!item || item.isActive === false) {
     return res.status(404).json({ success: false, message: 'Event not found' });
   }
-  res.status(200).json({ success: true, data: { item } });
+  
+  // Transform image URLs to blob storage URLs
+  const transformedItem = transformImageUrls(item.toObject(), ['image', 'images']);
+  
+  res.status(200).json({ success: true, data: { item: transformedItem } });
 });
 
 export const getRecentEvents = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 6;
   const items = await Event.find({ isActive: { $ne: false } })
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .limit(limit);
+  
+  // Transform image URLs to blob storage URLs
+  const transformedItems = transformImageUrls(items, ['image', 'images']);
   
   res.status(200).json({
     success: true,
-    data: { items }
+    data: { items: transformedItems }
   });
 });
 
@@ -66,14 +77,17 @@ export const getEventsByCategory = asyncHandler(async (req, res) => {
   };
 
   const [items, total] = await Promise.all([
-    Event.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Event.find(query).sort({ _id: -1 }).skip(skip).limit(limit),
     Event.countDocuments(query)
   ]);
+
+  // Transform image URLs to blob storage URLs
+  const transformedItems = transformImageUrls(items, ['image', 'images']);
 
   res.status(200).json({
     success: true,
     data: {
-      items,
+      items: transformedItems,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
@@ -106,14 +120,17 @@ export const searchEvents = asyncHandler(async (req, res) => {
   };
 
   const [items, total] = await Promise.all([
-    Event.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Event.find(query).sort({ _id: -1 }).skip(skip).limit(limit),
     Event.countDocuments(query)
   ]);
+
+  // Transform image URLs to blob storage URLs
+  const transformedItems = transformImageUrls(items, ['image', 'images']);
 
   res.status(200).json({
     success: true,
     data: {
-      items,
+      items: transformedItems,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),

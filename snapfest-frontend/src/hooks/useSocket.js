@@ -34,7 +34,9 @@ export const useSocket = () => {
           return;
         }
 
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+        // Extract base URL from VITE_API_BASE_URL (remove /api suffix for Socket.io)
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+        const apiUrl = apiBaseUrl.replace('/api', '') || 'http://localhost:5001';
         const newSocket = io(apiUrl, {
           auth: { token },
           transports: ['websocket', 'polling'],

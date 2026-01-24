@@ -3,6 +3,7 @@ import { User, Booking, Payment, OTP, Review, Notification } from '../models/ind
 import AuthService from '../services/authService.js';
 import PasswordService from '../services/passwordService.js';
 import notificationService from '../services/notificationService.js';
+import { transformImageUrl } from '../utils/urlTransformer.js';
 
 // ==================== VENDOR AUTHENTICATION & PROFILE ====================
 export const registerVendor = asyncHandler(async (req, res) => {
@@ -141,7 +142,7 @@ export const loginVendor = asyncHandler(async (req, res) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
-        profileImage: user.profileImage,
+        profileImage: transformImageUrl(user.profileImage),
         businessName: user.businessName,
         servicesOffered: user.servicesOffered,
         experience: user.experience,
@@ -191,7 +192,7 @@ export const getVendorProfile = asyncHandler(async (req, res) => {
         name: vendor.name,
         email: vendor.email,
         phone: vendor.phone,
-        profileImage: vendor.profileImage
+        profileImage: transformImageUrl(vendor.profileImage)
       },
       vendor: {
         id: vendor._id,
@@ -199,7 +200,7 @@ export const getVendorProfile = asyncHandler(async (req, res) => {
         name: vendor.name,
         email: vendor.email,
         phone: vendor.phone,
-        profileImage: vendor.profileImage,
+        profileImage: transformImageUrl(vendor.profileImage),
         businessName: vendor.businessName,
         businessType: vendor.businessType,
         servicesOffered: vendor.servicesOffered,
@@ -274,7 +275,7 @@ export const updateVendorProfile = asyncHandler(async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        profileImage: user.profileImage
+        profileImage: transformImageUrl(user.profileImage)
       },
       vendor: {
         id: user._id,
@@ -334,7 +335,7 @@ export const getVendorDashboard = asyncHandler(async (req, res) => {
   const recentBookings = await Booking.find({ assignedVendorId: vendor._id })
     .populate('userId', 'name email phone')
     .populate('packageId', 'title category')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .limit(5);
 
   // Get pending bookings
@@ -667,7 +668,7 @@ export const getVendorPerformance = asyncHandler(async (req, res) => {
       }
     },
     {
-      $sort: { createdAt: -1 }
+      $sort: { _id: -1 }
     },
     {
       $limit: 5
@@ -738,7 +739,7 @@ export const getVendorBookings = asyncHandler(async (req, res) => {
     .populate('userId', 'name email phone')
     .populate('packageId', 'title category basePrice')
     .populate('assignedVendorId', 'name email')
-    .sort({ assignedAt: -1, createdAt: -1 })
+    .sort({ _id: -1 })
     .limit(limit);
 
   // If we have space, get other bookings
@@ -749,7 +750,7 @@ export const getVendorBookings = asyncHandler(async (req, res) => {
     otherBookings = await Booking.find(otherQuery)
       .populate('userId', 'name email phone')
       .populate('packageId', 'title category basePrice')
-      .sort({ createdAt: -1 })
+      .sort({ _id: -1 })
       .limit(remainingLimit);
   }
 
@@ -1134,7 +1135,7 @@ export const getPendingOTPs = asyncHandler(async (req, res) => {
   })
     .populate('userId', 'name phone')
     .populate('packageId', 'title')
-    .sort({ createdAt: -1 });
+    .sort({ _id: -1 });
 
   res.status(200).json({
     success: true,
@@ -1447,7 +1448,7 @@ export const getVendorNotifications = asyncHandler(async (req, res) => {
   }
 
   const notifications = await Notification.find(query)
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
@@ -1800,7 +1801,7 @@ export const getVendorPayments = asyncHandler(async (req, res) => {
 
   const payments = await Payment.find(filter)
     .populate('bookingId', 'eventName eventDate')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .limit(limit * 1)
     .skip((page - 1) * limit);
 
@@ -1934,7 +1935,7 @@ export const getAssignedBookings = asyncHandler(async (req, res) => {
   const bookings = await Booking.find({ assignedVendorId: vendorId })
     .populate('userId', 'name email phone')
     .populate('packageId', 'title category basePrice')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
@@ -1982,9 +1983,64 @@ export const getBookingById = asyncHandler(async (req, res) => {
 // @route   POST /api/vendors/sync
 // @access  Private (Clerk cookie session) - uses optionalAuth to handle session edge cases
 export const syncClerkVendor = asyncHandler(async (req, res) => {
-  // If req.user already exists (from auth middleware), return it
+  // If req.user already exists (from auth middleware), verify/update Clerk metadata
   if (req.user && req.user.role === 'vendor') {
     const vendor = req.user;
+    
+    // CRITICAL FIX: Always verify/update Clerk metadata
+    const { getAuth } = await import('@clerk/express');
+    const { createClerkClient } = await import('@clerk/clerk-sdk-node');
+    const getClerkClient = () => createClerkClient({ 
+      secretKey: process.env.CLERK_SECRET_KEY || process.env.CLERK_SECRET_KEY_USER
+    });
+    
+    let clerkAuth = getAuth(req) || req.auth;
+    let clerkPublicMetadata = {};
+    
+    if (clerkAuth?.userId) {
+      try {
+        const clerkClient = getClerkClient();
+        let clerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+        clerkPublicMetadata = clerkUser.publicMetadata || {};
+        
+        // Update if role is not 'vendor'
+        if (clerkPublicMetadata?.role !== 'vendor') {
+          let retries = 3;
+          let success = false;
+          
+          while (retries > 0 && !success) {
+            try {
+              await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
+                publicMetadata: { 
+                  ...clerkPublicMetadata,
+                  role: 'vendor' 
+                }
+              });
+              
+              const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
+              if (updatedUser.publicMetadata?.role === 'vendor') {
+                success = true;
+                clerkPublicMetadata = updatedUser.publicMetadata;
+                console.log(`✅ syncClerkVendor: Updated Clerk metadata role=vendor for existing vendor=${clerkAuth.userId}`);
+              } else {
+                throw new Error(`Metadata verification failed: expected vendor, got ${updatedUser.publicMetadata?.role || 'none'}`);
+              }
+            } catch (retryError) {
+              retries--;
+              if (retries === 0) throw retryError;
+              await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries))); // Exponential backoff
+            }
+          }
+        }
+      } catch (updateError) {
+        console.error('❌ syncClerkVendor: Failed to update Clerk metadata:', {
+          error: updateError.message,
+          userId: clerkAuth?.userId,
+          stack: updateError.stack
+        });
+      }
+    }
+    
     return res.status(200).json({
       success: true,
       message: 'Vendor synced',
@@ -2002,7 +2058,9 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
           profileComplete: vendor.profileComplete,
           createdAt: vendor.createdAt,
           updatedAt: vendor.updatedAt,
-        }
+        },
+        clerkPublicMetadata: clerkPublicMetadata,
+        roleSet: clerkPublicMetadata?.role || null
       }
     });
   }
@@ -2017,33 +2075,100 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
     secretKey: process.env.CLERK_SECRET_KEY || process.env.CLERK_SECRET_KEY_USER
   });
   
-  // Try getAuth(req) first, then fallback to req.auth
-  let clerkAuth = getAuth(req);
+  let clerkAuth = null;
   
-  // Fallback: Check if req.auth exists
-  if (!clerkAuth?.userId && req.auth?.userId) {
-    clerkAuth = req.auth;
-    if (process.env.NODE_ENV === 'development') {
-      console.log('⚠️ syncClerkVendor: Using req.auth fallback');
+  // Method 1: Check Authorization header (token-based - works cross-origin)
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    try {
+      // Decode Clerk JWT token to get userId
+      const jwt = await import('jsonwebtoken');
+      const decoded = jwt.default.decode(token);
+      
+      if (decoded && decoded.sub) {
+        const userId = decoded.sub;
+        const clerkClient = getClerkClient();
+        const clerkUser = await clerkClient.users.getUser(userId);
+        
+        clerkAuth = {
+          userId: userId,
+          claims: {
+            email: clerkUser.emailAddresses?.[0]?.emailAddress,
+            firstName: clerkUser.firstName,
+            lastName: clerkUser.lastName,
+            name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
+            publicMetadata: clerkUser.publicMetadata || {}
+          }
+        };
+        
+        console.log('✅ syncClerkVendor: Using token-based authentication');
+      }
+    } catch (tokenError) {
+      // Token invalid, fall back to cookie-based auth
+      console.log('⚠️ syncClerkVendor: Token decode failed, falling back to cookies');
     }
   }
   
-  // Debug logging
-  if (process.env.NODE_ENV === 'development') {
-    if (!clerkAuth?.userId) {
-      console.log('🔍 syncClerkVendor: No Clerk session found');
-      console.log('   getAuth(req):', getAuth(req));
-      console.log('   req.auth:', req.auth);
-      console.log('   Request cookies:', Object.keys(req.cookies || {}));
+  // Method 2: Fallback to cookie-based auth (getAuth from cookies)
+  if (!clerkAuth) {
+    clerkAuth = getAuth(req);
+    
+    // Fallback: Check if req.auth exists
+    if (!clerkAuth?.userId && req.auth?.userId) {
+      clerkAuth = req.auth;
+      if (process.env.NODE_ENV === 'development') {
+        console.log('⚠️ syncClerkVendor: Using req.auth fallback');
+      }
     }
   }
   
+  // CRITICAL: Enhanced debugging for Clerk session extraction
   if (!clerkAuth?.userId) {
+    console.error('❌ syncClerkVendor: CRITICAL - No Clerk session found!', {
+      hasGetAuth: !!getAuth(req),
+      getAuthUserId: getAuth(req)?.userId || null,
+      hasReqAuth: !!req.auth,
+      reqAuthUserId: req.auth?.userId || null,
+      requestCookies: Object.keys(req.cookies || {}),
+      cookieNames: Object.keys(req.cookies || {}),
+      hasAuthorizationHeader: !!req.headers.authorization,
+      authMethod: authHeader ? 'token' : 'cookie',
+      origin: req.headers.origin,
+      referer: req.headers.referer,
+      userAgent: req.headers['user-agent']?.substring(0, 50),
+      nodeEnv: process.env.NODE_ENV
+    });
+    
+    // Check if cookies are being sent
+    const cookieHeader = req.headers.cookie;
+    console.error('❌ syncClerkVendor: Cookie header check', {
+      hasCookieHeader: !!cookieHeader,
+      cookieHeaderLength: cookieHeader?.length || 0,
+      cookieHeaderPreview: cookieHeader?.substring(0, 100) || 'N/A',
+      containsClerk: cookieHeader?.includes('__clerk') || false,
+      containsSession: cookieHeader?.includes('session') || false
+    });
+    
     return res.status(401).json({ 
       success: false, 
-      message: 'Access denied. Please sign in.' 
+      message: 'Access denied. Please sign in.',
+      code: 'CLERK_SESSION_NOT_FOUND',
+      debug: {
+        hasGetAuth: !!getAuth(req),
+        hasReqAuth: !!req.auth,
+        cookieCount: Object.keys(req.cookies || {}).length,
+        hasAuthorizationHeader: !!authHeader
+      }
     });
   }
+  
+  console.log('✅ syncClerkVendor: Clerk session found', {
+    userId: clerkAuth.userId,
+    sessionId: clerkAuth.sessionId,
+    hasClaims: !!clerkAuth.claims,
+    claimKeys: clerkAuth.claims ? Object.keys(clerkAuth.claims) : []
+  });
   
   // Check if request came from vendor port (3001)
   // Get origin from multiple sources for better reliability
@@ -2069,34 +2194,136 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
     }
   }
   
-  // If role is not set in Clerk metadata, update it (for new vendor signups)
-  // This handles the case where vendor signs up but Clerk metadata doesn't have role yet
+  // CRITICAL: Update Clerk metadata FIRST before creating vendor
+  // This ensures the role is persisted in Clerk for future requests
+  const clerkSecretKey = process.env.CLERK_SECRET_KEY || process.env.CLERK_SECRET_KEY_USER;
+  
   if (publicMetadata?.role !== 'vendor') {
+    console.log('🔍 syncClerkVendor: Attempting to update Clerk metadata for vendor', {
+      clerkUserId: clerkAuth.userId,
+      currentMetadataRole: publicMetadata?.role,
+      clerkSecretKeySet: !!clerkSecretKey,
+      clerkSecretKeyLength: clerkSecretKey?.length || 0
+    });
+    
     try {
       const clerkClient = getClerkClient();
-      await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
-        publicMetadata: { 
-          ...publicMetadata,
-          role: 'vendor' 
+      
+      // Fetch current user to get existing metadata
+      let currentClerkUser;
+      try {
+        currentClerkUser = await clerkClient.users.getUser(clerkAuth.userId);
+        publicMetadata = currentClerkUser.publicMetadata || {};
+        console.log('🔍 syncClerkVendor: Fetched current Clerk metadata', {
+          userId: clerkAuth.userId,
+          currentRole: publicMetadata?.role,
+          allMetadata: publicMetadata
+        });
+      } catch (fetchError) {
+        console.error('❌ syncClerkVendor: Failed to fetch current Clerk user:', {
+          error: fetchError.message,
+          errorCode: fetchError.errors?.[0]?.code,
+          errorStatus: fetchError.status,
+          userId: clerkAuth.userId
+        });
+        publicMetadata = {};
+      }
+      
+      // Update with retry logic and verification
+      let retries = 3;
+      let success = false;
+      let lastError = null;
+      
+      while (retries > 0 && !success) {
+        try {
+          console.log(`🔍 syncClerkVendor: Metadata update attempt ${4 - retries}/3 for userId=${clerkAuth.userId}, role=vendor`);
+          
+          await clerkClient.users.updateUserMetadata(clerkAuth.userId, {
+            publicMetadata: { 
+              ...publicMetadata,
+              role: 'vendor' 
+            }
+          });
+          
+          // CRITICAL: Wait a bit before verification (Clerk API might have eventual consistency)
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Verify update was successful
+          const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
+          const updatedRole = updatedUser.publicMetadata?.role;
+          
+          console.log('🔍 syncClerkVendor: Verification check', {
+            expected: 'vendor',
+            actual: updatedRole,
+            match: updatedRole === 'vendor',
+            allMetadata: updatedUser.publicMetadata
+          });
+          
+          if (updatedRole === 'vendor') {
+            success = true;
+            publicMetadata = updatedUser.publicMetadata;
+            console.log(`✅ syncClerkVendor: Successfully set vendor role in Clerk publicMetadata for user:`, clerkAuth.userId);
+            console.log('   Final publicMetadata:', JSON.stringify(publicMetadata, null, 2));
+          } else {
+            throw new Error(`Metadata verification failed: expected vendor, got ${updatedRole || 'none'}`);
+          }
+        } catch (retryError) {
+          lastError = retryError;
+          retries--;
+          
+          console.error(`❌ syncClerkVendor: Retry ${4 - retries} failed:`, {
+            error: retryError.message,
+            errorCode: retryError.errors?.[0]?.code,
+            errorStatus: retryError.status,
+            errorStatusCode: retryError.statusCode,
+            userId: clerkAuth.userId,
+            retriesLeft: retries
+          });
+          
+          if (retries === 0) {
+            throw retryError;
+          }
+          
+          // Exponential backoff
+          const delay = 1000 * (4 - retries);
+          console.log(`⏳ syncClerkVendor: Waiting ${delay}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
-      });
+      }
       
-      // Refresh metadata after update
-      const updatedUser = await clerkClient.users.getUser(clerkAuth.userId);
-      publicMetadata = updatedUser.publicMetadata || { role: 'vendor' };
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ syncClerkVendor: Set vendor role in Clerk publicMetadata for user:', clerkAuth.userId);
+      if (!success) {
+        throw lastError || new Error('Metadata update failed after all retries');
       }
     } catch (updateError) {
-      // Log error but don't block - allow vendor creation to proceed
-      console.error('❌ syncClerkVendor: Failed to update Clerk metadata:', {
+      // CRITICAL: Log the full error with all details
+      console.error('❌ syncClerkVendor: CRITICAL FAILURE - Failed to update Clerk metadata after retries:', {
         error: updateError.message,
-        userId: clerkAuth.userId
+        errorCode: updateError.errors?.[0]?.code || 'N/A',
+        errorStatus: updateError.status || 'N/A',
+        errorStatusCode: updateError.statusCode || 'N/A',
+        errorType: updateError.constructor?.name || 'Unknown',
+        stack: updateError.stack,
+        userId: clerkAuth.userId,
+        clerkSecretKeyLength: clerkSecretKey?.length || 0,
+        clerkSecretKeyPrefix: clerkSecretKey?.substring(0, 15) || 'NOT SET',
+        nodeEnv: process.env.NODE_ENV
       });
-      // Set role locally as fallback
-      publicMetadata = { ...publicMetadata, role: 'vendor' };
+      
+      // CRITICAL: Return error response so frontend knows metadata update failed
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to update Clerk metadata. Please check backend logs.',
+        error: updateError.message,
+        code: 'CLERK_METADATA_UPDATE_FAILED',
+        debug: {
+          userId: clerkAuth.userId,
+          errorCode: updateError.errors?.[0]?.code,
+          errorStatus: updateError.status
+        }
+      });
     }
+  } else {
+    console.log(`✅ syncClerkVendor: Role already set correctly in Clerk metadata (vendor)`);
   }
   
   // Extract email and name from Clerk session
@@ -2276,7 +2503,7 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
         name: vendor.name,
         email: vendor.email,
         phone: vendor.phone,
-        profileImage: vendor.profileImage,
+        profileImage: transformImageUrl(vendor.profileImage),
         businessName: vendor.businessName,
         businessType: vendor.businessType,
         servicesOffered: vendor.servicesOffered,

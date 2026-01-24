@@ -1,5 +1,6 @@
 import { BeatBloom, AuditLog } from '../models/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { transformImageUrls } from '../utils/urlTransformer.js';
 
 // ==================== PUBLIC ROUTES ====================
 
@@ -18,19 +19,23 @@ export const getAllBeatBloom = asyncHandler(async (req, res) => {
     if (maxPrice) query.price.$lte = parseInt(maxPrice);
   }
 
-  // Build sort object
+  // Build sort object - map createdAt to _id for Cosmos DB compatibility
   const sort = {};
-  sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+  const actualSortBy = sortBy === 'createdAt' ? '_id' : sortBy;
+  sort[actualSortBy] = sortOrder === 'desc' ? -1 : 1;
 
   const [items, total] = await Promise.all([
     BeatBloom.find(query).sort(sort).skip(skip).limit(limit),
     BeatBloom.countDocuments(query)
   ]);
 
+  // Transform image URLs to blob storage URLs
+  const transformedItems = transformImageUrls(items, ['primaryImage', 'images']);
+
   res.status(200).json({
     success: true,
     data: {
-      items,
+      items: transformedItems,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
@@ -45,7 +50,11 @@ export const getBeatBloomById = asyncHandler(async (req, res) => {
   if (!item || item.isActive === false) {
     return res.status(404).json({ success: false, message: 'Beat & Bloom item not found' });
   }
-  res.status(200).json({ success: true, data: { item } });
+  
+  // Transform image URLs to blob storage URLs
+  const transformedItem = transformImageUrls(item.toObject(), ['primaryImage', 'images']);
+  
+  res.status(200).json({ success: true, data: { item: transformedItem } });
 });
 
 export const getBeatBloomsByCategory = asyncHandler(async (req, res) => {
@@ -58,16 +67,19 @@ export const getBeatBloomsByCategory = asyncHandler(async (req, res) => {
     category, 
     isActive: true 
   })
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
   const total = await BeatBloom.countDocuments({ category, isActive: true });
 
+  // Transform image URLs to blob storage URLs
+  const transformedItems = transformImageUrls(items, ['primaryImage', 'images']);
+
   res.status(200).json({
     success: true,
     data: {
-      items,
+      items: transformedItems,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
@@ -92,9 +104,10 @@ export const getAllBeatBloomsAdmin = asyncHandler(async (req, res) => {
   if (status === 'active') query.isActive = true;
   if (status === 'inactive') query.isActive = false;
 
-  // Build sort object
+  // Build sort object - map createdAt to _id for Cosmos DB compatibility
   const sort = {};
-  sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+  const actualSortBy = sortBy === 'createdAt' ? '_id' : sortBy;
+  sort[actualSortBy] = sortOrder === 'desc' ? -1 : 1;
 
   const beatBlooms = await BeatBloom.find(query)
     .skip(skip)
@@ -387,7 +400,7 @@ export const searchBeatBlooms = asyncHandler(async (req, res) => {
   const beatBlooms = await BeatBloom.find(query)
     .skip(skip)
     .limit(limit)
-    .sort({ createdAt: -1 });
+    .sort({ _id: -1 });
 
   const total = await BeatBloom.countDocuments(query);
 

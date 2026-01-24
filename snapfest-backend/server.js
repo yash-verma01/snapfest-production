@@ -207,10 +207,12 @@ app.use((req, res, next) => {
     // }
     
     // Allow specific production domains
+    // All origins are configured via environment variables for flexibility
     const allowedOrigins = [
-      'https://snapfest-frontend.vercel.app',
-      'https://snapfest.vercel.app',
-      process.env.FRONTEND_URL // Allow from environment variable
+      // Primary frontend URL (set in .env)
+      process.env.FRONTEND_URL,
+      // Additional allowed origins (comma-separated in .env)
+      ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : [])
     ].filter(Boolean); // Remove undefined values
     
     if (allowedOrigins.includes(origin)) {
@@ -278,10 +280,9 @@ app.use('/PUBLIC', (req, res, next) => {
         allowedOrigin = isDevelopment ? '*' : null;
       }
     }
-    // Allow specific production domains
-    else if (origin === 'https://snapfest-frontend.vercel.app' || 
-             origin === 'https://snapfest.vercel.app' ||
-             origin === process.env.FRONTEND_URL) {
+    // Allow specific production domains (configured via environment variables)
+    else if (origin === process.env.FRONTEND_URL ||
+             (process.env.ALLOWED_ORIGINS && process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).includes(origin))) {
       allowedOrigin = origin;
     }
     // For other origins in production, be more restrictive
@@ -335,10 +336,9 @@ app.use('/PUBLIC', express.static('PUBLIC', {
           allowedOrigin = isDevelopment ? '*' : null;
         }
       }
-      // Allow specific production domains
-      else if (origin === 'https://snapfest-frontend.vercel.app' || 
-               origin === 'https://snapfest.vercel.app' ||
-               origin === process.env.FRONTEND_URL) {
+      // Allow specific production domains (configured via environment variables)
+      else if (origin === process.env.FRONTEND_URL ||
+               (process.env.ALLOWED_ORIGINS && process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).includes(origin))) {
         allowedOrigin = origin; // Specific origin for production
       }
       // For other origins, be restrictive
@@ -384,8 +384,28 @@ app.use('/api/upload', uploadRoutes);        // Image upload routes
 app.use('/api/webhooks', webhookRoutes);     // Webhook routes (Razorpay)
 app.use('/api', enquiryRoutes);              // Enquiry routes (public + admin)
 
-// Health check routes
+// Health check routes - Allow requests without Origin header
 app.get(['/api/health', '/'], (req, res) => {
+  // Set CORS headers manually for health check (allow all origins)
+  const origin = req.headers.origin;
+  if (origin) {
+    // Check if origin is allowed
+    const allowedOrigins = [
+      process.env.FRONTEND_URL,
+      ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : [])
+    ].filter(Boolean);
+    
+    if (allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    } else {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    }
+  } else {
+    // Allow requests without Origin header for health checks
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  
   res.status(200).json({
     success: true,
     message: 'SnapFest Backend Server is running!',

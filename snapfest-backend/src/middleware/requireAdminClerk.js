@@ -49,30 +49,78 @@ const getClerkClientForOrigin = (origin) => {
  */
 export const requireAdminClerk = async (req, res, next) => {
   try {
-    // 1. Check Clerk session exists
-    // Try getAuth(req) first, then fallback to req.auth() as function
-    let clerkAuth = getAuth(req);
+    let clerkAuth = null;
     
-    // Fallback: If getAuth returns unauthenticated, try calling req.auth as function
-    if (!clerkAuth?.userId && req.auth && typeof req.auth === 'function') {
+    // Method 1: Check Authorization header (token-based - works cross-origin)
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
       try {
-        const authFromFunc = req.auth();
-        if (authFromFunc?.userId) {
-          clerkAuth = authFromFunc;
+        // Decode Clerk JWT token to get userId
+        const jwt = await import('jsonwebtoken');
+        const decoded = jwt.default.decode(token);
+        
+        if (decoded && decoded.sub) {
+          const userId = decoded.sub;
+          
+          // Get the correct clerkClient based on origin
+          const origin = req.headers.origin || req.headers.referer || '';
+          const clerkClient = getClerkClientForOrigin(origin);
+          const clerkUser = await clerkClient.users.getUser(userId);
+          
+          clerkAuth = {
+            userId: userId,
+            sessionClaims: {
+              email: clerkUser.emailAddresses?.[0]?.emailAddress,
+              firstName: clerkUser.firstName,
+              lastName: clerkUser.lastName,
+              publicMetadata: clerkUser.publicMetadata || {}
+            },
+            claims: {
+              email: clerkUser.emailAddresses?.[0]?.emailAddress,
+              firstName: clerkUser.firstName,
+              lastName: clerkUser.lastName,
+              publicMetadata: clerkUser.publicMetadata || {}
+            }
+          };
+          
           if (process.env.NODE_ENV === 'development') {
-            console.log('⚠️ requireAdminClerk: Using req.auth() fallback');
+            console.log('✅ requireAdminClerk: Using token-based authentication');
           }
         }
-      } catch (e) {
-        // Ignore errors
+      } catch (tokenError) {
+        // Token invalid, fall back to cookie-based auth
+        if (process.env.NODE_ENV === 'development') {
+          console.log('⚠️ requireAdminClerk: Token decode failed, falling back to cookies');
+        }
       }
     }
     
-    // Also check if req.auth has properties directly (Proxy behavior)
-    if (!clerkAuth?.userId && req.auth && req.auth.userId) {
-      clerkAuth = req.auth;
-      if (process.env.NODE_ENV === 'development') {
-        console.log('⚠️ requireAdminClerk: Using req.auth properties directly');
+    // Method 2: Fallback to cookie-based auth (getAuth from cookies)
+    if (!clerkAuth) {
+      clerkAuth = getAuth(req);
+      
+      // Fallback: If getAuth returns unauthenticated, try calling req.auth as function
+      if (!clerkAuth?.userId && req.auth && typeof req.auth === 'function') {
+        try {
+          const authFromFunc = req.auth();
+          if (authFromFunc?.userId) {
+            clerkAuth = authFromFunc;
+            if (process.env.NODE_ENV === 'development') {
+              console.log('⚠️ requireAdminClerk: Using req.auth() fallback');
+            }
+          }
+        } catch (e) {
+          // Ignore errors
+        }
+      }
+      
+      // Also check if req.auth has properties directly (Proxy behavior)
+      if (!clerkAuth?.userId && req.auth && req.auth.userId) {
+        clerkAuth = req.auth;
+        if (process.env.NODE_ENV === 'development') {
+          console.log('⚠️ requireAdminClerk: Using req.auth properties directly');
+        }
       }
     }
     
@@ -80,16 +128,14 @@ export const requireAdminClerk = async (req, res, next) => {
     if (process.env.NODE_ENV === 'development') {
       // Always log for admin routes to debug
       console.log('🔍 requireAdminClerk: Admin route accessed');
+      console.log('   Auth method:', authHeader ? 'token' : 'cookie');
       console.log('   Path:', req.path);
       console.log('   Original URL:', req.originalUrl);
       console.log('   Origin:', req.headers.origin || req.headers.referer || 'missing');
       console.log('   Host:', req.get('host'));
-      console.log('   Portal type:', req._portalType || 'unknown');
-      console.log('   Cookie prefix:', req._cookiePrefix || 'unknown');
       console.log('   Cookies present:', Object.keys(req.cookies || {}));
-      console.log('   __session_admin cookie:', req.cookies?.__session_admin ? 'present (' + req.cookies.__session_admin.substring(0, 20) + '...)' : 'missing');
-      console.log('   __session cookie:', req.cookies?.__session ? 'present (' + req.cookies.__session.substring(0, 20) + '...)' : 'missing');
       console.log('   Cookie header:', req.headers.cookie ? 'present' : 'missing');
+      console.log('   Authorization header:', authHeader ? 'present' : 'missing');
       
       if (!clerkAuth?.userId) {
         console.log('❌ requireAdminClerk: No Clerk session found');
@@ -164,10 +210,41 @@ export const requireAdminClerk = async (req, res, next) => {
       }
     }
 
-    // 4. Primary check: publicMetadata.role === 'admin'
+    // 4. Primary check: publicMetadata.role === 'admin' OR database role === 'admin'
     const isAdminFromMetadata = publicMetadata?.role === 'admin';
     
-    if (isAdminFromMetadata) {
+    // CRITICAL FIX: Also check database role if metadata is missing
+    // This handles cases where metadata update failed but user was created as admin
+    let isAdminFromDB = false;
+    if (!isAdminFromMetadata) {
+      const user = await User.findOne({ clerkId: userId });
+      isAdminFromDB = user?.role === 'admin';
+      
+      if (isAdminFromDB) {
+        console.log('⚠️ requireAdminClerk: Metadata missing but user has admin role in DB. Attempting to sync metadata...');
+        
+        // Try to update Clerk metadata if user is admin in DB but not in Clerk
+        try {
+          // Get origin for clerk client selection
+          const origin = req.headers.origin || req.headers.referer || '';
+          const clerkClient = getClerkClientForOrigin(origin);
+          await clerkClient.users.updateUserMetadata(userId, {
+            publicMetadata: { 
+              ...(publicMetadata || {}),
+              role: 'admin' 
+            }
+          });
+          console.log('✅ requireAdminClerk: Synced admin role to Clerk metadata');
+          // Update local variable
+          publicMetadata = { ...(publicMetadata || {}), role: 'admin' };
+        } catch (syncError) {
+          console.error('❌ requireAdminClerk: Failed to sync admin role to Clerk metadata:', syncError.message);
+          // Continue - allow access based on DB role
+        }
+      }
+    }
+    
+    if (isAdminFromMetadata || isAdminFromDB) {
       // Find user in database (already created via Clerk with role='admin')
       const user = await User.findOne({ clerkId: userId });
       
@@ -192,11 +269,11 @@ export const requireAdminClerk = async (req, res, next) => {
       req.admin = {
         email: email || user?.email || 'unknown',
         userId: userId,
-        method: 'clerk'
+        method: isAdminFromMetadata ? 'clerk-metadata' : 'clerk-db-fallback'
       };
       
       if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Admin access granted via publicMetadata.role for userId:', userId);
+        console.log(`✅ Admin access granted via ${isAdminFromMetadata ? 'publicMetadata.role' : 'database role'} for userId:`, userId);
       }
       
       // Optional: Update admin audit log (non-blocking)

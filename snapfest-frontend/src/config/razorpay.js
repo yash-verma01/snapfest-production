@@ -1,9 +1,10 @@
 // Razorpay Configuration
-// Replace these with your actual Razorpay keys from https://razorpay.com
+// Uses environment variable for production, falls back to test key for development
 
 export const RAZORPAY_CONFIG = {
   // ✅ SAFE: Only Key ID on frontend (public key)
-  keyId: 'rzp_test_RWpCivnUSkVbTS',
+  // Set VITE_RAZORPAY_KEY_ID in your .env file for production
+  keyId: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_RWpCivnUSkVbTS',
   
   // ❌ SECURITY: Secret key should NEVER be on frontend
   // keySecret: 'your_secret_key_here' // DON'T PUT SECRET HERE!

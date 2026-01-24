@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { SignedIn, SignedOut, RedirectToSignIn, useUser, useAuth } from '@clerk/clerk-react';
 import { SignIn, SignUp } from '@clerk/clerk-react';
-import { vendorAPI } from './services/api';
+import { vendorAPI, setupAuthToken } from './services/api';
 import ErrorBoundary from './components/ErrorBoundary';
 import PortGuard from './components/PortGuard';
 
@@ -63,17 +63,64 @@ function VendorRootRedirect() {
 
 function VendorApp() {
   // Sync Clerk vendor to backend on sign-in
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, getToken } = useAuth();
+  const { user } = useUser();
+  
+  // Setup token getter for axios interceptor - CRITICAL: Must happen first
+  useEffect(() => {
+    if (getToken && typeof getToken === 'function') {
+      setupAuthToken(getToken);
+      console.log('✅ VendorApp: Token getter set up');
+    } else {
+      console.warn('⚠️ VendorApp: getToken not available yet');
+    }
+  }, [getToken]);
   
   useEffect(() => {
-    const sync = async () => {
+    const sync = async (retryCount = 0) => {
       if (!isSignedIn) return;
       
+      // Wait for window.Clerk to be available
+      if (typeof window === 'undefined' || !window.Clerk?.session) {
+        if (retryCount < 10) {
+          console.log(`⏳ VendorApp: Waiting for Clerk session (attempt ${retryCount + 1}/10)...`);
+          setTimeout(() => sync(retryCount + 1), 300);
+          return;
+        } else {
+          console.error('❌ VendorApp: Clerk session not available after 10 attempts');
+          return;
+        }
+      }
+      
+      // CRITICAL: Ensure token is set up before making API calls
+      if (getToken && typeof getToken === 'function') {
+        setupAuthToken(getToken);
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
       try {
+        // Verify token is available before calling sync
+        const token = await window.Clerk.session.getToken();
+        if (!token) {
+          throw new Error('Token not available');
+        }
+        
+        console.log('🔄 VendorApp: Calling vendorAPI.sync()...');
         await vendorAPI.sync();
-        console.log('✅ Vendor synced with backend via cookie session');
+        console.log('✅ Vendor synced with backend');
       } catch (e) {
-        console.warn('⚠️ Vendor sync failed (non-blocking):', e.message);
+        console.error('❌ Vendor sync failed:', {
+          error: e.message,
+          status: e.response?.status,
+          data: e.response?.data,
+          retryCount
+        });
+        
+        // Retry once if it's a 401 and we haven't retried yet
+        if (e.response?.status === 401 && retryCount === 0) {
+          console.log('🔄 Retrying vendor sync after 1 second...');
+          setTimeout(() => sync(1), 1000);
+        }
       }
     };
     
@@ -82,7 +129,7 @@ function VendorApp() {
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [isSignedIn]);
+  }, [isSignedIn, getToken, user]);
 
   return (
     <ErrorBoundary>
@@ -172,7 +219,6 @@ function VendorApp() {
             },
           }}
         />
-      </div>
       </Router>
     </ErrorBoundary>
   );

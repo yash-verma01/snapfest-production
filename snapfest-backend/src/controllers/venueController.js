@@ -1,5 +1,6 @@
 import { Venue, AuditLog } from '../models/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { transformImageUrls } from '../utils/urlTransformer.js';
 
 export const getAllVenues = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -22,14 +23,17 @@ export const getAllVenues = asyncHandler(async (req, res) => {
   }
 
   const [items, total] = await Promise.all([
-    Venue.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Venue.find(query).sort({ _id: -1 }).skip(skip).limit(limit),
     Venue.countDocuments(query)
   ]);
+
+  // Transform image URLs to blob storage URLs
+  const transformedItems = transformImageUrls(items, ['primaryImage', 'images']);
 
   res.status(200).json({
     success: true,
     data: {
-      items,
+      items: transformedItems,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
@@ -44,7 +48,11 @@ export const getVenueById = asyncHandler(async (req, res) => {
   if (!item || item.isActive === false) {
     return res.status(404).json({ success: false, message: 'Venue not found' });
   }
-  res.status(200).json({ success: true, data: { item } });
+  
+  // Transform image URLs to blob storage URLs
+  const transformedItem = transformImageUrls(item.toObject(), ['primaryImage', 'images']);
+  
+  res.status(200).json({ success: true, data: { item: transformedItem } });
 });
 
 // ==================== ADMIN ROUTES ====================
@@ -61,9 +69,10 @@ export const getAllVenuesAdmin = asyncHandler(async (req, res) => {
   if (status === 'active') query.isActive = true;
   if (status === 'inactive') query.isActive = false;
 
-  // Build sort object
+  // Build sort object - map createdAt to _id for Cosmos DB compatibility
   const sort = {};
-  sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+  const actualSortBy = sortBy === 'createdAt' ? '_id' : sortBy;
+  sort[actualSortBy] = sortOrder === 'desc' ? -1 : 1;
 
   const venues = await Venue.find(query)
     .skip(skip)
@@ -72,10 +81,13 @@ export const getAllVenuesAdmin = asyncHandler(async (req, res) => {
 
   const total = await Venue.countDocuments(query);
 
+  // Transform image URLs to blob storage URLs
+  const transformedVenues = transformImageUrls(venues, ['primaryImage', 'images']);
+
   res.status(200).json({
     success: true,
     data: {
-      venues,
+      venues: transformedVenues,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
@@ -96,9 +108,12 @@ export const getVenueByIdAdmin = asyncHandler(async (req, res) => {
     });
   }
 
+  // Transform image URLs to blob storage URLs
+  const transformedVenue = transformImageUrls(venue.toObject(), ['primaryImage', 'images']);
+
   res.status(200).json({
     success: true,
-    data: { venue }
+    data: { venue: transformedVenue }
   });
 });
 
@@ -147,6 +162,9 @@ export const createVenue = asyncHandler(async (req, res) => {
     createdBy: req.userId
   });
 
+  // Transform image URLs in response
+  const transformedVenue = transformImageUrls(venue.toObject(), ['primaryImage', 'images']);
+
   // Create audit log - DISABLED
   // // DISABLED: await AuditLog.create({
   //   //   actorId: req.userId,
@@ -158,7 +176,7 @@ export const createVenue = asyncHandler(async (req, res) => {
   res.status(201).json({
     success: true,
     message: 'Venue created successfully',
-    data: { venue }
+    data: { venue: transformedVenue }
   });
 });
 
@@ -211,6 +229,9 @@ export const updateVenue = asyncHandler(async (req, res) => {
   venue.updatedAt = new Date();
   await venue.save();
 
+  // Transform image URLs in response
+  const transformedVenue = transformImageUrls(venue.toObject(), ['primaryImage', 'images']);
+
   // Create audit log - DISABLED
   // // DISABLED: await AuditLog.create({
   //   //   actorId: req.userId,
@@ -222,7 +243,7 @@ export const updateVenue = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Venue updated successfully',
-    data: { venue }
+    data: { venue: transformedVenue }
   });
 });
 
@@ -383,14 +404,17 @@ export const searchVenues = asyncHandler(async (req, res) => {
   const venues = await Venue.find(query)
     .skip(skip)
     .limit(limit)
-    .sort({ createdAt: -1 });
+    .sort({ _id: -1 });
 
   const total = await Venue.countDocuments(query);
+
+  // Transform image URLs to blob storage URLs
+  const transformedVenues = transformImageUrls(venues, ['primaryImage', 'images']);
 
   res.status(200).json({
     success: true,
     data: {
-      venues,
+      venues: transformedVenues,
       query: q,
       pagination: {
         current: page,

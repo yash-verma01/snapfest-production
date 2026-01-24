@@ -5,6 +5,7 @@ import OTPService from '../services/otpService.js';
 import mongoose from 'mongoose';
 import RazorpayService from '../services/razorpayService.js';
 import notificationService from '../services/notificationService.js';
+import { transformImageUrls } from '../utils/urlTransformer.js';
 
 // ==================== DASHBOARD & ANALYTICS ====================
 export const getDashboard = asyncHandler(async (req, res) => {
@@ -20,18 +21,18 @@ export const getDashboard = asyncHandler(async (req, res) => {
     .populate('userId', 'name email')
     .populate('vendorId', 'businessName')
     .populate('packageId', 'name')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .limit(5);
 
   const recentUsers = await User.find({ role: 'user' })
     .select('name email createdAt')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .limit(5);
 
   // Vendors are now stored in User collection with role='vendor'
   const recentVendors = await User.find({ role: 'vendor' })
     .select('name email createdAt')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .limit(5);
 
   // Get pending approvals
@@ -221,7 +222,7 @@ export const getAllUsers = asyncHandler(async (req, res) => {
     .select('-password')
     .skip(skip)
     .limit(limit)
-    .sort({ createdAt: -1 });
+    .sort({ _id: -1 });
 
   const total = await User.countDocuments();
 
@@ -361,7 +362,7 @@ export const searchUsers = asyncHandler(async (req, res) => {
     .select('-password')
     .skip(skip)
     .limit(limit)
-    .sort({ createdAt: -1 });
+    .sort({ _id: -1 });
 
   const total = await User.countDocuments(query);
 
@@ -392,7 +393,7 @@ export const getUserStats = asyncHandler(async (req, res) => {
 
   const recentUsers = await User.find()
     .select('-password')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .limit(5);
 
   res.status(200).json({
@@ -421,7 +422,7 @@ export const getAllVendors = asyncHandler(async (req, res) => {
 
   const vendors = await User.find(query)
     .select('name email phone isActive profileImage lastLogin businessName businessType servicesOffered experience availability location currentLocation')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
@@ -606,7 +607,7 @@ export const searchVendors = asyncHandler(async (req, res) => {
 
   const vendors = await User.find(query)
     .select('-password')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
@@ -701,9 +702,10 @@ export const getAllPackages = asyncHandler(async (req, res) => {
   if (status === 'active') query.isActive = true;
   if (status === 'inactive') query.isActive = false;
 
-  // Build sort object
+  // Build sort object - map createdAt to _id for Cosmos DB compatibility
   const sort = {};
-  sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+  const actualSortBy = sortBy === 'createdAt' ? '_id' : sortBy;
+  sort[actualSortBy] = sortOrder === 'desc' ? -1 : 1;
 
   const packages = await Package.find(query)
     .skip(skip)
@@ -712,10 +714,13 @@ export const getAllPackages = asyncHandler(async (req, res) => {
 
   const total = await Package.countDocuments(query);
 
+  // Transform image URLs to blob storage URLs
+  const transformedPackages = transformImageUrls(packages, ['primaryImage', 'images']);
+
   res.status(200).json({
     success: true,
     data: {
-      packages,
+      packages: transformedPackages,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
@@ -742,10 +747,13 @@ export const getPackageById = asyncHandler(async (req, res) => {
     { $group: { _id: null, total: { $sum: '$totalAmount' } } }
   ]);
 
+  // Transform image URLs to blob storage URLs
+  const transformedPackage = transformImageUrls(packageData.toObject(), ['primaryImage', 'images']);
+
   res.status(200).json({
     success: true,
     data: {
-      package: packageData,
+      package: transformedPackage,
       stats: {
         bookingCount,
         totalRevenue: totalRevenue[0]?.total || 0
@@ -1284,9 +1292,10 @@ export const getAllBookings = asyncHandler(async (req, res) => {
   let query = {};
   if (status) query.vendorStatus = status;
 
-  // Build sort object
+  // Build sort object - map createdAt to _id for Cosmos DB compatibility
   const sort = {};
-  sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+  const actualSortBy = sortBy === 'createdAt' ? '_id' : sortBy;
+  sort[actualSortBy] = sortOrder === 'desc' ? -1 : 1;
 
   const bookings = await Booking.find(query)
     .populate('userId', 'name email phone')
@@ -1423,7 +1432,7 @@ export const getAllPayments = asyncHandler(async (req, res) => {
       }
     })
     .populate('bookingId.packageId', 'title category basePrice')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(parseInt(limit));
 
@@ -1765,7 +1774,7 @@ export const getPendingOTPs = asyncHandler(async (req, res) => {
     .populate('bookingId', 'userId packageId eventDate location status')
     .populate('bookingId.userId', 'name email')
     .populate('bookingId.packageId', 'title category')
-    .sort({ createdAt: -1 });
+    .sort({ _id: -1 });
 
   res.status(200).json({
     success: true,
@@ -2096,7 +2105,7 @@ export const getAllTestimonials = asyncHandler(async (req, res) => {
 
   const testimonials = await Review.find(filter)
     .populate('userId', 'name email')
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(parseInt(limit));
 
@@ -2251,7 +2260,7 @@ export const getAllBeatBloomsAdmin = asyncHandler(async (req, res) => {
   }
 
   const beatBlooms = await BeatBloom.find(query)
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
@@ -2407,7 +2416,7 @@ export const searchBeatBlooms = asyncHandler(async (req, res) => {
   }
 
   const beatBlooms = await BeatBloom.find(query)
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 
@@ -2507,7 +2516,7 @@ export const getAdminNotifications = asyncHandler(async (req, res) => {
   }
 
   const notifications = await Notification.find(query)
-    .sort({ createdAt: -1 })
+    .sort({ _id: -1 })
     .skip(skip)
     .limit(limit);
 

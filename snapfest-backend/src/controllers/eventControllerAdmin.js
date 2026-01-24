@@ -1,5 +1,6 @@
 import { Event } from '../models/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { transformImageUrls } from '../utils/urlTransformer.js';
 
 // ==================== ADMIN ROUTES ====================
 
@@ -22,14 +23,17 @@ export const getAllEventsAdmin = asyncHandler(async (req, res) => {
   if (isFeatured !== undefined) query.isFeatured = isFeatured === 'true';
 
   const [items, total] = await Promise.all([
-    Event.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Event.find(query).sort({ _id: -1 }).skip(skip).limit(limit),
     Event.countDocuments(query)
   ]);
+
+  // Transform image URLs to blob storage URLs
+  const transformedItems = transformImageUrls(items, ['image', 'images']);
 
   res.status(200).json({
     success: true,
     data: {
-      events: items,
+      events: transformedItems,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
@@ -48,19 +52,25 @@ export const getEventByIdAdmin = asyncHandler(async (req, res) => {
     });
   }
 
+  // Transform image URLs to blob storage URLs
+  const transformedEvent = transformImageUrls(event.toObject(), ['image', 'images']);
+
   res.status(200).json({
     success: true,
-    data: { event }
+    data: { event: transformedEvent }
   });
 });
 
 export const createEvent = asyncHandler(async (req, res) => {
   const event = await Event.create(req.body);
   
+  // Transform image URLs in response
+  const transformedEvent = transformImageUrls(event.toObject(), ['image', 'images']);
+  
   res.status(201).json({
     success: true,
     message: 'Event created successfully',
-    data: { event }
+    data: { event: transformedEvent }
   });
 });
 
@@ -78,10 +88,13 @@ export const updateEvent = asyncHandler(async (req, res) => {
     });
   }
 
+  // Transform image URLs in response
+  const transformedEvent = transformImageUrls(event.toObject(), ['image', 'images']);
+
   res.status(200).json({
     success: true,
     message: 'Event updated successfully',
-    data: { event }
+    data: { event: transformedEvent }
   });
 });
 
@@ -114,10 +127,13 @@ export const toggleEventStatus = asyncHandler(async (req, res) => {
   event.isActive = !event.isActive;
   await event.save();
 
+  // Transform image URLs in response
+  const transformedEvent = transformImageUrls(event.toObject(), ['image', 'images']);
+
   res.status(200).json({
     success: true,
     message: `Event ${event.isActive ? 'activated' : 'deactivated'} successfully`,
-    data: { event }
+    data: { event: transformedEvent }
   });
 });
 
@@ -172,7 +188,7 @@ export const searchEventsAdmin = asyncHandler(async (req, res) => {
   };
 
   const [items, total] = await Promise.all([
-    Event.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Event.find(query).sort({ _id: -1 }).skip(skip).limit(limit),
     Event.countDocuments(query)
   ]);
 

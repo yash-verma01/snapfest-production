@@ -1,4 +1,4 @@
-# Dependencies
+#s Dependencies
 node_modules/
 package-lock.json
 
@@ -15,7 +15,6 @@ yarn-debug.log*
 yarn-error.log*
 
 # Public uploads (ignore files but keep folder structure)
-PUBLIC/uploads/*
 !PUBLIC/uploads/.gitkeep
 !PUBLIC/uploads/packages/.gitkeep
 !PUBLIC/uploads/events/.gitkeep
