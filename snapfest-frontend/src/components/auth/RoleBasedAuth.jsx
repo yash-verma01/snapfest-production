@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { SignIn, SignUp, useUser, useClerk } from '@clerk/clerk-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,41 +14,88 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
   const location = useLocation();
   const { user, isLoaded } = useUser();
   const clerk = useClerk();
+  
+  // Track if redirect has already happened to prevent multiple redirects
+  const redirectAttemptedRef = useRef(false);
 
   // Check if we're on the signup/signin completion page
   const isSignupComplete = location.pathname === '/sign-up/complete';
   const isSigninComplete = location.pathname === '/sign-in/complete';
 
+  // Redirect function with useCallback to prevent recreation
+  const redirectBasedOnRole = useCallback((role) => {
+    // Prevent multiple redirects
+    if (redirectAttemptedRef.current) {
+      return;
+    }
+    
+    console.log('🔄 Redirecting based on role:', role);
+    redirectAttemptedRef.current = true;
+    
+    switch (role) {
+      case 'admin':
+        navigate('/admin/profile', { replace: true });
+        break;
+      case 'vendor':
+        navigate('/vendor/profile', { replace: true });
+        break;
+      case 'user':
+      default:
+        navigate('/user/profile', { replace: true });
+        break;
+    }
+  }, [navigate]);
+
+  // Safety timeout: Always redirect after 3 seconds if still on complete page
+  useEffect(() => {
+    if ((isSigninComplete || isSignupComplete) && isLoaded && user) {
+      const safetyTimeout = setTimeout(() => {
+        if ((location.pathname === '/sign-in/complete' || location.pathname === '/sign-up/complete') && !redirectAttemptedRef.current) {
+          console.warn('⚠️ Safety redirect triggered - redirecting to user profile');
+          redirectBasedOnRole('user');
+        }
+      }, 3000);
+      
+      return () => clearTimeout(safetyTimeout);
+    }
+  }, [isSigninComplete, isSignupComplete, location.pathname, isLoaded, user, redirectBasedOnRole]);
+
   // If user is already signed in, redirect based on role
   useEffect(() => {
-    if (isLoaded && user) {
+    if (isLoaded && user && !redirectAttemptedRef.current) {
       if (isSigninComplete || isSignupComplete) {
         // For signin completion, check Clerk metadata first, then backend
         if (isSigninComplete) {
           const role = user.publicMetadata?.role;
           if (role) {
+            // Role found in metadata, redirect immediately
             redirectBasedOnRole(role);
           } else {
-            // If no role in metadata, fetch from backend
+            // If no role in metadata, fetch from backend with timeout
             const fetchAndRedirect = async () => {
               try {
+                // Wait a bit for Clerk session to be fully established
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
                 const response = await userAPI.sync();
                 
                 if (response.data?.success) {
                   const userRole = response.data.data?.user?.role || response.data.data?.vendor?.role || 'user';
                   redirectBasedOnRole(userRole);
                 } else {
+                  // Fallback: redirect to user profile if sync fails
+                  console.warn('⚠️ Sync response not successful, redirecting to default user profile');
                   redirectBasedOnRole('user');
                 }
               } catch (error) {
-                console.error('Error fetching user role:', error);
+                console.error('❌ Error fetching user role:', error);
+                // CRITICAL: Always redirect even if API fails
                 redirectBasedOnRole('user');
               }
             };
             
-            setTimeout(() => {
-              fetchAndRedirect();
-            }, 500);
+            // Start fetching immediately
+            fetchAndRedirect();
           }
         } else if (isSignupComplete) {
           // For signup completion, check sessionStorage for selected role
@@ -59,6 +106,8 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
             // Fallback: check backend
             const fetchAndRedirect = async () => {
               try {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
                 const response = await userAPI.sync();
                 
                 if (response.data?.success) {
@@ -73,25 +122,34 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
               }
             };
             
-            setTimeout(() => {
-              fetchAndRedirect();
-            }, 500);
+            fetchAndRedirect();
           }
         }
       }
     }
-  }, [user, isLoaded, isSigninComplete, isSignupComplete]);
+  }, [user, isLoaded, isSigninComplete, isSignupComplete, redirectBasedOnRole]);
 
   // Handle role setting after signup - check for newly signed up user
   useEffect(() => {
-    if (isLoaded && user && isSignupComplete) {
+    if (isLoaded && user && isSignupComplete && !redirectAttemptedRef.current) {
       // Get role from sessionStorage (set when role was selected)
       const role = sessionStorage.getItem('selectedRole') || selectedRole;
       
       if (role) {
         // Sync user with backend to set role
-        const syncUser = async () => {
+        const syncUser = async (retryCount = 0) => {
           try {
+            // Wait for Clerk session to be available
+            if (typeof window === 'undefined' || !window.Clerk?.session) {
+              if (retryCount < 10) {
+                console.log(`⏳ Waiting for Clerk session (attempt ${retryCount + 1}/10)...`);
+                setTimeout(() => syncUser(retryCount + 1), 300);
+                return;
+              } else {
+                throw new Error('Clerk session not available');
+              }
+            }
+            
             let response;
             
             // For vendors, use vendor sync endpoint instead of user sync
@@ -103,10 +161,7 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
             }
             
             if (response.data?.success) {
-              console.log('User synced with role:', role, response.data);
-              
-              // Update Clerk metadata if possible (this requires backend webhook in production)
-              // For now, we'll rely on the database role
+              console.log('✅ User synced with role:', role, response.data);
             }
             
             // Clear sessionStorage
@@ -120,7 +175,7 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
             // Redirect based on role
             redirectBasedOnRole(role);
           } catch (error) {
-            console.error('Error syncing user:', error);
+            console.error('❌ Error syncing user:', error);
             // Still redirect based on selected role
             const roleFromStorage = sessionStorage.getItem('selectedRole') || selectedRole;
             sessionStorage.removeItem('selectedRole');
@@ -141,6 +196,8 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
         // If no role selected but on signup complete page, check backend
         const checkUserRole = async () => {
           try {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
             const response = await userAPI.sync();
             
             if (response.data?.success) {
@@ -161,24 +218,7 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
         }, 500);
       }
     }
-  }, [user, isLoaded, mode, isSignupComplete, selectedRole]);
-
-  const redirectBasedOnRole = (role) => {
-    const from = location.state?.from?.pathname || '/';
-    
-    switch (role) {
-      case 'admin':
-        navigate('/admin/profile', { replace: true });
-        break;
-      case 'vendor':
-        navigate('/vendor/profile', { replace: true });
-        break;
-      case 'user':
-      default:
-        navigate('/user/profile', { replace: true });
-        break;
-    }
-  };
+  }, [user, isLoaded, mode, isSignupComplete, selectedRole, redirectBasedOnRole]);
 
   // Check admin limit on component mount
   useEffect(() => {

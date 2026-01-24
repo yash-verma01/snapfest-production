@@ -17,22 +17,35 @@ const api = axios.create({
 });
 
 /**
- * Request interceptor - cookie-based authentication
- * 
- * Switched from JWT tokens to Clerk cookie sessions:
- * - Removed getToken() calls and Authorization header injection for Clerk
- * - Session cookies are sent automatically via withCredentials: true
- * - Legacy token support kept for backward compatibility (if needed)
+ * Request interceptor - Token-based authentication for production
+ * Supports both Clerk session tokens (for cross-origin) and cookies (for same-origin)
  */
 api.interceptors.request.use(
-  (config) => {
-    // Only add legacy token if explicitly present (for non-Clerk routes)
-    // Clerk authentication uses HTTP-only session cookies, not Authorization headers
+  async (config) => {
+    // Method 1: Try to get Clerk session token (works cross-origin in production)
+    if (typeof window !== 'undefined' && window.Clerk?.session) {
+      try {
+        const token = await window.Clerk.session.getToken();
+        if (token && typeof token === 'string' && token.length > 0) {
+          config.headers.Authorization = `Bearer ${token}`;
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ API Request: Using Clerk session token');
+          }
+        }
+      } catch (error) {
+        // Token not available, will fall back to cookies
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Could not get Clerk token, using cookies');
+        }
+      }
+    }
+    
+    // Method 2: Legacy token support (for backward compatibility)
     const legacyToken = localStorage.getItem('token');
     if (legacyToken && !config.headers.Authorization) {
-      // Only add if Authorization header wasn't explicitly set in the request
       config.headers.Authorization = `Bearer ${legacyToken}`;
     }
+    
     // Note: Clerk session cookies are automatically included via withCredentials: true
     return config;
   },
