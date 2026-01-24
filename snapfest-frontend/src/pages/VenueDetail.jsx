@@ -124,7 +124,8 @@ const VenueDetail = () => {
         }
       }
       
-      const response = await fetch('http://localhost:5001/api/enquiries', {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+      const response = await fetch(`${API_BASE_URL}/enquiries`, {
         method: 'POST',
         headers,
         credentials: 'include',

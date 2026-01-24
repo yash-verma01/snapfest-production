@@ -42,8 +42,8 @@ if (!CLERK_PK) {
         publishableKey={CLERK_PK} 
         signInUrl="/login"
         signUpUrl="/register"
-        afterSignInUrl="/" 
-        afterSignUpUrl="/"
+        afterSignInUrl="/sign-in/complete" 
+        afterSignUpUrl="/sign-up/complete"
       >
         <UserApp />
       </ClerkProvider>

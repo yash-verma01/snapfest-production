@@ -62,6 +62,9 @@ const Checkout = () => {
     setIsProcessing(true);
     setPaymentError(null);
 
+    // Get API base URL once
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+
     try {
       // For each cart item, create a booking and process partial payment
       const bookingPromises = cart.items.map(async (item) => {
@@ -91,7 +94,7 @@ const Checkout = () => {
         console.log('💳 Checkout: Creating booking...', bookingData);
         
         // Create booking
-        const bookingResponse = await fetch('http://localhost:5001/api/bookings', {
+        const bookingResponse = await fetch(`${API_BASE_URL}/bookings`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -116,7 +119,7 @@ const Checkout = () => {
 
         console.log('💳 Checkout: Creating partial payment order...', paymentData);
         
-        const paymentResponse = await fetch('http://localhost:5001/api/payments/create-order/partial', {
+        const paymentResponse = await fetch(`${API_BASE_URL}/payments/create-order/partial`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -163,7 +166,7 @@ const Checkout = () => {
           
           try {
             // Verify payment
-            const verifyResponse = await fetch('http://localhost:5001/api/payments/verify', {
+            const verifyResponse = await fetch(`${API_BASE_URL}/payments/verify`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

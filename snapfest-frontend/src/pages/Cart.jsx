@@ -132,7 +132,8 @@ const Cart = () => {
 
         console.log('🛒 Cart: Creating booking for item:', bookingData);
         
-        const response = await fetch('http://localhost:5001/api/bookings', {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+        const response = await fetch(`${API_BASE_URL}/bookings`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
