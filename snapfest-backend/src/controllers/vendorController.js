@@ -3,6 +3,7 @@ import { User, Booking, Payment, OTP, Review, Notification } from '../models/ind
 import AuthService from '../services/authService.js';
 import PasswordService from '../services/passwordService.js';
 import notificationService from '../services/notificationService.js';
+import { transformImageUrl } from '../utils/urlTransformer.js';
 
 // ==================== VENDOR AUTHENTICATION & PROFILE ====================
 export const registerVendor = asyncHandler(async (req, res) => {
@@ -141,7 +142,7 @@ export const loginVendor = asyncHandler(async (req, res) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
-        profileImage: user.profileImage,
+        profileImage: transformImageUrl(user.profileImage),
         businessName: user.businessName,
         servicesOffered: user.servicesOffered,
         experience: user.experience,
@@ -191,7 +192,7 @@ export const getVendorProfile = asyncHandler(async (req, res) => {
         name: vendor.name,
         email: vendor.email,
         phone: vendor.phone,
-        profileImage: vendor.profileImage
+        profileImage: transformImageUrl(vendor.profileImage)
       },
       vendor: {
         id: vendor._id,
@@ -199,7 +200,7 @@ export const getVendorProfile = asyncHandler(async (req, res) => {
         name: vendor.name,
         email: vendor.email,
         phone: vendor.phone,
-        profileImage: vendor.profileImage,
+        profileImage: transformImageUrl(vendor.profileImage),
         businessName: vendor.businessName,
         businessType: vendor.businessType,
         servicesOffered: vendor.servicesOffered,
@@ -274,7 +275,7 @@ export const updateVendorProfile = asyncHandler(async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        profileImage: user.profileImage
+        profileImage: transformImageUrl(user.profileImage)
       },
       vendor: {
         id: user._id,
@@ -2502,7 +2503,7 @@ export const syncClerkVendor = asyncHandler(async (req, res) => {
         name: vendor.name,
         email: vendor.email,
         phone: vendor.phone,
-        profileImage: vendor.profileImage,
+        profileImage: transformImageUrl(vendor.profileImage),
         businessName: vendor.businessName,
         businessType: vendor.businessType,
         servicesOffered: vendor.servicesOffered,

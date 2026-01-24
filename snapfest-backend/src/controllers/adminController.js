@@ -5,6 +5,7 @@ import OTPService from '../services/otpService.js';
 import mongoose from 'mongoose';
 import RazorpayService from '../services/razorpayService.js';
 import notificationService from '../services/notificationService.js';
+import { transformImageUrls } from '../utils/urlTransformer.js';
 
 // ==================== DASHBOARD & ANALYTICS ====================
 export const getDashboard = asyncHandler(async (req, res) => {
@@ -713,10 +714,13 @@ export const getAllPackages = asyncHandler(async (req, res) => {
 
   const total = await Package.countDocuments(query);
 
+  // Transform image URLs to blob storage URLs
+  const transformedPackages = transformImageUrls(packages, ['primaryImage', 'images']);
+
   res.status(200).json({
     success: true,
     data: {
-      packages,
+      packages: transformedPackages,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
@@ -743,10 +747,13 @@ export const getPackageById = asyncHandler(async (req, res) => {
     { $group: { _id: null, total: { $sum: '$totalAmount' } } }
   ]);
 
+  // Transform image URLs to blob storage URLs
+  const transformedPackage = transformImageUrls(packageData.toObject(), ['primaryImage', 'images']);
+
   res.status(200).json({
     success: true,
     data: {
-      package: packageData,
+      package: transformedPackage,
       stats: {
         bookingCount,
         totalRevenue: totalRevenue[0]?.total || 0

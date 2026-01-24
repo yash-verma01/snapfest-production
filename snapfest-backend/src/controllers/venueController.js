@@ -1,5 +1,6 @@
 import { Venue, AuditLog } from '../models/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { transformImageUrls } from '../utils/urlTransformer.js';
 
 export const getAllVenues = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -26,10 +27,13 @@ export const getAllVenues = asyncHandler(async (req, res) => {
     Venue.countDocuments(query)
   ]);
 
+  // Transform image URLs to blob storage URLs
+  const transformedItems = transformImageUrls(items, ['primaryImage', 'images']);
+
   res.status(200).json({
     success: true,
     data: {
-      items,
+      items: transformedItems,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
@@ -44,7 +48,11 @@ export const getVenueById = asyncHandler(async (req, res) => {
   if (!item || item.isActive === false) {
     return res.status(404).json({ success: false, message: 'Venue not found' });
   }
-  res.status(200).json({ success: true, data: { item } });
+  
+  // Transform image URLs to blob storage URLs
+  const transformedItem = transformImageUrls(item.toObject(), ['primaryImage', 'images']);
+  
+  res.status(200).json({ success: true, data: { item: transformedItem } });
 });
 
 // ==================== ADMIN ROUTES ====================
@@ -73,10 +81,13 @@ export const getAllVenuesAdmin = asyncHandler(async (req, res) => {
 
   const total = await Venue.countDocuments(query);
 
+  // Transform image URLs to blob storage URLs
+  const transformedVenues = transformImageUrls(venues, ['primaryImage', 'images']);
+
   res.status(200).json({
     success: true,
     data: {
-      venues,
+      venues: transformedVenues,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
@@ -97,9 +108,12 @@ export const getVenueByIdAdmin = asyncHandler(async (req, res) => {
     });
   }
 
+  // Transform image URLs to blob storage URLs
+  const transformedVenue = transformImageUrls(venue.toObject(), ['primaryImage', 'images']);
+
   res.status(200).json({
     success: true,
-    data: { venue }
+    data: { venue: transformedVenue }
   });
 });
 
@@ -148,6 +162,9 @@ export const createVenue = asyncHandler(async (req, res) => {
     createdBy: req.userId
   });
 
+  // Transform image URLs in response
+  const transformedVenue = transformImageUrls(venue.toObject(), ['primaryImage', 'images']);
+
   // Create audit log - DISABLED
   // // DISABLED: await AuditLog.create({
   //   //   actorId: req.userId,
@@ -159,7 +176,7 @@ export const createVenue = asyncHandler(async (req, res) => {
   res.status(201).json({
     success: true,
     message: 'Venue created successfully',
-    data: { venue }
+    data: { venue: transformedVenue }
   });
 });
 
@@ -212,6 +229,9 @@ export const updateVenue = asyncHandler(async (req, res) => {
   venue.updatedAt = new Date();
   await venue.save();
 
+  // Transform image URLs in response
+  const transformedVenue = transformImageUrls(venue.toObject(), ['primaryImage', 'images']);
+
   // Create audit log - DISABLED
   // // DISABLED: await AuditLog.create({
   //   //   actorId: req.userId,
@@ -223,7 +243,7 @@ export const updateVenue = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Venue updated successfully',
-    data: { venue }
+    data: { venue: transformedVenue }
   });
 });
 
@@ -388,10 +408,13 @@ export const searchVenues = asyncHandler(async (req, res) => {
 
   const total = await Venue.countDocuments(query);
 
+  // Transform image URLs to blob storage URLs
+  const transformedVenues = transformImageUrls(venues, ['primaryImage', 'images']);
+
   res.status(200).json({
     success: true,
     data: {
-      venues,
+      venues: transformedVenues,
       query: q,
       pagination: {
         current: page,

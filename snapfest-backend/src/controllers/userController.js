@@ -4,6 +4,7 @@ import { sanitizeSearchQuery, createSafeRegex } from '../utils/securityUtils.js'
 import PasswordService from '../services/passwordService.js';
 import AuthService from '../services/authService.js';
 import { profileResponse, successResponse, errorResponse } from '../utils/responseFormat.js';
+import { transformImageUrl } from '../utils/urlTransformer.js';
 import crypto from 'crypto';
 
 // ==================== USER-FOCUSED CONTROLLERS ====================
@@ -86,7 +87,7 @@ export const register = asyncHandler(async (req, res) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
-        profileImage: user.profileImage,
+        profileImage: transformImageUrl(user.profileImage),
         address: user.address,
         isEmailVerified: user.isEmailVerified,
         isPhoneVerified: user.isPhoneVerified
@@ -155,7 +156,7 @@ export const login = asyncHandler(async (req, res) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
-        profileImage: user.profileImage,
+        profileImage: transformImageUrl(user.profileImage),
         address: user.address,
         isEmailVerified: user.isEmailVerified,
         isPhoneVerified: user.isPhoneVerified,
@@ -216,7 +217,7 @@ export const getProfile = asyncHandler(async (req, res) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
-        profileImage: user.profileImage,
+        profileImage: transformImageUrl(user.profileImage),
         address: user.address,
         isActive: user.isActive,
         lastLogin: user.lastLogin,
@@ -347,7 +348,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
       email: user.email,
       phone: user.phone,
       role: user.role,
-      profileImage: user.profileImage,
+      profileImage: transformImageUrl(user.profileImage),
       address: user.address
     }
   ));
