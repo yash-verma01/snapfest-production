@@ -1,5 +1,6 @@
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { sanitizeSearchQuery, createSafeRegex } from '../utils/securityUtils.js';
+import { transformImageUrls, transformImageUrl } from '../utils/urlTransformer.js';
 import { Package, Booking, Review, Event, Venue, BeatBloom, User } from '../models/index.js';
 
 // ==================== PACKAGE ROUTES ====================
@@ -78,10 +79,13 @@ export const getAllPackages = asyncHandler(async (req, res) => {
     })
   );
 
+  // Transform image URLs to blob storage URLs
+  const transformedPackages = transformImageUrls(packagesWithStats, ['primaryImage', 'images']);
+
   res.status(200).json({
     success: true,
     data: {
-      packages: packagesWithStats,
+      packages: transformedPackages,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
@@ -168,10 +172,13 @@ export const getPackageById = asyncHandler(async (req, res) => {
     }
   ]);
 
+  // Transform image URLs to blob storage URLs
+  const transformedPackage = transformImageUrls(packageData.toObject(), ['primaryImage', 'images']);
+
   res.status(200).json({
     success: true,
     data: {
-      package: packageData,
+      package: transformedPackage,
       stats: {
         bookingCount,
         averageRating: avgRating[0]?.averageRating || 0,
@@ -237,9 +244,12 @@ export const getFeaturedPackages = asyncHandler(async (req, res) => {
 
     console.log('✅ Final featured packages count:', allPackages.length);
     
+    // Transform image URLs to blob storage URLs
+    const transformedPackages = transformImageUrls(allPackages, ['primaryImage', 'images']);
+    
     res.status(200).json({
       success: true,
-      data: { packages: allPackages }
+      data: { packages: transformedPackages }
     });
   } catch (error) {
     console.error('❌ Error in getFeaturedPackages:', error);
@@ -249,9 +259,12 @@ export const getFeaturedPackages = asyncHandler(async (req, res) => {
       const fallbackPackages = await Package.find({ isActive: true }).limit(limit);
       console.log('🔄 Fallback packages found:', fallbackPackages.length);
       
+      // Transform image URLs to blob storage URLs
+      const transformedFallback = transformImageUrls(fallbackPackages, ['primaryImage', 'images']);
+      
       res.status(200).json({
         success: true,
-        data: { packages: fallbackPackages }
+        data: { packages: transformedFallback }
       });
     } catch (fallbackError) {
       console.error('❌ Fallback also failed:', fallbackError);
@@ -1005,19 +1018,25 @@ export const getAllGalleryImages = asyncHandler(async (req, res) => {
     });
   }
   
+  // Transform image URLs to blob storage URLs
+  const transformedImages = images.map(img => ({
+    ...img,
+    url: transformImageUrl(img.url)
+  }));
+  
   // Shuffle and limit
-  const shuffled = images.sort(() => 0.5 - Math.random());
+  const shuffled = transformedImages.sort(() => 0.5 - Math.random());
   const limited = shuffled.slice(0, parseInt(limit));
   
   res.status(200).json({
     success: true,
     data: {
       images: limited,
-      total: images.length,
+      total: transformedImages.length,
       categories: {
-        events: images.filter(img => img.category === 'events').length,
-        venues: images.filter(img => img.category === 'venues').length,
-        packages: images.filter(img => img.category === 'packages').length
+        events: transformedImages.filter(img => img.category === 'events').length,
+        venues: transformedImages.filter(img => img.category === 'venues').length,
+        packages: transformedImages.filter(img => img.category === 'packages').length
       }
     }
   });

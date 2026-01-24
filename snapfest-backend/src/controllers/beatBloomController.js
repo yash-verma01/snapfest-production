@@ -1,5 +1,6 @@
 import { BeatBloom, AuditLog } from '../models/index.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { transformImageUrls } from '../utils/urlTransformer.js';
 
 // ==================== PUBLIC ROUTES ====================
 
@@ -28,10 +29,13 @@ export const getAllBeatBloom = asyncHandler(async (req, res) => {
     BeatBloom.countDocuments(query)
   ]);
 
+  // Transform image URLs to blob storage URLs
+  const transformedItems = transformImageUrls(items, ['primaryImage', 'images']);
+
   res.status(200).json({
     success: true,
     data: {
-      items,
+      items: transformedItems,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
@@ -46,7 +50,11 @@ export const getBeatBloomById = asyncHandler(async (req, res) => {
   if (!item || item.isActive === false) {
     return res.status(404).json({ success: false, message: 'Beat & Bloom item not found' });
   }
-  res.status(200).json({ success: true, data: { item } });
+  
+  // Transform image URLs to blob storage URLs
+  const transformedItem = transformImageUrls(item.toObject(), ['primaryImage', 'images']);
+  
+  res.status(200).json({ success: true, data: { item: transformedItem } });
 });
 
 export const getBeatBloomsByCategory = asyncHandler(async (req, res) => {
@@ -65,10 +73,13 @@ export const getBeatBloomsByCategory = asyncHandler(async (req, res) => {
 
   const total = await BeatBloom.countDocuments({ category, isActive: true });
 
+  // Transform image URLs to blob storage URLs
+  const transformedItems = transformImageUrls(items, ['primaryImage', 'images']);
+
   res.status(200).json({
     success: true,
     data: {
-      items,
+      items: transformedItems,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),

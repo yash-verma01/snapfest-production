@@ -255,12 +255,13 @@ const Home = () => {
     }
   ];
 
-  // Memoized step images array
+  // Memoized step images array - Use API-provided URLs or empty strings
+  // These should ideally come from API, but for now use empty strings to avoid hardcoded URLs
   const stepImages = useMemo(() => [
-    'http://localhost:5001/PUBLIC/uploads/packages/birthday-1-1763005343978-621953612.jpg',
-    'http://localhost:5001/PUBLIC/uploads/events/haldi-2-1762954712692-365441822.jpg',
-    'http://localhost:5001/PUBLIC/uploads/packages/wedding-1-1763006126439-890905982.jpg',
-    'http://localhost:5001/PUBLIC/uploads/events/birthday-1-1762974084698-58616251.jpg'
+    '', // Will be replaced with actual image URLs from API if needed
+    '',
+    '',
+    ''
   ], []);
 
   // Floating Elements Component - Optimized with memoization and reduced count for performance
@@ -748,18 +749,25 @@ const Home = () => {
                       </div>
 
                       {/* Image Section */}
-                      <div className="relative h-48 overflow-hidden">
-                        <motion.img
-                          src={stepImages[index]}
-                          alt={step.title}
-                          className="w-full h-full object-cover"
-                          style={{ willChange: 'transform' }}
-                          whileHover={{ scale: 1.1 }}
-                          transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-                          onError={(e) => {
-                            e.target.src = 'http://localhost:5001/PUBLIC/uploads/events/birthday-1-1763009354760-508356223.jpg';
-                          }}
-                        />
+                      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-pink-100 to-pink-200 flex items-center justify-center">
+                        {stepImages[index] ? (
+                          <motion.img
+                            src={stepImages[index]}
+                            alt={step.title}
+                            className="w-full h-full object-cover"
+                            style={{ willChange: 'transform' }}
+                            whileHover={{ scale: 1.1 }}
+                            transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center text-pink-400"><svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>';
+                            }}
+                          />
+                        ) : (
+                          <div className="text-pink-400">
+                            <step.icon className="w-16 h-16" />
+                          </div>
+                        )}
                         <div className="absolute inset-0 bg-gradient-to-t from-pink-600/80 via-pink-500/40 to-transparent"></div>
                         <div className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 w-16 h-16 ${step.color === 'pink' ? 'bg-gradient-to-br from-pink-400 to-red-400' : 'bg-gradient-to-br from-red-400 to-pink-400'} rounded-2xl flex items-center justify-center shadow-xl backdrop-blur-sm`}>
                           <step.icon className="w-8 h-8 text-white" />
@@ -894,7 +902,7 @@ const Home = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
               {featuredPackages.slice(0, 3).map((pkg, index) => {
-                const packageImage = pkg.primaryImage || pkg.images?.[0] || 'http://localhost:5001/PUBLIC/uploads/events/birthday-1-1763009354760-508356223.jpg';
+                const packageImage = pkg.primaryImage || pkg.images?.[0] || '';
                 return (
                   <motion.div
                     key={pkg._id || index}

@@ -1,31 +1,42 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { uploadToBlob, isBlobStorageAvailable, isBlobUrl, deleteFromBlob, generateBlobUrl } from '../services/blobStorage.js';
 
-// ==================== LOCAL STORAGE ====================
+// ==================== STORAGE CONFIGURATION ====================
+
+// Check if blob storage is available
+const useBlobStorage = isBlobStorageAvailable();
 
 // Create storage factory that accepts entity type
+// Uses memory storage if blob storage is available, otherwise disk storage
 const createStorage = (entityType) => {
-  return multer.diskStorage({
-  destination: (req, file, cb) => {
-      // Determine upload path based on entity type
-      const entityFolder = entityType || 'general';
-      const uploadPath = `PUBLIC/uploads/${entityFolder}/`;
-      
-      // Create directory if it doesn't exist
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-      // Generate unique filename
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const ext = path.extname(file.originalname);
-      const baseName = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9]/g, '-');
-      cb(null, `${baseName}-${uniqueSuffix}${ext}`);
+  if (useBlobStorage) {
+    // Use memory storage - files will be uploaded to blob storage after multer processes them
+    return multer.memoryStorage();
+  } else {
+    // Fallback to disk storage for local development
+    return multer.diskStorage({
+      destination: (req, file, cb) => {
+        // Determine upload path based on entity type
+        const entityFolder = entityType || 'general';
+        const uploadPath = `PUBLIC/uploads/${entityFolder}/`;
+        
+        // Create directory if it doesn't exist
+        if (!fs.existsSync(uploadPath)) {
+          fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null, uploadPath);
+      },
+      filename: (req, file, cb) => {
+        // Generate unique filename
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        const baseName = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9]/g, '-');
+        cb(null, `${baseName}-${uniqueSuffix}${ext}`);
+      }
+    });
   }
-});
 };
 
 // ==================== FILE FILTER ====================
@@ -77,12 +88,122 @@ const fileFilter = (req, file, cb) => {
 const createMulterInstance = (entityType) => {
   return multer({
     storage: createStorage(entityType),
-  fileFilter: fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-    files: 10 // Maximum 10 files
+    fileFilter: fileFilter,
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB limit
+      files: 10 // Maximum 10 files
+    }
+  });
+};
+
+// ==================== POST-UPLOAD PROCESSING ====================
+
+/**
+ * Process uploaded file(s) and upload to blob storage if configured
+ * This middleware should be called after multer middleware
+ * @param {Object} req - Express request object
+ * @param {string} entityType - Entity type (packages, events, venues, beatbloom, profiles)
+ * @returns {Promise<void>}
+ */
+export const processUploadedFiles = async (req, entityType = 'packages') => {
+  if (!useBlobStorage) {
+    // If blob storage not available, files are already saved to disk
+    return;
   }
-});
+
+  try {
+    // Process single file upload
+    if (req.file) {
+      const file = req.file;
+      const ext = path.extname(file.originalname).toLowerCase();
+      const baseName = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9]/g, '-');
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const fileName = `${baseName}-${uniqueSuffix}${ext}`;
+      const blobName = `uploads/${entityType}/${fileName}`;
+
+      // Determine content type
+      const contentTypeMap = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp'
+      };
+      const contentType = contentTypeMap[ext] || file.mimetype || 'image/jpeg';
+
+      // Upload to blob storage
+      const blobUrl = await uploadToBlob(file.buffer, blobName, contentType);
+      
+      if (blobUrl) {
+        // Store blob URL in file object for generatePublicUrl to use
+        req.file.blobUrl = blobUrl;
+        req.file.path = blobName; // Store blob name for reference
+        console.log(`✅ Uploaded to blob storage: ${blobName}`);
+      }
+    }
+
+    // Process multiple file uploads
+    if (req.files && Array.isArray(req.files)) {
+      for (const file of req.files) {
+        const ext = path.extname(file.originalname).toLowerCase();
+        const baseName = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9]/g, '-');
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const fileName = `${baseName}-${uniqueSuffix}${ext}`;
+        const blobName = `uploads/${entityType}/${fileName}`;
+
+        const contentTypeMap = {
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.png': 'image/png',
+          '.gif': 'image/gif',
+          '.webp': 'image/webp'
+        };
+        const contentType = contentTypeMap[ext] || file.mimetype || 'image/jpeg';
+
+        const blobUrl = await uploadToBlob(file.buffer, blobName, contentType);
+        
+        if (blobUrl) {
+          file.blobUrl = blobUrl;
+          file.path = blobName;
+          console.log(`✅ Uploaded to blob storage: ${blobName}`);
+        }
+      }
+    }
+
+    // Process mixed uploads (fields)
+    if (req.files && typeof req.files === 'object' && !Array.isArray(req.files)) {
+      for (const fieldName in req.files) {
+        const files = Array.isArray(req.files[fieldName]) ? req.files[fieldName] : [req.files[fieldName]];
+        for (const file of files) {
+          const ext = path.extname(file.originalname).toLowerCase();
+          const baseName = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9]/g, '-');
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+          const fileName = `${baseName}-${uniqueSuffix}${ext}`;
+          const blobName = `uploads/${entityType}/${fileName}`;
+
+          const contentTypeMap = {
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.gif': 'image/gif',
+            '.webp': 'image/webp'
+          };
+          const contentType = contentTypeMap[ext] || file.mimetype || 'image/jpeg';
+
+          const blobUrl = await uploadToBlob(file.buffer, blobName, contentType);
+          
+          if (blobUrl) {
+            file.blobUrl = blobUrl;
+            file.path = blobName;
+            console.log(`✅ Uploaded to blob storage: ${blobName}`);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error processing uploaded files:', error);
+    throw error;
+  }
 };
 
 // ==================== UPLOAD MIDDLEWARE ====================
@@ -109,13 +230,21 @@ export const uploadMixed = (fields, entityType = 'packages') => {
 
 /**
  * Generate a public URL for an uploaded file
- * @param {string} filePath - The local file path (e.g., "PUBLIC/uploads/packages/photo-123.jpg")
+ * @param {string|Object} filePathOrFile - The local file path or file object (e.g., "PUBLIC/uploads/packages/photo-123.jpg" or req.file)
  * @param {string} entityType - The entity type (packages, events, venues, beatbloom, profiles)
  * @param {Object} req - Express request object (optional, for getting protocol and host)
- * @returns {string} - Public URL (e.g., "http://localhost:5001/PUBLIC/uploads/packages/photo-123.jpg")
+ * @returns {string} - Public URL (blob URL if blob storage is used, otherwise local URL)
  */
-export const generatePublicUrl = (filePath, entityType = 'packages', req = null) => {
-  // If filePath is already a full URL (from old Cloudinary uploads), return as is
+export const generatePublicUrl = (filePathOrFile, entityType = 'packages', req = null) => {
+  // Handle file object (from multer with blob storage)
+  if (filePathOrFile && typeof filePathOrFile === 'object' && filePathOrFile.blobUrl) {
+    return filePathOrFile.blobUrl;
+  }
+
+  // Extract file path if it's an object
+  const filePath = typeof filePathOrFile === 'object' ? filePathOrFile?.path : filePathOrFile;
+
+  // If filePath is already a full URL (blob URL, Cloudinary, etc.), return as is
   if (filePath && (filePath.startsWith('http://') || filePath.startsWith('https://'))) {
     return filePath;
   }
@@ -125,6 +254,15 @@ export const generatePublicUrl = (filePath, entityType = 'packages', req = null)
     return '';
   }
 
+  // If blob storage is available and path looks like a blob name (uploads/...)
+  if (useBlobStorage && filePath.startsWith('uploads/')) {
+    const blobUrl = generateBlobUrl(filePath);
+    if (blobUrl) {
+      return blobUrl;
+    }
+  }
+
+  // Fallback to local storage URL generation
   // Normalize the path - remove leading slash if present
   let normalizedPath = filePath.replace(/^\/+/, '');
   
@@ -163,7 +301,7 @@ export const generatePublicUrl = (filePath, entityType = 'packages', req = null)
 // ==================== IMAGE DELETION ====================
 
 /**
- * Delete an image file from local storage
+ * Delete an image file from storage (blob storage or local filesystem)
  * @param {string} imageUrl - The image URL (can be full URL or relative path)
  * @returns {Promise<boolean>} - True if deleted successfully, false otherwise
  */
@@ -179,6 +317,13 @@ export const deleteImage = async (imageUrl) => {
       return true; // Return true to avoid errors, but don't actually delete
     }
 
+    // Check if it's a blob storage URL
+    if (isBlobUrl(imageUrl)) {
+      const deleted = await deleteFromBlob(imageUrl);
+      return deleted;
+    }
+
+    // Fallback to local filesystem deletion
     // Extract file path from URL
     let filePath = imageUrl;
     
@@ -214,7 +359,7 @@ export const deleteImage = async (imageUrl) => {
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
       console.log('Deleted file:', filePath);
-    return true;
+      return true;
     } else {
       console.log('File not found:', filePath);
       return false;
