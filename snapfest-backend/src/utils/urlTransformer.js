@@ -20,35 +20,59 @@ export const transformImageUrl = (url) => {
     return url;
   }
 
-  // If already a full URL (Cloudinary, etc.), return as-is
+  // If already a full URL (Cloudinary, etc.), check if it needs transformation
   if (url.startsWith('http://') || url.startsWith('https://')) {
-    // Check if it's a localhost URL that needs transformation
-    if (url.includes('localhost') || url.includes('127.0.0.1')) {
-      // Extract the path from localhost URL
-      // Format: http://localhost:5001/PUBLIC/uploads/packages/image.jpg
-      // Or: https://snapfest-api.azurewebsites.net/PUBLIC/uploads/packages/image.jpg
-      const urlObj = new URL(url);
-      let path = urlObj.pathname;
-      
-      // Remove leading slash
-      path = path.replace(/^\/+/, '');
-      
-      // If path starts with PUBLIC/uploads, convert to blob storage format
-      if (path.startsWith('PUBLIC/uploads/')) {
-        // Convert: PUBLIC/uploads/packages/image.jpg -> uploads/packages/image.jpg
-        const blobPath = path.replace(/^PUBLIC\//, '');
+    // Check if it's a localhost URL or incorrect Azure URL that needs transformation
+    const isLocalhost = url.includes('localhost') || url.includes('127.0.0.1');
+    const isIncorrectAzureUrl = url.includes('azurewebsites.net') && (url.includes(':8080') || url.includes(':5001') || url.includes('/PUBLIC/'));
+    
+    if (isLocalhost || isIncorrectAzureUrl) {
+      try {
+        const urlObj = new URL(url);
+        let path = urlObj.pathname;
         
-        // Generate blob URL if blob storage is available
-        if (isBlobStorageAvailable()) {
-          const blobUrl = generateBlobUrl(blobPath);
-          if (blobUrl) {
-            return blobUrl;
+        // Remove leading slash
+        path = path.replace(/^\/+/, '');
+        
+        // If path starts with PUBLIC/uploads, convert to blob storage format
+        if (path.startsWith('PUBLIC/uploads/')) {
+          // Convert: PUBLIC/uploads/packages/image.jpg -> uploads/packages/image.jpg
+          const blobPath = path.replace(/^PUBLIC\//, '');
+          
+          // Generate blob URL if blob storage is available
+          if (isBlobStorageAvailable()) {
+            const blobUrl = generateBlobUrl(blobPath);
+            if (blobUrl) {
+              return blobUrl;
+            }
           }
+          
+          // Fallback: Use production backend URL (without port) if blob storage not available
+          const backendUrl = process.env.BACKEND_URL || 'https://snapfest-api.azurewebsites.net';
+          // Remove any port from backend URL
+          const cleanBackendUrl = backendUrl.replace(/:\d+$/, '').replace(/:\d+\//, '/');
+          return `${cleanBackendUrl}/${path}`;
         }
+      } catch (error) {
+        // If URL parsing fails, try to extract path manually
+        console.warn('⚠️ URL parsing failed:', url, error.message);
         
-        // Fallback: Use production backend URL if blob storage not available
-        const backendUrl = process.env.BACKEND_URL || 'https://snapfest-api.azurewebsites.net';
-        return `${backendUrl}/${path}`;
+        // Try to extract path from localhost URLs manually
+        const localhostMatch = url.match(/\/PUBLIC\/uploads\/(.+)$/);
+        if (localhostMatch) {
+          const blobPath = `uploads/${localhostMatch[1]}`;
+          
+          if (isBlobStorageAvailable()) {
+            const blobUrl = generateBlobUrl(blobPath);
+            if (blobUrl) {
+              return blobUrl;
+            }
+          }
+          
+          const backendUrl = process.env.BACKEND_URL || 'https://snapfest-api.azurewebsites.net';
+          const cleanBackendUrl = backendUrl.replace(/:\d+$/, '').replace(/:\d+\//, '/');
+          return `${cleanBackendUrl}/PUBLIC/uploads/${localhostMatch[1]}`;
+        }
       }
     }
     
@@ -73,9 +97,10 @@ export const transformImageUrl = (url) => {
       }
     }
     
-    // Fallback: Use backend URL
+    // Fallback: Use backend URL (without port)
     const backendUrl = process.env.BACKEND_URL || 'https://snapfest-api.azurewebsites.net';
-    return `${backendUrl}/${blobPath.startsWith('PUBLIC/') ? blobPath : `PUBLIC/uploads/${blobPath.replace(/^uploads\//, '')}`}`;
+    const cleanBackendUrl = backendUrl.replace(/:\d+$/, '').replace(/:\d+\//, '/');
+    return `${cleanBackendUrl}/${blobPath.startsWith('PUBLIC/') ? blobPath : `PUBLIC/uploads/${blobPath.replace(/^uploads\//, '')}`}`;
   }
 
   // Return as-is if no transformation needed

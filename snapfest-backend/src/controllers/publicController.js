@@ -491,17 +491,20 @@ export const getAllEvents = asyncHandler(async (req, res) => {
   const sort = {};
   sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-  const events = await Package.find(query)
+  const events = await Event.find(query)
     .sort(sort)
     .skip(skip)
     .limit(limit);
 
-  const total = await Package.countDocuments(query);
+  const total = await Event.countDocuments(query);
+
+  // Transform image URLs to blob storage URLs
+  const transformedEvents = transformImageUrls(events, ['image', 'images']);
 
   res.status(200).json({
     success: true,
     data: {
-      events,
+      events: transformedEvents,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
@@ -512,7 +515,7 @@ export const getAllEvents = asyncHandler(async (req, res) => {
 });
 
 export const getEventById = asyncHandler(async (req, res) => {
-  const event = await Package.findById(req.params.id);
+  const event = await Event.findById(req.params.id);
 
   if (!event || !event.isActive) {
     return res.status(404).json({
@@ -522,7 +525,7 @@ export const getEventById = asyncHandler(async (req, res) => {
   }
 
   // Get event statistics
-  const bookingCount = await Booking.countDocuments({ packageId: event._id });
+  const bookingCount = await Booking.countDocuments({ eventId: event._id });
   const avgRating = await Review.aggregate([
     {
       $lookup: {
@@ -534,7 +537,7 @@ export const getEventById = asyncHandler(async (req, res) => {
     },
     {
       $match: {
-        'booking.packageId': event._id
+        'booking.eventId': event._id
       }
     },
     {
@@ -546,10 +549,13 @@ export const getEventById = asyncHandler(async (req, res) => {
     }
   ]);
 
+  // Transform image URLs to blob storage URLs
+  const transformedEvent = transformImageUrls(event.toObject(), ['image', 'images']);
+
   res.status(200).json({
     success: true,
     data: {
-      event,
+      event: transformedEvent,
       stats: {
         bookingCount,
         averageRating: avgRating[0]?.averageRating || 0,
@@ -565,7 +571,7 @@ export const getEventsByCategory = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 12;
   const skip = (page - 1) * limit;
 
-  const events = await Package.find({ 
+  const events = await Event.find({ 
     category, 
     isActive: true 
   })
@@ -573,12 +579,15 @@ export const getEventsByCategory = asyncHandler(async (req, res) => {
     .skip(skip)
     .limit(limit);
 
-  const total = await Package.countDocuments({ category, isActive: true });
+  const total = await Event.countDocuments({ category, isActive: true });
+
+  // Transform image URLs to blob storage URLs
+  const transformedEvents = transformImageUrls(events, ['image', 'images']);
 
   res.status(200).json({
     success: true,
     data: {
-      events,
+      events: transformedEvents,
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
