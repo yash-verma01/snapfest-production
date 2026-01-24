@@ -5,7 +5,7 @@ import { GlassCard, ScrollReveal } from '../components/enhanced';
 import CompanyLocationMap from '../components/CompanyLocationMap';
 import toast from 'react-hot-toast';
 import { useAuth } from '@clerk/clerk-react';
-import { userAPI } from '../services/api';
+import { userAPI, publicAPI } from '../services/api';
 import { motion } from 'framer-motion';
 
 const Contact = () => {
@@ -118,24 +118,16 @@ const Contact = () => {
         }
       }
       
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
-      const response = await fetch(`${API_BASE_URL}/enquiries`, {
-        method: 'POST',
-        headers,
-        credentials: 'include',
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          enquiryType: formData.inquiryType,
-          subject: formData.subject,
-          message: formData.message
-        })
+      const response = await publicAPI.createEnquiry({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        enquiryType: formData.inquiryType,
+        subject: formData.subject,
+        message: formData.message
       });
       
-      const data = await response.json();
-      
-      if (data.success) {
+      if (response.data?.success) {
         toast.success('Message sent successfully! We\'ll get back to you soon.');
         
         // Reload user profile to reset form with correct values

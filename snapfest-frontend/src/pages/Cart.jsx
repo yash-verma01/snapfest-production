@@ -17,7 +17,7 @@ import { useCart } from '../hooks';
 import { Card, Button, Badge } from '../components/ui';
 import { GlassCard, ScrollReveal, LoadingSkeleton, StepWizard } from '../components/enhanced';
 import { priceCalculator } from '../utils';
-import { paymentAPI } from '../services/api';
+import { paymentAPI, bookingAPI } from '../services/api';
 import { paymentService } from '../services/paymentService';
 import toast from 'react-hot-toast';
 // Debug components removed - cart is now working
@@ -132,20 +132,11 @@ const Cart = () => {
 
         console.log('🛒 Cart: Creating booking for item:', bookingData);
         
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
-        const response = await fetch(`${API_BASE_URL}/bookings`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
-          },
-          body: JSON.stringify(bookingData)
-        });
-
-        const result = await response.json();
+        const response = await bookingAPI.createBooking(bookingData);
+        const result = response.data;
         console.log('🛒 Cart: Booking creation response:', result);
         
-        if (!response.ok) {
+        if (!result.success) {
           console.error('🛒 Cart: Booking creation failed:', result);
           throw new Error(result.message || 'Failed to create booking');
         }

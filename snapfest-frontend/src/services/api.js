@@ -1,123 +1,53 @@
 import axios from 'axios';
 
-// API Base URL - Uses environment variable for production, falls back to localhost for development
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+// Get API URL from environment variable or use production URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+                     (import.meta.env.PROD 
+                       ? 'https://snapfest-api.azurewebsites.net/api'
+                       : 'http://localhost:5001/api');
 
 // Create axios instance with base configuration
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 20000, // Increased from 10000 to 20000 (20 seconds) to handle slow database queries
-  withCredentials: true, // Keep for cookie fallback in local development
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Store getToken function reference (set by components using useAuth hook)
-let getTokenFunction = null;
-
 /**
- * Setup function to initialize token getter from Clerk useAuth hook
- * This should be called from a component that has access to useAuth hook
- */
-export const setupAuthToken = (getToken) => {
-  if (getToken && typeof getToken === 'function') {
-    getTokenFunction = getToken;
-    console.log('✅ setupAuthToken: Token getter initialized');
-  } else {
-    console.warn('⚠️ setupAuthToken: Invalid getToken function provided');
-  }
-};
-
-/**
- * Helper function to get Clerk token - EXACT IMPLEMENTATION
- * Uses window.Clerk.session.getToken() which we verified works
- */
-const getClerkToken = async () => {
-  // Method 1: Use window.Clerk.session.getToken() - PRIMARY (VERIFIED TO WORK)
-  if (typeof window !== 'undefined' && window.Clerk?.session) {
-    try {
-      const token = await window.Clerk.session.getToken();
-      if (token && typeof token === 'string' && token.length > 0) {
-        console.log('✅ getClerkToken: Got token from window.Clerk.session');
-        return token;
-      }
-    } catch (error) {
-      console.warn('⚠️ getClerkToken: window.Clerk.session.getToken() failed:', error.message);
-    }
-  }
-  
-  // Method 2: Use stored getToken function (from useAuth hook) - FALLBACK
-  if (getTokenFunction && typeof getTokenFunction === 'function') {
-    try {
-      const token = await getTokenFunction();
-      if (token && typeof token === 'string' && token.length > 0) {
-        console.log('✅ getClerkToken: Got token from getTokenFunction');
-        return token;
-      }
-    } catch (error) {
-      console.warn('⚠️ getClerkToken: getTokenFunction failed:', error.message);
-    }
-  }
-  
-  console.error('❌ getClerkToken: All methods failed', {
-    hasWindowClerk: typeof window !== 'undefined' && !!window.Clerk,
-    hasClerkSession: typeof window !== 'undefined' && !!window.Clerk?.session,
-    hasGetTokenFunction: !!getTokenFunction
-  });
-  
-  return null;
-};
-
-/**
- * Request interceptor - Token-based authentication (Clerk session tokens)
- * 
- * CRITICAL FIX: Use Clerk getToken() for cross-origin authentication
- * - Local: Cookies work (same domain)
- * - Production: Tokens work (cross-origin)
- * - Falls back to cookies if token unavailable (backward compatibility)
+ * Request interceptor - Token-based authentication for production
+ * Supports both Clerk session tokens (for cross-origin) and cookies (for same-origin)
  */
 api.interceptors.request.use(
   async (config) => {
-    try {
-      // Always try to get token (multiple fallback methods)
-      const token = await getClerkToken();
-      
-      if (token) {
-        // Use Clerk session token in Authorization header
-        config.headers.Authorization = `Bearer ${token}`;
-        
-        // Log in production for debugging
-        console.log('✅ API Request: Token added to Authorization header', {
-          url: config.url?.substring(0, 50),
-          method: config.method,
-          tokenLength: token.length
-        });
-      } else {
-        // No token available - log for debugging
-        console.warn('⚠️ API Request: No token available', {
-          url: config.url?.substring(0, 50),
-          method: config.method,
-          hasWindowClerk: typeof window !== 'undefined' && !!window.Clerk,
-          hasClerkSession: typeof window !== 'undefined' && !!window.Clerk?.session,
-          hasGetTokenFunction: !!getTokenFunction
-        });
+    // Method 1: Try to get Clerk session token (works cross-origin in production)
+    if (typeof window !== 'undefined' && window.Clerk?.session) {
+      try {
+        const token = await window.Clerk.session.getToken();
+        if (token && typeof token === 'string' && token.length > 0) {
+          config.headers.Authorization = `Bearer ${token}`;
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ API Request: Using Clerk session token');
+          }
+        }
+      } catch (error) {
+        // Token not available, will fall back to cookies
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Could not get Clerk token, using cookies');
+        }
       }
-      
-      // Fallback: Legacy token support (if needed)
-      const legacyToken = localStorage.getItem('token');
-      if (legacyToken && !config.headers.Authorization) {
-        config.headers.Authorization = `Bearer ${legacyToken}`;
-        console.log('✅ API Request: Using legacy token from localStorage');
-      }
-      
-      return config;
-    } catch (error) {
-      // If getToken() fails (user not signed in), continue without token
-      // Backend will handle authentication via cookies if available
-      console.error('❌ API Request Interceptor Error:', error.message);
-      return config;
     }
+    
+    // Method 2: Legacy token support (for backward compatibility)
+    const legacyToken = localStorage.getItem('token');
+    if (legacyToken && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${legacyToken}`;
+    }
+    
+    // Note: Clerk session cookies are automatically included via withCredentials: true
+    return config;
   },
   (error) => Promise.reject(error)
 );
@@ -125,20 +55,16 @@ api.interceptors.request.use(
 // Response interceptor to handle errors
 api.interceptors.response.use(
   (response) => {
+    // Only log in development mode, and only status/URL (no sensitive data)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('API Response:', response.status, response.config.url);
+    }
     return response;
   },
   (error) => {
-    // Enhanced error logging
-    if (error.response) {
-      console.error('❌ API Error:', {
-        status: error.response.status,
-        url: error.config?.url,
-        method: error.config?.method,
-        data: error.response.data,
-        hasAuthHeader: !!error.config?.headers?.Authorization
-      });
-    } else {
-      console.error('❌ API Network Error:', error.message);
+    // Only log error status/URL, not sensitive error data
+    if (process.env.NODE_ENV === 'development') {
+      console.error('API Request failed:', error.response?.status, error.config?.url);
     }
     // Do not force redirect; Clerk handles auth UI and ProtectedRoute gates access
     return Promise.reject(error);
@@ -500,6 +426,9 @@ export const publicAPI = {
   // Google Places API (via backend)
   getPlacesAutocomplete: (data) => api.post('/places/autocomplete', data),
   getPlaceDetails: (placeId) => api.get(`/places/${placeId}`),
+  
+  // Enquiries
+  createEnquiry: (data) => api.post('/enquiries', data),
 };
 
 export const bookingAPI = {
