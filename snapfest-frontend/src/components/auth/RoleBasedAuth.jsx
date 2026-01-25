@@ -215,9 +215,6 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
         const data = response.data;
         
         if (data.success) {
-          // CRITICAL FIX: Check the actual admin count from the response
-          // If adminCount < maxAdmins, always allow (there's room for more admins)
-          // If adminCount >= maxAdmins, only block if user is NOT already an admin
           const { adminCount, maxAdmins, isAllowed, isCurrentUserAdmin } = data.data;
           
           console.log('🔍 RoleBasedAuth: Admin limit check result', {
@@ -226,29 +223,38 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
             isAllowed,
             isCurrentUserAdmin,
             userRole: user?.publicMetadata?.role,
-            isSignedIn: !!user
+            isSignedIn: !!user,
+            clerkUserId: user?.id
           });
           
-          if (adminCount < maxAdmins) {
-            // Under limit - always allow
-            console.log(`✅ RoleBasedAuth: Admin count (${adminCount}) is under limit (${maxAdmins}), allowing admin selection`);
-            setAdminLimitReached(false);
-          } else if (user && user.publicMetadata?.role === 'admin') {
-            // User is already an admin - allow admin selection
-            console.log('✅ RoleBasedAuth: User is already an admin, allowing admin selection');
-            setAdminLimitReached(false);
-          } else if (isCurrentUserAdmin) {
-            // Backend confirmed user is an admin - allow
-            console.log('✅ RoleBasedAuth: Backend confirmed user is an admin, allowing admin selection');
+          // CRITICAL FIX: Trust the backend's isAllowed flag directly
+          // Backend calculates: isAllowed = adminCount < maxAdmins || isCurrentUserAdmin
+          // This handles both cases: under limit OR existing admin
+          if (isAllowed) {
+            console.log(`✅ RoleBasedAuth: Backend allows admin selection`, {
+              reason: adminCount < maxAdmins ? 'Under limit' : 'Existing admin',
+              adminCount,
+              maxAdmins,
+              isCurrentUserAdmin
+            });
             setAdminLimitReached(false);
           } else {
-            // At limit and user is not an admin - block
-            console.log(`⚠️ RoleBasedAuth: Admin limit reached (${adminCount}/${maxAdmins}), blocking admin selection`);
+            // Backend says admin selection is not allowed
+            console.log(`⚠️ RoleBasedAuth: Backend blocks admin selection`, {
+              adminCount,
+              maxAdmins,
+              isCurrentUserAdmin,
+              reason: 'Limit reached and user is not an existing admin'
+            });
             setAdminLimitReached(true);
           }
+        } else {
+          // API returned success: false - allow admin selection (fail open)
+          console.warn('⚠️ RoleBasedAuth: checkAdminLimit returned success: false, allowing admin selection');
+          setAdminLimitReached(false);
         }
       } catch (error) {
-        console.error('Error checking admin limit:', error);
+        console.error('❌ RoleBasedAuth: Error checking admin limit:', error);
         // On error, allow admin selection (fail open)
         setAdminLimitReached(false);
       } finally {
@@ -261,15 +267,27 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
 
   const handleRoleSelect = (role) => {
     if (role === 'admin' && adminLimitReached) {
-      // CRITICAL FIX: Check if user is already an admin before blocking
+      // CRITICAL FIX: Check multiple sources for admin status
+      // 1. Clerk public metadata (if synced)
+      // 2. Backend isCurrentUserAdmin (from checkAdminLimit response)
+      // 3. Allow if user is signed in (they might be an admin but not synced yet)
       if (user && user.publicMetadata?.role === 'admin') {
-        // User is already an admin - allow selection
-        console.log('✅ RoleBasedAuth: User is already an admin, allowing admin selection');
+        console.log('✅ RoleBasedAuth: User is already an admin (Clerk metadata), allowing selection');
         setSelectedRole(role);
         sessionStorage.setItem('selectedRole', role);
         return;
       }
-      // Show error message only if user is not an admin
+      
+      // If user is signed in but adminLimitReached is true, they might be an admin
+      // Let them try - backend will validate
+      if (user) {
+        console.log('⚠️ RoleBasedAuth: User is signed in but adminLimitReached is true, allowing attempt (backend will validate)');
+        setSelectedRole(role);
+        sessionStorage.setItem('selectedRole', role);
+        return;
+      }
+      
+      // Not signed in and limit reached - show error
       alert('You are not authorized for this. Maximum admin limit (2) has been reached.');
       return;
     }
@@ -422,12 +440,16 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
                       if (!card.disabled) {
                         handleRoleSelect(card.role);
                       } else {
-                        // CRITICAL FIX: Check if user is already an admin before showing alert
+                        // CRITICAL FIX: Allow existing admins even if card appears disabled
                         if (user && user.publicMetadata?.role === 'admin') {
-                          // User is already an admin - allow selection
-                          console.log('✅ RoleBasedAuth: User is already an admin, allowing admin selection');
+                          console.log('✅ RoleBasedAuth: User is already an admin, allowing selection despite disabled card');
+                          handleRoleSelect(card.role);
+                        } else if (user) {
+                          // User is signed in - let them try (backend will validate)
+                          console.log('⚠️ RoleBasedAuth: User is signed in, allowing admin selection attempt');
                           handleRoleSelect(card.role);
                         } else {
+                          // Not signed in and limit reached
                           alert('You are not authorized for this. Maximum admin limit (2) has been reached.');
                         }
                       }
