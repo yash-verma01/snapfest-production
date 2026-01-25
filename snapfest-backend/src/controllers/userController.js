@@ -1815,7 +1815,17 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
     const adminCount = await User.countDocuments({ role: 'admin' });
     const maxAdmins = 2;
     
-    // CRITICAL FIX: Check if current user is already an admin BEFORE blocking
+    console.log('🔍 syncClerkUser: Admin limit check', {
+      adminCount,
+      maxAdmins,
+      requestedRole,
+      currentClerkUserId,
+      hasReqUser: !!req.user,
+      reqUserId: req.userId
+    });
+    
+    // CRITICAL FIX: Only check limit if adminCount >= maxAdmins
+    // If adminCount < maxAdmins, there's room for more admins - always allow
     if (adminCount >= maxAdmins) {
       let isCurrentUserAdmin = false;
       
@@ -2171,6 +2181,15 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
     const adminCount = await User.countDocuments({ role: 'admin' });
     const maxAdmins = 2;
     
+    console.log('🔍 syncClerkUser: Late admin limit check', {
+      adminCount,
+      maxAdmins,
+      clerkUserId: clerkAuth.userId,
+      requestedRole
+    });
+    
+    // CRITICAL FIX: Only check limit if adminCount >= maxAdmins
+    // If adminCount < maxAdmins, there's room for more admins - always allow
     if (adminCount >= maxAdmins) {
       const existingAdmin = await User.findOne({ 
         clerkId: clerkAuth.userId, 
@@ -2597,7 +2616,16 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
       const adminCount = await User.countDocuments({ role: 'admin' });
       const maxAdmins = 2;
       
-      // If limit reached and user is not already an admin, reject
+      console.log('🔍 syncClerkUser: Admin user creation check', {
+        adminCount,
+        maxAdmins,
+        clerkUserId: clerkAuth.userId,
+        isAdmin,
+        targetRole
+      });
+      
+      // CRITICAL FIX: Only check limit if adminCount >= maxAdmins
+      // If adminCount < maxAdmins, there's room for more admins - always allow
       if (adminCount >= maxAdmins) {
         // Check if this user is already an admin
         const existingAdmin = await User.findOne({ clerkId: clerkAuth.userId, role: 'admin' });
