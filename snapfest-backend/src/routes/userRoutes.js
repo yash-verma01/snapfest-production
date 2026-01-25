@@ -28,7 +28,8 @@ import {
   sendEmailVerification,
   verifyEmail,
   syncClerkUser,
-  checkAdminLimit
+  checkAdminLimit,
+  cleanupDuplicateAdmins
 } from '../controllers/userController.js';
 import { authenticate, optionalAuth, authRateLimit } from '../middleware/auth.js';
 import {
@@ -47,6 +48,7 @@ const router = express.Router();
 
 // Public routes
 router.get('/check-admin-limit', checkAdminLimit);
+router.post('/cleanup-duplicate-admins', cleanupDuplicateAdmins);
 router.post('/register', authRateLimit, validateUserRegistration, register);
 router.post('/login', authRateLimit, validateUserLogin, login);
 router.post('/forgot-password', authRateLimit, validateForgotPassword, forgotPassword);

@@ -1780,6 +1780,78 @@ export const checkAdminLimit = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Cleanup duplicate admins with generated emails (one-time cleanup)
+// @route   POST /api/users/cleanup-duplicate-admins
+// @access  Public (but requires secret key)
+export const cleanupDuplicateAdmins = asyncHandler(async (req, res) => {
+  // Require secret key for security
+  const secretKey = req.headers['x-cleanup-secret'] || req.query.secret;
+  const expectedSecret = process.env.CLEANUP_SECRET_KEY || 'cleanup-duplicate-admins-2025';
+  
+  if (secretKey !== expectedSecret) {
+    return res.status(401).json({
+      success: false,
+      message: 'Unauthorized. Secret key required.'
+    });
+  }
+
+  try {
+    // Find all admins with generated emails (snapfest.local domain)
+    const duplicateAdmins = await User.find({ 
+      role: 'admin',
+      email: { $regex: /@snapfest\.local$/i }
+    });
+
+    if (duplicateAdmins.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'No duplicate admins found',
+        data: {
+          removed: 0,
+          remaining: await User.countDocuments({ role: 'admin' })
+        }
+      });
+    }
+
+    const removedIds = [];
+    for (const admin of duplicateAdmins) {
+      // Change role to user instead of deleting (safer)
+      admin.role = 'user';
+      await admin.save();
+      removedIds.push({
+        id: admin._id.toString(),
+        email: admin.email,
+        clerkId: admin.clerkId
+      });
+    }
+
+    const remainingCount = await User.countDocuments({ role: 'admin' });
+    const validAdmins = await User.find({ role: 'admin' }).select('name email clerkId');
+
+    return res.status(200).json({
+      success: true,
+      message: `Removed ${duplicateAdmins.length} duplicate admin(s)`,
+      data: {
+        removed: duplicateAdmins.length,
+        removedAdmins: removedIds,
+        remaining: remainingCount,
+        validAdmins: validAdmins.map(a => ({
+          name: a.name,
+          email: a.email,
+          clerkId: a.clerkId
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('❌ cleanupDuplicateAdmins: Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to cleanup duplicate admins',
+      error: error.message
+    });
+  }
+});
+
 // @desc    Sync Clerk user to local DB (idempotent)
 // @route   POST /api/users/sync
 // @access  Private (Clerk cookie session) - uses optionalAuth to handle session edge cases
