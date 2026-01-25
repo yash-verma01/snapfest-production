@@ -1997,37 +1997,60 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
     }
   }
   
-  // SIMPLE RULE: 
-  // 1. If user is existing admin → Skip limit check (SIGNIN)
-  // 2. If user is NOT admin → Check limit (SIGNUP)
+  // CRITICAL FIX: Admin limit check - ONLY for SIGNUP, NEVER for SIGNIN
+  // Rule: If Clerk metadata shows admin OR user exists as admin → This is SIGNIN → Always allow
+  // Rule: If Clerk metadata doesn't show admin AND user doesn't exist → This is SIGNUP → Check limit
   if (requestedRole === 'admin') {
-    // Check if user is existing admin
-    let userIsExistingAdmin = false;
+    // STEP 1: Try to get Clerk metadata to determine if this is SIGNIN
+    let clerkMetadataShowsAdmin = false;
+    try {
+      if (currentClerkUserId) {
+        const { createClerkClient } = await import('@clerk/clerk-sdk-node');
+        const clerkSecretKey = process.env.CLERK_SECRET_KEY || process.env.CLERK_SECRET_KEY_USER;
+        if (clerkSecretKey) {
+          const clerkClient = createClerkClient({ secretKey: clerkSecretKey });
+          const clerkUser = await clerkClient.users.getUser(currentClerkUserId);
+          const publicMetadata = clerkUser.publicMetadata || {};
+          clerkMetadataShowsAdmin = publicMetadata?.role === 'admin';
+          
+          if (clerkMetadataShowsAdmin) {
+            console.log('✅ syncClerkUser: Clerk metadata shows admin - this is SIGNIN, skipping limit check', {
+              currentClerkUserId,
+              clerkRole: publicMetadata?.role
+            });
+            // This is SIGNIN - skip limit check entirely
+            isExistingAdmin = true;
+          }
+        }
+      }
+    } catch (clerkError) {
+      // Non-blocking - continue with DB check
+      console.warn('⚠️ syncClerkUser: Could not check Clerk metadata:', clerkError.message);
+    }
     
-    if (isExistingAdmin) {
-      userIsExistingAdmin = true;
-    } else if (currentClerkUserId) {
-      // Check database for existing admin
-      const existingAdmin = await User.findOne({ 
-        clerkId: currentClerkUserId, 
-        role: 'admin' 
-      });
-      if (existingAdmin) {
-        userIsExistingAdmin = true;
-        isExistingAdmin = true;
-        existingUserInDB = existingAdmin;
+    // STEP 2: Check database for existing admin
+    if (!isExistingAdmin && !clerkMetadataShowsAdmin) {
+      if (isExistingAdmin) {
+        // Already confirmed as existing admin
+      } else if (currentClerkUserId) {
+        // Check database for existing admin
+        const existingAdmin = await User.findOne({ 
+          clerkId: currentClerkUserId, 
+          role: 'admin' 
+        });
+        if (existingAdmin) {
+          isExistingAdmin = true;
+          existingUserInDB = existingAdmin;
+          console.log('✅ syncClerkUser: Found existing admin in DB - this is SIGNIN, skipping limit check', {
+            currentClerkUserId,
+            userId: existingAdmin._id
+          });
+        }
       }
     }
     
-    if (userIsExistingAdmin) {
-      // User is existing admin → SKIP limit check (SIGNIN)
-      console.log('✅ syncClerkUser: Existing admin - skipping limit check (SIGNIN)', {
-        currentClerkUserId,
-        userId: existingUserInDB?._id
-      });
-      // Proceed with sync - no limit check
-    } else {
-      // User is NOT admin → Check limit (SIGNUP)
+    // STEP 3: Only check limit if user is NOT an existing admin (this is SIGNUP)
+    if (!isExistingAdmin && !clerkMetadataShowsAdmin) {
       const adminCount = await User.countDocuments({ role: 'admin' });
       const maxAdmins = 2;
       
@@ -2035,7 +2058,9 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
         console.log('❌ syncClerkUser: Admin limit reached - blocking signup', {
           adminCount,
           maxAdmins,
-          currentClerkUserId
+          currentClerkUserId,
+          clerkMetadataShowsAdmin,
+          isExistingAdmin
         });
         return res.status(403).json({
           success: false,
@@ -2043,6 +2068,13 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
           code: 'ADMIN_LIMIT_REACHED'
         });
       }
+    } else {
+      console.log('✅ syncClerkUser: Admin signin detected - skipping limit check', {
+        currentClerkUserId,
+        clerkMetadataShowsAdmin,
+        isExistingAdmin,
+        reason: 'SIGNIN_ALLOWED'
+      });
     }
   }
   
@@ -2351,40 +2383,57 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
     claimKeys: clerkAuth.claims ? Object.keys(clerkAuth.claims) : []
   });
   
-  // SIMPLE RULE: Late check - same logic
-  // If user is existing admin → Skip limit check (SIGNIN)
-  // If user is NOT admin → Check limit (SIGNUP)
+  // CRITICAL FIX: Late check - check Clerk metadata FIRST to determine SIGNIN vs SIGNUP
+  // Rule: If Clerk metadata shows admin → This is SIGNIN → Always allow
+  // Rule: If Clerk metadata doesn't show admin AND user doesn't exist → This is SIGNUP → Check limit
   if (requestedRole === 'admin' && clerkAuth?.userId && !isExistingAdmin) {
-    // Check if user is existing admin
-    const existingAdmin = await User.findOne({ 
-      clerkId: clerkAuth.userId, 
-      role: 'admin' 
-    });
+    // STEP 1: Check Clerk metadata for admin role (definitive SIGNIN indicator)
+    const clerkPublicMetadata = clerkAuth?.claims?.publicMetadata || {};
+    const clerkMetadataShowsAdmin = clerkPublicMetadata?.role === 'admin';
     
-    if (existingAdmin) {
-      // User is existing admin → SKIP limit check (SIGNIN)
-      console.log('✅ syncClerkUser: Existing admin (late check) - skipping limit check', {
-        clerkId: clerkAuth.userId
+    if (clerkMetadataShowsAdmin) {
+      // Clerk metadata shows admin → This is SIGNIN → Skip limit check
+      console.log('✅ syncClerkUser: Clerk metadata shows admin (late check) - this is SIGNIN, skipping limit check', {
+        clerkId: clerkAuth.userId,
+        clerkRole: clerkPublicMetadata?.role
       });
       isExistingAdmin = true;
-      existingUserInDB = existingAdmin;
       // Proceed with sync - no limit check
     } else {
-      // User is NOT admin → Check limit (SIGNUP)
-      const adminCount = await User.countDocuments({ role: 'admin' });
-      const maxAdmins = 2;
+      // STEP 2: Check database for existing admin
+      const existingAdmin = await User.findOne({ 
+        clerkId: clerkAuth.userId, 
+        role: 'admin' 
+      });
       
-      if (adminCount >= maxAdmins) {
-        console.log('❌ syncClerkUser: Admin limit reached (late check) - blocking signup', {
-          adminCount,
-          maxAdmins,
-          clerkId: clerkAuth.userId
+      if (existingAdmin) {
+        // User is existing admin → SKIP limit check (SIGNIN)
+        console.log('✅ syncClerkUser: Existing admin found in DB (late check) - this is SIGNIN, skipping limit check', {
+          clerkId: clerkAuth.userId,
+          adminId: existingAdmin._id
         });
-        return res.status(403).json({
-          success: false,
-          message: 'You are not authorized for this. Maximum admin limit (2) has been reached.',
-          code: 'ADMIN_LIMIT_REACHED'
-        });
+        isExistingAdmin = true;
+        existingUserInDB = existingAdmin;
+        // Proceed with sync - no limit check
+      } else {
+        // STEP 3: User is NOT admin → Check limit (SIGNUP)
+        const adminCount = await User.countDocuments({ role: 'admin' });
+        const maxAdmins = 2;
+        
+        if (adminCount >= maxAdmins) {
+          console.log('❌ syncClerkUser: Admin limit reached (late check) - blocking signup', {
+            adminCount,
+            maxAdmins,
+            clerkId: clerkAuth.userId,
+            clerkMetadataShowsAdmin,
+            isExistingAdmin
+          });
+          return res.status(403).json({
+            success: false,
+            message: 'You are not authorized for this. Maximum admin limit (2) has been reached.',
+            code: 'ADMIN_LIMIT_REACHED'
+          });
+        }
       }
     }
   }
