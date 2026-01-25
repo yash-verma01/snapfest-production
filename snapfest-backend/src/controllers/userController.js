@@ -1691,6 +1691,20 @@ export const checkAdminLimit = asyncHandler(async (req, res) => {
   const adminCount = await User.countDocuments({ role: 'admin' });
   const maxAdmins = 2;
   
+  // CRITICAL: Log the actual admin count for debugging
+  console.log('🔍 checkAdminLimit: Database query result', {
+    adminCount,
+    maxAdmins,
+    query: { role: 'admin' }
+  });
+  
+  // List all admins for debugging
+  const allAdmins = await User.find({ role: 'admin' }).select('name email clerkId');
+  console.log('👥 checkAdminLimit: All admins in database', {
+    count: allAdmins.length,
+    admins: allAdmins.map(a => ({ name: a.name, email: a.email, clerkId: a.clerkId }))
+  });
+  
   // CRITICAL FIX: Check if current user is already an admin
   let isCurrentUserAdmin = false;
   let currentClerkUserId = null;
@@ -1721,6 +1735,11 @@ export const checkAdminLimit = asyncHandler(async (req, res) => {
         role: 'admin' 
       });
       isCurrentUserAdmin = !!existingAdmin;
+      console.log('🔍 checkAdminLimit: Current user check', {
+        currentClerkUserId,
+        isCurrentUserAdmin,
+        foundAdmin: !!existingAdmin
+      });
     }
   } catch (e) {
     // Non-blocking
@@ -1729,6 +1748,14 @@ export const checkAdminLimit = asyncHandler(async (req, res) => {
   
   // Allow if under limit OR if current user is already an admin
   const isAllowed = adminCount < maxAdmins || isCurrentUserAdmin;
+  
+  console.log('✅ checkAdminLimit: Final result', {
+    adminCount,
+    maxAdmins,
+    isAllowed,
+    isCurrentUserAdmin,
+    reason: isAllowed ? (adminCount < maxAdmins ? 'Under limit' : 'Existing admin') : 'Limit reached'
+  });
   
   res.status(200).json({
     success: true,
