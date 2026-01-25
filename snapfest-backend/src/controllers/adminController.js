@@ -2435,22 +2435,60 @@ export const searchBeatBlooms = asyncHandler(async (req, res) => {
 // @route   GET /api/admin/profile
 // @access  Private/Admin
 export const getAdminProfile = asyncHandler(async (req, res) => {
-  const adminId = req.userId;
-
-  const admin = await User.findById(adminId).select("-password");
-  
-  if (!admin) {
-    return res.status(404).json({
+  // CRITICAL FIX: Validate req.userId exists
+  if (!req.userId) {
+    console.error('❌ getAdminProfile: req.userId is missing', {
+      hasReqUser: !!req.user,
+      hasReqUserId: !!req.userId,
+      hasReqAdmin: !!req.admin,
+      path: req.path,
+      originalUrl: req.originalUrl,
+      headers: {
+        authorization: req.headers.authorization ? 'present' : 'missing',
+        cookie: req.headers.cookie ? 'present' : 'missing'
+      }
+    });
+    return res.status(500).json({
       success: false,
-      message: "Admin not found"
+      error: 'Internal server error',
+      message: 'User ID not found in request. Please try signing in again.'
     });
   }
 
-  res.status(200).json({
-    success: true,
-    message: "Admin profile retrieved successfully",
-    data: admin
-  });
+  const adminId = req.userId;
+
+  try {
+    const admin = await User.findById(adminId).select("-password");
+    
+    if (!admin) {
+      console.error('❌ getAdminProfile: Admin not found in database', {
+        adminId: adminId,
+        userId: req.userId,
+        clerkId: req.user?.clerkId || 'unknown'
+      });
+      return res.status(404).json({
+        success: false,
+        message: "Admin not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Admin profile retrieved successfully",
+      data: admin
+    });
+  } catch (error) {
+    console.error('❌ getAdminProfile: Database query error', {
+      error: error.message,
+      adminId: adminId,
+      stack: error.stack
+    });
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: 'Failed to retrieve admin profile. Please try again.'
+    });
+  }
 });
 
 // @desc    Update admin profile

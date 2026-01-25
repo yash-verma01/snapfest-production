@@ -4,7 +4,7 @@ import { useUser, useClerk, SignedIn, SignedOut, UserButton } from '@clerk/clerk
 import { Menu as MenuIcon, X, User, LogOut, Settings, Package, Calendar, Home, Camera, Heart, ShoppingCart, Star } from 'lucide-react';
 import { Menu, Transition } from '@headlessui/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { userAPI, vendorAPI } from '../services/api';
+import { userAPI, vendorAPI, adminAPI } from '../services/api';
 
 const Navbar = memo(() => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -88,7 +88,9 @@ const Navbar = memo(() => {
         
         let response;
         // Call role-specific API method
-        if (role === 'vendor') {
+        if (role === 'admin') {
+          response = await adminAPI.getProfile();
+        } else if (role === 'vendor') {
           response = await vendorAPI.getVendorProfile();
         } else {
           response = await userAPI.getUserProfile();
@@ -96,7 +98,8 @@ const Navbar = memo(() => {
         
         if (response.data) {
           const userName = response.data?.data?.user?.name || 
-                          response.data?.data?.vendor?.name;
+                          response.data?.data?.vendor?.name ||
+                          response.data?.data?.name; // Admin profile uses data.name
           if (userName) {
             setBackendUserName(userName);
           }

@@ -267,8 +267,16 @@ export const requireAdminClerk = async (req, res, next) => {
             name: user.name
           });
         } catch (createError) {
-          console.error('❌ requireAdminClerk: Failed to create admin user:', createError.message);
-          // Continue - will try to use existing user or fail gracefully
+          console.error('❌ requireAdminClerk: Failed to create admin user:', {
+            error: createError.message,
+            stack: createError.stack,
+            userId: userId,
+            email: email,
+            errorCode: createError.code,
+            errorName: createError.name
+          });
+          // Don't continue - user creation failed and user doesn't exist
+          // The check below will return appropriate error
         }
       }
       
@@ -370,7 +378,16 @@ export const requireAdminClerk = async (req, res, next) => {
               name: user.name
             });
           } catch (createError) {
-            console.error('❌ requireAdminClerk: Failed to create admin user via email fallback:', createError.message);
+            console.error('❌ requireAdminClerk: Failed to create admin user via email fallback:', {
+              error: createError.message,
+              stack: createError.stack,
+              userId: userId,
+              email: email,
+              errorCode: createError.code,
+              errorName: createError.name
+            });
+            // Don't continue - user creation failed and user doesn't exist
+            // The check below will return appropriate error
           }
         }
         
