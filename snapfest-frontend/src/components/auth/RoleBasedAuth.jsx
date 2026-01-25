@@ -272,8 +272,7 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
   }, [user]); // Add user as dependency to re-check when user signs in
 
   const handleRoleSelect = (role) => {
-    // CRITICAL FIX: Always allow admin selection if user is signed in
-    // Backend will validate - don't block on frontend
+    // CRITICAL FIX: Block admin selection if limit is reached and user is not signed in
     if (role === 'admin') {
       if (user) {
         // User is signed in - always allow (backend will validate)
@@ -285,12 +284,9 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
       
       // User is NOT signed in - check adminLimitReached
       if (adminLimitReached) {
-        // Check if this is a new registration attempt
-        // If adminCount < maxAdmins, allow new registrations
-        // Backend will validate during sync
-        console.log('⚠️ RoleBasedAuth: Admin limit reached, but allowing attempt (backend will validate)');
-        setSelectedRole(role);
-        sessionStorage.setItem('selectedRole', role);
+        // Admin limit reached - block selection for new signup
+        console.log('❌ RoleBasedAuth: Admin limit reached - blocking admin selection for new signup');
+        // Don't set selectedRole - keep user on role selection screen
         return;
       }
     }
@@ -440,8 +436,12 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
                         : 'border-transparent hover:border-pink-300'
                     }`}
                     onClick={() => {
-                      // CRITICAL FIX: Always call handleRoleSelect, don't show alert here
-                      // handleRoleSelect will decide whether to allow or block
+                      // CRITICAL FIX: Block admin selection if limit is reached and user is not signed in
+                      if (card.role === 'admin' && adminLimitReached && !user) {
+                        // Don't allow selection - show error message
+                        console.log('❌ RoleBasedAuth: Admin limit reached - cannot select admin for signup');
+                        return;
+                      }
                       handleRoleSelect(card.role);
                     }}
                   >
@@ -512,6 +512,12 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
 
   const currentRoleInfo = roleInfo[selectedRole] || roleInfo.user;
   const RoleIcon = currentRoleInfo.icon;
+
+  // CRITICAL FIX: Block admin signup form when limit is reached and user is not signed in
+  const shouldBlockAdminSignup = selectedRole === 'admin' && 
+                                  adminLimitReached && 
+                                  !user && 
+                                  mode === 'signup';
 
   return (
     <div className="min-h-screen flex">
@@ -702,6 +708,45 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
                           }
                         }}
                       />
+                    </motion.div>
+                  ) : shouldBlockAdminSignup ? (
+                    <motion.div
+                      key="admin-blocked"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}
+                      className="bg-red-50 border-2 border-red-200 rounded-xl p-6"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0">
+                          <Shield className="w-8 h-8 text-red-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-red-900 mb-2">
+                            Admin Registration Not Available
+                          </h3>
+                          <p className="text-red-700 mb-4">
+                            The maximum admin limit (2) has been reached. New admin registrations are currently not available.
+                          </p>
+                          <div className="bg-white rounded-lg p-4 border border-red-200">
+                            <p className="text-sm text-gray-700 mb-2">
+                              <strong>Existing admins:</strong> If you are an existing admin, please use the sign-in option instead.
+                            </p>
+                            <motion.button
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => {
+                                setMode('signin');
+                                // Keep admin role selected for signin
+                              }}
+                              className="w-full bg-gradient-to-r from-gray-700 to-gray-900 text-white py-2 px-4 rounded-lg font-semibold hover:shadow-lg transition-all duration-300"
+                            >
+                              Switch to Sign In
+                            </motion.button>
+                          </div>
+                        </div>
+                      </div>
                     </motion.div>
                   ) : (
                     <motion.div
