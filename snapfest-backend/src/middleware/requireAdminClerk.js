@@ -227,84 +227,114 @@ export const requireAdminClerk = async (req, res, next) => {
       
       // CRITICAL FIX: Create admin user if doesn't exist in database
       // This prevents 404 errors when accessing admin routes before sync completes
-      // Use findOneAndUpdate with upsert to handle race conditions atomically
+      // BUT: Check admin limit BEFORE creating new admin users
       if (!user) {
         try {
-          // Fetch user details from Clerk if email/name not available
-          let finalEmail = email;
-          let finalName = null;
+          // CRITICAL FIX: Check admin limit BEFORE creating admin user
+          // This prevents bypassing the limit by accessing admin routes directly
+          const adminCount = await User.countDocuments({ role: 'admin' });
+          const maxAdmins = 2;
           
-          if (!finalEmail || !finalName) {
-            const clerkClient = getClerkClient();
-            const clerkUser = await clerkClient.users.getUser(userId);
+          if (adminCount >= maxAdmins) {
+            // Admin limit reached - check if this user is already an admin (shouldn't happen here, but safety check)
+            const existingAdmin = await User.findOne({ clerkId: userId, role: 'admin' });
             
-            if (!finalEmail) {
-              finalEmail = clerkUser.emailAddresses?.find(email => email.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
-                          clerkUser.emailAddresses?.[0]?.emailAddress ||
-                          clerkUser.emailAddress ||
-                          null;
+            if (!existingAdmin) {
+              // User doesn't exist and limit is reached - block admin creation
+              console.error('❌ requireAdminClerk: Admin limit reached - cannot create admin user', {
+                adminCount,
+                maxAdmins,
+                userId: userId,
+                reason: 'ADMIN_LIMIT_REACHED'
+              });
+              
+              return res.status(403).json({
+                success: false,
+                message: 'You are not authorized for this. Maximum admin limit (2) has been reached.',
+                code: 'ADMIN_LIMIT_REACHED'
+              });
             }
             
-            if (!finalName) {
-              finalName = `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || 
-                         finalEmail?.split('@')[0] || 
-                         'Admin';
-            }
-          }
-          
-          // CRITICAL FIX: Do NOT create admin users with generated emails
-          // Admins MUST have a valid email from Clerk - this prevents duplicate/invalid admins
-          if (!finalEmail || finalEmail === 'unknown' || finalEmail.trim() === '' || finalEmail.includes('@snapfest.local')) {
-            console.error('❌ requireAdminClerk: Cannot create admin user - invalid or missing email', {
-              userId: userId,
-              email: finalEmail,
-              reason: !finalEmail ? 'No email' : finalEmail.includes('@snapfest.local') ? 'Generated email' : 'Invalid email'
-            });
+            // User exists as admin - use it
+            user = existingAdmin;
+          } else {
+            // Admin limit not reached - proceed with user creation
+            // Fetch user details from Clerk if email/name not available
+            let finalEmail = email;
+            let finalName = null;
             
-            // Don't create admin user - return error instead
-            return res.status(400).json({
-              success: false,
-              error: 'Invalid admin account',
-              message: 'Admin accounts must have a valid email address. Please ensure your Clerk account has an email address.'
-            });
-          }
-          
-          // Check if user exists with this email (might have been created by sync endpoint)
-          const existingUserByEmail = await User.findOne({ email: finalEmail.toLowerCase().trim() });
-          if (existingUserByEmail && existingUserByEmail.clerkId !== userId) {
-            // Email conflict - don't create duplicate
-            console.error('❌ requireAdminClerk: Email conflict - user already exists with this email', {
-              userId: userId,
-              email: finalEmail,
-              existingUserId: existingUserByEmail._id,
-              existingClerkId: existingUserByEmail.clerkId
-            });
-            
-            return res.status(400).json({
-              success: false,
-              error: 'Email conflict',
-              message: 'An account with this email already exists. Please use a different email address.'
-            });
-          }
-          
-          // Use findOneAndUpdate with upsert for atomic operation (handles race conditions)
-          user = await User.findOneAndUpdate(
-            { clerkId: userId }, // Query
-            {
-              $setOnInsert: { // Only set these fields on insert (not on update)
-                clerkId: userId,
-                name: finalName || 'Admin',
-                email: finalEmail.toLowerCase().trim(),
-                role: 'admin',
-                isActive: true
+            if (!finalEmail || !finalName) {
+              const clerkClient = getClerkClient();
+              const clerkUser = await clerkClient.users.getUser(userId);
+              
+              if (!finalEmail) {
+                finalEmail = clerkUser.emailAddresses?.find(email => email.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
+                            clerkUser.emailAddresses?.[0]?.emailAddress ||
+                            clerkUser.emailAddress ||
+                            null;
               }
-            },
-            {
-              upsert: true, // Create if doesn't exist
-              new: true, // Return updated document
-              runValidators: true // Run schema validators
+              
+              if (!finalName) {
+                finalName = `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || 
+                           finalEmail?.split('@')[0] || 
+                           'Admin';
+              }
             }
-          );
+            
+            // CRITICAL FIX: Do NOT create admin users with generated emails
+            // Admins MUST have a valid email from Clerk - this prevents duplicate/invalid admins
+            if (!finalEmail || finalEmail === 'unknown' || finalEmail.trim() === '' || finalEmail.includes('@snapfest.local')) {
+              console.error('❌ requireAdminClerk: Cannot create admin user - invalid or missing email', {
+                userId: userId,
+                email: finalEmail,
+                reason: !finalEmail ? 'No email' : finalEmail.includes('@snapfest.local') ? 'Generated email' : 'Invalid email'
+              });
+              
+              // Don't create admin user - return error instead
+              return res.status(400).json({
+                success: false,
+                error: 'Invalid admin account',
+                message: 'Admin accounts must have a valid email address. Please ensure your Clerk account has an email address.'
+              });
+            }
+            
+            // Check if user exists with this email (might have been created by sync endpoint)
+            const existingUserByEmail = await User.findOne({ email: finalEmail.toLowerCase().trim() });
+            if (existingUserByEmail && existingUserByEmail.clerkId !== userId) {
+              // Email conflict - don't create duplicate
+              console.error('❌ requireAdminClerk: Email conflict - user already exists with this email', {
+                userId: userId,
+                email: finalEmail,
+                existingUserId: existingUserByEmail._id,
+                existingClerkId: existingUserByEmail.clerkId
+              });
+              
+              return res.status(400).json({
+                success: false,
+                error: 'Email conflict',
+                message: 'An account with this email already exists. Please use a different email address.'
+              });
+            }
+            
+            // Use findOneAndUpdate with upsert for atomic operation (handles race conditions)
+            user = await User.findOneAndUpdate(
+              { clerkId: userId }, // Query
+              {
+                $setOnInsert: { // Only set these fields on insert (not on update)
+                  clerkId: userId,
+                  name: finalName || 'Admin',
+                  email: finalEmail.toLowerCase().trim(),
+                  role: 'admin',
+                  isActive: true
+                }
+              },
+              {
+                upsert: true, // Create if doesn't exist
+                new: true, // Return updated document
+                runValidators: true // Run schema validators
+              }
+            );
+          }
           
           console.log('✅ requireAdminClerk: Created/found admin user in database', {
             userId: user._id,
@@ -407,84 +437,113 @@ export const requireAdminClerk = async (req, res, next) => {
         let user = await User.findOne({ clerkId: userId });
         
         // CRITICAL FIX: Create admin user if doesn't exist (same as above)
-        // Use findOneAndUpdate with upsert to handle race conditions atomically
+        // BUT: Check admin limit BEFORE creating new admin users
         if (!user) {
           try {
-            // Fetch user details from Clerk if email/name not available
-            let finalEmail = email;
-            let finalName = null;
+            // CRITICAL FIX: Check admin limit BEFORE creating admin user
+            const adminCount = await User.countDocuments({ role: 'admin' });
+            const maxAdmins = 2;
             
-            if (!finalEmail || !finalName) {
-              const clerkClient = getClerkClient();
-              const clerkUser = await clerkClient.users.getUser(userId);
+            if (adminCount >= maxAdmins) {
+              // Admin limit reached - check if this user is already an admin
+              const existingAdmin = await User.findOne({ clerkId: userId, role: 'admin' });
               
-              if (!finalEmail) {
-                finalEmail = clerkUser.emailAddresses?.find(email => email.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
-                            clerkUser.emailAddresses?.[0]?.emailAddress ||
-                            clerkUser.emailAddress ||
-                            null;
+              if (!existingAdmin) {
+                // User doesn't exist and limit is reached - block admin creation
+                console.error('❌ requireAdminClerk: Admin limit reached - cannot create admin user (ADMIN_EMAILS fallback)', {
+                  adminCount,
+                  maxAdmins,
+                  userId: userId,
+                  reason: 'ADMIN_LIMIT_REACHED'
+                });
+                
+                return res.status(403).json({
+                  success: false,
+                  message: 'You are not authorized for this. Maximum admin limit (2) has been reached.',
+                  code: 'ADMIN_LIMIT_REACHED'
+                });
               }
               
-              if (!finalName) {
-                finalName = `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || 
-                           finalEmail?.split('@')[0] || 
-                           'Admin';
-              }
-            }
-            
-            // CRITICAL FIX: Do NOT create admin users with generated emails
-            // Admins MUST have a valid email from Clerk - this prevents duplicate/invalid admins
-            if (!finalEmail || finalEmail === 'unknown' || finalEmail.trim() === '' || finalEmail.includes('@snapfest.local')) {
-              console.error('❌ requireAdminClerk: Cannot create admin user - invalid or missing email', {
-                userId: userId,
-                email: finalEmail,
-                reason: !finalEmail ? 'No email' : finalEmail.includes('@snapfest.local') ? 'Generated email' : 'Invalid email'
-              });
+              // User exists as admin - use it
+              user = existingAdmin;
+            } else {
+              // Admin limit not reached - proceed with user creation
+              // Fetch user details from Clerk if email/name not available
+              let finalEmail = email;
+              let finalName = null;
               
-              // Don't create admin user - return error instead
-              return res.status(400).json({
-                success: false,
-                error: 'Invalid admin account',
-                message: 'Admin accounts must have a valid email address. Please ensure your Clerk account has an email address.'
-              });
-            }
-            
-            // Check if user exists with this email (might have been created by sync endpoint)
-            const existingUserByEmail = await User.findOne({ email: finalEmail.toLowerCase().trim() });
-            if (existingUserByEmail && existingUserByEmail.clerkId !== userId) {
-              // Email conflict - don't create duplicate
-              console.error('❌ requireAdminClerk: Email conflict - user already exists with this email', {
-                userId: userId,
-                email: finalEmail,
-                existingUserId: existingUserByEmail._id,
-                existingClerkId: existingUserByEmail.clerkId
-              });
-              
-              return res.status(400).json({
-                success: false,
-                error: 'Email conflict',
-                message: 'An account with this email already exists. Please use a different email address.'
-              });
-            }
-            
-            // Use findOneAndUpdate with upsert for atomic operation (handles race conditions)
-            user = await User.findOneAndUpdate(
-              { clerkId: userId }, // Query
-              {
-                $setOnInsert: { // Only set these fields on insert (not on update)
-                  clerkId: userId,
-                  name: finalName || 'Admin',
-                  email: finalEmail.toLowerCase().trim(),
-                  role: 'admin',
-                  isActive: true
+              if (!finalEmail || !finalName) {
+                const clerkClient = getClerkClient();
+                const clerkUser = await clerkClient.users.getUser(userId);
+                
+                if (!finalEmail) {
+                  finalEmail = clerkUser.emailAddresses?.find(email => email.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
+                              clerkUser.emailAddresses?.[0]?.emailAddress ||
+                              clerkUser.emailAddress ||
+                              null;
                 }
-              },
-              {
-                upsert: true, // Create if doesn't exist
-                new: true, // Return updated document
-                runValidators: true // Run schema validators
+                
+                if (!finalName) {
+                  finalName = `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || 
+                             finalEmail?.split('@')[0] || 
+                             'Admin';
+                }
               }
-            );
+              
+              // CRITICAL FIX: Do NOT create admin users with generated emails
+              // Admins MUST have a valid email from Clerk - this prevents duplicate/invalid admins
+              if (!finalEmail || finalEmail === 'unknown' || finalEmail.trim() === '' || finalEmail.includes('@snapfest.local')) {
+                console.error('❌ requireAdminClerk: Cannot create admin user - invalid or missing email', {
+                  userId: userId,
+                  email: finalEmail,
+                  reason: !finalEmail ? 'No email' : finalEmail.includes('@snapfest.local') ? 'Generated email' : 'Invalid email'
+                });
+                
+                // Don't create admin user - return error instead
+                return res.status(400).json({
+                  success: false,
+                  error: 'Invalid admin account',
+                  message: 'Admin accounts must have a valid email address. Please ensure your Clerk account has an email address.'
+                });
+              }
+              
+              // Check if user exists with this email (might have been created by sync endpoint)
+              const existingUserByEmail = await User.findOne({ email: finalEmail.toLowerCase().trim() });
+              if (existingUserByEmail && existingUserByEmail.clerkId !== userId) {
+                // Email conflict - don't create duplicate
+                console.error('❌ requireAdminClerk: Email conflict - user already exists with this email', {
+                  userId: userId,
+                  email: finalEmail,
+                  existingUserId: existingUserByEmail._id,
+                  existingClerkId: existingUserByEmail.clerkId
+                });
+                
+                return res.status(400).json({
+                  success: false,
+                  error: 'Email conflict',
+                  message: 'An account with this email already exists. Please use a different email address.'
+                });
+              }
+              
+              // Use findOneAndUpdate with upsert for atomic operation (handles race conditions)
+              user = await User.findOneAndUpdate(
+                { clerkId: userId }, // Query
+                {
+                  $setOnInsert: { // Only set these fields on insert (not on update)
+                    clerkId: userId,
+                    name: finalName || 'Admin',
+                    email: finalEmail.toLowerCase().trim(),
+                    role: 'admin',
+                    isActive: true
+                  }
+                },
+                {
+                  upsert: true, // Create if doesn't exist
+                  new: true, // Return updated document
+                  runValidators: true // Run schema validators
+                }
+              );
+            }
             
             console.log('✅ requireAdminClerk: Created/found admin user via email fallback', {
               userId: user._id,

@@ -2854,14 +2854,57 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
         // Check if user exists with different role - update to admin
         const existingUser = await User.findOne({ clerkId: clerkAuth.userId });
         if (existingUser) {
+          // CRITICAL FIX: Check admin limit BEFORE upgrading existing user to admin
+          // This prevents users from bypassing the limit by signing up as regular users first
+          const currentAdminCount = await User.countDocuments({ role: 'admin' });
+          const maxAdmins = 2;
+          
+          if (currentAdminCount >= maxAdmins) {
+            // Admin limit reached - cannot upgrade user to admin
+            console.log('❌ syncClerkUser: Admin limit reached - cannot upgrade existing user to admin', {
+              adminCount: currentAdminCount,
+              maxAdmins,
+              clerkUserId: clerkAuth.userId,
+              currentRole: existingUser.role,
+              reason: 'ROLE_UPGRADE_BLOCKED'
+            });
+            return res.status(403).json({
+              success: false,
+              message: 'You are not authorized for this. Maximum admin limit (2) has been reached.',
+              code: 'ADMIN_LIMIT_REACHED'
+            });
+          }
+          
+          // Limit not reached - allow role upgrade
           const oldRole = existingUser.role;
           existingUser.role = 'admin';
           adminUser = await existingUser.save();
           
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`✅ syncClerkUser: Updated existing user from '${oldRole}' to 'admin'`);
-          }
+          console.log(`✅ syncClerkUser: Updated existing user from '${oldRole}' to 'admin'`, {
+            adminCount: currentAdminCount + 1,
+            maxAdmins
+          });
         } else {
+          // User doesn't exist - this is a new admin signup
+          // CRITICAL FIX: Double-check admin limit before creating new admin user
+          // This is a safety check in case the earlier check was bypassed
+          const currentAdminCount = await User.countDocuments({ role: 'admin' });
+          const maxAdmins = 2;
+          
+          if (currentAdminCount >= maxAdmins) {
+            console.log('❌ syncClerkUser: Admin limit reached - blocking new admin creation (safety check)', {
+              adminCount: currentAdminCount,
+              maxAdmins,
+              clerkUserId: clerkAuth.userId,
+              reason: 'NEW_ADMIN_CREATION_BLOCKED'
+            });
+            return res.status(403).json({
+              success: false,
+              message: 'You are not authorized for this. Maximum admin limit (2) has been reached.',
+              code: 'ADMIN_LIMIT_REACHED'
+            });
+          }
+          
           // CRITICAL FIX: Do NOT create admin users with generated emails
           // Admins MUST have a valid email from Clerk - this prevents duplicate/invalid admins
           if (!finalEmail || finalEmail.includes('@snapfest.local') || finalEmail === 'unknown' || finalEmail.trim() === '') {
@@ -2886,9 +2929,12 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
             isActive: true,
           });
           
-          if (process.env.NODE_ENV === 'development') {
-            console.log('✅ syncClerkUser: Created new admin user:', { adminId: adminUser._id, email: adminUser.email });
-          }
+          console.log('✅ syncClerkUser: Created new admin user', {
+            adminId: adminUser._id,
+            email: adminUser.email,
+            adminCount: currentAdminCount + 1,
+            maxAdmins
+          });
         }
       }
       
