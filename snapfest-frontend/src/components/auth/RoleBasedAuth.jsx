@@ -255,7 +255,13 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
         }
       } catch (error) {
         console.error('❌ RoleBasedAuth: Error checking admin limit:', error);
-        // On error, allow admin selection (fail open)
+        console.error('   Error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
+        // CRITICAL FIX: On error, allow admin selection (fail open)
+        // This prevents blocking admins if API fails
         setAdminLimitReached(false);
       } finally {
         setIsCheckingAdminLimit(false);
@@ -266,30 +272,27 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
   }, [user]); // Add user as dependency to re-check when user signs in
 
   const handleRoleSelect = (role) => {
-    if (role === 'admin' && adminLimitReached) {
-      // CRITICAL FIX: Check multiple sources for admin status
-      // 1. Clerk public metadata (if synced)
-      // 2. Backend isCurrentUserAdmin (from checkAdminLimit response)
-      // 3. Allow if user is signed in (they might be an admin but not synced yet)
-      if (user && user.publicMetadata?.role === 'admin') {
-        console.log('✅ RoleBasedAuth: User is already an admin (Clerk metadata), allowing selection');
-        setSelectedRole(role);
-        sessionStorage.setItem('selectedRole', role);
-        return;
-      }
-      
-      // If user is signed in but adminLimitReached is true, they might be an admin
-      // Let them try - backend will validate
+    // CRITICAL FIX: Always allow admin selection if user is signed in
+    // Backend will validate - don't block on frontend
+    if (role === 'admin') {
       if (user) {
-        console.log('⚠️ RoleBasedAuth: User is signed in but adminLimitReached is true, allowing attempt (backend will validate)');
+        // User is signed in - always allow (backend will validate)
+        console.log('✅ RoleBasedAuth: User is signed in, allowing admin selection (backend will validate)');
         setSelectedRole(role);
         sessionStorage.setItem('selectedRole', role);
         return;
       }
       
-      // Not signed in and limit reached - show error
-      alert('You are not authorized for this. Maximum admin limit (2) has been reached.');
-      return;
+      // User is NOT signed in - check adminLimitReached
+      if (adminLimitReached) {
+        // Check if this is a new registration attempt
+        // If adminCount < maxAdmins, allow new registrations
+        // Backend will validate during sync
+        console.log('⚠️ RoleBasedAuth: Admin limit reached, but allowing attempt (backend will validate)');
+        setSelectedRole(role);
+        sessionStorage.setItem('selectedRole', role);
+        return;
+      }
     }
     
     setSelectedRole(role);
@@ -437,22 +440,9 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
                         : 'border-transparent hover:border-pink-300'
                     }`}
                     onClick={() => {
-                      if (!card.disabled) {
-                        handleRoleSelect(card.role);
-                      } else {
-                        // CRITICAL FIX: Allow existing admins even if card appears disabled
-                        if (user && user.publicMetadata?.role === 'admin') {
-                          console.log('✅ RoleBasedAuth: User is already an admin, allowing selection despite disabled card');
-                          handleRoleSelect(card.role);
-                        } else if (user) {
-                          // User is signed in - let them try (backend will validate)
-                          console.log('⚠️ RoleBasedAuth: User is signed in, allowing admin selection attempt');
-                          handleRoleSelect(card.role);
-                        } else {
-                          // Not signed in and limit reached
-                          alert('You are not authorized for this. Maximum admin limit (2) has been reached.');
-                        }
-                      }
+                      // CRITICAL FIX: Always call handleRoleSelect, don't show alert here
+                      // handleRoleSelect will decide whether to allow or block
+                      handleRoleSelect(card.role);
                     }}
                   >
                     {/* Gradient Background */}
