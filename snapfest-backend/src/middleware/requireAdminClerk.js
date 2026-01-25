@@ -227,6 +227,7 @@ export const requireAdminClerk = async (req, res, next) => {
       
       // CRITICAL FIX: Create admin user if doesn't exist in database
       // This prevents 404 errors when accessing admin routes before sync completes
+      // Use findOneAndUpdate with upsert to handle race conditions atomically
       if (!user) {
         try {
           // Fetch user details from Clerk if email/name not available
@@ -251,32 +252,80 @@ export const requireAdminClerk = async (req, res, next) => {
             }
           }
           
-          // Create admin user in database
-          user = await User.create({
-            clerkId: userId,
-            name: finalName || 'Admin',
-            email: finalEmail?.toLowerCase().trim() || 'unknown',
-            role: 'admin',
-            isActive: true
-          });
+          // CRITICAL FIX: Generate unique email if email is missing to avoid unique constraint violations
+          // Use clerkId-based email to ensure uniqueness
+          if (!finalEmail || finalEmail === 'unknown' || finalEmail.trim() === '') {
+            finalEmail = `clerk-${userId}@snapfest.local`;
+            console.log('⚠️ requireAdminClerk: Using generated email for admin user:', finalEmail);
+          }
           
-          console.log('✅ requireAdminClerk: Created admin user in database', {
+          // Check if user exists with this email (might have been created by sync endpoint)
+          const existingUserByEmail = await User.findOne({ email: finalEmail.toLowerCase().trim() });
+          if (existingUserByEmail && existingUserByEmail.clerkId !== userId) {
+            // Email conflict - use clerkId-based email instead
+            finalEmail = `clerk-${userId}@snapfest.local`;
+            console.log('⚠️ requireAdminClerk: Email conflict detected, using clerkId-based email:', finalEmail);
+          }
+          
+          // Use findOneAndUpdate with upsert for atomic operation (handles race conditions)
+          user = await User.findOneAndUpdate(
+            { clerkId: userId }, // Query
+            {
+              $setOnInsert: { // Only set these fields on insert (not on update)
+                clerkId: userId,
+                name: finalName || 'Admin',
+                email: finalEmail.toLowerCase().trim(),
+                role: 'admin',
+                isActive: true
+              }
+            },
+            {
+              upsert: true, // Create if doesn't exist
+              new: true, // Return updated document
+              runValidators: true // Run schema validators
+            }
+          );
+          
+          console.log('✅ requireAdminClerk: Created/found admin user in database', {
             userId: user._id,
             clerkId: userId,
             email: user.email,
-            name: user.name
+            name: user.name,
+            wasCreated: !user.createdAt || (Date.now() - new Date(user.createdAt).getTime()) < 5000
           });
         } catch (createError) {
-          console.error('❌ requireAdminClerk: Failed to create admin user:', {
-            error: createError.message,
-            stack: createError.stack,
-            userId: userId,
-            email: email,
-            errorCode: createError.code,
-            errorName: createError.name
-          });
-          // Don't continue - user creation failed and user doesn't exist
-          // The check below will return appropriate error
+          // Handle duplicate key errors specifically
+          if (createError.code === 11000 || createError.name === 'MongoServerError') {
+            // Duplicate key error - user might have been created by another request
+            // Try to find the user again
+            user = await User.findOne({ clerkId: userId });
+            if (user) {
+              console.log('✅ requireAdminClerk: User found after duplicate key error (race condition handled)');
+            } else {
+              console.error('❌ requireAdminClerk: Duplicate key error but user not found:', {
+                error: createError.message,
+                userId: userId,
+                email: email
+              });
+            }
+          } else {
+            console.error('❌ requireAdminClerk: Failed to create admin user:', {
+              error: createError.message,
+              stack: createError.stack,
+              userId: userId,
+              email: email,
+              errorCode: createError.code,
+              errorName: createError.name
+            });
+          }
+        }
+      }
+      
+      // CRITICAL: Final check - if user is still null, try to find again (might have been created by another request)
+      if (!user) {
+        user = await User.findOne({ clerkId: userId });
+        if (user) {
+          console.log('✅ requireAdminClerk: User found on final check (created by another process)');
         }
       }
       
@@ -338,6 +387,7 @@ export const requireAdminClerk = async (req, res, next) => {
         let user = await User.findOne({ clerkId: userId });
         
         // CRITICAL FIX: Create admin user if doesn't exist (same as above)
+        // Use findOneAndUpdate with upsert to handle race conditions atomically
         if (!user) {
           try {
             // Fetch user details from Clerk if email/name not available
@@ -362,38 +412,86 @@ export const requireAdminClerk = async (req, res, next) => {
               }
             }
             
-            // Create admin user in database
-            user = await User.create({
-              clerkId: userId,
-              name: finalName || 'Admin',
-              email: finalEmail?.toLowerCase().trim() || 'unknown',
-              role: 'admin',
-              isActive: true
-            });
+            // CRITICAL FIX: Generate unique email if email is missing to avoid unique constraint violations
+            if (!finalEmail || finalEmail === 'unknown' || finalEmail.trim() === '') {
+              finalEmail = `clerk-${userId}@snapfest.local`;
+              console.log('⚠️ requireAdminClerk: Using generated email for admin user (email fallback):', finalEmail);
+            }
             
-            console.log('✅ requireAdminClerk: Created admin user via email fallback', {
+            // Check if user exists with this email (might have been created by sync endpoint)
+            const existingUserByEmail = await User.findOne({ email: finalEmail.toLowerCase().trim() });
+            if (existingUserByEmail && existingUserByEmail.clerkId !== userId) {
+              // Email conflict - use clerkId-based email instead
+              finalEmail = `clerk-${userId}@snapfest.local`;
+              console.log('⚠️ requireAdminClerk: Email conflict detected (email fallback), using clerkId-based email:', finalEmail);
+            }
+            
+            // Use findOneAndUpdate with upsert for atomic operation (handles race conditions)
+            user = await User.findOneAndUpdate(
+              { clerkId: userId }, // Query
+              {
+                $setOnInsert: { // Only set these fields on insert (not on update)
+                  clerkId: userId,
+                  name: finalName || 'Admin',
+                  email: finalEmail.toLowerCase().trim(),
+                  role: 'admin',
+                  isActive: true
+                }
+              },
+              {
+                upsert: true, // Create if doesn't exist
+                new: true, // Return updated document
+                runValidators: true // Run schema validators
+              }
+            );
+            
+            console.log('✅ requireAdminClerk: Created/found admin user via email fallback', {
               userId: user._id,
               clerkId: userId,
               email: user.email,
-              name: user.name
+              name: user.name,
+              wasCreated: !user.createdAt || (Date.now() - new Date(user.createdAt).getTime()) < 5000
             });
           } catch (createError) {
-            console.error('❌ requireAdminClerk: Failed to create admin user via email fallback:', {
-              error: createError.message,
-              stack: createError.stack,
-              userId: userId,
-              email: email,
-              errorCode: createError.code,
-              errorName: createError.name
-            });
-            // Don't continue - user creation failed and user doesn't exist
-            // The check below will return appropriate error
+            // Handle duplicate key errors specifically
+            if (createError.code === 11000 || createError.name === 'MongoServerError') {
+              // Duplicate key error - user might have been created by another request
+              // Try to find the user again
+              user = await User.findOne({ clerkId: userId });
+              if (user) {
+                console.log('✅ requireAdminClerk: User found after duplicate key error (email fallback - race condition handled)');
+              } else {
+                console.error('❌ requireAdminClerk: Duplicate key error but user not found (email fallback):', {
+                  error: createError.message,
+                  userId: userId,
+                  email: email
+                });
+              }
+            } else {
+              console.error('❌ requireAdminClerk: Failed to create admin user via email fallback:', {
+                error: createError.message,
+                stack: createError.stack,
+                userId: userId,
+                email: email,
+                errorCode: createError.code,
+                errorName: createError.name
+              });
+            }
+          }
+        }
+        
+        // CRITICAL: Final check - if user is still null, try to find again (might have been created by another request)
+        if (!user) {
+          user = await User.findOne({ clerkId: userId });
+          if (user) {
+            console.log('✅ requireAdminClerk: User found on final check (email fallback - created by another process)');
           }
         }
         
         if (user) {
           // Update email if it's missing or "unknown" and we have a valid email from Clerk
-          if (email && (user.email === 'unknown' || !user.email || user.email === '')) {
+          // Also update if email is the generated clerkId-based email
+          if (email && (user.email === 'unknown' || !user.email || user.email === '' || user.email.includes('@snapfest.local'))) {
             user.email = email.toLowerCase().trim();
             await user.save();
             
