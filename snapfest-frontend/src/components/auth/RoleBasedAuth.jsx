@@ -213,7 +213,16 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
         const data = response.data;
         
         if (data.success) {
-          setAdminLimitReached(!data.data.isAllowed);
+          // CRITICAL FIX: If user is already signed in and is an admin, allow admin selection
+          // Otherwise, check if limit is reached
+          if (user && user.publicMetadata?.role === 'admin') {
+            // User is already an admin - allow admin selection
+            console.log('✅ RoleBasedAuth: User is already an admin, allowing admin selection');
+            setAdminLimitReached(false);
+          } else {
+            // User is not signed in or not an admin - check limit
+            setAdminLimitReached(!data.data.isAllowed);
+          }
         }
       } catch (error) {
         console.error('Error checking admin limit:', error);
@@ -225,11 +234,19 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
     };
     
     checkAdminLimit();
-  }, []);
+  }, [user]); // Add user as dependency to re-check when user signs in
 
   const handleRoleSelect = (role) => {
     if (role === 'admin' && adminLimitReached) {
-      // Show error message
+      // CRITICAL FIX: Check if user is already an admin before blocking
+      if (user && user.publicMetadata?.role === 'admin') {
+        // User is already an admin - allow selection
+        console.log('✅ RoleBasedAuth: User is already an admin, allowing admin selection');
+        setSelectedRole(role);
+        sessionStorage.setItem('selectedRole', role);
+        return;
+      }
+      // Show error message only if user is not an admin
       alert('You are not authorized for this. Maximum admin limit (2) has been reached.');
       return;
     }
@@ -382,7 +399,14 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
                       if (!card.disabled) {
                         handleRoleSelect(card.role);
                       } else {
-                        alert('You are not authorized for this. Maximum admin limit (2) has been reached.');
+                        // CRITICAL FIX: Check if user is already an admin before showing alert
+                        if (user && user.publicMetadata?.role === 'admin') {
+                          // User is already an admin - allow selection
+                          console.log('✅ RoleBasedAuth: User is already an admin, allowing admin selection');
+                          handleRoleSelect(card.role);
+                        } else {
+                          alert('You are not authorized for this. Maximum admin limit (2) has been reached.');
+                        }
                       }
                     }}
                   >
