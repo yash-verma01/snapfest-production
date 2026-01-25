@@ -85,37 +85,69 @@ function AdminApp() {
   }, [getToken]);
   
   useEffect(() => {
-    const sync = async () => {
-      if (!isSignedIn) return;
+    const setupAndSync = async (retryCount = 0) => {
+      if (!isSignedIn || !getToken) return;
       
-      // CRITICAL: Ensure token is set up before making API calls
-      if (getToken && typeof getToken === 'function') {
-        setupAuthToken(getToken);
-        // Small delay to ensure token setup is complete
-        await new Promise(resolve => setTimeout(resolve, 200));
+      // CRITICAL: Wait for Clerk session to be fully ready
+      if (typeof window === 'undefined' || !window.Clerk?.session) {
+        if (retryCount < 10) {
+          console.log(`⏳ AdminApp: Waiting for Clerk session (attempt ${retryCount + 1}/10)...`);
+          setTimeout(() => setupAndSync(retryCount + 1), 300);
+          return;
+        } else {
+          console.error('❌ AdminApp: Clerk session not available after 10 attempts');
+          return;
+        }
       }
       
+      // Setup token getter
+      if (getToken && typeof getToken === 'function') {
+        setupAuthToken(getToken);
+      }
+      
+      // Verify token is available before proceeding
       try {
-        // Sync user with backend - pass admin role to ensure correct role assignment
+        const token = await window.Clerk.session.getToken();
+        if (!token) {
+          if (retryCount < 5) {
+            console.warn(`⚠️ AdminApp: Token not available yet, retrying... (${retryCount + 1}/5)`);
+            setTimeout(() => setupAndSync(retryCount + 1), 500);
+            return;
+          } else {
+            console.error('❌ AdminApp: Token not available after retries');
+            return;
+          }
+        }
+        
+        console.log('✅ AdminApp: Token verified, proceeding with sync');
+        
+        // Now safe to make API calls
         await userAPI.sync('admin');
         console.log('✅ Admin user synced with backend');
       } catch (e) {
         // Non-blocking - log error but don't prevent app from loading
-        console.error('❌ Admin user sync failed:', {
+        console.error('❌ AdminApp: Setup/sync failed:', {
           error: e.message,
           status: e.response?.status,
-          data: e.response?.data
+          data: e.response?.data,
+          retryCount
         });
+        
+        // Retry once if it's a 401 and we haven't retried yet
+        if (e.response?.status === 401 && retryCount === 0) {
+          console.log('🔄 Retrying admin sync after 1 second...');
+          setTimeout(() => setupAndSync(1), 1000);
+        }
       }
     };
     
     // Small delay to ensure Clerk session cookie is fully established
     const timeoutId = setTimeout(() => {
-      sync();
+      setupAndSync();
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [isSignedIn]);
+  }, [isSignedIn, getToken]);
   
   return (
     <ErrorBoundary>

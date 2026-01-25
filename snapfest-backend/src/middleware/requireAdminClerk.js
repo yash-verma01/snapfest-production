@@ -223,8 +223,56 @@ export const requireAdminClerk = async (req, res, next) => {
     
     if (isAdminFromMetadata || isAdminFromDB) {
       // Find user in database (already created via Clerk with role='admin')
-      const user = await User.findOne({ clerkId: userId });
+      let user = await User.findOne({ clerkId: userId });
       
+      // CRITICAL FIX: Create admin user if doesn't exist in database
+      // This prevents 404 errors when accessing admin routes before sync completes
+      if (!user) {
+        try {
+          // Fetch user details from Clerk if email/name not available
+          let finalEmail = email;
+          let finalName = null;
+          
+          if (!finalEmail || !finalName) {
+            const clerkClient = getClerkClient();
+            const clerkUser = await clerkClient.users.getUser(userId);
+            
+            if (!finalEmail) {
+              finalEmail = clerkUser.emailAddresses?.find(email => email.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
+                          clerkUser.emailAddresses?.[0]?.emailAddress ||
+                          clerkUser.emailAddress ||
+                          null;
+            }
+            
+            if (!finalName) {
+              finalName = `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || 
+                         finalEmail?.split('@')[0] || 
+                         'Admin';
+            }
+          }
+          
+          // Create admin user in database
+          user = await User.create({
+            clerkId: userId,
+            name: finalName || 'Admin',
+            email: finalEmail?.toLowerCase().trim() || 'unknown',
+            role: 'admin',
+            isActive: true
+          });
+          
+          console.log('✅ requireAdminClerk: Created admin user in database', {
+            userId: user._id,
+            clerkId: userId,
+            email: user.email,
+            name: user.name
+          });
+        } catch (createError) {
+          console.error('❌ requireAdminClerk: Failed to create admin user:', createError.message);
+          // Continue - will try to use existing user or fail gracefully
+        }
+      }
+      
+      // Now user is guaranteed to exist (either found or created)
       if (user) {
         // Update email if it's missing or "unknown" and we have a valid email from Clerk
         if (email && (user.email === 'unknown' || !user.email || user.email === '')) {
@@ -240,6 +288,14 @@ export const requireAdminClerk = async (req, res, next) => {
         req.userId = user._id;  // MongoDB _id
         req.user = user;
         req.userRole = user.role;
+      } else {
+        // If user creation failed and user doesn't exist, return error
+        console.error('❌ requireAdminClerk: Cannot proceed - user not found and creation failed');
+        return res.status(500).json({
+          success: false,
+          error: 'Internal server error',
+          message: 'Failed to initialize admin user. Please try again.'
+        });
       }
       
       // Grant access - set req.admin for audit/logging purposes
@@ -271,7 +327,52 @@ export const requireAdminClerk = async (req, res, next) => {
       
       if (adminEmails.includes(normalizedEmail)) {
         // Find user in database (already created via Clerk with role='admin')
-        const user = await User.findOne({ clerkId: userId });
+        let user = await User.findOne({ clerkId: userId });
+        
+        // CRITICAL FIX: Create admin user if doesn't exist (same as above)
+        if (!user) {
+          try {
+            // Fetch user details from Clerk if email/name not available
+            let finalEmail = email;
+            let finalName = null;
+            
+            if (!finalEmail || !finalName) {
+              const clerkClient = getClerkClient();
+              const clerkUser = await clerkClient.users.getUser(userId);
+              
+              if (!finalEmail) {
+                finalEmail = clerkUser.emailAddresses?.find(email => email.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
+                            clerkUser.emailAddresses?.[0]?.emailAddress ||
+                            clerkUser.emailAddress ||
+                            null;
+              }
+              
+              if (!finalName) {
+                finalName = `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || 
+                           finalEmail?.split('@')[0] || 
+                           'Admin';
+              }
+            }
+            
+            // Create admin user in database
+            user = await User.create({
+              clerkId: userId,
+              name: finalName || 'Admin',
+              email: finalEmail?.toLowerCase().trim() || 'unknown',
+              role: 'admin',
+              isActive: true
+            });
+            
+            console.log('✅ requireAdminClerk: Created admin user via email fallback', {
+              userId: user._id,
+              clerkId: userId,
+              email: user.email,
+              name: user.name
+            });
+          } catch (createError) {
+            console.error('❌ requireAdminClerk: Failed to create admin user via email fallback:', createError.message);
+          }
+        }
         
         if (user) {
           // Update email if it's missing or "unknown" and we have a valid email from Clerk
@@ -288,6 +389,14 @@ export const requireAdminClerk = async (req, res, next) => {
           req.userId = user._id;  // MongoDB _id
           req.user = user;
           req.userRole = user.role;
+        } else {
+          // If user creation failed and user doesn't exist, return error
+          console.error('❌ requireAdminClerk: Cannot proceed - user not found and creation failed (email fallback)');
+          return res.status(500).json({
+            success: false,
+            error: 'Internal server error',
+            message: 'Failed to initialize admin user. Please try again.'
+          });
         }
         
         // Grant access via email fallback

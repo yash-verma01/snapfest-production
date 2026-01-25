@@ -77,14 +77,14 @@ function VendorApp() {
   }, [getToken]);
   
   useEffect(() => {
-    const sync = async (retryCount = 0) => {
-      if (!isSignedIn) return;
+    const setupAndSync = async (retryCount = 0) => {
+      if (!isSignedIn || !getToken) return;
       
-      // Wait for window.Clerk to be available
+      // CRITICAL: Wait for Clerk session to be fully ready
       if (typeof window === 'undefined' || !window.Clerk?.session) {
         if (retryCount < 10) {
           console.log(`⏳ VendorApp: Waiting for Clerk session (attempt ${retryCount + 1}/10)...`);
-          setTimeout(() => sync(retryCount + 1), 300);
+          setTimeout(() => setupAndSync(retryCount + 1), 300);
           return;
         } else {
           console.error('❌ VendorApp: Clerk session not available after 10 attempts');
@@ -92,19 +92,28 @@ function VendorApp() {
         }
       }
       
-      // CRITICAL: Ensure token is set up before making API calls
+      // Setup token getter
       if (getToken && typeof getToken === 'function') {
         setupAuthToken(getToken);
-        await new Promise(resolve => setTimeout(resolve, 200));
       }
       
+      // Verify token is available before proceeding
       try {
-        // Verify token is available before calling sync
         const token = await window.Clerk.session.getToken();
         if (!token) {
-          throw new Error('Token not available');
+          if (retryCount < 5) {
+            console.warn(`⚠️ VendorApp: Token not available yet, retrying... (${retryCount + 1}/5)`);
+            setTimeout(() => setupAndSync(retryCount + 1), 500);
+            return;
+          } else {
+            console.error('❌ VendorApp: Token not available after retries');
+            return;
+          }
         }
         
+        console.log('✅ VendorApp: Token verified, proceeding with sync');
+        
+        // Now safe to make API calls
         console.log('🔄 VendorApp: Calling vendorAPI.sync()...');
         await vendorAPI.sync();
         console.log('✅ Vendor synced with backend');
@@ -119,13 +128,14 @@ function VendorApp() {
         // Retry once if it's a 401 and we haven't retried yet
         if (e.response?.status === 401 && retryCount === 0) {
           console.log('🔄 Retrying vendor sync after 1 second...');
-          setTimeout(() => sync(1), 1000);
+          setTimeout(() => setupAndSync(1), 1000);
         }
       }
     };
     
+    // Small delay to ensure Clerk session cookie is fully established
     const timeoutId = setTimeout(() => {
-      sync();
+      setupAndSync();
     }, 500);
     
     return () => clearTimeout(timeoutId);
