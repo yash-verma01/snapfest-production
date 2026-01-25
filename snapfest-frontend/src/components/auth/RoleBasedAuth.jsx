@@ -213,15 +213,36 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
         const data = response.data;
         
         if (data.success) {
-          // CRITICAL FIX: If user is already signed in and is an admin, allow admin selection
-          // Otherwise, check if limit is reached
-          if (user && user.publicMetadata?.role === 'admin') {
+          // CRITICAL FIX: Check the actual admin count from the response
+          // If adminCount < maxAdmins, always allow (there's room for more admins)
+          // If adminCount >= maxAdmins, only block if user is NOT already an admin
+          const { adminCount, maxAdmins, isAllowed, isCurrentUserAdmin } = data.data;
+          
+          console.log('🔍 RoleBasedAuth: Admin limit check result', {
+            adminCount,
+            maxAdmins,
+            isAllowed,
+            isCurrentUserAdmin,
+            userRole: user?.publicMetadata?.role,
+            isSignedIn: !!user
+          });
+          
+          if (adminCount < maxAdmins) {
+            // Under limit - always allow
+            console.log(`✅ RoleBasedAuth: Admin count (${adminCount}) is under limit (${maxAdmins}), allowing admin selection`);
+            setAdminLimitReached(false);
+          } else if (user && user.publicMetadata?.role === 'admin') {
             // User is already an admin - allow admin selection
             console.log('✅ RoleBasedAuth: User is already an admin, allowing admin selection');
             setAdminLimitReached(false);
+          } else if (isCurrentUserAdmin) {
+            // Backend confirmed user is an admin - allow
+            console.log('✅ RoleBasedAuth: Backend confirmed user is an admin, allowing admin selection');
+            setAdminLimitReached(false);
           } else {
-            // User is not signed in or not an admin - check limit
-            setAdminLimitReached(!data.data.isAllowed);
+            // At limit and user is not an admin - block
+            console.log(`⚠️ RoleBasedAuth: Admin limit reached (${adminCount}/${maxAdmins}), blocking admin selection`);
+            setAdminLimitReached(true);
           }
         }
       } catch (error) {
