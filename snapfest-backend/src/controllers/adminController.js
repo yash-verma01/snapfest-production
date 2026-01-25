@@ -2600,3 +2600,103 @@ export const markAllNotificationsRead = asyncHandler(async (req, res) => {
     message: 'All notifications marked as read'
   });
 });
+
+// ==================== ADMIN MANAGEMENT ====================
+// @desc    List all admins (for debugging)
+// @route   GET /api/admin/admins
+// @access  Private (Admin only)
+export const listAllAdmins = asyncHandler(async (req, res) => {
+  const admins = await User.find({ role: 'admin' })
+    .select('name email clerkId createdAt isActive lastLogin')
+    .sort({ createdAt: -1 });
+
+  // Check for duplicates
+  const emailGroups = {};
+  const clerkIdGroups = {};
+  
+  admins.forEach(admin => {
+    if (admin.email) {
+      const emailKey = admin.email.toLowerCase();
+      if (!emailGroups[emailKey]) {
+        emailGroups[emailKey] = [];
+      }
+      emailGroups[emailKey].push(admin);
+    }
+    
+    if (admin.clerkId) {
+      if (!clerkIdGroups[admin.clerkId]) {
+        clerkIdGroups[admin.clerkId] = [];
+      }
+      clerkIdGroups[admin.clerkId].push(admin);
+    }
+  });
+
+  const duplicateEmails = Object.entries(emailGroups)
+    .filter(([email, users]) => users.length > 1)
+    .map(([email, users]) => ({ email, count: users.length, admins: users.map(u => u._id.toString()) }));
+
+  const duplicateClerkIds = Object.entries(clerkIdGroups)
+    .filter(([clerkId, users]) => users.length > 1)
+    .map(([clerkId, users]) => ({ clerkId, count: users.length, admins: users.map(u => u._id.toString()) }));
+
+  res.status(200).json({
+    success: true,
+    data: {
+      total: admins.length,
+      admins: admins.map(a => ({
+        id: a._id,
+        name: a.name,
+        email: a.email,
+        clerkId: a.clerkId,
+        createdAt: a.createdAt,
+        isActive: a.isActive,
+        lastLogin: a.lastLogin
+      })),
+      duplicates: {
+        byEmail: duplicateEmails,
+        byClerkId: duplicateClerkIds
+      }
+    }
+  });
+});
+
+// @desc    Remove duplicate admin
+// @route   DELETE /api/admin/admins/:id
+// @access  Private (Admin only)
+export const removeAdmin = asyncHandler(async (req, res) => {
+  const adminId = req.params.id;
+  
+  // Prevent removing yourself
+  if (adminId === req.userId.toString()) {
+    return res.status(400).json({
+      success: false,
+      message: 'You cannot remove yourself'
+    });
+  }
+
+  const admin = await User.findOne({ _id: adminId, role: 'admin' });
+  
+  if (!admin) {
+    return res.status(404).json({
+      success: false,
+      message: 'Admin not found'
+    });
+  }
+
+  // Change role to user instead of deleting (safer)
+  admin.role = 'user';
+  await admin.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Admin role removed successfully',
+    data: {
+      admin: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        newRole: admin.role
+      }
+    }
+  });
+});

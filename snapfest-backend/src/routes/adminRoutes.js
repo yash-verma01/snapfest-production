@@ -71,7 +71,11 @@ import {
   // Notification Management
   getAdminNotifications,
   markNotificationRead,
-  markAllNotificationsRead
+  markAllNotificationsRead,
+  
+  // Admin Management
+  listAllAdmins,
+  removeAdmin
 } from '../controllers/adminController.js';
 import {
   // Beat & Bloom Management
@@ -231,6 +235,10 @@ router.put('/profile', updateAdminProfile);
 router.get('/notifications', getAdminNotifications);
 router.put('/notifications/:id/read', markNotificationRead);
 router.put('/notifications/read-all', markAllNotificationsRead);
+
+// ==================== ADMIN MANAGEMENT ====================
+router.get('/admins', listAllAdmins);
+router.delete('/admins/:id', removeAdmin);
 
 export default router;
 
