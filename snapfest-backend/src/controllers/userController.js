@@ -2689,6 +2689,22 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
             console.log(`✅ syncClerkUser: Updated existing user from '${oldRole}' to 'admin'`);
           }
         } else {
+          // CRITICAL FIX: Do NOT create admin users with generated emails
+          // Admins MUST have a valid email from Clerk - this prevents duplicate/invalid admins
+          if (!finalEmail || finalEmail.includes('@snapfest.local') || finalEmail === 'unknown' || finalEmail.trim() === '') {
+            console.error('❌ syncClerkUser: Cannot create admin user - invalid or missing email', {
+              userId: clerkAuth.userId,
+              email: finalEmail,
+              reason: !finalEmail ? 'No email' : finalEmail.includes('@snapfest.local') ? 'Generated email' : 'Invalid email'
+            });
+            
+            return res.status(400).json({
+              success: false,
+              error: 'Invalid admin account',
+              message: 'Admin accounts must have a valid email address. Please ensure your Clerk account has an email address.'
+            });
+          }
+          
           adminUser = await User.create({
             clerkId: clerkAuth.userId,
             name: finalName || finalEmail.split('@')[0],
