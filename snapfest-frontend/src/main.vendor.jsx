@@ -31,6 +31,8 @@ createRoot(document.getElementById('root')).render(
       signUpUrl="/sign-up"
       afterSignInUrl="/sign-in/complete" 
       afterSignUpUrl="/sign-up/complete"
+      signInFallbackRedirectUrl="/sign-in/complete"
+      signUpFallbackRedirectUrl="/sign-up/complete"
     >
       <VendorApp />
     </ClerkProvider>

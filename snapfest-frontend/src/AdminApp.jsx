@@ -133,6 +133,10 @@ function AdminApp() {
                   <Route path="/sign-in/*" element={<SignIn />} />
                   <Route path="/sign-up/*" element={<SignUp />} />
                   
+                  {/* Handle Clerk's /register routes - redirect to /sign-up for consistency */}
+                  <Route path="/register" element={<Navigate to="/sign-up" replace />} />
+                  <Route path="/register/*" element={<Navigate to="/sign-up" replace />} />
+                  
                   {/* Protected Routes - Admin Only */}
                   <Route path="/admin/dashboard" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
                   <Route path="/admin/profile" element={<AdminGuard><AdminProfile /></AdminGuard>} />

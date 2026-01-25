@@ -147,6 +147,10 @@ function VendorApp() {
             <Route path="/sign-in/*" element={<SignIn />} />
             <Route path="/sign-up/*" element={<SignUp />} />
             
+            {/* Handle Clerk's /register routes - redirect to /sign-up for consistency */}
+            <Route path="/register" element={<Navigate to="/sign-up" replace />} />
+            <Route path="/register/*" element={<Navigate to="/sign-up" replace />} />
+            
             {/* Public routes */}
             <Route path="/packages" element={<Packages />} />
             <Route path="/packages/:id" element={<PackageDetail />} />
