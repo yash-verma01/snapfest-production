@@ -272,7 +272,8 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
   }, [user]); // Add user as dependency to re-check when user signs in
 
   const handleRoleSelect = (role) => {
-    // CRITICAL FIX: Block admin selection if limit is reached and user is not signed in
+    // CRITICAL FIX: Always allow admin SIGNIN (backend will verify)
+    // Only block admin SIGNUP when limit is reached
     if (role === 'admin') {
       if (user) {
         // User is signed in - always allow (backend will validate)
@@ -282,12 +283,19 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
         return;
       }
       
-      // User is NOT signed in - check adminLimitReached
-      if (adminLimitReached) {
-        // Admin limit reached - block selection for new signup
-        console.log('❌ RoleBasedAuth: Admin limit reached - blocking admin selection for new signup');
+      // User is NOT signed in
+      // CRITICAL: Always allow SIGNIN - backend will verify if user is existing admin
+      // Only block SIGNUP when limit is reached
+      if (mode === 'signup' && adminLimitReached) {
+        // Admin limit reached - block selection for SIGNUP only
+        console.log('❌ RoleBasedAuth: Admin limit reached - blocking admin selection for signup');
         // Don't set selectedRole - keep user on role selection screen
         return;
+      }
+      
+      // For SIGNIN mode, always allow (backend will verify if user is existing admin)
+      if (mode === 'signin') {
+        console.log('✅ RoleBasedAuth: Signin mode - allowing admin selection (backend will verify)');
       }
     }
     
@@ -336,14 +344,26 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
         icon: Shield,
         title: 'Admin',
         description: 'Manage users, vendors, bookings, and system settings',
-        badge: isCheckingAdminLimit ? 'Checking...' : (adminLimitReached ? 'Registration Not Available' : 'For Administrators'),
+        badge: isCheckingAdminLimit 
+          ? 'Checking...' 
+          : (mode === 'signup' && adminLimitReached 
+              ? 'Registration Not Available' 
+              : 'For Administrators'),
         gradient: 'from-gray-700 to-gray-900',
         bgGradient: 'from-gray-50 to-gray-100',
-        iconBg: adminLimitReached ? 'bg-gray-400' : 'bg-gradient-to-br from-gray-700 to-gray-900',
+        iconBg: (mode === 'signup' && adminLimitReached) ? 'bg-gray-400' : 'bg-gradient-to-br from-gray-700 to-gray-900',
         iconColor: 'text-white',
-        badgeBg: isCheckingAdminLimit ? 'bg-gray-100' : (adminLimitReached ? 'bg-red-100' : 'bg-gradient-to-r from-gray-100 to-gray-200'),
-        badgeText: isCheckingAdminLimit ? 'text-gray-600' : (adminLimitReached ? 'text-red-700' : 'text-gray-700'),
-        disabled: adminLimitReached || isCheckingAdminLimit // CRITICAL FIX: Disable while checking
+        badgeBg: isCheckingAdminLimit 
+          ? 'bg-gray-100' 
+          : (mode === 'signup' && adminLimitReached 
+              ? 'bg-red-100' 
+              : 'bg-gradient-to-r from-gray-100 to-gray-200'),
+        badgeText: isCheckingAdminLimit 
+          ? 'text-gray-600' 
+          : (mode === 'signup' && adminLimitReached 
+              ? 'text-red-700' 
+              : 'text-gray-700'),
+        disabled: (mode === 'signup' && adminLimitReached) || isCheckingAdminLimit // Only disable for signup when limit reached
       }
     ];
 
@@ -436,12 +456,13 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
                         : 'border-transparent hover:border-pink-300'
                     }`}
                     onClick={() => {
-                      // CRITICAL FIX: Block admin selection if limit is reached and user is not signed in
-                      if (card.role === 'admin' && adminLimitReached && !user) {
-                        // Don't allow selection - show error message
+                      // CRITICAL FIX: Always allow admin SIGNIN, only block SIGNUP when limit reached
+                      if (card.role === 'admin' && mode === 'signup' && adminLimitReached && !user) {
+                        // Block only for signup when limit reached
                         console.log('❌ RoleBasedAuth: Admin limit reached - cannot select admin for signup');
                         return;
                       }
+                      // Always allow signin - backend will verify
                       handleRoleSelect(card.role);
                     }}
                   >
