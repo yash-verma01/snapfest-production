@@ -1972,9 +1972,23 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
       // CRITICAL FIX: If we have Clerk user ID, check if user exists in DB
       // This determines if this is SIGNIN (user exists) vs SIGNUP (user doesn't exist)
       if (currentClerkUserId && !existingUserInDB) {
-        existingUserInDB = await User.findOne({ clerkId: currentClerkUserId });
-        if (existingUserInDB) {
-          isExistingAdmin = existingUserInDB.role === 'admin';
+        try {
+          existingUserInDB = await User.findOne({ clerkId: currentClerkUserId });
+          if (existingUserInDB) {
+            isExistingAdmin = existingUserInDB.role === 'admin';
+            console.log('🔍 syncClerkUser: Found user in DB during early check', {
+              currentClerkUserId,
+              userId: existingUserInDB._id,
+              role: existingUserInDB.role,
+              isExistingAdmin
+            });
+          }
+        } catch (dbError) {
+          // DB query failed - will check again in late check
+          console.warn('⚠️ syncClerkUser: DB query failed during early user lookup, will check again later', {
+            error: dbError.message,
+            currentClerkUserId
+          });
         }
       }
     } catch (e) {
@@ -1996,40 +2010,76 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
         reason: 'EXISTING_ADMIN_SIGNIN'
       });
       // Skip admin limit check - proceed with sync
-    } else {
-      // User is NOT an existing admin - this might be SIGNUP or ROLE_UPGRADE
-      // Check admin limit before allowing
-      const adminCount = await User.countDocuments({ role: 'admin' });
-      const maxAdmins = 2;
-      
-      console.log('🔍 syncClerkUser: Admin limit check (early) - user is NOT existing admin', {
-        adminCount,
-        maxAdmins,
-        requestedRole,
-        currentClerkUserId,
-        hasReqUser: !!req.user,
-        reqUserId: req.userId,
-        isExistingAdmin,
-        reason: 'POTENTIAL_SIGNUP_OR_UPGRADE'
-      });
-      
-      // CRITICAL FIX: Only check limit if adminCount >= maxAdmins
-      // If adminCount < maxAdmins, there's room for more admins - always allow
-      if (adminCount >= maxAdmins) {
-        // Admin limit reached - block new admin creation/upgrade
-        console.log('❌ syncClerkUser: Admin limit reached - blocking new admin creation/upgrade', {
-          adminCount,
-          maxAdmins,
-          currentClerkUserId,
-          isExistingAdmin,
-          reason: 'SIGNUP_OR_UPGRADE_BLOCKED'
+    } else if (currentClerkUserId) {
+      // We have Clerk user ID but user is NOT found as admin in early check
+      // This might be SIGNUP or ROLE_UPGRADE, OR the user lookup failed
+      // Double-check by querying DB again to be sure
+      try {
+        const doubleCheckAdmin = await User.findOne({ 
+          clerkId: currentClerkUserId, 
+          role: 'admin' 
         });
-        return res.status(403).json({
-          success: false,
-          message: 'You are not authorized for this. Maximum admin limit (2) has been reached.',
-          code: 'ADMIN_LIMIT_REACHED'
+        
+        if (doubleCheckAdmin) {
+          // User IS an admin - update flag and skip limit check
+          isExistingAdmin = true;
+          existingUserInDB = doubleCheckAdmin;
+          console.log('✅ syncClerkUser: Found existing admin on double-check - skipping admin limit check (SIGNIN)', {
+            currentClerkUserId,
+            userId: doubleCheckAdmin._id,
+            reason: 'EXISTING_ADMIN_SIGNIN_DOUBLE_CHECK'
+          });
+          // Skip admin limit check - proceed with sync
+        } else {
+          // User is confirmed NOT an admin - check limit
+          const adminCount = await User.countDocuments({ role: 'admin' });
+          const maxAdmins = 2;
+          
+          console.log('🔍 syncClerkUser: Admin limit check (early) - user confirmed NOT existing admin', {
+            adminCount,
+            maxAdmins,
+            requestedRole,
+            currentClerkUserId,
+            hasReqUser: !!req.user,
+            reqUserId: req.userId,
+            isExistingAdmin,
+            reason: 'POTENTIAL_SIGNUP_OR_UPGRADE'
+          });
+          
+          // CRITICAL FIX: Only check limit if adminCount >= maxAdmins
+          // If adminCount < maxAdmins, there's room for more admins - always allow
+          if (adminCount >= maxAdmins) {
+            // Admin limit reached - block new admin creation/upgrade
+            console.log('❌ syncClerkUser: Admin limit reached - blocking new admin creation/upgrade', {
+              adminCount,
+              maxAdmins,
+              currentClerkUserId,
+              isExistingAdmin,
+              reason: 'SIGNUP_OR_UPGRADE_BLOCKED'
+            });
+            return res.status(403).json({
+              success: false,
+              message: 'You are not authorized for this. Maximum admin limit (2) has been reached.',
+              code: 'ADMIN_LIMIT_REACHED'
+            });
+          }
+        }
+      } catch (dbError) {
+        // DB query failed - can't verify, defer to late check
+        console.warn('⚠️ syncClerkUser: DB query failed during early double-check, deferring to late check', {
+          error: dbError.message,
+          currentClerkUserId
         });
+        // Don't block - let late check handle it
       }
+    } else {
+      // Don't have Clerk user ID yet - defer check to later when we have clerkAuth
+      console.warn('⚠️ syncClerkUser: Cannot verify admin status early - no Clerk user ID, deferring to late check', {
+        requestedRole,
+        hasReqUser: !!req.user,
+        reqUserId: req.userId
+      });
+      // Don't block - let late check handle it
     }
   }
   
@@ -2338,44 +2388,54 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
     claimKeys: clerkAuth.claims ? Object.keys(clerkAuth.claims) : []
   });
   
-  // CRITICAL FIX: Re-check admin limit if we couldn't check earlier due to missing Clerk user ID
-  // This handles the case where currentClerkUserId was null in the early check
-  if (requestedRole === 'admin' && clerkAuth?.userId && !currentClerkUserId) {
-    const adminCount = await User.countDocuments({ role: 'admin' });
-    const maxAdmins = 2;
-    
-    console.log('🔍 syncClerkUser: Late admin limit check', {
-      adminCount,
-      maxAdmins,
-      clerkUserId: clerkAuth.userId,
-      requestedRole
+  // CRITICAL FIX: Re-check admin limit if we couldn't verify user is existing admin earlier
+  // This handles cases where early check couldn't verify identity or user wasn't found yet
+  // ALWAYS check if user is existing admin FIRST before blocking
+  if (requestedRole === 'admin' && clerkAuth?.userId) {
+    // CRITICAL FIX: Check if user is already an admin FIRST
+    // If user is existing admin, skip limit check entirely (this is SIGNIN)
+    const existingAdminCheck = await User.findOne({ 
+      clerkId: clerkAuth.userId, 
+      role: 'admin' 
     });
     
-    // CRITICAL FIX: Only check limit if adminCount >= maxAdmins
-    // If adminCount < maxAdmins, there's room for more admins - always allow
-    if (adminCount >= maxAdmins) {
-      const existingAdmin = await User.findOne({ 
-        clerkId: clerkAuth.userId, 
-        role: 'admin' 
+    if (existingAdminCheck) {
+      // User is already an admin - this is SIGNIN, skip limit check
+      console.log('✅ syncClerkUser: User is existing admin (late check) - skipping admin limit check (SIGNIN)', {
+        clerkUserId: clerkAuth.userId,
+        adminId: existingAdminCheck._id,
+        reason: 'EXISTING_ADMIN_SIGNIN'
+      });
+      // Skip admin limit check - proceed with sync
+    } else if (!isExistingAdmin) {
+      // User is NOT an existing admin - this might be SIGNUP or ROLE_UPGRADE
+      // Check admin limit before allowing
+      const adminCount = await User.countDocuments({ role: 'admin' });
+      const maxAdmins = 2;
+      
+      console.log('🔍 syncClerkUser: Late admin limit check - user is NOT existing admin', {
+        adminCount,
+        maxAdmins,
+        clerkUserId: clerkAuth.userId,
+        requestedRole,
+        isExistingAdmin,
+        reason: 'POTENTIAL_SIGNUP_OR_UPGRADE'
       });
       
-      // Only block if user is NOT already an admin
-      if (!existingAdmin) {
-        console.log('❌ syncClerkUser: Admin limit reached (late check) and user is not an existing admin', {
+      // CRITICAL FIX: Only check limit if adminCount >= maxAdmins
+      // If adminCount < maxAdmins, there's room for more admins - always allow
+      if (adminCount >= maxAdmins) {
+        // Admin limit reached - block new admin creation/upgrade
+        console.log('❌ syncClerkUser: Admin limit reached (late check) - blocking new admin creation/upgrade', {
           adminCount,
           maxAdmins,
-          clerkUserId: clerkAuth.userId
+          clerkUserId: clerkAuth.userId,
+          reason: 'SIGNUP_OR_UPGRADE_BLOCKED'
         });
         return res.status(403).json({
           success: false,
           message: 'You are not authorized for this. Maximum admin limit (2) has been reached.',
           code: 'ADMIN_LIMIT_REACHED'
-        });
-      } else {
-        console.log('✅ syncClerkUser: Admin limit reached (late check) but user is existing admin, allowing sync', {
-          adminCount,
-          maxAdmins,
-          clerkUserId: clerkAuth.userId
         });
       }
     }
