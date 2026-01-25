@@ -8,7 +8,9 @@ import { Sparkles, ArrowRight, Users, Briefcase, Shield } from 'lucide-react';
 
 const RoleBasedAuth = ({ mode = 'signin' }) => {
   const [selectedRole, setSelectedRole] = useState(null);
-  const [adminLimitReached, setAdminLimitReached] = useState(false);
+  // CRITICAL FIX: Initialize to true (pessimistic) - assume limit reached until API confirms otherwise
+  // This prevents the flash of "available" admin card before the check completes
+  const [adminLimitReached, setAdminLimitReached] = useState(true);
   const [isCheckingAdminLimit, setIsCheckingAdminLimit] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
@@ -317,14 +319,14 @@ const RoleBasedAuth = ({ mode = 'signin' }) => {
         icon: Shield,
         title: 'Admin',
         description: 'Manage users, vendors, bookings, and system settings',
-        badge: adminLimitReached ? 'Registration Not Available' : 'For Administrators',
+        badge: isCheckingAdminLimit ? 'Checking...' : (adminLimitReached ? 'Registration Not Available' : 'For Administrators'),
         gradient: 'from-gray-700 to-gray-900',
         bgGradient: 'from-gray-50 to-gray-100',
         iconBg: adminLimitReached ? 'bg-gray-400' : 'bg-gradient-to-br from-gray-700 to-gray-900',
         iconColor: 'text-white',
-        badgeBg: adminLimitReached ? 'bg-red-100' : 'bg-gradient-to-r from-gray-100 to-gray-200',
-        badgeText: adminLimitReached ? 'text-red-700' : 'text-gray-700',
-        disabled: adminLimitReached
+        badgeBg: isCheckingAdminLimit ? 'bg-gray-100' : (adminLimitReached ? 'bg-red-100' : 'bg-gradient-to-r from-gray-100 to-gray-200'),
+        badgeText: isCheckingAdminLimit ? 'text-gray-600' : (adminLimitReached ? 'text-red-700' : 'text-gray-700'),
+        disabled: adminLimitReached || isCheckingAdminLimit // CRITICAL FIX: Disable while checking
       }
     ];
 
