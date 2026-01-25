@@ -1764,6 +1764,13 @@ export const checkAdminLimit = asyncHandler(async (req, res) => {
       maxAdmins,
       isAllowed,
       isCurrentUserAdmin,
+      // DEBUG: Include admin list in response to help debug
+      admins: allAdmins.map(a => ({ 
+        name: a.name, 
+        email: a.email, 
+        clerkId: a.clerkId,
+        createdAt: a.createdAt
+      })),
       message: isAllowed 
         ? (isCurrentUserAdmin 
             ? 'You are an existing admin. Admin access allowed.' 
