@@ -608,19 +608,29 @@ export const optionalAuth = async (req, res, next) => {
                       normalizedEmail === adminEmail.toLowerCase() ||
                       adminEmails.includes(normalizedEmail);
         
-        // CRITICAL FIX: Check admin limit BEFORE creating admin user
+        // SIMPLE RULE: Admin limit check
+        // 1. Check if user is existing admin FIRST → Always allow (SIGNIN)
+        // 2. If NOT existing admin → Check limit (SIGNUP)
         if (isAdmin) {
           const { User } = await import('../models/index.js');
-          const adminCount = await User.countDocuments({ role: 'admin' });
-          const maxAdmins = 2;
           
-          // Check if this user is already an admin (shouldn't happen here, but safety check)
+          // STEP 1: Check if user is already an admin (SIGNIN)
           const existingAdmin = await User.findOne({ clerkId: clerkAuth.userId, role: 'admin' });
           
-          // If limit reached and user is not already an admin, reject admin role
-          if (adminCount >= maxAdmins && !existingAdmin) {
-            console.warn(`⚠️ optionalAuth: Admin limit reached (${adminCount}/${maxAdmins}). Creating user as 'user' instead of 'admin'.`);
-            isAdmin = false; // Override to prevent admin creation
+          if (existingAdmin) {
+            // User is existing admin → Always allow (SIGNIN)
+            console.log('✅ optionalAuth: Existing admin found - allowing signin');
+            // Keep isAdmin = true
+          } else {
+            // STEP 2: User is NOT admin → Check limit (SIGNUP)
+            const adminCount = await User.countDocuments({ role: 'admin' });
+            const maxAdmins = 2;
+            
+            if (adminCount >= maxAdmins) {
+              // Admin limit reached - block new admin creation
+              console.warn(`⚠️ optionalAuth: Admin limit reached (${adminCount}/${maxAdmins}). Creating user as 'user' instead of 'admin'.`);
+              isAdmin = false; // Override to prevent admin creation
+            }
           }
         }
         

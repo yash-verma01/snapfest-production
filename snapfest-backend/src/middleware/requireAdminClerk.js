@@ -225,27 +225,33 @@ export const requireAdminClerk = async (req, res, next) => {
       // Find user in database (already created via Clerk with role='admin')
       let user = await User.findOne({ clerkId: userId });
       
-      // CRITICAL FIX: Create admin user if doesn't exist in database
-      // This prevents 404 errors when accessing admin routes before sync completes
-      // BUT: Check admin limit BEFORE creating new admin users
+      // SIMPLE RULE: Create admin user if doesn't exist
+      // 1. Check if user is existing admin FIRST → Always allow (SIGNIN)
+      // 2. If NOT existing admin → Check limit (SIGNUP)
       if (!user) {
         try {
-          // CRITICAL FIX: Check admin limit BEFORE creating admin user
-          // This prevents bypassing the limit by accessing admin routes directly
-          const adminCount = await User.countDocuments({ role: 'admin' });
-          const maxAdmins = 2;
+          // STEP 1: Check if user is already an admin (SIGNIN)
+          const existingAdmin = await User.findOne({ clerkId: userId, role: 'admin' });
           
-          if (adminCount >= maxAdmins) {
-            // Admin limit reached - check if this user is already an admin (shouldn't happen here, but safety check)
-            const existingAdmin = await User.findOne({ clerkId: userId, role: 'admin' });
+          if (existingAdmin) {
+            // User is existing admin → Always allow (SIGNIN)
+            console.log('✅ requireAdminClerk: Existing admin found - allowing signin', {
+              userId: userId,
+              adminId: existingAdmin._id
+            });
+            user = existingAdmin;
+          } else {
+            // STEP 2: User is NOT admin → Check limit (SIGNUP)
+            const adminCount = await User.countDocuments({ role: 'admin' });
+            const maxAdmins = 2;
             
-            if (!existingAdmin) {
-              // User doesn't exist and limit is reached - block admin creation
+            if (adminCount >= maxAdmins) {
+              // Admin limit reached - block new admin creation
               console.error('❌ requireAdminClerk: Admin limit reached - cannot create admin user', {
                 adminCount,
                 maxAdmins,
                 userId: userId,
-                reason: 'ADMIN_LIMIT_REACHED'
+                reason: 'SIGNUP_BLOCKED'
               });
               
               return res.status(403).json({
@@ -255,9 +261,7 @@ export const requireAdminClerk = async (req, res, next) => {
               });
             }
             
-            // User exists as admin - use it
-            user = existingAdmin;
-          } else {
+            // Admin limit not reached - proceed with user creation
             // Admin limit not reached - proceed with user creation
             // Fetch user details from Clerk if email/name not available
             let finalEmail = email;
@@ -436,25 +440,33 @@ export const requireAdminClerk = async (req, res, next) => {
         // Find user in database (already created via Clerk with role='admin')
         let user = await User.findOne({ clerkId: userId });
         
-        // CRITICAL FIX: Create admin user if doesn't exist (same as above)
-        // BUT: Check admin limit BEFORE creating new admin users
+        // SIMPLE RULE: Create admin user if doesn't exist (same as above)
+        // 1. Check if user is existing admin FIRST → Always allow (SIGNIN)
+        // 2. If NOT existing admin → Check limit (SIGNUP)
         if (!user) {
           try {
-            // CRITICAL FIX: Check admin limit BEFORE creating admin user
-            const adminCount = await User.countDocuments({ role: 'admin' });
-            const maxAdmins = 2;
+            // STEP 1: Check if user is already an admin (SIGNIN)
+            const existingAdmin = await User.findOne({ clerkId: userId, role: 'admin' });
             
-            if (adminCount >= maxAdmins) {
-              // Admin limit reached - check if this user is already an admin
-              const existingAdmin = await User.findOne({ clerkId: userId, role: 'admin' });
+            if (existingAdmin) {
+              // User is existing admin → Always allow (SIGNIN)
+              console.log('✅ requireAdminClerk: Existing admin found (ADMIN_EMAILS fallback) - allowing signin', {
+                userId: userId,
+                adminId: existingAdmin._id
+              });
+              user = existingAdmin;
+            } else {
+              // STEP 2: User is NOT admin → Check limit (SIGNUP)
+              const adminCount = await User.countDocuments({ role: 'admin' });
+              const maxAdmins = 2;
               
-              if (!existingAdmin) {
-                // User doesn't exist and limit is reached - block admin creation
+              if (adminCount >= maxAdmins) {
+                // Admin limit reached - block new admin creation
                 console.error('❌ requireAdminClerk: Admin limit reached - cannot create admin user (ADMIN_EMAILS fallback)', {
                   adminCount,
                   maxAdmins,
                   userId: userId,
-                  reason: 'ADMIN_LIMIT_REACHED'
+                  reason: 'SIGNUP_BLOCKED'
                 });
                 
                 return res.status(403).json({
@@ -464,9 +476,7 @@ export const requireAdminClerk = async (req, res, next) => {
                 });
               }
               
-              // User exists as admin - use it
-              user = existingAdmin;
-            } else {
+              // Admin limit not reached - proceed with user creation
               // Admin limit not reached - proceed with user creation
               // Fetch user details from Clerk if email/name not available
               let finalEmail = email;
