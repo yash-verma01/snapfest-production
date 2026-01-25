@@ -5,30 +5,14 @@ import { User } from '../models/index.js';
 // Note: dotenv.config() is already called in server.js
 // No need to reload environment variables here
 
-// Create clerkClient instances for each portal with correct secret keys
-const getUserClerkClient = () => createClerkClient({ 
-  secretKey: process.env.CLERK_SECRET_KEY_USER 
-});
-
-const getVendorClerkClient = () => createClerkClient({ 
-  secretKey: process.env.CLERK_SECRET_KEY_VENDOR 
-});
-
-const getAdminClerkClient = () => createClerkClient({ 
-  secretKey: process.env.CLERK_SECRET_KEY_ADMIN 
-});
-
-// Helper function to get the correct clerkClient based on origin
-const getClerkClientForOrigin = (origin) => {
-  if (!origin) return getUserClerkClient(); // Default to user
-  
-  if (origin.includes('localhost:3001') || origin.includes(':3001')) {
-    return getVendorClerkClient();
-  } else if (origin.includes('localhost:3002') || origin.includes(':3002')) {
-    return getAdminClerkClient();
-  } else {
-    return getUserClerkClient(); // Default to user for port 3000 or unknown
+// Single Clerk application configuration (matches server.js)
+// Use CLERK_SECRET_KEY (primary) or fallback to CLERK_SECRET_KEY_USER for backward compatibility
+const getClerkClient = () => {
+  const secretKey = process.env.CLERK_SECRET_KEY || process.env.CLERK_SECRET_KEY_USER;
+  if (!secretKey) {
+    throw new Error('Clerk secret key not configured. Set CLERK_SECRET_KEY or CLERK_SECRET_KEY_USER in environment variables.');
   }
+  return createClerkClient({ secretKey });
 };
 
 /**
@@ -63,9 +47,8 @@ export const requireAdminClerk = async (req, res, next) => {
         if (decoded && decoded.sub) {
           const userId = decoded.sub;
           
-          // Get the correct clerkClient based on origin
-          const origin = req.headers.origin || req.headers.referer || '';
-          const clerkClient = getClerkClientForOrigin(origin);
+          // Use single Clerk client (no port-based routing)
+          const clerkClient = getClerkClient();
           const clerkUser = await clerkClient.users.getUser(userId);
           
           clerkAuth = {
@@ -124,37 +107,33 @@ export const requireAdminClerk = async (req, res, next) => {
       }
     }
     
-    // Debug logging in development
-    if (process.env.NODE_ENV === 'development') {
-      // Always log for admin routes to debug
-      console.log('🔍 requireAdminClerk: Admin route accessed');
-      console.log('   Auth method:', authHeader ? 'token' : 'cookie');
-      console.log('   Path:', req.path);
-      console.log('   Original URL:', req.originalUrl);
-      console.log('   Origin:', req.headers.origin || req.headers.referer || 'missing');
-      console.log('   Host:', req.get('host'));
-      console.log('   Cookies present:', Object.keys(req.cookies || {}));
-      console.log('   Cookie header:', req.headers.cookie ? 'present' : 'missing');
-      console.log('   Authorization header:', authHeader ? 'present' : 'missing');
-      
-      if (!clerkAuth?.userId) {
-        console.log('❌ requireAdminClerk: No Clerk session found');
-        console.log('   getAuth(req).isAuthenticated:', getAuth(req).isAuthenticated);
-        console.log('   getAuth(req).userId:', getAuth(req).userId);
-        console.log('   req.auth type:', typeof req.auth);
-        console.log('   req.auth value:', req.auth);
-        if (typeof req.auth === 'function') {
-          try {
-            console.log('   req.auth() result:', req.auth());
-          } catch (e) {
-            console.log('   req.auth() error:', e.message);
-          }
-        }
-      } else {
-        console.log('✅ requireAdminClerk: Clerk session found');
-        console.log('   userId:', clerkAuth.userId);
-        console.log('   isAuthenticated:', clerkAuth.isAuthenticated);
-      }
+    // Debug logging (always log in production too for admin routes - critical for debugging)
+    console.log('🔍 requireAdminClerk: Admin route accessed', {
+      authMethod: authHeader ? 'token' : 'cookie',
+      path: req.path,
+      originalUrl: req.originalUrl,
+      origin: req.headers.origin || req.headers.referer || 'missing',
+      host: req.get('host'),
+      cookieCount: Object.keys(req.cookies || {}).length,
+      hasCookieHeader: !!req.headers.cookie,
+      hasAuthorizationHeader: !!authHeader,
+      hasClerkAuth: !!clerkAuth?.userId,
+      clerkUserId: clerkAuth?.userId || null,
+      nodeEnv: process.env.NODE_ENV
+    });
+    
+    if (!clerkAuth?.userId) {
+      console.error('❌ requireAdminClerk: No Clerk session found', {
+        getAuthIsAuthenticated: getAuth(req).isAuthenticated,
+        getAuthUserId: getAuth(req).userId,
+        reqAuthType: typeof req.auth,
+        hasReqAuth: !!req.auth
+      });
+    } else {
+      console.log('✅ requireAdminClerk: Clerk session found', {
+        userId: clerkAuth.userId,
+        isAuthenticated: clerkAuth.isAuthenticated
+      });
     }
     
     if (!clerkAuth?.userId) {
@@ -183,9 +162,8 @@ export const requireAdminClerk = async (req, res, next) => {
     // Also fetch email if not in session claims
     if (!publicMetadata || !email) {
       try {
-        // Get the correct clerkClient based on origin
-        const origin = req.headers.origin || req.headers.referer || '';
-        const clerkClient = getClerkClientForOrigin(origin);
+        // Use single Clerk client (no port-based routing)
+        const clerkClient = getClerkClient();
         const clerkUser = await clerkClient.users.getUser(userId);
         
         // Fetch publicMetadata if not in claims
@@ -202,7 +180,7 @@ export const requireAdminClerk = async (req, res, next) => {
         }
         
         if (process.env.NODE_ENV === 'development') {
-          console.log('📋 Fetched publicMetadata and email from Clerk API for userId:', userId, 'origin:', origin);
+          console.log('📋 Fetched publicMetadata and email from Clerk API for userId:', userId);
         }
       } catch (apiError) {
         console.warn('⚠️ Failed to fetch user from Clerk API:', apiError.message);
@@ -225,9 +203,8 @@ export const requireAdminClerk = async (req, res, next) => {
         
         // Try to update Clerk metadata if user is admin in DB but not in Clerk
         try {
-          // Get origin for clerk client selection
-          const origin = req.headers.origin || req.headers.referer || '';
-          const clerkClient = getClerkClientForOrigin(origin);
+          // Use single Clerk client (no port-based routing)
+          const clerkClient = getClerkClient();
           await clerkClient.users.updateUserMetadata(userId, {
             publicMetadata: { 
               ...(publicMetadata || {}),

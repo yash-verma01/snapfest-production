@@ -178,12 +178,39 @@ app.use((req, res, next) => {
   // Apply CORS for all other routes (API routes that need credentials)
   cors({
   origin: function (origin, callback) {
+    // CRITICAL: Always log CORS checks (not just in development) for production debugging
+    const allowedOrigins = [
+      // Primary frontend URL (set in .env)
+      process.env.FRONTEND_URL,
+      // Additional allowed origins (comma-separated in .env)
+      ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : [])
+    ].filter(Boolean); // Remove undefined values
+    
+    // CRITICAL: Log CORS check in production too for debugging
+    console.log('🔍 CORS Check:', {
+      origin: origin || 'NO ORIGIN',
+      allowedOrigins: allowedOrigins,
+      frontendUrl: process.env.FRONTEND_URL || 'NOT SET',
+      allowedOriginsEnv: process.env.ALLOWED_ORIGINS || 'NOT SET',
+      nodeEnv: process.env.NODE_ENV,
+      isEmpty: allowedOrigins.length === 0
+    });
+    
+    // CRITICAL: Warn if environment variables are not set
+    if (allowedOrigins.length === 0) {
+      console.error('❌ CRITICAL CORS ERROR: No allowed origins configured!');
+      console.error('   FRONTEND_URL:', process.env.FRONTEND_URL || 'NOT SET');
+      console.error('   ALLOWED_ORIGINS:', process.env.ALLOWED_ORIGINS || 'NOT SET');
+      console.error('   This will block ALL CORS requests!');
+    }
+    
     // Allow requests with no origin (like mobile apps or curl requests) - but only in development
     if (!origin) {
       if (isDevelopment) {
         return callback(null, true);
       }
       // In production, reject requests without origin for security
+      console.warn('⚠️ CORS: Rejected request without origin header');
       return callback(new Error('Origin header required'));
     }
     
@@ -201,28 +228,28 @@ app.use((req, res, next) => {
       return callback(new Error('Not allowed by CORS'));
     }
     
-    // SECURITY: Remove file:// protocol support (security risk)
-    // if (origin.startsWith('file://')) {
-    //   return callback(null, true);
-    // }
+    // Normalize origins for comparison (remove trailing slashes, lowercase)
+    const normalizeOrigin = (url) => {
+      if (!url) return null;
+      return url.toLowerCase().replace(/\/$/, '').trim();
+    };
     
-    // Allow specific production domains
-    // All origins are configured via environment variables for flexibility
-    const allowedOrigins = [
-      // Primary frontend URL (set in .env)
-      process.env.FRONTEND_URL,
-      // Additional allowed origins (comma-separated in .env)
-      ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : [])
-    ].filter(Boolean); // Remove undefined values
+    const normalizedOrigin = normalizeOrigin(origin);
+    const normalizedAllowedOrigins = allowedOrigins.map(normalizeOrigin);
     
-    if (allowedOrigins.includes(origin)) {
+    if (normalizedAllowedOrigins.includes(normalizedOrigin)) {
+      console.log('✅ CORS: Allowed origin:', origin);
       return callback(null, true);
     }
     
-    // Log the origin for debugging
-    if (isDevelopment) {
-      console.log('⚠️ CORS: Blocked origin:', origin);
-    }
+    // Log the origin for debugging (ALWAYS log, not just in development)
+    console.error('❌ CORS: Blocked origin:', {
+      origin: origin,
+      normalizedOrigin: normalizedOrigin,
+      allowedOrigins: allowedOrigins,
+      normalizedAllowedOrigins: normalizedAllowedOrigins,
+      match: normalizedAllowedOrigins.includes(normalizedOrigin)
+    });
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true, // CRITICAL: Must be true for cookies to be sent cross-origin
