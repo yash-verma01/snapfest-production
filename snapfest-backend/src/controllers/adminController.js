@@ -2472,6 +2472,39 @@ export const getAdminProfile = asyncHandler(async (req, res) => {
       });
     }
 
+    // CRITICAL FIX: If email is generated (@snapfest.local), fetch real email from Clerk
+    if (admin.email && admin.email.includes('@snapfest.local') && admin.clerkId) {
+      try {
+        const { getAuth } = await import('@clerk/express');
+        const { createClerkClient } = await import('@clerk/clerk-sdk-node');
+        
+        const clerkSecretKey = process.env.CLERK_SECRET_KEY || process.env.CLERK_SECRET_KEY_USER;
+        if (clerkSecretKey) {
+          const clerkClient = createClerkClient({ secretKey: clerkSecretKey });
+          const clerkUser = await clerkClient.users.getUser(admin.clerkId);
+          
+          const realEmail = clerkUser.emailAddresses?.find(email => email.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
+                           clerkUser.emailAddresses?.[0]?.emailAddress ||
+                           clerkUser.emailAddress ||
+                           null;
+          
+          if (realEmail && realEmail !== admin.email && !realEmail.includes('@snapfest.local')) {
+            console.log('✅ getAdminProfile: Updating generated email with real email from Clerk', {
+              oldEmail: admin.email,
+              newEmail: realEmail,
+              clerkId: admin.clerkId
+            });
+            
+            admin.email = realEmail.toLowerCase().trim();
+            await admin.save();
+          }
+        }
+      } catch (clerkError) {
+        console.warn('⚠️ getAdminProfile: Could not fetch email from Clerk:', clerkError.message);
+        // Continue with existing email - non-blocking
+      }
+    }
+
     res.status(200).json({
       success: true,
       message: "Admin profile retrieved successfully",

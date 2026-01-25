@@ -432,18 +432,39 @@ export const requireAdminClerk = async (req, res, next) => {
               }
             }
             
-            // CRITICAL FIX: Generate unique email if email is missing to avoid unique constraint violations
-            if (!finalEmail || finalEmail === 'unknown' || finalEmail.trim() === '') {
-              finalEmail = `clerk-${userId}@snapfest.local`;
-              console.log('⚠️ requireAdminClerk: Using generated email for admin user (email fallback):', finalEmail);
+            // CRITICAL FIX: Do NOT create admin users with generated emails
+            // Admins MUST have a valid email from Clerk - this prevents duplicate/invalid admins
+            if (!finalEmail || finalEmail === 'unknown' || finalEmail.trim() === '' || finalEmail.includes('@snapfest.local')) {
+              console.error('❌ requireAdminClerk: Cannot create admin user - invalid or missing email', {
+                userId: userId,
+                email: finalEmail,
+                reason: !finalEmail ? 'No email' : finalEmail.includes('@snapfest.local') ? 'Generated email' : 'Invalid email'
+              });
+              
+              // Don't create admin user - return error instead
+              return res.status(400).json({
+                success: false,
+                error: 'Invalid admin account',
+                message: 'Admin accounts must have a valid email address. Please ensure your Clerk account has an email address.'
+              });
             }
             
             // Check if user exists with this email (might have been created by sync endpoint)
             const existingUserByEmail = await User.findOne({ email: finalEmail.toLowerCase().trim() });
             if (existingUserByEmail && existingUserByEmail.clerkId !== userId) {
-              // Email conflict - use clerkId-based email instead
-              finalEmail = `clerk-${userId}@snapfest.local`;
-              console.log('⚠️ requireAdminClerk: Email conflict detected (email fallback), using clerkId-based email:', finalEmail);
+              // Email conflict - don't create duplicate
+              console.error('❌ requireAdminClerk: Email conflict - user already exists with this email', {
+                userId: userId,
+                email: finalEmail,
+                existingUserId: existingUserByEmail._id,
+                existingClerkId: existingUserByEmail.clerkId
+              });
+              
+              return res.status(400).json({
+                success: false,
+                error: 'Email conflict',
+                message: 'An account with this email already exists. Please use a different email address.'
+              });
             }
             
             // Use findOneAndUpdate with upsert for atomic operation (handles race conditions)
