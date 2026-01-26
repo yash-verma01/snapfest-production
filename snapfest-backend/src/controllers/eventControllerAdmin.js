@@ -55,34 +55,181 @@ export const getEventByIdAdmin = asyncHandler(async (req, res) => {
 });
 
 export const createEvent = asyncHandler(async (req, res) => {
-  const event = await Event.create(req.body);
-  
-  res.status(201).json({
-    success: true,
-    message: 'Event created successfully',
-    data: { event }
-  });
-});
+  const { title, type, description, slug } = req.body;
 
-export const updateEvent = asyncHandler(async (req, res) => {
-  const event = await Event.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    { new: true, runValidators: true }
-  );
-
-  if (!event) {
-    return res.status(404).json({
+  // Validate required fields
+  if (!title || !title.trim()) {
+    return res.status(400).json({
       success: false,
-      message: 'Event not found'
+      message: 'Title is required'
     });
   }
 
-  res.status(200).json({
-    success: true,
-    message: 'Event updated successfully',
-    data: { event }
-  });
+  // Validate type enum if provided
+  const validTypes = ['WEDDING', 'BIRTHDAY', 'HALDI', 'CORPORATE', 'BABY_SHOWER', 'ANNIVERSARY', 'FESTIVAL', 'OTHER'];
+  if (type && !validTypes.includes(type)) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid event type. Must be one of: ${validTypes.join(', ')}`
+    });
+  }
+
+  // Generate slug if not provided
+  let eventSlug = slug;
+  if (!eventSlug || !eventSlug.trim()) {
+    eventSlug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim('-');
+    
+    // Add timestamp to ensure uniqueness
+    eventSlug = `${eventSlug}-${Date.now()}`;
+  }
+
+  // Check if slug already exists
+  if (eventSlug) {
+    const existingEvent = await Event.findOne({ slug: eventSlug });
+    if (existingEvent) {
+      // Regenerate slug with random string
+      eventSlug = `${eventSlug}-${Math.random().toString(36).substr(2, 9)}`;
+    }
+  }
+
+  try {
+    const event = await Event.create({
+      ...req.body,
+      title: title.trim(),
+      slug: eventSlug,
+      type: type || 'OTHER'
+    });
+    
+    res.status(201).json({
+      success: true,
+      message: 'Event created successfully',
+      data: { event }
+    });
+  } catch (error) {
+    // Handle Mongoose/MongoDB duplicate key errors
+    if (error.code === 11000 || error.name === 'MongoServerError') {
+      const field = error.keyPattern ? Object.keys(error.keyPattern)[0] : 'slug';
+      return res.status(409).json({
+        success: false,
+        message: `An event with this ${field} already exists. Please use a different ${field === 'slug' ? 'title' : field}.`
+      });
+    }
+
+    // Handle Azure Cosmos DB unique constraint violations
+    if (error.message && error.message.includes('Unique index constraint violation')) {
+      return res.status(409).json({
+        success: false,
+        message: 'An event with this information already exists. Please use different values.'
+      });
+    }
+
+    // Handle Mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message).join(', ');
+      return res.status(400).json({
+        success: false,
+        message: `Validation error: ${messages}`,
+        errors: Object.keys(error.errors).reduce((acc, key) => {
+          acc[key] = error.errors[key].message;
+          return acc;
+        }, {})
+      });
+    }
+
+    // Log unexpected errors
+    console.error('❌ createEvent: Unexpected error:', {
+      error: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code,
+      keyPattern: error.keyPattern
+    });
+
+    // Re-throw for asyncHandler to catch
+    throw error;
+  }
+});
+
+export const updateEvent = asyncHandler(async (req, res) => {
+  const { title, type, slug } = req.body;
+
+  // Validate type enum if provided
+  const validTypes = ['WEDDING', 'BIRTHDAY', 'HALDI', 'CORPORATE', 'BABY_SHOWER', 'ANNIVERSARY', 'FESTIVAL', 'OTHER'];
+  if (type && !validTypes.includes(type)) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid event type. Must be one of: ${validTypes.join(', ')}`
+    });
+  }
+
+  // Check if slug is being updated and if it conflicts
+  if (slug) {
+    const existingEvent = await Event.findOne({ slug, _id: { $ne: req.params.id } });
+    if (existingEvent) {
+      return res.status(409).json({
+        success: false,
+        message: 'An event with this slug already exists. Please use a different slug.'
+      });
+    }
+  }
+
+  try {
+    const event = await Event.findByIdAndUpdate(
+      req.params.id,
+      {
+        ...req.body,
+        ...(title && { title: title.trim() })
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Event updated successfully',
+      data: { event }
+    });
+  } catch (error) {
+    // Handle Mongoose/MongoDB duplicate key errors
+    if (error.code === 11000 || error.name === 'MongoServerError') {
+      const field = error.keyPattern ? Object.keys(error.keyPattern)[0] : 'slug';
+      return res.status(409).json({
+        success: false,
+        message: `An event with this ${field} already exists. Please use a different ${field}.`
+      });
+    }
+
+    // Handle Azure Cosmos DB unique constraint violations
+    if (error.message && error.message.includes('Unique index constraint violation')) {
+      return res.status(409).json({
+        success: false,
+        message: 'An event with this information already exists. Please use different values.'
+      });
+    }
+
+    // Handle Mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message).join(', ');
+      return res.status(400).json({
+        success: false,
+        message: `Validation error: ${messages}`
+      });
+    }
+
+    console.error('❌ updateEvent: Unexpected error:', error.message);
+    throw error;
+  }
 });
 
 export const deleteEvent = asyncHandler(async (req, res) => {

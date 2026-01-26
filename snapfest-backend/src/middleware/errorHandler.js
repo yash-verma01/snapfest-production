@@ -5,15 +5,20 @@ export const errorHandler = (err, req, res, next) => {
   let error = { ...err };
   error.message = err.message;
 
-  // Log error with enhanced details
-  logError('Application error occurred', err, {
-    reqId: req.reqId,
-    method: req.method,
-    url: req.url,
-    userAgent: req.get('User-Agent'),
-    ip: req.ip,
-    user: req.user ? `${req.user._id} (${req.user.role})` : 'anonymous'
-  });
+  // Safely log error (don't let logging errors break error handling)
+  try {
+    logError('Application error occurred', err, {
+      reqId: req.reqId,
+      method: req.method,
+      url: req.url,
+      userAgent: req.get('User-Agent'),
+      ip: req.ip,
+      user: req.user ? `${req.user._id} (${req.user.role})` : 'anonymous'
+    });
+  } catch (logErr) {
+    console.error('Failed to log error:', logErr);
+    console.error('Original error:', err.message);
+  }
 
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {
@@ -21,11 +26,26 @@ export const errorHandler = (err, req, res, next) => {
     error = { message, statusCode: 404 };
   }
 
-  // Mongoose duplicate key
-  if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
-    const message = `${field} already exists`;
-    error = { message, statusCode: 400 };
+  // Mongoose/MongoDB duplicate key (code 11000)
+  if (err.code === 11000 || err.name === 'MongoServerError') {
+    const field = err.keyPattern ? Object.keys(err.keyPattern)[0] : (err.keyValue ? Object.keys(err.keyValue)[0] : 'field');
+    const message = `A record with this ${field} already exists`;
+    error = { message, statusCode: 409 };
+  }
+
+  // Azure Cosmos DB unique constraint violation
+  // Error format: "Error=117, Details='...Unique index constraint violation...'"
+  // Also check error.error property which might contain the error string
+  const errorMessage = err.message || '';
+  const errorError = err.error || '';
+  const errorString = typeof errorError === 'string' ? errorError : '';
+  
+  if (errorMessage.includes('Unique index constraint violation') ||
+      errorMessage.includes('Error=117') ||
+      errorString.includes('Unique index constraint violation') ||
+      errorString.includes('Error=117')) {
+    const message = 'A record with this information already exists. Please use different values.';
+    error = { message, statusCode: 409 };
   }
 
   // Mongoose validation error

@@ -149,45 +149,114 @@ export const createBeatBloom = asyncHandler(async (req, res) => {
     isActive = true
   } = req.body;
 
-  // Generate slug from title
-  const slug = title
+  // Validate required fields
+  if (!title || !title.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Title is required'
+    });
+  }
+
+  if (!price || price < 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Valid price is required'
+    });
+  }
+
+  // Validate category enum
+  const validCategories = ['ENTERTAINMENT', 'DECOR', 'PHOTOGRAPHY', 'CATERING', 'LIGHTING', 'OTHER'];
+  if (category && !validCategories.includes(category)) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid category. Must be one of: ${validCategories.join(', ')}`
+    });
+  }
+
+  // Generate unique slug from title
+  let slug = title
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/-+/g, '-') // Replace multiple hyphens with single
-    .trim('-') // Remove leading/trailing hyphens
-    + `-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`; // Add timestamp and random string
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim('-');
+  
+  // Add timestamp and random string to ensure uniqueness
+  slug = `${slug}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-  const beatBloom = await BeatBloom.create({
-    title,
-    slug,
-    category,
-    description,
-    price,
-    features,
-    images,
-    primaryImage: primaryImage || '',
-    rating: rating !== undefined ? rating : 0,
-    isActive,
-    createdBy: req.userId
-  });
+  // Check if slug already exists (unlikely but possible) and regenerate if needed
+  let existingBeatBloom = await BeatBloom.findOne({ slug });
+  let retryCount = 0;
+  while (existingBeatBloom && retryCount < 5) {
+    // Regenerate slug if collision occurs
+    slug = `${slug}-${Math.random().toString(36).substr(2, 9)}`;
+    existingBeatBloom = await BeatBloom.findOne({ slug });
+    retryCount++;
+  }
 
-  // Create audit log only if actorId is available
-  // Temporarily disabled for debugging
-  // // DISABLED: if (req.userId) {
-  //   //   // DISABLED: await AuditLog.create({
-  //   //   //     actorId: req.userId,
-  //   //   //     action: 'CREATE_BEATBLOOM',
-  //   //   //     targetId: beatBloom._id,
-  //   //   //     description: `Created Beat & Bloom package: ${title}`
-  //   //   //   });
-  //   // }
+  try {
+    const beatBloom = await BeatBloom.create({
+      title: title.trim(),
+      slug,
+      category: category || 'OTHER',
+      description: description || '',
+      price,
+      features: features || [],
+      images: images || [],
+      primaryImage: primaryImage || '',
+      rating: rating !== undefined ? Math.max(0, Math.min(5, rating)) : 0,
+      isActive,
+      createdBy: req.userId
+    });
 
-  res.status(201).json({
-    success: true,
-    message: 'Beat & Bloom package created successfully',
-    data: { beatBloom }
-  });
+    res.status(201).json({
+      success: true,
+      message: 'Beat & Bloom package created successfully',
+      data: { beatBloom }
+    });
+  } catch (error) {
+    // Handle Mongoose/MongoDB duplicate key errors (slug uniqueness)
+    if (error.code === 11000 || error.name === 'MongoServerError') {
+      const field = error.keyPattern ? Object.keys(error.keyPattern)[0] : 'slug';
+      return res.status(409).json({
+        success: false,
+        message: `A Beat & Bloom package with this ${field} already exists. Please try again with a different title.`
+      });
+    }
+
+    // Handle Azure Cosmos DB unique constraint violations
+    if (error.message && error.message.includes('Unique index constraint violation')) {
+      return res.status(409).json({
+        success: false,
+        message: 'A Beat & Bloom package with this title already exists. Please use a different title.'
+      });
+    }
+
+    // Handle Mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message).join(', ');
+      return res.status(400).json({
+        success: false,
+        message: `Validation error: ${messages}`,
+        errors: Object.keys(error.errors).reduce((acc, key) => {
+          acc[key] = error.errors[key].message;
+          return acc;
+        }, {})
+      });
+    }
+
+    // Log unexpected errors
+    console.error('❌ createBeatBloom: Unexpected error:', {
+      error: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code,
+      keyPattern: error.keyPattern
+    });
+
+    // Re-throw for asyncHandler to catch
+    throw error;
+  }
 });
 
 // Update Beat & Bloom package (Admin)

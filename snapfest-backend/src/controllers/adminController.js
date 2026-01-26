@@ -1070,28 +1070,81 @@ export const createPackage = asyncHandler(async (req, res) => {
     });
   }
 
-  const packageData = await Package.create({
-    title,
-    description,
-    category,
-    basePrice,
-    images: images || [],
-    primaryImage: primaryImage || '',
-    includedFeatures: includedFeatures || [],
-    highlights: highlights || [],
-    tags: tags || [],
-    customizationOptions: customizationOptions || [],
-    rating: rating !== undefined ? rating : 0,
-    isPremium: isPremium || false,
-    isActive,
-    metaDescription: metaDescription || ''
-  });
+  // Validate category enum
+  const validCategories = ['WEDDING', 'BIRTHDAY', 'BABY_SHOWER', 'DEMISE', 'HALDI_MEHNDI', 'CAR_DIGGI_CELEBRATION', 'CORPORATE'];
+  if (!validCategories.includes(category)) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid category. Must be one of: ${validCategories.join(', ')}`
+    });
+  }
 
-  res.status(201).json({
-    success: true,
-    message: 'Package created successfully',
-    data: { package: packageData }
-  });
+  try {
+    const packageData = await Package.create({
+      title: title.trim(),
+      description: description.trim(),
+      category,
+      basePrice,
+      images: images || [],
+      primaryImage: primaryImage || '',
+      includedFeatures: includedFeatures || [],
+      highlights: highlights || [],
+      tags: tags || [],
+      customizationOptions: customizationOptions || [],
+      rating: rating !== undefined ? Math.max(0, Math.min(5, rating)) : 0,
+      isPremium: isPremium || false,
+      isActive,
+      metaDescription: metaDescription || ''
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Package created successfully',
+      data: { package: packageData }
+    });
+  } catch (error) {
+    // Handle Mongoose/MongoDB duplicate key errors
+    if (error.code === 11000 || error.name === 'MongoServerError') {
+      const field = error.keyPattern ? Object.keys(error.keyPattern)[0] : 'slug';
+      return res.status(409).json({
+        success: false,
+        message: `A package with this ${field} already exists. Please use a different ${field === 'slug' ? 'title' : field}.`
+      });
+    }
+
+    // Handle Azure Cosmos DB unique constraint violations
+    if (error.message && error.message.includes('Unique index constraint violation')) {
+      return res.status(409).json({
+        success: false,
+        message: 'A package with this information already exists. Please use different values.'
+      });
+    }
+
+    // Handle Mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message).join(', ');
+      return res.status(400).json({
+        success: false,
+        message: `Validation error: ${messages}`,
+        errors: Object.keys(error.errors).reduce((acc, key) => {
+          acc[key] = error.errors[key].message;
+          return acc;
+        }, {})
+      });
+    }
+
+    // Log unexpected errors
+    console.error('❌ createPackage: Unexpected error:', {
+      error: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code,
+      keyPattern: error.keyPattern
+    });
+
+    // Re-throw for asyncHandler to catch
+    throw error;
+  }
 });
 
 export const updatePackage = asyncHandler(async (req, res) => {
@@ -1168,29 +1221,71 @@ export const updatePackage = asyncHandler(async (req, res) => {
     });
   }
 
-  // Update package fields
-  if (title) packageData.title = title;
-  if (description) packageData.description = description;
-  if (category) packageData.category = category;
-  if (basePrice !== undefined) packageData.basePrice = basePrice;
-  if (images !== undefined) packageData.images = images;
-  if (primaryImage !== undefined) packageData.primaryImage = primaryImage;
-  if (includedFeatures !== undefined) packageData.includedFeatures = includedFeatures;
-  if (highlights !== undefined) packageData.highlights = highlights;
-  if (tags !== undefined) packageData.tags = tags;
-  if (customizationOptions !== undefined) packageData.customizationOptions = customizationOptions;
-  if (rating !== undefined) packageData.rating = rating;
-  if (isPremium !== undefined) packageData.isPremium = isPremium;
-  if (isActive !== undefined) packageData.isActive = isActive;
-  if (metaDescription !== undefined) packageData.metaDescription = metaDescription;
+  // Validate category enum if provided
+  if (category) {
+    const validCategories = ['WEDDING', 'BIRTHDAY', 'BABY_SHOWER', 'DEMISE', 'HALDI_MEHNDI', 'CAR_DIGGI_CELEBRATION', 'CORPORATE'];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid category. Must be one of: ${validCategories.join(', ')}`
+      });
+    }
+  }
 
-  await packageData.save();
+  try {
+    // Update package fields
+    if (title) packageData.title = title.trim();
+    if (description) packageData.description = description.trim();
+    if (category) packageData.category = category;
+    if (basePrice !== undefined) packageData.basePrice = basePrice;
+    if (images !== undefined) packageData.images = images;
+    if (primaryImage !== undefined) packageData.primaryImage = primaryImage;
+    if (includedFeatures !== undefined) packageData.includedFeatures = includedFeatures;
+    if (highlights !== undefined) packageData.highlights = highlights;
+    if (tags !== undefined) packageData.tags = tags;
+    if (customizationOptions !== undefined) packageData.customizationOptions = customizationOptions;
+    if (rating !== undefined) packageData.rating = Math.max(0, Math.min(5, rating));
+    if (isPremium !== undefined) packageData.isPremium = isPremium;
+    if (isActive !== undefined) packageData.isActive = isActive;
+    if (metaDescription !== undefined) packageData.metaDescription = metaDescription;
 
-  res.status(200).json({
-    success: true,
-    message: 'Package updated successfully',
-    data: { package: packageData }
-  });
+    await packageData.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Package updated successfully',
+      data: { package: packageData }
+    });
+  } catch (error) {
+    // Handle Mongoose/MongoDB duplicate key errors
+    if (error.code === 11000 || error.name === 'MongoServerError') {
+      const field = error.keyPattern ? Object.keys(error.keyPattern)[0] : 'slug';
+      return res.status(409).json({
+        success: false,
+        message: `A package with this ${field} already exists. Please use a different ${field === 'slug' ? 'title' : field}.`
+      });
+    }
+
+    // Handle Azure Cosmos DB unique constraint violations
+    if (error.message && error.message.includes('Unique index constraint violation')) {
+      return res.status(409).json({
+        success: false,
+        message: 'A package with this information already exists. Please use different values.'
+      });
+    }
+
+    // Handle Mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message).join(', ');
+      return res.status(400).json({
+        success: false,
+        message: `Validation error: ${messages}`
+      });
+    }
+
+    console.error('❌ updatePackage: Unexpected error:', error.message);
+    throw error;
+  }
 });
 
 export const deletePackage = asyncHandler(async (req, res) => {
@@ -2291,35 +2386,150 @@ export const getBeatBloomByIdAdmin = asyncHandler(async (req, res) => {
 
 // Create new Beat & Bloom service
 export const createBeatBloom = asyncHandler(async (req, res) => {
-  const beatBloom = await BeatBloom.create(req.body);
+  const { title, category, description, price, features, images, primaryImage, rating, isActive } = req.body;
 
-  res.status(201).json({
-    success: true,
-    message: 'Beat & Bloom service created successfully',
-    data: { beatBloom }
-  });
+  // Validate required fields
+  if (!title || !title.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Title is required'
+    });
+  }
+
+  if (!price || price < 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Valid price is required'
+    });
+  }
+
+  // Validate category enum
+  const validCategories = ['ENTERTAINMENT', 'DECOR', 'PHOTOGRAPHY', 'CATERING', 'LIGHTING', 'OTHER'];
+  if (category && !validCategories.includes(category)) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid category. Must be one of: ${validCategories.join(', ')}`
+    });
+  }
+
+  try {
+    const beatBloom = await BeatBloom.create(req.body);
+
+    res.status(201).json({
+      success: true,
+      message: 'Beat & Bloom service created successfully',
+      data: { beatBloom }
+    });
+  } catch (error) {
+    // Handle duplicate key errors
+    if (error.code === 11000 || error.name === 'MongoServerError') {
+      const field = error.keyPattern ? Object.keys(error.keyPattern)[0] : 'slug';
+      return res.status(409).json({
+        success: false,
+        message: `A Beat & Bloom package with this ${field} already exists. Please try again.`
+      });
+    }
+
+    // Handle Azure Cosmos DB unique constraint violations
+    if (error.message && error.message.includes('Unique index constraint violation')) {
+      return res.status(409).json({
+        success: false,
+        message: 'A Beat & Bloom package with this information already exists. Please use different values.'
+      });
+    }
+
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message).join(', ');
+      return res.status(400).json({
+        success: false,
+        message: `Validation error: ${messages}`
+      });
+    }
+
+    console.error('❌ createBeatBloom: Unexpected error:', error.message);
+    throw error;
+  }
 });
 
 // Update Beat & Bloom service
 export const updateBeatBloom = asyncHandler(async (req, res) => {
-  const beatBloom = await BeatBloom.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    { new: true, runValidators: true }
-  );
+  const { category, price, rating } = req.body;
 
-  if (!beatBloom) {
-    return res.status(404).json({
+  // Validate category enum if provided
+  const validCategories = ['ENTERTAINMENT', 'DECOR', 'PHOTOGRAPHY', 'CATERING', 'LIGHTING', 'OTHER'];
+  if (category && !validCategories.includes(category)) {
+    return res.status(400).json({
       success: false,
-      message: 'Beat & Bloom service not found'
+      message: `Invalid category. Must be one of: ${validCategories.join(', ')}`
     });
   }
 
-  res.status(200).json({
-    success: true,
-    message: 'Beat & Bloom service updated successfully',
-    data: { beatBloom }
-  });
+  // Validate price if provided
+  if (price !== undefined && price < 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Price must be a positive number'
+    });
+  }
+
+  // Validate rating if provided
+  if (rating !== undefined && (rating < 0 || rating > 5)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Rating must be between 0 and 5'
+    });
+  }
+
+  try {
+    const beatBloom = await BeatBloom.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    if (!beatBloom) {
+      return res.status(404).json({
+        success: false,
+        message: 'Beat & Bloom service not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Beat & Bloom service updated successfully',
+      data: { beatBloom }
+    });
+  } catch (error) {
+    // Handle Mongoose/MongoDB duplicate key errors
+    if (error.code === 11000 || error.name === 'MongoServerError') {
+      const field = error.keyPattern ? Object.keys(error.keyPattern)[0] : 'slug';
+      return res.status(409).json({
+        success: false,
+        message: `A Beat & Bloom package with this ${field} already exists. Please use a different ${field === 'slug' ? 'title' : field}.`
+      });
+    }
+
+    // Handle Azure Cosmos DB unique constraint violations
+    if (error.message && error.message.includes('Unique index constraint violation')) {
+      return res.status(409).json({
+        success: false,
+        message: 'A Beat & Bloom package with this information already exists. Please use different values.'
+      });
+    }
+
+    // Handle Mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message).join(', ');
+      return res.status(400).json({
+        success: false,
+        message: `Validation error: ${messages}`
+      });
+    }
+
+    console.error('❌ updateBeatBloom: Unexpected error:', error.message);
+    throw error;
+  }
 });
 
 // Delete Beat & Bloom service
