@@ -133,8 +133,24 @@ const packageSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Ensure options array exists for backward compatibility with existing packages
+// Pre-save middleware to generate slug and ensure options array exists
 packageSchema.pre('save', function(next) {
+  // Generate slug if missing or empty
+  if (!this.slug || this.slug === '') {
+    if (this.title) {
+      let slug = this.title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+        .replace(/\s+/g, '-') // Replace spaces with hyphens
+        .replace(/-+/g, '-') // Replace multiple hyphens with single
+        .trim('-'); // Remove leading/trailing hyphens
+      
+      // Add timestamp and random string to ensure uniqueness
+      this.slug = `${slug}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    }
+  }
+
+  // Ensure options array exists for backward compatibility with existing packages
   if (this.customizationOptions && Array.isArray(this.customizationOptions)) {
     this.customizationOptions = this.customizationOptions.map(option => {
       // Ensure options array exists and is an array

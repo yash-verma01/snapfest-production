@@ -1079,12 +1079,37 @@ export const createPackage = asyncHandler(async (req, res) => {
     });
   }
 
+  // Generate unique slug from title if not provided
+  let slug = req.body.slug;
+  if (!slug || !slug.trim()) {
+    slug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single
+      .trim('-'); // Remove leading/trailing hyphens
+    
+    // Add timestamp and random string to ensure uniqueness
+    slug = `${slug}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  // Check if slug already exists and regenerate if needed
+  let existingPackage = await Package.findOne({ slug });
+  let retryCount = 0;
+  while (existingPackage && retryCount < 5) {
+    // Regenerate slug if collision occurs
+    slug = `${slug}-${Math.random().toString(36).substr(2, 9)}`;
+    existingPackage = await Package.findOne({ slug });
+    retryCount++;
+  }
+
   try {
     const packageData = await Package.create({
       title: title.trim(),
       description: description.trim(),
       category,
       basePrice,
+      slug: slug.trim(),
       images: images || [],
       primaryImage: primaryImage || '',
       includedFeatures: includedFeatures || [],
@@ -1232,6 +1257,27 @@ export const updatePackage = asyncHandler(async (req, res) => {
     }
   }
 
+  // Generate slug if title is being updated and slug is not explicitly provided
+  let newSlug = req.body.slug;
+  if (title && title.trim() !== packageData.title && !newSlug) {
+    newSlug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim('-');
+    
+    // Add timestamp to ensure uniqueness
+    newSlug = `${newSlug}-${Date.now()}`;
+    
+    // Check if slug conflicts with another package
+    const existingPackage = await Package.findOne({ slug: newSlug, _id: { $ne: req.params.id } });
+    if (existingPackage) {
+      // Regenerate with random string
+      newSlug = `${newSlug}-${Math.random().toString(36).substr(2, 9)}`;
+    }
+  }
+
   try {
     // Update package fields
     if (title) packageData.title = title.trim();
@@ -1248,6 +1294,7 @@ export const updatePackage = asyncHandler(async (req, res) => {
     if (isPremium !== undefined) packageData.isPremium = isPremium;
     if (isActive !== undefined) packageData.isActive = isActive;
     if (metaDescription !== undefined) packageData.metaDescription = metaDescription;
+    if (newSlug) packageData.slug = newSlug.trim();
 
     await packageData.save();
 
