@@ -348,8 +348,19 @@ export const requireAdminClerk = async (req, res, next) => {
             wasCreated: !user.createdAt || (Date.now() - new Date(user.createdAt).getTime()) < 5000
           });
         } catch (createError) {
-          // Handle duplicate key errors specifically
-          if (createError.code === 11000 || createError.name === 'MongoServerError') {
+          // Handle duplicate key errors specifically (MongoDB and Azure Cosmos DB)
+          const errorMessage = createError.message || '';
+          const errorError = createError.error || '';
+          const errorString = typeof errorError === 'string' ? errorError : '';
+          
+          const isDuplicateKey = createError.code === 11000 || 
+                                 createError.name === 'MongoServerError' ||
+                                 errorMessage.includes('Unique index constraint violation') ||
+                                 errorMessage.includes('Error=117') ||
+                                 errorString.includes('Unique index constraint violation') ||
+                                 errorString.includes('Error=117');
+          
+          if (isDuplicateKey) {
             // Duplicate key error - user might have been created by another request
             // Try to find the user again
             user = await User.findOne({ clerkId: userId });
@@ -358,6 +369,7 @@ export const requireAdminClerk = async (req, res, next) => {
             } else {
               console.error('❌ requireAdminClerk: Duplicate key error but user not found:', {
                 error: createError.message,
+                errorError: errorString,
                 userId: userId,
                 email: email
               });
@@ -365,6 +377,7 @@ export const requireAdminClerk = async (req, res, next) => {
           } else {
             console.error('❌ requireAdminClerk: Failed to create admin user:', {
               error: createError.message,
+              errorError: errorString,
               stack: createError.stack,
               userId: userId,
               email: email,

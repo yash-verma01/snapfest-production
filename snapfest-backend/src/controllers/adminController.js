@@ -1128,6 +1128,11 @@ export const createPackage = asyncHandler(async (req, res) => {
       data: { package: packageData }
     });
   } catch (error) {
+    // Extract error details for Azure Cosmos DB
+    const errorMessage = error.message || '';
+    const errorError = error.error || '';
+    const errorString = typeof errorError === 'string' ? errorError : '';
+    
     // Handle Mongoose/MongoDB duplicate key errors
     if (error.code === 11000 || error.name === 'MongoServerError') {
       const field = error.keyPattern ? Object.keys(error.keyPattern)[0] : 'slug';
@@ -1138,10 +1143,24 @@ export const createPackage = asyncHandler(async (req, res) => {
     }
 
     // Handle Azure Cosmos DB unique constraint violations
-    if (error.message && error.message.includes('Unique index constraint violation')) {
+    // Check both error.message and error.error properties
+    if (errorMessage.includes('Unique index constraint violation') ||
+        errorMessage.includes('Error=117') ||
+        errorString.includes('Unique index constraint violation') ||
+        errorString.includes('Error=117')) {
+      // Log the full error for debugging
+      console.error('❌ createPackage: Azure Cosmos DB unique constraint violation:', {
+        errorMessage,
+        errorError: errorString,
+        error: error.error,
+        slug: slug,
+        title: title
+      });
+      
       return res.status(409).json({
         success: false,
-        message: 'A package with this information already exists. Please use different values.'
+        message: 'A package with this slug already exists. Please try again with a different title.',
+        error: errorString || errorMessage
       });
     }
 
@@ -1158,13 +1177,16 @@ export const createPackage = asyncHandler(async (req, res) => {
       });
     }
 
-    // Log unexpected errors
+    // Log unexpected errors with full error details
     console.error('❌ createPackage: Unexpected error:', {
       error: error.message,
+      errorError: errorString,
+      errorObject: error.error,
       stack: error.stack,
       name: error.name,
       code: error.code,
-      keyPattern: error.keyPattern
+      keyPattern: error.keyPattern,
+      fullError: JSON.stringify(error, Object.getOwnPropertyNames(error))
     });
 
     // Re-throw for asyncHandler to catch
